@@ -9,18 +9,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-    <link rel="icon" type="image/png" href="logo.png">
-    <link rel="shortcut icon" type="image/png" href="logo.png">
-    <link rel="apple-touch-icon" href="logo.png">
-    
-
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="RV Negócios">
-    <meta name="apple-mobile-web-app-title" content="RV Negócios">
-    <meta name="theme-color" content="#0f172a"> 
-    <link rel="manifest" href="manifest.json">
-
     <style>
       body { background-color: #f8fafc; font-family: 'Segoe UI', sans-serif; -webkit-font-smoothing: antialiased; }
       .border { border-width: 1px !important; border-style: solid !important; border-color: #cbd5e1 !important; }
@@ -49,7 +37,7 @@
     <div class="w-64 bg-slate-900 text-white h-screen fixed left-0 top-0 flex flex-col shadow-2xl z-20 hidden md:flex no-print">
       <div class="p-6 flex flex-col items-center border-b border-slate-800 bg-slate-900">
         <div class="w-20 h-20 rounded-full border-4 border-blue-600 mb-3 shadow-lg overflow-hidden p-1 bg-white">
-            <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" class="w-full h-full object-contain" />
+            <img src="https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png" class="w-full h-full object-contain" />
         </div>
         <h1 class="text-lg font-bold tracking-wider text-blue-500">RV OBRAS</h1>
       </div>
@@ -172,11 +160,11 @@
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="bg-white p-4 rounded-xl border-l-4 border-l-red-500 shadow-sm">
-                <p class="text-slate-500 text-xs font-bold uppercase">Total de Custos (Saídas)</p>
+                <p class="text-slate-500 text-xs font-bold uppercase">Total de Custos (Pagos)</p>
                 <h3 id="fin-expenses" class="text-2xl font-black text-slate-800 mt-1">R$ 0,00</h3>
             </div>
             <div class="bg-white p-4 rounded-xl border-l-4 border-l-green-500 shadow-sm">
-                <p class="text-slate-500 text-xs font-bold uppercase">Receitas / Aportes</p>
+                <p class="text-slate-500 text-xs font-bold uppercase">Receitas / Aportes (Recebidos)</p>
                 <h3 id="fin-income" class="text-2xl font-black text-slate-800 mt-1">R$ 0,00</h3>
             </div>
             <div class="bg-white p-4 rounded-xl border-l-4 border-l-blue-600 shadow-sm">
@@ -211,7 +199,7 @@
                     <table class="w-full text-sm text-left">
                         <thead class="text-slate-500 bg-slate-100 sticky top-0 border-b">
                             <tr>
-                                <th class="p-3 font-semibold">Data</th>
+                                <th class="p-3 font-semibold">Venc/Data</th>
                                 <th class="p-3 font-semibold">Descrição / Obra</th>
                                 <th class="p-3 font-semibold">Valor</th>
                                 <th class="p-3 font-semibold text-right w-28">Ações</th>
@@ -232,7 +220,7 @@
                     <table class="w-full text-sm text-left">
                         <thead class="text-slate-500 bg-slate-100 sticky top-0 border-b">
                             <tr>
-                                <th class="p-3 font-semibold">Data</th>
+                                <th class="p-3 font-semibold">Venc/Data</th>
                                 <th class="p-3 font-semibold">Descrição/Origem</th>
                                 <th class="p-3 font-semibold">Valor</th>
                                 <th class="p-3 font-semibold text-right w-28">Ações</th>
@@ -348,16 +336,16 @@
       <div id="modal-confirm-oc" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
             <h3 class="font-bold text-lg mb-4 text-slate-800 flex items-center gap-2"><i data-lucide="check-circle" class="text-blue-600"></i> Confirmar Compra</h3>
-            <p class="text-sm text-slate-600 mb-4">Ao confirmar, os valores desta Ordem de Compra serão lançados como custo (pendente de pagamento) para a obra correspondente.</p>
+            <p class="text-sm text-slate-600 mb-4">Selecione a forma de pagamento. PIX já entra como pago no caixa. Cartões ou Medição entram como pendente para daqui a 30 dias.</p>
             <input type="hidden" id="confirm-oc-id">
             <div class="space-y-3">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase">Forma de Pagamento Acordada</label>
                     <select id="confirm-oc-payment" class="w-full p-2 border rounded-lg outline-none focus:border-blue-600 font-bold text-slate-700">
-                        <option value="Boleto">Boleto (Faturado)</option>
                         <option value="PIX">PIX</option>
-                        <option value="Cartão Crédito">Cartão de Crédito</option>
-                        <option value="Dinheiro">Dinheiro</option>
+                        <option value="Cartão de Crédito">Cartão de Crédito</option>
+                        <option value="Cartão de Débito">Cartão de Débito</option>
+                        <option value="Medição">Medição</option>
                     </select>
                 </div>
             </div>
@@ -747,11 +735,8 @@
             CART=[]; 
             CURRENT_OC_ID=null; 
             document.getElementById('pos-custom-obs').value=''; 
-            
-            // Limpar Fornecedor
             document.getElementById('pos-fornecedor').value = '';
             document.getElementById('pos-fornecedor-btn').querySelector('span').innerText = 'Selecione Fornecedor';
-            
             renderCart(); 
         }
 
@@ -921,18 +906,29 @@
             const formPagto = document.getElementById('confirm-oc-payment').value;
             showLoading(true);
             
-            // Muda o tipo de oc_pendente para 'compra' -> entra no financeiro
+            let statusFinal = 'PENDENTE';
+            let dataHoje = new Date();
+            let dataVenc = new Date();
+
+            if (formPagto === 'PIX') {
+                statusFinal = 'PAGO';
+            } else {
+                // Se for Cartão de Crédito, Débito ou Medição, joga 30 dias pra frente e fica PENDENTE
+                dataVenc.setDate(dataVenc.getDate() + 30);
+            }
+            
             const { error } = await sb.from('jsp_logs').update({ 
                 tipo: 'compra', 
                 forma_pagamento: formPagto,
-                status_financeiro: 'PENDENTE',
-                data: new Date().toISOString()
+                status_financeiro: statusFinal,
+                data: dataHoje.toISOString(),
+                vencimento: dataVenc.toISOString()
             }).eq('id', id).eq('tipo', 'oc_pendente');
 
             if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
             
             document.getElementById('modal-confirm-oc').classList.add('hidden');
-            showToast("Compra Confirmada! Lançada no Financeiro.");
+            showToast("Compra efetivada no fluxo de caixa!");
             loadData();
         }
 
@@ -961,7 +957,8 @@
             STATE.obras.forEach(o => custosObras[o.id] = 0);
 
             STATE.logs.forEach(l => {
-                if(l.obra_id && (l.tipo === 'compra' || l.tipo === 'despesa') && l.status_financeiro !== 'CANCELADO') {
+                // REGRA: Só entra no somatório do Dashboard se estiver com status PAGO.
+                if(l.obra_id && (l.tipo === 'compra' || l.tipo === 'despesa') && l.status_financeiro === 'PAGO') {
                     custosObras[l.obra_id] += parseFloat(l.valor_total);
                 }
             });
@@ -974,7 +971,7 @@
                     <h4 class="font-black text-lg text-slate-800 pr-10">${o.nome}</h4>
                     <p class="text-xs text-slate-500 uppercase font-bold mt-1 mb-4 truncate"><i data-lucide="map-pin" class="inline w-3 h-3"></i> ${o.endereco || 'Endereço n. inf.'}</p>
                     <div class="mt-auto pt-4 border-t border-slate-100 flex justify-between items-end">
-                        <span class="text-xs font-bold text-slate-400">Total Custo Acumulado</span>
+                        <span class="text-xs font-bold text-slate-400">Total Custo (Pago)</span>
                         <span class="font-black text-2xl text-red-600">${formatMoney(custosObras[o.id] || 0)}</span>
                     </div>
                 </div>
@@ -999,7 +996,8 @@
             const start = document.getElementById('relatorio-start').value;
             const end = document.getElementById('relatorio-end').value;
 
-            let registros = STATE.logs.filter(l => String(l.obra_id) === String(obraId) && (l.tipo === 'compra' || l.tipo === 'despesa') && l.status_financeiro !== 'CANCELADO');
+            // Relatório só pega o que já foi PAGO
+            let registros = STATE.logs.filter(l => String(l.obra_id) === String(obraId) && (l.tipo === 'compra' || l.tipo === 'despesa') && l.status_financeiro === 'PAGO');
 
             if(start) registros = registros.filter(l => new Date(l.data) >= new Date(start));
             if(end) {
@@ -1025,7 +1023,7 @@
 
             const htmlReport = `
                 <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-                    <h2 style="margin: 0 0 5px 0; color: #1e3a8a;">Relatório de Custos da Obra</h2>
+                    <h2 style="margin: 0 0 5px 0; color: #1e3a8a;">Relatório de Custos da Obra (Pagos)</h2>
                     <h3 style="margin: 0 0 15px 0; color: #333;">${obraObj.nome}</h3>
                     <p style="font-size: 12px; color: #666; margin-bottom: 20px;">
                         Endereço: ${obraObj.endereco || '-'}<br>
@@ -1034,7 +1032,7 @@
                     <table width="100%" style="border-collapse: collapse; font-size: 12px;">
                         <thead style="background-color: #f1f5f9;">
                             <tr>
-                                <th style="padding: 8px; border-bottom: 2px solid #ccc; text-align: left;">Data</th>
+                                <th style="padding: 8px; border-bottom: 2px solid #ccc; text-align: left;">Data Pago</th>
                                 <th style="padding: 8px; border-bottom: 2px solid #ccc; text-align: left;">Referência</th>
                                 <th style="padding: 8px; border-bottom: 2px solid #ccc; text-align: left;">Descrição</th>
                                 <th style="padding: 8px; border-bottom: 2px solid #ccc; text-align: left;">Fornecedor</th>
@@ -1044,7 +1042,7 @@
                         <tbody>${htmlLinhas || '<tr><td colspan="5" align="center" style="padding: 10px;">Nenhum custo no período.</td></tr>'}</tbody>
                         <tfoot>
                             <tr>
-                                <td colspan="4" align="right" style="padding: 10px; font-weight: bold; font-size: 14px; border-top: 2px solid #333;">TOTAL ACUMULADO:</td>
+                                <td colspan="4" align="right" style="padding: 10px; font-weight: bold; font-size: 14px; border-top: 2px solid #333;">TOTAL PAGO:</td>
                                 <td align="right" style="padding: 10px; font-weight: bold; font-size: 16px; color: #b91c1c; border-top: 2px solid #333;">${formatMoney(total)}</td>
                             </tr>
                         </tfoot>
@@ -1055,7 +1053,6 @@
             document.getElementById('modal-relatorio-obra').classList.add('hidden');
             setTimeout(() => window.print(), 300);
         }
-
 
         // ====== FINANCEIRO MANUAL ======
         function renderFinance() {
@@ -1075,17 +1072,21 @@
             if(expSearch) despArr = despArr.filter(l => (l.produto_nome && l.produto_nome.toLowerCase().includes(expSearch)) || String(l.id).includes(expSearch));
             if(expStatus) despArr = despArr.filter(l => l.status_financeiro === expStatus);
             
-            despArr.sort((a,b)=> new Date(b.data) - new Date(a.data));
+            despArr.sort((a,b)=> new Date(b.vencimento || b.data) - new Date(a.vencimento || a.data));
             
             listaDesp.innerHTML = despArr.map(l => {
-                totDesp += parseFloat(l.valor_total);
-                const obra = STATE.obras.find(x=>x.id==l.obra_id);
                 const isPago = l.status_financeiro === 'PAGO';
+                
+                // REGRA: SÓ SOMA SE FOR PAGO!
+                if(isPago) totDesp += parseFloat(l.valor_total);
+                
+                const obra = STATE.obras.find(x=>x.id==l.obra_id);
                 return `<tr class="border-b ${isPago?'bg-green-50':'bg-red-50/20'} transition">
-                    <td class="p-3 text-xs font-bold text-slate-700">${formatDate(l.data)}</td>
+                    <td class="p-3 text-xs font-bold text-slate-700">${formatDate(l.vencimento || l.data)}</td>
                     <td class="p-3">
                         <div class="font-bold text-slate-800 text-xs">${l.tipo==='compra'?`O.C. #${l.id} - Itens Múltiplos`: l.produto_nome}</div>
                         <div class="text-[10px] text-blue-700 font-bold"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Geral'}</div>
+                        ${!isPago ? `<div class="text-[9px] text-slate-500 uppercase mt-0.5">Pagamento via: ${l.forma_pagamento || '-'}</div>` : ''}
                     </td>
                     <td class="p-3 font-bold text-sm ${isPago?'text-slate-500':'text-red-600'}">${formatMoney(l.valor_total)}</td>
                     <td class="p-3 text-right flex items-center justify-end gap-1">
@@ -1103,14 +1104,17 @@
             // --- CONTAS A RECEBER ---
             const listaRec = document.getElementById('fin-receivables-list');
             let recArr = logsFilt.filter(l => l.tipo === 'receita');
-            recArr.sort((a,b)=> new Date(b.data) - new Date(a.data));
+            recArr.sort((a,b)=> new Date(b.vencimento || b.data) - new Date(a.vencimento || a.data));
             
             listaRec.innerHTML = recArr.map(l => {
-                totRec += parseFloat(l.valor_total);
-                const obra = STATE.obras.find(x=>x.id==l.obra_id);
                 const isPago = l.status_financeiro === 'PAGO';
+                
+                // REGRA: SÓ SOMA SE FOR PAGO!
+                if(isPago) totRec += parseFloat(l.valor_total);
+
+                const obra = STATE.obras.find(x=>x.id==l.obra_id);
                 return `<tr class="border-b ${isPago?'bg-green-50':'bg-orange-50/20'} transition">
-                    <td class="p-3 text-xs font-bold text-slate-700">${formatDate(l.vencimento)}</td>
+                    <td class="p-3 text-xs font-bold text-slate-700">${formatDate(l.vencimento || l.data)}</td>
                     <td class="p-3">
                         <div class="font-bold text-slate-800 text-xs">${l.produto_nome}</div>
                         <div class="text-[10px] text-blue-700 font-bold"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Geral'}</div>
@@ -1135,29 +1139,28 @@
         }
 
         async function baixarLog(uid) {
-            if(!confirm("Confirmar a baixa financeira deste lançamento?")) return;
+            if(!confirm("Confirmar a baixa financeira deste lançamento? O valor vai entrar no caixa.")) return;
             showLoading(true);
             const {error} = await sb.from('jsp_logs').update({ status_financeiro: 'PAGO' }).eq('uid', uid);
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
-            showToast("Baixa realizada!"); loadData();
+            showToast("Baixa realizada! Valor computado."); loadData();
         }
 
         async function estornarBaixa(uid) {
-            if(!confirm("Tem certeza que deseja ESTORNAR a baixa? O status voltará para PENDENTE.")) return;
+            if(!confirm("Tem certeza que deseja ESTORNAR a baixa? O status voltará para PENDENTE e sairá do caixa/dashboard.")) return;
             showLoading(true);
-            const {error} = await sb.from('jsp_logs').update({ status_financeiro: 'PENDENTE', valor_pago: 0 }).eq('uid', uid);
+            const {error} = await sb.from('jsp_logs').update({ status_financeiro: 'PENDENTE' }).eq('uid', uid);
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
             showToast("Baixa estornada com sucesso!"); loadData();
         }
 
         async function excluirLancamento(uid) {
-            if(!confirm("Tem certeza que deseja CANCELAR este lançamento? Ele será removido dos cálculos.")) return;
+            if(!confirm("Tem certeza que deseja CANCELAR este lançamento? Ele será removido definitivamente das pendências.")) return;
             showLoading(true);
             const {error} = await sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }).eq('uid', uid);
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
             showToast("Lançamento Cancelado!"); loadData();
         }
-
 
         async function saveExpense() {
             const obra_id = document.getElementById('exp-obra').value || null;
@@ -1169,8 +1172,6 @@
             if(!desc || isNaN(val)) return showToast("Preencha descrição e valor!", true);
             showLoading(true);
 
-            const valPago = status === 'PAGO' ? val : 0;
-
             const {error} = await sb.from('jsp_logs').insert([{
                 id: getNextIdNum(STATE.logs).toString(),
                 obra_id: obra_id ? parseInt(obra_id) : null,
@@ -1178,8 +1179,7 @@
                 produto_nome: desc,
                 valor_total: val,
                 data: dt, vencimento: dt,
-                status_financeiro: status,
-                valor_pago: valPago
+                status_financeiro: status
             }]);
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
             
@@ -1199,8 +1199,6 @@
             if(!desc || isNaN(val)) return showToast("Preencha descrição e valor!", true);
             showLoading(true);
             
-            const valPago = status === 'PAGO' ? val : 0;
-
             const {error} = await sb.from('jsp_logs').insert([{
                 id: getNextIdNum(STATE.logs).toString(),
                 obra_id: obra_id ? parseInt(obra_id) : null,
@@ -1208,8 +1206,7 @@
                 produto_nome: desc,
                 valor_total: val,
                 data: dt, vencimento: dt,
-                status_financeiro: status,
-                valor_pago: valPago
+                status_financeiro: status
             }]);
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
             
@@ -1245,7 +1242,7 @@
                 <table width="100%" style="border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px;">
                     <tr>
                         <td width="130" valign="middle" style="border-right: 1px solid #e2e8f0; padding-right: 15px;">
-                            <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" crossorigin="anonymous" style="max-height: 80px; display: block; margin: 0 auto;" />
+                            <img src="https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png" crossorigin="anonymous" style="max-height: 80px; display: block; margin: 0 auto;" />
                         </td>
                         <td valign="middle" style="padding-left: 15px;">
                             <h2 style="margin: 0; color: #1d4ed8; font-size: 20px; font-weight: 800;">RV OBRAS</h2>
