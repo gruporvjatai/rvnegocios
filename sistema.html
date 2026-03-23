@@ -284,10 +284,11 @@
       <div id="view-users" class="hidden-section">
           <div class="flex justify-between items-center mb-4">
               <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i data-lucide="shield" class="text-blue-600"></i> Gerenciar Usuários</h2>
+              <button onclick="openUserForm()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="plus"></i> Novo Usuário</button>
           </div>
           <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
               <table class="w-full text-sm text-left">
-                  <thead class="bg-slate-100 text-slate-700"><tr><th class="p-4">Nome</th><th class="p-4">Usuário (Login)</th><th class="p-4">Nível</th><th class="p-4 text-center">Status</th></tr></thead>
+                  <thead class="bg-slate-100 text-slate-700"><tr><th class="p-4">Nome</th><th class="p-4">Usuário (Login)</th><th class="p-4">Nível</th><th class="p-4 text-center">Status</th><th class="p-4 text-center">Ações</th></tr></thead>
                   <tbody id="users-list" class="divide-y"></tbody>
               </table>
           </div>
@@ -511,6 +512,47 @@
         </div>
       </div>
 
+      <div id="user-form-container" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <form onsubmit="saveUser(event)" class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
+            <h3 class="font-bold text-lg mb-4 text-slate-800 flex items-center gap-2"><i data-lucide="user-plus" class="text-blue-600"></i> Dados do Usuário</h3>
+            <input type="hidden" id="usr-id">
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase">Nome Completo</label>
+                    <input type="text" id="usr-name" required class="w-full p-2 border rounded outline-none focus:border-blue-600">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase">Login (Usuário)</label>
+                    <input type="text" id="usr-login" required class="w-full p-2 border rounded outline-none focus:border-blue-600">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase">Senha (Somente números)</label>
+                    <input type="password" id="usr-pass" inputmode="numeric" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="Deixe em branco para não alterar" class="w-full p-2 border rounded outline-none focus:border-blue-600">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase">Nível de Acesso</label>
+                        <select id="usr-level" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-bold">
+                            <option value="comprador">Comprador</option>
+                            <option value="admin">Administrador</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase">Status</label>
+                        <select id="usr-status" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-bold">
+                            <option value="true">Ativo</option>
+                            <option value="false">Inativo</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-2 mt-6">
+                <button type="button" onclick="document.getElementById('user-form-container').classList.add('hidden')" class="flex-1 p-2 bg-slate-200 rounded font-bold hover:bg-slate-300">Cancelar</button>
+                <button type="submit" class="flex-1 p-2 bg-blue-700 text-white rounded font-bold hover:bg-blue-800">Salvar</button>
+            </div>
+        </form>
+      </div>
+
     </main>
 
     <div id="print-area" class="print-only"></div>
@@ -591,6 +633,7 @@
                 STATE.produtos = resProd.data || [];
                 STATE.logs = resLog.data || [];
 
+                // Somente carrega usuários se for Admin
                 if (dadosUsuario.nivel === 'admin') {
                     const navUsersBtn = document.getElementById('nav-users');
                     if (navUsersBtn) navUsersBtn.classList.remove('hidden');
@@ -942,11 +985,18 @@
              const arr = Object.values(ocs).sort((a,b)=>b.id - a.id).slice(0,10);
              list.innerHTML = arr.map(o => {
                  const obra = STATE.obras.find(x=>x.id==o.obra_id);
-                 return `<tr class="border-b">
-                     <td class="p-2 text-xs font-bold text-slate-600">#${o.id} <br><span class="text-[9px] text-blue-600">${obra?.nome||''}</span></td>
+                 return `<tr class="border-b hover:bg-slate-50">
+                     <td class="p-2 text-xs font-bold text-slate-600">
+                        <div class="flex items-center gap-1">
+                            #${o.id}
+                            <button onclick="printOC('${o.id}')" class="text-slate-400 hover:text-blue-600 transition ml-1" title="Imprimir 2ª Via"><i data-lucide="printer" class="w-3 h-3"></i></button>
+                        </div>
+                        <span class="text-[9px] text-blue-600">${obra?.nome||''}</span>
+                     </td>
                      <td class="p-2 text-xs text-right font-bold text-slate-800">${formatMoney(o.total)}<br><span class="text-[9px] ${o.tipo==='compra'?'text-indigo-600':'text-orange-500'}">${o.tipo==='compra'?'COMPRADO':'PENDENTE'}</span></td>
                  </tr>`;
              }).join('');
+             lucide.createIcons();
         }
 
         // ====== DASHBOARD OBRAS (VISÃO GERAL) ======
@@ -1245,7 +1295,7 @@
                             <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" crossorigin="anonymous" style="max-height: 80px; display: block; margin: 0 auto;" />
                         </td>
                         <td valign="middle" style="padding-left: 15px;">
-                        <h2 style="margin: 0; color: #059669; font-size: 20px; font-weight: 800;">RV NEGÓCIOS E COMPANHIA</h2>
+                        <h2 style="margin: 0; color: #1d4ed8; font-size: 20px; font-weight: 800;">RV NEGÓCIOS E COMPANHIA</h2>
                         <div style="font-size: 11px; color: #475569; margin-top: 5px; line-height: 1.4;">CNPJ: 61.893.912/0001-24</div>
                         <div style="font-size: 11px; color: #475569; line-height: 1.4;">Rua Mineiros, 530 | Jataí - GO | (64) 99981-5852</div>
                     </td>
@@ -1377,9 +1427,77 @@
 
         // ====== USUARIOS ======
         function renderUsers() {
-            document.getElementById('users-list').innerHTML = STATE.users.map(u => `<tr class="border-b"><td class="p-4 font-bold">${u.nome}</td><td class="p-4 text-blue-600">${u.login}</td><td class="p-4">${u.nivel_acesso}</td><td class="p-4 text-center">${u.ativo?'Ativo':'Inativo'}</td></tr>`).join('');
+            document.getElementById('users-list').innerHTML = STATE.users.map(u => `
+            <tr class="border-b hover:bg-slate-50">
+                <td class="p-4 font-bold text-slate-700">${u.nome}</td>
+                <td class="p-4 text-blue-600 font-medium">${u.login}</td>
+                <td class="p-4 uppercase text-[10px] font-bold text-slate-500">${u.nivel_acesso}</td>
+                <td class="p-4 text-center">
+                    <span class="px-2 py-1 rounded text-[10px] font-bold ${u.ativo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">${u.ativo ? 'ATIVO' : 'INATIVO'}</span>
+                </td>
+                <td class="p-4 text-center">
+                    <button onclick="openUserForm('${u.id}')" class="text-blue-600 hover:text-blue-800"><i data-lucide="edit-3" width="16"></i></button>
+                </td>
+            </tr>`).join('');
+            lucide.createIcons();
         }
-        function openUserForm() { showToast("Criação de usuários via banco de dados.", false); }
+
+        function openUserForm(id) {
+            document.getElementById('user-form-container').classList.remove('hidden');
+            const passField = document.getElementById('usr-pass');
+            if(id) {
+                const u = STATE.users.find(x => x.id == id);
+                document.getElementById('usr-id').value = u.id;
+                document.getElementById('usr-name').value = u.nome;
+                document.getElementById('usr-login').value = u.login;
+                document.getElementById('usr-level').value = u.nivel_acesso;
+                document.getElementById('usr-status').value = u.ativo ? "true" : "false";
+                passField.required = false;
+                passField.placeholder = "Deixe em branco para manter a senha";
+            } else {
+                document.getElementById('user-form-container').querySelector('form').reset();
+                document.getElementById('usr-id').value = '';
+                document.getElementById('usr-status').value = "true";
+                passField.required = true;
+                passField.placeholder = "Senha apenas números";
+            }
+        }
+
+        async function saveUser(e) {
+            e.preventDefault(); 
+            showLoading(true);
+            const id = document.getElementById('usr-id').value;
+            const isNew = !id;
+            
+            const payload = {
+                nome: document.getElementById('usr-name').value,
+                login: document.getElementById('usr-login').value.trim().toLowerCase(),
+                nivel_acesso: document.getElementById('usr-level').value,
+                ativo: document.getElementById('usr-status').value === "true"
+            };
+
+            const senha = document.getElementById('usr-pass').value;
+            if (senha) {
+                payload.senha = senha;
+            } else if (isNew) {
+                showLoading(false);
+                return showToast("Senha é obrigatória para novos usuários!", true);
+            }
+
+            if(!isNew) payload.id = id;
+
+            const { error } = await sb.from('jsp_usuarios').upsert(payload);
+            
+            if(error) { 
+                showLoading(false); 
+                return showToast("Erro ao salvar usuário: " + error.message, true); 
+            }
+            
+            document.getElementById('user-form-container').classList.add('hidden');
+            showToast("Usuário salvo com sucesso!"); 
+            loadData();
+        }
+
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
   </body>
