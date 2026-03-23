@@ -10,12 +10,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
-      body { background-color: #f1f5f9; font-family: 'Segoe UI', sans-serif; -webkit-font-smoothing: antialiased; }
+      body { background-color: #f8fafc; font-family: 'Segoe UI', sans-serif; -webkit-font-smoothing: antialiased; }
       .border { border-width: 1px !important; border-style: solid !important; border-color: #cbd5e1 !important; }
       .hidden-section { display: none !important; }
       .active-section { display: block !important; animation: fadeIn 0.3s ease-in-out; }
       @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-      .loader { border: 3px solid #e2e8f0; border-top: 3px solid #059669; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+      
+      /* Loader Azul */
+      .loader { border: 3px solid #e2e8f0; border-top: 3px solid #1d4ed8; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
       @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
       .btn-action { transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: bold; border-radius: 8px; }
       .btn-action:active { transform: scale(0.98); }
@@ -26,38 +28,6 @@
         body { background: white; margin: 0; padding: 0; font-family: 'Helvetica', 'Arial', sans-serif; color: #1e293b; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .no-print { display: none !important; }
         .print-only { display: block !important; }
-        .invoice-full, .invoice-box-orig { position: relative; z-index: 1; background-color: transparent !important; }
-        .invoice-full { border: 1px solid #000; min-height: 27.5cm; }
-        .invoice-box-orig { width: 100%; border: 1px solid #000; margin: 0 auto; }
-        .invoice-full::before, .invoice-box-orig::before {
-            content: ""; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 450px; height: 450px; background-image: url('https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png');
-            background-size: contain; background-position: center; background-repeat: no-repeat;
-            opacity: 0.1; z-index: -1; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;
-        }
-        .header-section { display: flex; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; }
-        .logo-area { width: 120px; display: flex; align-items: center; justify-content: center; border-right: 1px solid #e2e8f0; padding-right: 15px; margin-right: 15px; }
-        .company-details { flex: 1; }
-        .company-title { font-size: 20px; font-weight: 800; color: #059669; text-transform: uppercase; margin: 0; }
-        .company-info { font-size: 11px; color: #475569; line-height: 1.4; margin-top: 5px; }
-        .doc-meta { width: 180px; text-align: right; margin-right: 20px;}
-        .doc-title { font-size: 16px; font-weight: 900; color: #0f172a; text-transform: uppercase; margin-bottom: 5px; }
-        .meta-row { font-size: 11px; margin-bottom: 2px; }
-        .info-grid { display: flex; gap: 20px; margin-bottom: 20px; }
-        .info-col { flex: 1; border: 1px solid #000; border-radius: 6px; overflow: hidden; }
-        .col-header { background-color: #f1f5f9; padding: 5px 10px; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #64748b; border-bottom: 1px solid #000; }
-        .col-content { padding: 10px; font-size: 11px; line-height: 1.5; }
-        .full-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 20px; }
-        .full-table th { background-color: #0f172a; color: white; padding: 8px; text-align: left; font-weight: bold; text-transform: uppercase; font-size: 10px; }
-        .full-table td { border-bottom: 1px solid #000; padding: 8px; vertical-align: middle; }
-        .full-table tr:nth-child(even) { background-color: #f8fafc; }
-        .footer-section { display: flex; gap: 30px; margin-top: 10px; }
-        .notes-area { flex: 1; border: 1px dashed #cbd5e1; padding: 10px; border-radius: 6px; }
-        .notes-title { font-size: 10px; font-weight: bold; margin-bottom: 5px; color: #64748b; }
-        .notes-text { font-size: 10px; color: #334155; }
-        .totals-area { width: 250px; }
-        .total-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 11px; border-bottom: 1px solid #e2e8f0; }
-        .total-row.final { border-bottom: none; border-top: 2px solid #0f172a; font-size: 14px; font-weight: 900; margin-top: 5px; padding-top: 10px; background-color: #f1f5f9; padding: 10px; }
       }
       .print-only { display: none; }
     </style>
@@ -65,53 +35,53 @@
   <body>
 
     <div class="w-64 bg-slate-900 text-white h-screen fixed left-0 top-0 flex flex-col shadow-2xl z-20 hidden md:flex no-print">
-      <div class="p-6 flex flex-col items-center border-b border-slate-700 bg-slate-900">
-        <div class="w-20 h-20 rounded-full border-4 border-emerald-600 mb-3 shadow-lg overflow-hidden p-1 bg-white">
+      <div class="p-6 flex flex-col items-center border-b border-slate-800 bg-slate-900">
+        <div class="w-20 h-20 rounded-full border-4 border-blue-600 mb-3 shadow-lg overflow-hidden p-1 bg-white">
             <img src="https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png" class="w-full h-full object-contain" />
         </div>
-        <h1 class="text-lg font-bold tracking-wider text-emerald-500">RV OBRAS</h1>
+        <h1 class="text-lg font-bold tracking-wider text-blue-500">RV OBRAS</h1>
       </div>
       <nav class="flex-1 mt-4 px-3 space-y-1 overflow-y-auto">
         <button onclick="navigate('dash')" id="nav-dash" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="layout-dashboard"></i> <span class="font-medium text-sm">Visão Geral</span></button>
         <button onclick="navigate('oc')" id="nav-oc" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="folder-open"></i> <span class="font-medium text-sm">O.C. Pendentes</span></button>
         <button onclick="navigate('pos')" id="nav-pos" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="shopping-cart"></i> <span class="font-medium text-sm">Nova O.C.</span></button>
         <button onclick="navigate('fin')" id="nav-fin" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="bar-chart-3"></i> <span class="font-medium text-sm">Financeiro Obras</span></button>
-        <div class="border-t border-slate-700 my-2 pt-2"></div>
+        <div class="border-t border-slate-800 my-2 pt-2"></div>
         <button onclick="navigate('fornecedores')" id="nav-fornecedores" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="truck"></i> <span class="font-medium text-sm">Fornecedores</span></button>
         <button onclick="navigate('prod')" id="nav-prod" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="package"></i> <span class="font-medium text-sm">Produtos</span></button>
-        <button onclick="navigate('logs')" id="nav-logs" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="history"></i> <span class="font-medium text-sm">Histórico Geral</span></button>
-        <button onclick="navigate('users')" id="nav-users" class="nav-btn w-full hidden flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="shield"></i> <span class="font-medium text-sm">Usuários (Admin)</span></button>
+        <button onclick="navigate('reports')" id="nav-reports" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="pie-chart"></i> <span class="font-medium text-sm">Relatórios</span></button>
+        <button onclick="navigate('users')" id="nav-users" class="nav-btn w-full hidden flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="shield"></i> <span class="font-medium text-sm">Usuários</span></button>
        </nav>
       <div class="p-3 border-t border-slate-800"> <button onclick="fazerLogout()" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-400 hover:bg-red-900/30 transition-all"><i data-lucide="log-out"></i> <span class="font-medium text-sm">Sair</span></button> </div>
     </div>
 
-    <main class="flex-1 md:ml-64 p-4 md:p-6 overflow-y-auto h-screen no-print bg-slate-100">
+    <main class="flex-1 md:ml-64 p-4 md:p-6 overflow-y-auto h-screen no-print bg-slate-50">
       
-      <div id="loading" class="hidden fixed inset-0 bg-black/30 z-50 flex items-center justify-center">
-         <div class="bg-white p-6 rounded-xl flex flex-col items-center shadow-lg"><div class="loader mb-4"></div><span class="font-bold text-slate-700">Processando...</span></div>
+      <div id="loading" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center">
+         <div class="bg-white p-6 rounded-xl flex flex-col items-center shadow-2xl"><div class="loader mb-4"></div><span class="font-bold text-slate-700">Processando...</span></div>
       </div>
       <div id="toast" class="hidden fixed top-5 right-5 px-6 py-3 rounded-lg shadow-xl text-white font-medium z-50 transition-opacity duration-300"></div>
 
       <div id="view-dash" class="hidden-section">
           <div class="flex justify-between items-center mb-6">
               <h2 class="text-2xl font-bold text-slate-800">Controle de Obras</h2>
-              <button onclick="openObraForm()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold shadow flex items-center gap-2"><i data-lucide="plus"></i> Nova Obra</button>
+              <button onclick="openObraForm()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded-lg font-bold shadow-md flex items-center gap-2"><i data-lucide="plus"></i> Nova Obra</button>
           </div>
-          <div id="dash-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-10"></div>
+          <div id="dash-grid" class="grid grid-cols-1 xl:grid-cols-2 gap-6 pb-10"></div>
       </div>
       
       <div id="view-oc" class="hidden-section">
           <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
-              <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i data-lucide="folder-open" class="text-indigo-600"></i> Ordens de Compra</h2>
+              <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i data-lucide="folder-open" class="text-blue-700"></i> Ordens de Compra</h2>
               <div class="relative w-full md:w-64">
                   <i data-lucide="search" class="absolute left-2 top-2.5 text-slate-400 w-4 h-4"></i>
-                  <input type="text" id="oc-search" placeholder="Buscar fornecedor/obra..." class="w-full pl-8 p-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-600 outline-none shadow-sm" onkeyup="renderOCList()">
+                  <input type="text" id="oc-search" placeholder="Buscar fornecedor/obra..." class="w-full pl-8 p-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-600 outline-none shadow-sm" onkeyup="renderOCList()">
               </div>
           </div>
           <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
               <div class="overflow-x-auto">
                   <table class="w-full text-sm text-left">
-                      <thead class="bg-slate-50 text-slate-700">
+                      <thead class="bg-slate-100 text-slate-700">
                           <tr>
                               <th class="p-4 w-24">O.C.</th>
                               <th class="p-4">Fornecedor / Obra</th>
@@ -131,8 +101,8 @@
             <div class="lg:col-span-2 flex flex-col gap-4 h-full">
                 
                 <div class="bg-white rounded-xl shadow-sm border p-6 flex justify-between items-center">
-                    <h3 class="font-bold text-slate-700 text-lg flex gap-2 items-center"><i data-lucide="package-plus"></i> Itens da Ordem de Compra</h3>
-                    <button onclick="openPosProductModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg transition"><i data-lucide="search"></i> Buscar Materiais</button>
+                    <h3 class="font-bold text-slate-700 text-lg flex gap-2 items-center"><i data-lucide="package-plus" class="text-blue-600"></i> Itens da Ordem de Compra</h3>
+                    <button onclick="openPosProductModal()" class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg transition"><i data-lucide="search"></i> Buscar Materiais</button>
                 </div>
                 
                 <div class="bg-white p-4 rounded-xl border flex flex-col flex-1 shadow-sm overflow-hidden">
@@ -145,34 +115,33 @@
                 </div>
             </div>
             
-            <div class="bg-white p-0 rounded-xl border shadow-lg flex flex-col h-full overflow-hidden border-t-4 border-t-slate-800">
-                <div class="p-4 bg-slate-50 border-b flex justify-between items-center"><div class="font-bold text-slate-700 flex gap-2 items-center"><i data-lucide="shopping-cart"></i> CARRINHO</div><button onclick="clearCart()" class="text-xs text-red-500 hover:text-red-700 font-bold border border-red-200 px-2 py-1 rounded bg-white">LIMPAR</button></div>
+            <div class="bg-white p-0 rounded-xl border shadow-lg flex flex-col h-full overflow-hidden border-t-4 border-t-blue-800">
+                <div class="p-4 bg-slate-50 border-b flex justify-between items-center"><div class="font-bold text-slate-700 flex gap-2 items-center"><i data-lucide="shopping-cart" class="text-blue-700"></i> CARRINHO</div><button onclick="clearCart()" class="text-xs text-red-500 hover:text-red-700 font-bold border border-red-200 px-2 py-1 rounded bg-white">LIMPAR</button></div>
                 <div id="pos-cart-items" class="flex-1 space-y-2 overflow-y-auto p-4 bg-white"></div>
                 <div class="bg-slate-50 p-4 border-t space-y-3 shadow-inner">
                     <div class="space-y-3">
                         <div>
                             <label class="text-[10px] font-bold text-slate-500 uppercase">Destino (Obra)</label>
-                            <select id="pos-obra" class="w-full p-2 border rounded-lg text-sm bg-white font-bold text-slate-700 focus:border-emerald-600 outline-none"></select>
+                            <select id="pos-obra" class="w-full p-2 border rounded-lg text-sm bg-white font-bold text-slate-700 focus:border-blue-600 outline-none"></select>
                         </div>
                         <div>
                             <label class="text-[10px] font-bold text-slate-500 uppercase">Fornecedor</label>
                             <div class="flex gap-2">
                                 <input type="hidden" id="pos-fornecedor" value="">
-                                <button id="pos-fornecedor-btn" onclick="openPosFornecedorModal()" class="w-full p-2 border rounded text-sm bg-white focus:border-emerald-600 text-left flex justify-between items-center text-slate-600 font-bold">
+                                <button id="pos-fornecedor-btn" onclick="openPosFornecedorModal()" class="w-full p-2 border rounded text-sm bg-white focus:border-blue-600 text-left flex justify-between items-center text-slate-600 font-bold">
                                     <span>Selecione Fornecedor</span>
                                     <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
                                 </button>
                                 <button onclick="navigate('fornecedores')" class="p-2 bg-slate-200 rounded hover:bg-slate-300" title="Novo Fornecedor"><i data-lucide="user-plus" class="w-4 h-4"></i></button>
                             </div>
                         </div>
-                        
                         <div>
-                            <textarea id="pos-custom-obs" rows="2" placeholder="Observações da Cotação..." class="w-full p-2 border rounded-lg text-xs bg-white focus:border-emerald-600 outline-none resize-none shadow-inner"></textarea>
+                            <textarea id="pos-custom-obs" rows="2" placeholder="Observações da Cotação..." class="w-full p-2 border rounded-lg text-xs bg-white focus:border-blue-600 outline-none resize-none shadow-inner"></textarea>
                         </div>
                     </div>
                     
                     <div class="flex justify-between items-end border-t border-slate-300 pt-3"><div class="text-xs text-slate-500">Itens: <span id="cart-count">0</span></div><div class="text-right"><div class="text-xs text-slate-500">Total Estimado</div><div id="pos-total-display" class="text-2xl font-bold text-slate-800 leading-none">R$ 0,00</div></div></div>
-                    <div class="pt-2"><button onclick="saveOC()" class="w-full btn-action bg-indigo-700 hover:bg-indigo-800 text-white py-3 text-sm shadow-lg"><i data-lucide="save"></i> Gerar Ordem de Compra</button></div>
+                    <div class="pt-2"><button onclick="saveOC()" class="w-full btn-action bg-blue-700 hover:bg-blue-800 text-white py-3 text-sm shadow-lg"><i data-lucide="save"></i> Gerar Ordem de Compra</button></div>
                 </div>
             </div>
         </div>
@@ -180,45 +149,45 @@
 
       <div id="view-fin" class="hidden-section">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            <h2 class="text-2xl font-bold text-slate-800">Financeiro & Caixa</h2>
+            <h2 class="text-2xl font-bold text-slate-800">Financeiro das Obras</h2>
             <div class="w-full md:w-1/3">
                 <label class="text-xs font-bold text-slate-500 uppercase">Filtrar por Obra</label>
-                <select id="fin-obra-filter" onchange="renderFinance()" class="w-full p-2 border rounded-lg text-sm bg-white font-bold text-slate-700 shadow-sm focus:border-indigo-600 outline-none">
+                <select id="fin-obra-filter" onchange="renderFinance()" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white font-bold text-blue-700 shadow-sm focus:border-blue-600 outline-none">
                     <option value="">Todas as Obras / Geral</option>
                 </select>
             </div>
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div class="bg-red-50 p-4 rounded-xl border border-red-100 shadow-sm">
-                <p class="text-red-800 text-xs font-bold uppercase">Total de Custos (Saídas)</p>
-                <h3 id="fin-expenses" class="text-2xl font-bold text-red-600 mt-1">R$ 0,00</h3>
+            <div class="bg-white p-4 rounded-xl border-l-4 border-l-red-500 shadow-sm">
+                <p class="text-slate-500 text-xs font-bold uppercase">Total de Custos (Saídas)</p>
+                <h3 id="fin-expenses" class="text-2xl font-black text-slate-800 mt-1">R$ 0,00</h3>
             </div>
-            <div class="bg-green-50 p-4 rounded-xl border border-green-100 shadow-sm">
-                <p class="text-green-800 text-xs font-bold uppercase">Receitas / Aportes</p>
-                <h3 id="fin-income" class="text-2xl font-bold text-green-600 mt-1">R$ 0,00</h3>
+            <div class="bg-white p-4 rounded-xl border-l-4 border-l-green-500 shadow-sm">
+                <p class="text-slate-500 text-xs font-bold uppercase">Receitas / Aportes</p>
+                <h3 id="fin-income" class="text-2xl font-black text-slate-800 mt-1">R$ 0,00</h3>
             </div>
-            <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100 shadow-sm">
-                <p class="text-indigo-800 text-xs font-bold uppercase">Saldo (Aporte - Custo)</p>
-                <h3 id="fin-balance" class="text-2xl font-bold text-indigo-600 mt-1">R$ 0,00</h3>
+            <div class="bg-white p-4 rounded-xl border-l-4 border-l-blue-600 shadow-sm">
+                <p class="text-slate-500 text-xs font-bold uppercase">Saldo (Aporte - Custo)</p>
+                <h3 id="fin-balance" class="text-2xl font-black text-blue-700 mt-1">R$ 0,00</h3>
             </div>
         </div>
         
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
             
             <div class="bg-white rounded-xl border shadow-sm flex flex-col h-[650px]">
                 <div class="p-4 border-b bg-slate-50 rounded-t-xl flex justify-between items-center">
-                    <h3 class="font-bold text-slate-700 flex items-center gap-2"><i data-lucide="arrow-up-from-line" class="w-5 h-5 text-red-500"></i> Custos / Pagamentos</h3>
-                    <button onclick="document.getElementById('exp-id').value=''; document.getElementById('modal-expense').classList.remove('hidden')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md transition-all flex items-center gap-1"><i data-lucide="plus" class="w-4 h-4"></i> Lançar Despesa</button>
+                    <h3 class="font-bold text-slate-700 flex items-center gap-2"><i data-lucide="arrow-up-circle" class="w-5 h-5 text-red-500"></i> Custos / Pagamentos</h3>
+                    <button onclick="document.getElementById('exp-id').value=''; document.getElementById('modal-expense').classList.remove('hidden')" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md transition-all flex items-center gap-1"><i data-lucide="plus" class="w-4 h-4"></i> Lançar Despesa</button>
                 </div>
                 
                 <div class="p-3 border-b bg-white flex flex-col gap-2">
                     <div class="flex gap-2">
                         <div class="relative flex-1">
                             <i data-lucide="search" class="absolute left-2 top-2 text-slate-400 w-4 h-4"></i>
-                            <input type="text" id="exp-search" placeholder="Buscar fornecedor/item..." class="w-full pl-8 p-1.5 border rounded text-xs focus:ring-1 focus:ring-red-500 outline-none" onkeyup="renderFinance()">
+                            <input type="text" id="exp-search" placeholder="Buscar..." class="w-full pl-8 p-1.5 border rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none" onkeyup="renderFinance()">
                         </div>
-                        <select id="exp-status" class="w-32 p-1.5 border rounded text-xs focus:ring-1 focus:ring-red-500 outline-none" onchange="renderFinance()">
+                        <select id="exp-status" class="w-32 p-1.5 border rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none" onchange="renderFinance()">
                             <option value="">Todos</option>
                             <option value="PENDENTE">Pendentes</option>
                             <option value="PAGO">Pagos</option>
@@ -228,12 +197,12 @@
 
                 <div class="overflow-y-auto flex-1 p-0">
                     <table class="w-full text-sm text-left">
-                        <thead class="text-slate-500 bg-slate-50 sticky top-0 border-b">
+                        <thead class="text-slate-500 bg-slate-100 sticky top-0 border-b">
                             <tr>
                                 <th class="p-3 font-semibold">Data</th>
                                 <th class="p-3 font-semibold">Descrição / Obra</th>
                                 <th class="p-3 font-semibold">Valor</th>
-                                <th class="p-3 font-semibold text-right w-24">Ação</th>
+                                <th class="p-3 font-semibold text-right w-28">Ações</th>
                             </tr>
                         </thead>
                         <tbody id="fin-expense-history-list" class="divide-y"></tbody>
@@ -243,18 +212,18 @@
 
             <div class="bg-white rounded-xl border shadow-sm flex flex-col h-[650px]">
                 <div class="p-4 border-b bg-slate-50 rounded-t-xl flex justify-between items-center">
-                    <h3 class="font-bold text-slate-700 flex items-center gap-2"><i data-lucide="arrow-down-to-line" class="w-5 h-5 text-green-600"></i> Aportes / Receitas</h3>
-                    <button onclick="openRevenueModal()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md transition-all flex items-center gap-1"><i data-lucide="plus" class="w-4 h-4"></i> Novo Aporte</button>
+                    <h3 class="font-bold text-slate-700 flex items-center gap-2"><i data-lucide="arrow-down-circle" class="w-5 h-5 text-green-600"></i> Aportes / Receitas</h3>
+                    <button onclick="openRevenueModal()" class="bg-blue-700 hover:bg-blue-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md transition-all flex items-center gap-1"><i data-lucide="plus" class="w-4 h-4"></i> Novo Aporte</button>
                 </div>
                 
                 <div class="overflow-y-auto flex-1 p-0">
                     <table class="w-full text-sm text-left">
-                        <thead class="text-slate-500 bg-slate-50 sticky top-0 border-b">
+                        <thead class="text-slate-500 bg-slate-100 sticky top-0 border-b">
                             <tr>
-                                <th class="p-3 font-semibold">Venc/Pagto</th>
+                                <th class="p-3 font-semibold">Data</th>
                                 <th class="p-3 font-semibold">Descrição/Origem</th>
                                 <th class="p-3 font-semibold">Valor</th>
-                                <th class="p-3 font-semibold text-right w-24">Ação</th>
+                                <th class="p-3 font-semibold text-right w-28">Ações</th>
                             </tr>
                         </thead>
                         <tbody id="fin-receivables-list" class="divide-y"></tbody>
@@ -268,18 +237,18 @@
       <div id="view-fornecedores" class="hidden-section">
           <div class="flex justify-between items-center mb-4">
               <h2 class="text-2xl font-bold text-slate-800">Fornecedores</h2>
-              <button onclick="openFornecedorForm()" class="bg-indigo-700 hover:bg-indigo-800 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="plus"></i> Novo Fornecedor</button>
+              <button onclick="openFornecedorForm()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="plus"></i> Novo Fornecedor</button>
           </div>
           <div class="mb-4 bg-white p-4 rounded-xl shadow-sm border">
               <div class="relative w-full">
                   <i data-lucide="search" class="absolute left-3 top-2.5 text-slate-400 w-5 h-5"></i>
-                  <input type="text" id="forn-search" placeholder="Buscar fornecedor por nome, telefone ou documento..." class="w-full pl-10 p-2 border rounded outline-none focus:border-indigo-600 font-medium" onkeyup="renderFornecedores()">
+                  <input type="text" id="forn-search" placeholder="Buscar fornecedor por nome, telefone ou documento..." class="w-full pl-10 p-2 border rounded outline-none focus:border-blue-600 font-medium" onkeyup="renderFornecedores()">
               </div>
           </div>
 
           <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
               <table class="w-full text-sm text-left">
-                  <thead class="bg-slate-50 text-slate-700"><tr><th class="p-4">Nome</th><th class="p-4">Telefone</th><th class="p-4">Documento</th><th class="p-4 text-center">Ações</th></tr></thead>
+                  <thead class="bg-slate-100 text-slate-700"><tr><th class="p-4">Nome</th><th class="p-4">Telefone</th><th class="p-4">Documento</th><th class="p-4 text-center">Ações</th></tr></thead>
                   <tbody id="fornecedores-list" class="divide-y"></tbody>
               </table>
           </div>
@@ -288,34 +257,37 @@
       <div id="view-prod" class="hidden-section">
           <div class="flex justify-between items-center mb-4">
               <h2 class="text-2xl font-bold text-slate-800">Materiais / Insumos</h2>
-              <button onclick="openProductForm()" class="bg-indigo-700 hover:bg-indigo-800 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="plus"></i> Novo Material</button>
+              <button onclick="openProductForm()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="plus"></i> Novo Material</button>
           </div>
           <div class="flex gap-2 mb-4 bg-white p-4 rounded-xl shadow-sm border">
-              <input type="text" id="prod-search" placeholder="Buscar material..." class="w-full p-2 border rounded outline-none focus:border-indigo-600 font-medium" onkeyup="renderProducts()">
+              <input type="text" id="prod-search" placeholder="Buscar material..." class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium" onkeyup="renderProducts()">
           </div>
           <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
               <table class="w-full text-sm text-left">
-                  <thead class="bg-slate-50 text-slate-700"><tr><th class="p-4">Material</th><th class="p-4">Preço Ref. (R$)</th><th class="p-4 text-center">Editar</th></tr></thead>
+                  <thead class="bg-slate-100 text-slate-700"><tr><th class="p-4">Material</th><th class="p-4">Preço Ref. (R$)</th><th class="p-4 text-center">Editar</th></tr></thead>
                   <tbody id="prod-list" class="divide-y"></tbody>
               </table>
           </div>
       </div>
 
-      <div id="view-logs" class="hidden-section">
-        <h2 class="text-2xl font-bold text-slate-800 mb-4">Histórico do Sistema</h2>
-        <div class="bg-white rounded-xl border shadow-sm overflow-hidden"><div class="overflow-x-auto">
-            <table class="w-full text-sm text-left"><thead class="bg-slate-50 text-slate-700"><tr><th class="p-4">Data</th><th class="p-4">Tipo</th><th class="p-4">Descrição/Produto</th><th class="p-4">Obra / Ref</th><th class="p-4">Valor</th><th class="p-4">Status</th><th class="p-4 text-center">Ações</th></tr></thead><tbody id="logs-table-body" class="divide-y"></tbody></table>
-        </div></div>
+      <div id="view-reports" class="hidden-section w-full h-[calc(100vh-120px)] flex flex-col">
+          <h2 class="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+              <i data-lucide="pie-chart" class="text-blue-700"></i> Relatórios Gerais
+          </h2>
+          <div class="bg-white rounded-xl shadow-sm border p-10 flex flex-col items-center justify-center flex-1">
+              <i data-lucide="bar-chart-2" class="w-20 h-20 text-slate-200 mb-4"></i>
+              <h3 class="text-2xl font-bold text-slate-500">Área de Relatórios</h3>
+              <p class="text-slate-400 mt-2 text-center max-w-md">Em breve, você terá acesso a gráficos consolidados e demonstrativos de resultados avançados nesta tela.</p>
+          </div>
       </div>
 
       <div id="view-users" class="hidden-section">
           <div class="flex justify-between items-center mb-4">
-              <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i data-lucide="shield" class="text-emerald-600"></i> Gerenciar Usuários</h2>
-              <button onclick="openUserForm()" class="bg-indigo-700 hover:bg-indigo-800 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="plus"></i> Novo Usuário</button>
+              <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i data-lucide="shield" class="text-blue-600"></i> Gerenciar Usuários</h2>
           </div>
           <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
               <table class="w-full text-sm text-left">
-                  <thead class="bg-slate-50 text-slate-700"><tr><th class="p-4">Nome</th><th class="p-4">Usuário (Login)</th><th class="p-4">Nível</th><th class="p-4 text-center">Status</th><th class="p-4 text-center">Ações</th></tr></thead>
+                  <thead class="bg-slate-100 text-slate-700"><tr><th class="p-4">Nome</th><th class="p-4">Usuário (Login)</th><th class="p-4">Nível</th><th class="p-4 text-center">Status</th></tr></thead>
                   <tbody id="users-list" class="divide-y"></tbody>
               </table>
           </div>
@@ -324,29 +296,52 @@
 
       <div id="obra-form-container" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
         <form onsubmit="saveObra(event)" class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
-            <h3 class="font-bold text-lg mb-4 text-emerald-700 flex items-center gap-2"><i data-lucide="building"></i> Dados da Obra</h3>
+            <h3 class="font-bold text-lg mb-4 text-blue-800 flex items-center gap-2"><i data-lucide="building"></i> Dados da Obra</h3>
             <input type="hidden" id="obra-id">
             <div class="space-y-3">
-                <div><label class="block text-xs font-bold text-slate-500 uppercase">Nome / Identificação</label><input type="text" id="obra-name" required class="w-full p-2 border rounded outline-none focus:border-emerald-600"></div>
-                <div><label class="block text-xs font-bold text-slate-500 uppercase">Endereço</label><input type="text" id="obra-addr" class="w-full p-2 border rounded outline-none focus:border-emerald-600"></div>
-                <div><label class="block text-xs font-bold text-slate-500 uppercase">Solicitante / Proprietário</label><input type="text" id="obra-solic" class="w-full p-2 border rounded outline-none focus:border-emerald-600"></div>
+                <div><label class="block text-xs font-bold text-slate-500 uppercase">Nome / Identificação</label><input type="text" id="obra-name" required class="w-full p-2 border rounded outline-none focus:border-blue-600"></div>
+                <div><label class="block text-xs font-bold text-slate-500 uppercase">Endereço</label><input type="text" id="obra-addr" class="w-full p-2 border rounded outline-none focus:border-blue-600"></div>
+                <div><label class="block text-xs font-bold text-slate-500 uppercase">Solicitante / Proprietário</label><input type="text" id="obra-solic" class="w-full p-2 border rounded outline-none focus:border-blue-600"></div>
             </div>
             <div class="flex gap-2 mt-6">
                 <button type="button" onclick="document.getElementById('obra-form-container').classList.add('hidden')" class="flex-1 p-3 bg-slate-200 text-slate-700 rounded-lg font-bold hover:bg-slate-300">Cancelar</button>
-                <button type="submit" class="flex-1 p-3 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700 shadow-md">Salvar</button>
+                <button type="submit" class="flex-1 p-3 bg-blue-700 text-white rounded-lg font-bold hover:bg-blue-800 shadow-md">Salvar</button>
             </div>
         </form>
       </div>
 
+      <div id="modal-relatorio-obra" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md border-t-4 border-t-blue-700">
+            <h3 class="font-bold text-lg mb-2 text-slate-800 flex items-center gap-2"><i data-lucide="printer" class="text-blue-600"></i> Imprimir Relatório de Obra</h3>
+            <p id="relatorio-obra-nome" class="text-sm font-bold text-blue-600 mb-4 pb-2 border-b"></p>
+            <input type="hidden" id="relatorio-obra-id">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Inicial</label>
+                    <input type="date" id="relatorio-start" class="w-full p-2 border rounded outline-none focus:border-blue-600">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Final</label>
+                    <input type="date" id="relatorio-end" class="w-full p-2 border rounded outline-none focus:border-blue-600">
+                </div>
+            </div>
+            <p class="text-[10px] text-slate-400 mt-2">* Deixe em branco para imprimir todo o histórico da obra.</p>
+            <div class="flex gap-2 mt-6">
+                <button type="button" onclick="document.getElementById('modal-relatorio-obra').classList.add('hidden')" class="flex-1 p-3 bg-slate-200 text-slate-700 rounded-lg font-bold hover:bg-slate-300">Cancelar</button>
+                <button onclick="imprimirRelatorioObra()" class="flex-1 p-3 bg-blue-700 text-white rounded-lg font-bold hover:bg-blue-800 shadow-md flex items-center justify-center gap-2"><i data-lucide="printer" class="w-4 h-4"></i> Gerar e Imprimir</button>
+            </div>
+        </div>
+      </div>
+
       <div id="modal-confirm-oc" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
-            <h3 class="font-bold text-lg mb-4 text-indigo-700 flex items-center gap-2"><i data-lucide="check-circle"></i> Confirmar Compra</h3>
-            <p class="text-sm text-slate-600 mb-4">Ao confirmar, os valores desta Ordem de Compra serão lançados no custo da obra.</p>
+            <h3 class="font-bold text-lg mb-4 text-slate-800 flex items-center gap-2"><i data-lucide="check-circle" class="text-blue-600"></i> Confirmar Compra</h3>
+            <p class="text-sm text-slate-600 mb-4">Ao confirmar, os valores desta Ordem de Compra serão lançados como custo (pendente de pagamento) para a obra correspondente.</p>
             <input type="hidden" id="confirm-oc-id">
             <div class="space-y-3">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase">Forma de Pagamento Acordada</label>
-                    <select id="confirm-oc-payment" class="w-full p-2 border rounded-lg outline-none focus:border-indigo-600 font-bold text-slate-700">
+                    <select id="confirm-oc-payment" class="w-full p-2 border rounded-lg outline-none focus:border-blue-600 font-bold text-slate-700">
                         <option value="Boleto">Boleto (Faturado)</option>
                         <option value="PIX">PIX</option>
                         <option value="Cartão Crédito">Cartão de Crédito</option>
@@ -356,7 +351,7 @@
             </div>
             <div class="flex gap-2 mt-6">
                 <button type="button" onclick="document.getElementById('modal-confirm-oc').classList.add('hidden')" class="flex-1 p-3 bg-slate-200 text-slate-700 rounded-lg font-bold hover:bg-slate-300">Cancelar</button>
-                <button onclick="executeConfirmOC()" class="flex-1 p-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 shadow-md">Confirmar Lançamento</button>
+                <button onclick="executeConfirmOC()" class="flex-1 p-3 bg-blue-700 text-white rounded-lg font-bold hover:bg-blue-800 shadow-md">Efetivar Compra</button>
             </div>
         </div>
       </div>
@@ -372,8 +367,8 @@
                 <input type="text" id="forn-addr" placeholder="Endereço" class="w-full p-2 border rounded">
             </div>
             <div class="flex gap-2 mt-6">
-                <button type="button" onclick="document.getElementById('fornecedor-form-container').classList.add('hidden')" class="flex-1 p-2 bg-slate-200 rounded font-bold">Cancelar</button>
-                <button type="submit" class="flex-1 p-2 bg-indigo-700 text-white rounded font-bold">Salvar</button>
+                <button type="button" onclick="document.getElementById('fornecedor-form-container').classList.add('hidden')" class="flex-1 p-2 bg-slate-200 rounded font-bold hover:bg-slate-300">Cancelar</button>
+                <button type="submit" class="flex-1 p-2 bg-blue-700 text-white rounded font-bold hover:bg-blue-800">Salvar</button>
             </div>
         </form>
       </div>
@@ -381,13 +376,13 @@
       <div id="pos-fornecedor-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]">
             <div class="p-4 border-b flex justify-between items-center bg-slate-50 rounded-t-2xl">
-                <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2"><i data-lucide="users" class="text-emerald-600"></i> Selecionar Fornecedor</h3>
+                <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2"><i data-lucide="users" class="text-blue-600"></i> Selecionar Fornecedor</h3>
                 <button onclick="closePosFornecedorModal()" class="text-slate-400 hover:text-red-500"><i data-lucide="x"></i></button>
             </div>
             <div class="p-4 border-b">
                 <div class="relative w-full">
                     <i data-lucide="search" class="absolute left-3 top-3.5 text-slate-400 w-5 h-5"></i>
-                    <input type="text" id="pos-fornecedor-modal-search" placeholder="Buscar fornecedor..." class="w-full pl-10 p-3 border-2 border-slate-200 rounded-xl font-bold outline-none focus:border-emerald-600" onkeyup="renderPosFornecedorModal()">
+                    <input type="text" id="pos-fornecedor-modal-search" placeholder="Buscar fornecedor..." class="w-full pl-10 p-3 border-2 border-slate-200 rounded-xl font-bold outline-none focus:border-blue-600" onkeyup="renderPosFornecedorModal()">
                 </div>
             </div>
             <div class="flex-1 overflow-y-auto p-4 bg-slate-100/50">
@@ -413,7 +408,7 @@
             </div>
             <div class="flex gap-2 mt-6">
                 <button type="button" onclick="document.getElementById('prod-form-container').classList.add('hidden')" class="flex-1 p-2 bg-slate-200 rounded font-bold hover:bg-slate-300">Cancelar</button>
-                <button type="submit" class="flex-1 p-2 bg-indigo-700 text-white rounded font-bold hover:bg-indigo-800">Salvar</button>
+                <button type="submit" class="flex-1 p-2 bg-blue-700 text-white rounded font-bold hover:bg-blue-800">Salvar</button>
             </div>
         </form>
       </div>
@@ -421,13 +416,13 @@
       <div id="pos-product-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]">
             <div class="p-4 border-b flex justify-between items-center bg-slate-50 rounded-t-2xl">
-                <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2"><i data-lucide="package-search" class="text-emerald-600"></i> Selecionar Material</h3>
+                <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2"><i data-lucide="package-search" class="text-blue-600"></i> Selecionar Material</h3>
                 <button onclick="closePosProductModal()" class="text-slate-400 hover:text-red-500"><i data-lucide="x"></i></button>
             </div>
             <div class="p-4 border-b">
                 <div class="relative w-full">
                     <i data-lucide="search" class="absolute left-3 top-3.5 text-slate-400 w-5 h-5"></i>
-                    <input type="text" id="pos-modal-search" placeholder="Digite o nome..." class="w-full pl-10 p-3 border-2 border-slate-200 rounded-xl font-bold outline-none focus:border-emerald-600" onkeyup="renderPosProductModal()">
+                    <input type="text" id="pos-modal-search" placeholder="Digite o nome..." class="w-full pl-10 p-3 border-2 border-slate-200 rounded-xl font-bold outline-none focus:border-blue-600" onkeyup="renderPosProductModal()">
                 </div>
             </div>
             <div class="flex-1 overflow-y-auto p-4 bg-slate-100/50">
@@ -449,23 +444,23 @@
                  <input type="hidden" id="exp-id">
                  <div>
                     <label class="block text-sm font-bold text-slate-700 mb-1">Obra (Centro de Custo)</label>
-                    <select id="exp-obra" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-emerald-600 outline-none bg-white font-bold text-slate-700"></select>
+                    <select id="exp-obra" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none bg-white font-bold text-slate-700"></select>
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-slate-700 mb-1">Descrição do Custo</label>
-                    <input type="text" id="exp-item" placeholder="Ex: Mão de Obra, Combustível, Taxa..." class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-emerald-600 outline-none">
+                    <input type="text" id="exp-item" placeholder="Ex: Mão de Obra, Combustível, Taxa..." class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-slate-700 mb-1">Valor Total (R$)</label>
-                    <input type="number" id="exp-cost" placeholder="0.00" class="w-full p-3 border rounded-xl font-bold text-red-600 focus:ring-2 focus:ring-emerald-600 outline-none">
+                    <input type="number" id="exp-cost" placeholder="0.00" class="w-full p-3 border rounded-xl font-bold text-red-600 focus:ring-2 focus:ring-blue-600 outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-slate-700 mb-1">Data (Vencimento/Pagamento)</label>
-                    <input type="date" id="exp-date" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-emerald-600 outline-none">
+                    <input type="date" id="exp-date" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-slate-700 mb-1">Status</label>
-                    <select id="exp-status-val" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-emerald-600 outline-none font-bold">
+                    <select id="exp-status-val" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none font-bold">
                         <option value="PENDENTE">Pendente a Pagar</option>
                         <option value="PAGO">Já Pago</option>
                     </select>
@@ -487,23 +482,23 @@
             <div class="p-6 space-y-4 overflow-y-auto">
                 <div>
                     <label class="block text-sm font-bold text-slate-700 mb-1">Obra (Destino do Aporte)</label>
-                    <select id="rev-obra" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-emerald-600 outline-none bg-white font-bold text-slate-700"></select>
+                    <select id="rev-obra" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none bg-white font-bold text-slate-700"></select>
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-slate-700 mb-1">Descrição</label>
-                    <input type="text" id="rev-desc" placeholder="Ex: Pagamento Cliente, Aporte Diretor..." class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none bg-white">
+                    <input type="text" id="rev-desc" placeholder="Ex: Pagamento Cliente, Aporte Diretor..." class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none bg-white">
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-slate-700 mb-1">Valor (R$)</label>
-                    <input type="number" id="rev-val" placeholder="0.00" class="w-full p-3 border rounded-xl font-bold text-green-700 focus:ring-2 focus:ring-indigo-600 outline-none">
+                    <input type="number" id="rev-val" placeholder="0.00" class="w-full p-3 border rounded-xl font-bold text-green-700 focus:ring-2 focus:ring-blue-600 outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-slate-700 mb-1">Data de Venc/Pagamento</label>
-                    <input type="date" id="rev-due" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-indigo-600 outline-none">
+                    <input type="date" id="rev-due" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-slate-700 mb-1">Status</label>
-                    <select id="rev-status-val" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-emerald-600 outline-none font-bold">
+                    <select id="rev-status-val" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none font-bold">
                         <option value="PENDENTE">A Receber</option>
                         <option value="PAGO">Recebido / Em Caixa</option>
                     </select>
@@ -545,9 +540,9 @@
             document.querySelectorAll('div[id^="view-"]').forEach(el => { el.classList.add('hidden-section'); el.classList.remove('active-section'); });
             const target = document.getElementById('view-' + viewId);
             if(target) { target.classList.remove('hidden-section'); target.classList.add('active-section'); }
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('bg-emerald-700', 'text-white', 'shadow-lg'));
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('bg-blue-800', 'text-white', 'shadow-lg'));
             const activeBtn = document.getElementById('nav-' + viewId);
-            if(activeBtn) activeBtn.classList.add('bg-emerald-700', 'text-white', 'shadow-lg');
+            if(activeBtn) activeBtn.classList.add('bg-blue-800', 'text-white', 'shadow-lg');
             
             if(viewId === 'dash') renderDashboard();
             if(viewId === 'pos') { renderRecentHistory(); updateSelects(); }
@@ -555,13 +550,12 @@
             if(viewId === 'fin') { updateSelects(); renderFinance(); }
             if(viewId === 'fornecedores') renderFornecedores();
             if(viewId === 'prod') renderProducts();
-            if(viewId === 'logs') renderLogs();
             if(viewId === 'users') renderUsers(); 
             lucide.createIcons();
         }
 
         function formatMoney(val) { return parseFloat(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
-        function formatDate(d) { try { return d ? new Date(d).toLocaleDateString('pt-BR') : '-'; } catch(e) { return '-'; } }
+        function formatDate(d) { try { return d ? new Date(d).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : '-'; } catch(e) { return '-'; } }
         function showLoading(show) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
         function showToast(msg, isError) { 
             const t=document.getElementById('toast'); 
@@ -704,7 +698,7 @@
             const term = document.getElementById('forn-search').value.toLowerCase();
             const list = document.getElementById('fornecedores-list');
             const fil = STATE.fornecedores.filter(f => f.nome.toLowerCase().includes(term) || (f.documento||'').includes(term));
-            list.innerHTML = fil.map(f => `<tr class="border-b hover:bg-slate-50"><td class="p-4 font-bold">${f.nome}</td><td class="p-4">${f.telefone||'-'}</td><td class="p-4">${f.documento||'-'}</td><td class="p-4 text-center"><button onclick="openFornecedorForm('${f.id}')" class="text-indigo-600 hover:text-indigo-800"><i data-lucide="edit-3" width="16"></i></button></td></tr>`).join('');
+            list.innerHTML = fil.map(f => `<tr class="border-b hover:bg-slate-50"><td class="p-4 font-bold">${f.nome}</td><td class="p-4">${f.telefone||'-'}</td><td class="p-4">${f.documento||'-'}</td><td class="p-4 text-center"><button onclick="openFornecedorForm('${f.id}')" class="text-blue-600 hover:text-blue-800"><i data-lucide="edit-3" width="16"></i></button></td></tr>`).join('');
             lucide.createIcons();
         }
 
@@ -720,12 +714,12 @@
             box.innerHTML = CART.map((i,idx) => {
                 const totalItem = i.qty * i.price; sub += totalItem;
                 return `
-                <div class="bg-white p-2 border border-slate-200 rounded-lg mb-1.5 flex items-center justify-between gap-2 shadow-sm">
+                <div class="bg-white p-2 border border-slate-200 rounded-lg mb-1.5 flex items-center justify-between gap-2 shadow-sm hover:border-blue-300">
                     <div class="flex-1 min-w-0"><div class="text-[11px] font-bold text-slate-700 truncate">${i.name}</div></div>
                     <div class="flex items-center gap-1 shrink-0">
-                        <input type="number" value="${i.qty}" onchange="updateCart(${idx}, 'qty', this.value)" class="w-12 p-1 border rounded bg-slate-50 text-center text-xs font-bold focus:border-emerald-500 outline-none">
+                        <input type="number" value="${i.qty}" onchange="updateCart(${idx}, 'qty', this.value)" class="w-12 p-1 border rounded bg-slate-50 text-center text-xs font-bold focus:border-blue-500 outline-none">
                         <span class="text-slate-400 text-xs font-bold">x</span>
-                        <input type="number" step="0.01" value="${i.price}" onchange="updateCart(${idx}, 'price', this.value)" class="w-16 p-1 border rounded bg-slate-50 text-center text-xs font-bold focus:border-emerald-500 outline-none">
+                        <input type="number" step="0.01" value="${i.price}" onchange="updateCart(${idx}, 'price', this.value)" class="w-16 p-1 border rounded bg-slate-50 text-center text-xs font-bold focus:border-blue-500 outline-none">
                     </div>
                     <div class="font-black text-slate-800 w-16 text-right shrink-0 text-xs">${formatMoney(totalItem)}</div>
                     <button onclick="CART.splice(${idx},1);renderCart()" class="text-red-400 hover:text-red-600 shrink-0 p-1"><i data-lucide="x-circle" width="14"></i></button>
@@ -736,7 +730,18 @@
             lucide.createIcons();
         }
         function updateCart(idx, field, value) { CART[idx][field] = parseFloat(value)||0; renderCart(); }
-        function clearCart() { CART=[]; CURRENT_OC_ID=null; document.getElementById('pos-custom-obs').value=''; renderCart(); }
+        
+        function clearCart() { 
+            CART=[]; 
+            CURRENT_OC_ID=null; 
+            document.getElementById('pos-custom-obs').value=''; 
+            
+            // Limpar Fornecedor
+            document.getElementById('pos-fornecedor').value = '';
+            document.getElementById('pos-fornecedor-btn').querySelector('span').innerText = 'Selecione Fornecedor';
+            
+            renderCart(); 
+        }
 
         // MODAL PRODUTOS PDV
         function openPosProductModal() { document.getElementById('pos-product-modal').classList.remove('hidden'); renderPosProductModal(); }
@@ -750,7 +755,7 @@
                     <h4 class="font-black text-sm text-slate-800 w-1/2 truncate">${p.nome}</h4>
                     <div class="flex items-center gap-3 w-1/2 justify-end">
                         <span class="text-slate-500 font-bold text-xs">${formatMoney(p.preco)}</span>
-                        <button onclick="addCartModal(${p.id}, '${p.nome.replace(/'/g,"")}', ${p.preco})" class="bg-emerald-100 text-emerald-700 hover:bg-emerald-600 hover:text-white p-2 rounded-lg transition"><i data-lucide="plus" width="16"></i></button>
+                        <button onclick="addCartModal(${p.id}, '${p.nome.replace(/'/g,"")}', ${p.preco})" class="bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white p-2 rounded-lg transition"><i data-lucide="plus" width="16"></i></button>
                     </div>
                 </div>`).join('');
             lucide.createIcons();
@@ -796,8 +801,8 @@
 
             const inserts = CART.map(i => ({
                 id: newId.toString(),
-                obra_id: obraId,
-                fornecedor_id: fornId,
+                obra_id: parseInt(obraId),
+                fornecedor_id: fornId ? parseInt(fornId) : null,
                 tipo: 'oc_pendente',
                 produto_nome: i.name,
                 quantidade: i.qty,
@@ -821,9 +826,11 @@
             
             // Agrupar OC
             const ocs = {};
-            STATE.logs.filter(l => l.tipo === 'oc_pendente').forEach(l => {
-                if(!ocs[l.id]) ocs[l.id] = { id: l.id, data: l.data, items: [], total: 0, obra_id: l.obra_id, forn_id: l.fornecedor_id, obs: l.observacao };
-                ocs[l.id].items.push(l.produto_nome + ` (x${l.quantidade})`);
+            STATE.logs.filter(l => l.tipo === 'oc_pendente' && l.status_financeiro !== 'CANCELADO').forEach(l => {
+                if(!ocs[l.id]) ocs[l.id] = { id: l.id, data: l.data, itemsLog: [], itemsText: [], total: 0, obra_id: l.obra_id, forn_id: l.fornecedor_id, obs: l.observacao };
+                
+                ocs[l.id].itemsLog.push({ name: l.produto_nome, qty: l.quantidade, price: (parseFloat(l.valor_total) / parseFloat(l.quantidade)) });
+                ocs[l.id].itemsText.push(l.produto_nome + ` (x${l.quantidade})`);
                 ocs[l.id].total += parseFloat(l.valor_total);
             });
 
@@ -837,35 +844,52 @@
                 const txt = (obra?.nome || '?') + ' ' + (forn?.nome || '');
                 if(term && !txt.toLowerCase().includes(term) && !String(o.id).includes(term)) return '';
 
-                let zapLink = "#";
-                if(forn && forn.telefone) {
-                    let num = forn.telefone.replace(/\D/g, '');
-                    if(num.length>=10) {
-                        if(!num.startsWith('55')) num='55'+num;
-                        const msg = encodeURIComponent(`Olá ${forn.nome}, favor enviar cotação para a OC #${o.id}. Referência Obra: ${obra?.nome||'-'}.`);
-                        zapLink = `https://wa.me/${num}?text=${msg}`;
-                    }
-                }
-
                 return `
-                <tr class="border-b hover:bg-slate-50">
+                <tr class="border-b hover:bg-slate-50 transition">
                     <td class="p-4 font-black text-slate-700">#${o.id}</td>
                     <td class="p-4">
                         <div class="font-bold text-slate-800">${forn?.nome || 'Fornecedor A Definir'}</div>
-                        <div class="text-[10px] text-emerald-600 font-bold uppercase"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome || 'Sem Obra'}</div>
+                        <div class="text-[10px] text-blue-600 font-bold uppercase mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome || 'Sem Obra'}</div>
                     </td>
-                    <td class="p-4 text-xs text-slate-500 truncate max-w-[200px]" title="${o.items.join(', ')}">${o.items.join(', ')}</td>
+                    <td class="p-4 text-xs text-slate-500 truncate max-w-[200px]" title="${o.itemsText.join(', ')}">${o.itemsText.join(', ')}</td>
                     <td class="p-4 text-right font-bold text-slate-800">${formatMoney(o.total)}</td>
                     <td class="p-4 text-center">
-                        <div class="flex justify-center gap-1">
-                            <button onclick="openConfirmOC('${o.id}')" class="p-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 shadow-sm font-bold text-xs">Comprar</button>
-                            <a href="${zapLink}" target="_blank" class="p-2 border border-green-200 text-green-600 hover:bg-green-50 rounded"><i data-lucide="message-circle" width="14"></i></a>
-                            <button onclick="deleteOC('${o.id}')" class="p-2 border border-red-200 text-red-500 hover:bg-red-50 rounded"><i data-lucide="trash-2" width="14"></i></button>
+                        <div class="flex justify-center gap-2">
+                            <button onclick="openConfirmOC('${o.id}')" class="p-2 bg-green-600 text-white rounded hover:bg-green-700 shadow-sm font-bold text-xs">Comprar</button>
+                            <button onclick="loadOCToCart('${o.id}')" class="p-2 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Editar Itens"><i data-lucide="edit-3" width="14"></i></button>
+                            <button onclick="printOC('${o.id}')" class="p-2 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Imprimir"><i data-lucide="printer" width="14"></i></button>
+                            <button onclick="downloadOCPDF('${o.id}')" class="p-2 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Baixar PDF"><i data-lucide="download" width="14"></i></button>
+                            <button onclick="deleteOC('${o.id}')" class="p-2 border border-red-200 text-red-500 hover:bg-red-50 rounded" title="Excluir"><i data-lucide="trash-2" width="14"></i></button>
                         </div>
                     </td>
                 </tr>`;
             }).join('');
             lucide.createIcons();
+        }
+
+        function loadOCToCart(id) {
+            const itemsLog = STATE.logs.filter(l => String(l.id) === String(id) && l.tipo === 'oc_pendente');
+            if(!itemsLog.length) return;
+
+            CART = itemsLog.map(i => ({ name: i.produto_nome, qty: parseFloat(i.quantidade), price: (parseFloat(i.valor_total)/parseFloat(i.quantidade)), total: parseFloat(i.valor_total) }));
+            CURRENT_OC_ID = id;
+            
+            document.getElementById('pos-obra').value = itemsLog[0].obra_id || '';
+            
+            const fornObj = STATE.fornecedores.find(f => f.id == itemsLog[0].fornecedor_id);
+            if(fornObj) {
+                document.getElementById('pos-fornecedor').value = fornObj.id;
+                document.getElementById('pos-fornecedor-btn').querySelector('span').innerText = fornObj.nome;
+            } else {
+                document.getElementById('pos-fornecedor').value = '';
+                document.getElementById('pos-fornecedor-btn').querySelector('span').innerText = 'Selecione Fornecedor';
+            }
+
+            document.getElementById('pos-custom-obs').value = itemsLog[0].observacao || '';
+
+            navigate('pos');
+            renderCart();
+            showToast(`Editando Ordem de Compra #${id}`);
         }
 
         async function deleteOC(id) {
@@ -889,7 +913,8 @@
             const { error } = await sb.from('jsp_logs').update({ 
                 tipo: 'compra', 
                 forma_pagamento: formPagto,
-                status_financeiro: 'PENDENTE' 
+                status_financeiro: 'PENDENTE',
+                data: new Date().toISOString()
             }).eq('id', id).eq('tipo', 'oc_pendente');
 
             if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
@@ -902,7 +927,7 @@
         function renderRecentHistory() {
              const list = document.getElementById('pos-recent-history');
              const ocs = {};
-             STATE.logs.filter(l => l.tipo === 'oc_pendente' || l.tipo === 'compra').forEach(l => {
+             STATE.logs.filter(l => (l.tipo === 'oc_pendente' || l.tipo === 'compra') && l.status_financeiro !== 'CANCELADO').forEach(l => {
                  if(!ocs[l.id]) ocs[l.id] = { id: l.id, obra_id: l.obra_id, tipo: l.tipo, total: 0 };
                  ocs[l.id].total += parseFloat(l.valor_total);
              });
@@ -910,21 +935,19 @@
              list.innerHTML = arr.map(o => {
                  const obra = STATE.obras.find(x=>x.id==o.obra_id);
                  return `<tr class="border-b">
-                     <td class="p-2 text-xs font-bold text-slate-600">#${o.id} <br><span class="text-[9px] text-emerald-600">${obra?.nome||''}</span></td>
+                     <td class="p-2 text-xs font-bold text-slate-600">#${o.id} <br><span class="text-[9px] text-blue-600">${obra?.nome||''}</span></td>
                      <td class="p-2 text-xs text-right font-bold text-slate-800">${formatMoney(o.total)}<br><span class="text-[9px] ${o.tipo==='compra'?'text-indigo-600':'text-orange-500'}">${o.tipo==='compra'?'COMPRADO':'PENDENTE'}</span></td>
                  </tr>`;
              }).join('');
         }
 
-        // ====== DASHBOARD OBRAS ======
+        // ====== DASHBOARD OBRAS (VISÃO GERAL) ======
         function renderDashboard() {
             const grid = document.getElementById('dash-grid');
             const custosObras = {};
             
-            // Inicializa zero
             STATE.obras.forEach(o => custosObras[o.id] = 0);
 
-            // Soma compras e despesas
             STATE.logs.forEach(l => {
                 if(l.obra_id && (l.tipo === 'compra' || l.tipo === 'despesa') && l.status_financeiro !== 'CANCELADO') {
                     custosObras[l.obra_id] += parseFloat(l.valor_total);
@@ -932,17 +955,95 @@
             });
 
             grid.innerHTML = STATE.obras.map(o => `
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col hover:border-emerald-500 transition">
-                    <h4 class="font-black text-lg text-slate-800">${o.nome}</h4>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col hover:border-blue-500 transition relative">
+                    <button onclick="abrirFiltroRelatorio('${o.id}', '${o.nome.replace(/'/g, "\\'")}')" class="absolute top-4 right-4 bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white p-2 rounded-lg transition" title="Imprimir Relatório de Custos">
+                        <i data-lucide="printer" width="18"></i>
+                    </button>
+                    <h4 class="font-black text-lg text-slate-800 pr-10">${o.nome}</h4>
                     <p class="text-xs text-slate-500 uppercase font-bold mt-1 mb-4 truncate"><i data-lucide="map-pin" class="inline w-3 h-3"></i> ${o.endereco || 'Endereço n. inf.'}</p>
                     <div class="mt-auto pt-4 border-t border-slate-100 flex justify-between items-end">
-                        <span class="text-xs font-bold text-slate-400">Total Custo (Gasto/Comprometido)</span>
-                        <span class="font-black text-xl text-red-600">${formatMoney(custosObras[o.id] || 0)}</span>
+                        <span class="text-xs font-bold text-slate-400">Total Custo Acumulado</span>
+                        <span class="font-black text-2xl text-red-600">${formatMoney(custosObras[o.id] || 0)}</span>
                     </div>
                 </div>
             `).join('');
             lucide.createIcons();
         }
+
+        // ====== RELATÓRIO DE CUSTOS (MODAL) ======
+        function abrirFiltroRelatorio(obraId, obraNome) {
+            document.getElementById('relatorio-obra-id').value = obraId;
+            document.getElementById('relatorio-obra-nome').innerText = "Obra: " + obraNome;
+            document.getElementById('relatorio-start').value = '';
+            document.getElementById('relatorio-end').value = '';
+            document.getElementById('modal-relatorio-obra').classList.remove('hidden');
+        }
+
+        function imprimirRelatorioObra() {
+            const obraId = document.getElementById('relatorio-obra-id').value;
+            const obraObj = STATE.obras.find(o => String(o.id) === String(obraId));
+            if(!obraObj) return;
+
+            const start = document.getElementById('relatorio-start').value;
+            const end = document.getElementById('relatorio-end').value;
+
+            let registros = STATE.logs.filter(l => String(l.obra_id) === String(obraId) && (l.tipo === 'compra' || l.tipo === 'despesa') && l.status_financeiro !== 'CANCELADO');
+
+            if(start) registros = registros.filter(l => new Date(l.data) >= new Date(start));
+            if(end) {
+                let endD = new Date(end);
+                endD.setHours(23,59,59);
+                registros = registros.filter(l => new Date(l.data) <= endD);
+            }
+            registros.sort((a,b) => new Date(a.data) - new Date(b.data));
+
+            let total = 0;
+            const htmlLinhas = registros.map(l => {
+                const valor = parseFloat(l.valor_total) || 0;
+                total += valor;
+                const forn = STATE.fornecedores.find(x => x.id == l.fornecedor_id)?.nome || '-';
+                return `<tr>
+                    <td style="padding: 6px; border-bottom: 1px solid #ddd;">${formatDate(l.data)}</td>
+                    <td style="padding: 6px; border-bottom: 1px solid #ddd;">${l.tipo === 'compra' ? `O.C. #${l.id}` : 'Despesa Avulsa'}</td>
+                    <td style="padding: 6px; border-bottom: 1px solid #ddd;">${l.produto_nome || '-'}</td>
+                    <td style="padding: 6px; border-bottom: 1px solid #ddd;">${forn}</td>
+                    <td style="padding: 6px; border-bottom: 1px solid #ddd;" align="right">${formatMoney(valor)}</td>
+                </tr>`;
+            }).join('');
+
+            const htmlReport = `
+                <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                    <h2 style="margin: 0 0 5px 0; color: #1e3a8a;">Relatório de Custos da Obra</h2>
+                    <h3 style="margin: 0 0 15px 0; color: #333;">${obraObj.nome}</h3>
+                    <p style="font-size: 12px; color: #666; margin-bottom: 20px;">
+                        Endereço: ${obraObj.endereco || '-'}<br>
+                        Período: ${start ? formatDate(start) : 'Início'} até ${end ? formatDate(end) : 'Hoje'}
+                    </p>
+                    <table width="100%" style="border-collapse: collapse; font-size: 12px;">
+                        <thead style="background-color: #f1f5f9;">
+                            <tr>
+                                <th style="padding: 8px; border-bottom: 2px solid #ccc; text-align: left;">Data</th>
+                                <th style="padding: 8px; border-bottom: 2px solid #ccc; text-align: left;">Referência</th>
+                                <th style="padding: 8px; border-bottom: 2px solid #ccc; text-align: left;">Descrição</th>
+                                <th style="padding: 8px; border-bottom: 2px solid #ccc; text-align: left;">Fornecedor</th>
+                                <th style="padding: 8px; border-bottom: 2px solid #ccc; text-align: right;">Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>${htmlLinhas || '<tr><td colspan="5" align="center" style="padding: 10px;">Nenhum custo no período.</td></tr>'}</tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="4" align="right" style="padding: 10px; font-weight: bold; font-size: 14px; border-top: 2px solid #333;">TOTAL ACUMULADO:</td>
+                                <td align="right" style="padding: 10px; font-weight: bold; font-size: 16px; color: #b91c1c; border-top: 2px solid #333;">${formatMoney(total)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            `;
+            document.getElementById('print-area').innerHTML = htmlReport;
+            document.getElementById('modal-relatorio-obra').classList.add('hidden');
+            setTimeout(() => window.print(), 300);
+        }
+
 
         // ====== FINANCEIRO MANUAL ======
         function renderFinance() {
@@ -952,29 +1053,42 @@
 
             let totDesp = 0; let totRec = 0;
             
-            // Despesas
+            // --- CONTAS A PAGAR ---
             const listaDesp = document.getElementById('fin-expense-history-list');
             let despArr = logsFilt.filter(l => l.tipo === 'compra' || l.tipo === 'despesa');
+            
+            const expSearch = document.getElementById('exp-search').value.toLowerCase();
+            const expStatus = document.getElementById('exp-status').value;
+            
+            if(expSearch) despArr = despArr.filter(l => (l.produto_nome && l.produto_nome.toLowerCase().includes(expSearch)) || String(l.id).includes(expSearch));
+            if(expStatus) despArr = despArr.filter(l => l.status_financeiro === expStatus);
+            
             despArr.sort((a,b)=> new Date(b.data) - new Date(a.data));
             
             listaDesp.innerHTML = despArr.map(l => {
                 totDesp += parseFloat(l.valor_total);
                 const obra = STATE.obras.find(x=>x.id==l.obra_id);
                 const isPago = l.status_financeiro === 'PAGO';
-                return `<tr class="border-b ${isPago?'bg-green-50':'bg-red-50/20'}">
+                return `<tr class="border-b ${isPago?'bg-green-50':'bg-red-50/20'} transition">
                     <td class="p-3 text-xs font-bold text-slate-700">${formatDate(l.data)}</td>
                     <td class="p-3">
-                        <div class="font-bold text-slate-800 text-xs">${l.tipo==='compra'?`O.C. #${l.id} - Compra`: l.produto_nome}</div>
-                        <div class="text-[10px] text-emerald-700 font-bold"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Geral'}</div>
+                        <div class="font-bold text-slate-800 text-xs">${l.tipo==='compra'?`O.C. #${l.id} - Itens Múltiplos`: l.produto_nome}</div>
+                        <div class="text-[10px] text-blue-700 font-bold"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Geral'}</div>
                     </td>
                     <td class="p-3 font-bold text-sm ${isPago?'text-slate-500':'text-red-600'}">${formatMoney(l.valor_total)}</td>
-                    <td class="p-3 text-right">
-                        ${!isPago ? `<button onclick="baixarLog('${l.uid}')" class="text-[10px] bg-red-600 text-white px-2 py-1 rounded font-bold">BAIXAR</button>` : `<span class="text-[10px] font-bold text-green-700">PAGO</span>`}
+                    <td class="p-3 text-right flex items-center justify-end gap-1">
+                        ${!isPago ? `
+                            <button onclick="baixarLog('${l.uid}')" class="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded shadow flex items-center gap-1 text-[10px] font-bold" title="Baixar / Pagar"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> BAIXAR</button>
+                            <button onclick="excluirLancamento('${l.uid}')" class="bg-slate-200 hover:bg-slate-300 text-slate-600 p-1.5 rounded shadow" title="Cancelar Lançamento"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>
+                        ` : `
+                            <span class="text-[10px] font-bold text-green-700 bg-green-200 px-2 py-1 rounded">PAGO</span>
+                            <button onclick="estornarBaixa('${l.uid}')" class="bg-slate-200 hover:bg-slate-300 text-slate-600 p-1.5 rounded shadow" title="Estornar Baixa (Voltar p/ Pendente)"><i data-lucide="rotate-ccw" class="w-3 h-3"></i></button>
+                        `}
                     </td>
                 </tr>`;
             }).join('');
 
-            // Receitas
+            // --- CONTAS A RECEBER ---
             const listaRec = document.getElementById('fin-receivables-list');
             let recArr = logsFilt.filter(l => l.tipo === 'receita');
             recArr.sort((a,b)=> new Date(b.data) - new Date(a.data));
@@ -983,15 +1097,21 @@
                 totRec += parseFloat(l.valor_total);
                 const obra = STATE.obras.find(x=>x.id==l.obra_id);
                 const isPago = l.status_financeiro === 'PAGO';
-                return `<tr class="border-b ${isPago?'bg-green-50':'bg-orange-50/20'}">
+                return `<tr class="border-b ${isPago?'bg-green-50':'bg-orange-50/20'} transition">
                     <td class="p-3 text-xs font-bold text-slate-700">${formatDate(l.vencimento)}</td>
                     <td class="p-3">
                         <div class="font-bold text-slate-800 text-xs">${l.produto_nome}</div>
-                        <div class="text-[10px] text-emerald-700 font-bold"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Geral'}</div>
+                        <div class="text-[10px] text-blue-700 font-bold"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Geral'}</div>
                     </td>
                     <td class="p-3 font-bold text-sm text-green-700">${formatMoney(l.valor_total)}</td>
-                    <td class="p-3 text-right">
-                        ${!isPago ? `<button onclick="baixarLog('${l.uid}')" class="text-[10px] bg-green-600 text-white px-2 py-1 rounded font-bold">RECEBER</button>` : `<span class="text-[10px] font-bold text-green-700">PAGO</span>`}
+                    <td class="p-3 text-right flex items-center justify-end gap-1">
+                        ${!isPago ? `
+                            <button onclick="baixarLog('${l.uid}')" class="bg-green-600 hover:bg-green-700 text-white p-1.5 rounded shadow flex items-center gap-1 text-[10px] font-bold" title="Confirmar Recebimento"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> RECEBER</button>
+                            <button onclick="excluirLancamento('${l.uid}')" class="bg-slate-200 hover:bg-slate-300 text-slate-600 p-1.5 rounded shadow" title="Cancelar Lançamento"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>
+                        ` : `
+                            <span class="text-[10px] font-bold text-green-700 bg-green-200 px-2 py-1 rounded">RECEBIDO</span>
+                            <button onclick="estornarBaixa('${l.uid}')" class="bg-slate-200 hover:bg-slate-300 text-slate-600 p-1.5 rounded shadow" title="Estornar Baixa"><i data-lucide="rotate-ccw" class="w-3 h-3"></i></button>
+                        `}
                     </td>
                 </tr>`;
             }).join('');
@@ -1010,6 +1130,23 @@
             showToast("Baixa realizada!"); loadData();
         }
 
+        async function estornarBaixa(uid) {
+            if(!confirm("Tem certeza que deseja ESTORNAR a baixa? O status voltará para PENDENTE.")) return;
+            showLoading(true);
+            const {error} = await sb.from('jsp_logs').update({ status_financeiro: 'PENDENTE', valor_pago: 0 }).eq('uid', uid);
+            if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
+            showToast("Baixa estornada com sucesso!"); loadData();
+        }
+
+        async function excluirLancamento(uid) {
+            if(!confirm("Tem certeza que deseja CANCELAR este lançamento? Ele será removido dos cálculos.")) return;
+            showLoading(true);
+            const {error} = await sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }).eq('uid', uid);
+            if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
+            showToast("Lançamento Cancelado!"); loadData();
+        }
+
+
         async function saveExpense() {
             const obra_id = document.getElementById('exp-obra').value || null;
             const desc = document.getElementById('exp-item').value;
@@ -1020,14 +1157,17 @@
             if(!desc || isNaN(val)) return showToast("Preencha descrição e valor!", true);
             showLoading(true);
 
+            const valPago = status === 'PAGO' ? val : 0;
+
             const {error} = await sb.from('jsp_logs').insert([{
                 id: getNextIdNum(STATE.logs).toString(),
-                obra_id: obra_id,
+                obra_id: obra_id ? parseInt(obra_id) : null,
                 tipo: 'despesa',
                 produto_nome: desc,
                 valor_total: val,
                 data: dt, vencimento: dt,
-                status_financeiro: status
+                status_financeiro: status,
+                valor_pago: valPago
             }]);
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
             
@@ -1046,15 +1186,18 @@
 
             if(!desc || isNaN(val)) return showToast("Preencha descrição e valor!", true);
             showLoading(true);
+            
+            const valPago = status === 'PAGO' ? val : 0;
 
             const {error} = await sb.from('jsp_logs').insert([{
                 id: getNextIdNum(STATE.logs).toString(),
-                obra_id: obra_id,
+                obra_id: obra_id ? parseInt(obra_id) : null,
                 tipo: 'receita',
                 produto_nome: desc,
                 valor_total: val,
                 data: dt, vencimento: dt,
-                status_financeiro: status
+                status_financeiro: status,
+                valor_pago: valPago
             }]);
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
             
@@ -1062,11 +1205,136 @@
             showToast("Aporte Salvo!"); loadData();
         }
 
+        // ====== IMPRESSÃO E PDF DA O.C. ======
+        function buildHTMLOC(id) {
+            const logsOC = STATE.logs.filter(l => String(l.id) === String(id) && (l.tipo === 'oc_pendente' || l.tipo === 'compra'));
+            if(!logsOC.length) return '';
+            
+            const o = logsOC[0];
+            const obra = STATE.obras.find(x => x.id == o.obra_id) || { nome: 'Sem Obra', endereco: '-' };
+            const forn = STATE.fornecedores.find(x => x.id == o.fornecedor_id) || { nome: 'A Definir', documento: '', telefone: '' };
+            
+            let total = 0;
+            const linhas = logsOC.map((i, index) => {
+                const valor = parseFloat(i.valor_total);
+                total += valor;
+                const price = valor / parseFloat(i.quantidade);
+                const bg = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+                return `<tr style="background-color: ${bg};">
+                    <td style="border-bottom: 1px solid #000; padding: 8px;">${i.produto_nome}</td>
+                    <td align="center" style="border-bottom: 1px solid #000; padding: 8px;">${i.quantidade}</td>
+                    <td align="right" style="border-bottom: 1px solid #000; padding: 8px;">${formatMoney(price)}</td>
+                    <td align="right" style="border-bottom: 1px solid #000; padding: 8px;">${formatMoney(valor)}</td>
+                </tr>`;
+            }).join('');
+
+            return `
+            <div style="font-family: 'Helvetica', sans-serif; padding: 15px; width: 100%; border: 1px solid #000; min-height: 27.5cm;">
+                <table width="100%" style="border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px;">
+                    <tr>
+                        <td width="130" valign="middle" style="border-right: 1px solid #e2e8f0; padding-right: 15px;">
+                            <img src="https://i.postimg.cc/52cvrkkP/LOGRVPORTAL.png" crossorigin="anonymous" style="max-height: 80px; display: block; margin: 0 auto;" />
+                        </td>
+                        <td valign="middle" style="padding-left: 15px;">
+                            <h2 style="margin: 0; color: #1d4ed8; font-size: 20px; font-weight: 800;">RV OBRAS</h2>
+                            <div style="font-size: 11px; color: #475569; margin-top: 5px;">CONTROLE DE CUSTOS E MATERIAIS</div>
+                        </td>
+                        <td align="right" valign="top">
+                            <h2 style="margin: 0 0 5px 0; font-size: 16px; font-weight: 900;">ORDEM DE COMPRA</h2>
+                            <div style="font-size: 11px;"><strong>Nº:</strong> ${o.id}</div>
+                            <div style="font-size: 11px;"><strong>Emissão:</strong> ${formatDate(o.data)}</div>
+                        </td>
+                    </tr>
+                </table>
+
+                <table width="100%" style="margin-bottom: 20px;">
+                    <tr>
+                        <td width="48%" valign="top" style="border: 1px solid #000; padding: 0;">
+                            <div style="background-color: #f1f5f9; padding: 5px; font-size: 10px; font-weight: bold; border-bottom: 1px solid #000;">DADOS DO FORNECEDOR</div>
+                            <div style="padding: 10px; font-size: 11px;">
+                                <strong>${forn.nome}</strong><br>
+                                Doc: ${forn.documento || '-'}<br>
+                                Tel: ${forn.telefone || '-'}
+                            </div>
+                        </td>
+                        <td width="4%"></td> 
+                        <td width="48%" valign="top" style="border: 1px solid #000; padding: 0;">
+                            <div style="background-color: #f1f5f9; padding: 5px; font-size: 10px; font-weight: bold; border-bottom: 1px solid #000;">DESTINO (OBRA)</div>
+                            <div style="padding: 10px; font-size: 11px;">
+                                <strong>${obra.nome}</strong><br>
+                                Endereço: ${obra.endereco || '-'}
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+
+                <table width="100%" style="border-collapse: collapse; margin-bottom: 20px; font-size: 11px;">
+                    <thead>
+                        <tr>
+                            <th align="left" style="background-color: #0f172a; color: #fff; padding: 8px;">Descrição</th>
+                            <th align="center" style="background-color: #0f172a; color: #fff; padding: 8px;">Qtd</th>
+                            <th align="right" style="background-color: #0f172a; color: #fff; padding: 8px;">Unit. Estimado</th>
+                            <th align="right" style="background-color: #0f172a; color: #fff; padding: 8px;">Total Estimado</th>
+                        </tr>
+                    </thead>
+                    <tbody>${linhas}</tbody>
+                </table>
+
+                <table width="100%">
+                    <tr>
+                        <td valign="top">
+                            <div style="border: 1px dashed #cbd5e1; padding: 10px; min-height: 50px;">
+                                <div style="font-size: 10px; font-weight: bold; margin-bottom: 5px;">Observações:</div>
+                                <div style="font-size: 10px;">${o.observacao || 'Nenhuma observação informada.'}</div>
+                            </div>
+                        </td>
+                        <td width="250" valign="top">
+                            <table width="100%" style="font-size: 12px; border-collapse: collapse;">
+                                <tr>
+                                    <td style="padding: 10px 0; font-weight: 900;">TOTAL ESTIMADO:</td>
+                                    <td align="right" style="padding: 10px 0; font-size: 14px; font-weight: 900;">${formatMoney(total)}</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+                <div style="margin-top: 50px; text-align: center; width: 300px; border-top: 1px solid #000; padding-top: 5px; font-size: 10px; font-weight: bold; margin-left: auto; margin-right: auto;">
+                    ASSINATURA RESPONSÁVEL
+                </div>
+            </div>`;
+        }
+
+        function printOC(id) {
+            document.getElementById('print-area').innerHTML = buildHTMLOC(id);
+            setTimeout(() => window.print(), 300);
+        }
+
+        function downloadOCPDF(id) {
+            showLoading(true);
+            const htmlString = buildHTMLOC(id);
+            if(!htmlString) { showLoading(false); return; }
+
+            setTimeout(() => {
+                const opt = {
+                    margin: 10, 
+                    filename: `Ordem_Compra_${id}.pdf`, 
+                    image: { type: 'jpeg', quality: 1 },
+                    html2canvas: { scale: 2, useCORS: true },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+                html2pdf().set(opt).from(htmlString).save().then(() => {
+                    showLoading(false); showToast("PDF Baixado com Sucesso!");
+                }).catch(err => {
+                    console.error("Erro PDF:", err); showLoading(false); showToast("Erro ao gerar PDF", true);
+                });
+            }, 500); 
+        }
+
         // ====== PRODUTOS ======
         function renderProducts() {
             const term = document.getElementById('prod-search').value.toLowerCase();
             const fil = STATE.produtos.filter(p => p.nome.toLowerCase().includes(term));
-            document.getElementById('prod-list').innerHTML = fil.map(p => `<tr class="border-b"><td class="p-4 font-bold text-slate-700">${p.nome} <br><span class="text-[10px] bg-slate-200 px-1 rounded uppercase">${p.categoria||'GERAL'}</span></td><td class="p-4">${formatMoney(p.preco)}</td><td class="p-4 text-center"><button onclick="openProductForm('${p.id}')" class="text-indigo-600"><i data-lucide="edit-3" width="16"></i></button></td></tr>`).join('');
+            document.getElementById('prod-list').innerHTML = fil.map(p => `<tr class="border-b"><td class="p-4 font-bold text-slate-700">${p.nome} <br><span class="text-[10px] bg-slate-200 px-1 rounded uppercase">${p.categoria||'GERAL'}</span></td><td class="p-4">${formatMoney(p.preco)}</td><td class="p-4 text-center"><button onclick="openProductForm('${p.id}')" class="text-blue-600"><i data-lucide="edit-3" width="16"></i></button></td></tr>`).join('');
             lucide.createIcons();
         }
         function openProductForm(id) {
@@ -1097,26 +1365,9 @@
             showToast("Material salvo!"); loadData();
         }
 
-        function renderLogs() {
-            const list = document.getElementById('logs-table-body');
-            const arr = STATE.logs.slice().sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
-            list.innerHTML = arr.map(l => {
-                const obra = STATE.obras.find(x=>x.id==l.obra_id);
-                return `<tr class="border-b">
-                    <td class="p-4 text-xs">${formatDate(l.data)}</td>
-                    <td class="p-4"><span class="px-2 py-0.5 bg-slate-200 rounded text-[10px] font-bold uppercase">${l.tipo}</span></td>
-                    <td class="p-4 text-sm font-bold text-slate-700">${l.produto_nome||'-'} ${l.quantidade>0?`(x${l.quantidade})`:''}</td>
-                    <td class="p-4 text-xs font-bold text-emerald-700">${obra?.nome||'Geral'}</td>
-                    <td class="p-4 text-sm font-bold">${formatMoney(l.valor_total)}</td>
-                    <td class="p-4 text-xs">${l.status_financeiro||'-'}</td>
-                    <td class="p-4 text-center">-</td>
-                </tr>`;
-            }).join('');
-        }
-
         // ====== USUARIOS ======
         function renderUsers() {
-            document.getElementById('users-list').innerHTML = STATE.users.map(u => `<tr class="border-b"><td class="p-4 font-bold">${u.nome}</td><td class="p-4 text-indigo-600">${u.login}</td><td class="p-4">${u.nivel_acesso}</td><td class="p-4 text-center">${u.ativo?'Ativo':'Inativo'}</td><td class="p-4 text-center">-</td></tr>`).join('');
+            document.getElementById('users-list').innerHTML = STATE.users.map(u => `<tr class="border-b"><td class="p-4 font-bold">${u.nome}</td><td class="p-4 text-blue-600">${u.login}</td><td class="p-4">${u.nivel_acesso}</td><td class="p-4 text-center">${u.ativo?'Ativo':'Inativo'}</td></tr>`).join('');
         }
         function openUserForm() { showToast("Criação de usuários via banco de dados.", false); }
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
