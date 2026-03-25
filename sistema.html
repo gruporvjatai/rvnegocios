@@ -1589,7 +1589,7 @@
                     return {
                         uid: crypto.randomUUID(),      // Gera o código único na hora
                         id: nextId,                   // Agrupa todos no mesmo ID de Orçamento
-                        tipo: 'Orçamento',
+                        tipo: 'orcamento',
                         produto_nome: item.produto_nome,
                         quantidade: parseFloat(item.quantidade),
                         data: dataHojeTexto, 
@@ -1597,7 +1597,7 @@
                         valor_total: parseFloat(item.valor_total),
                         cliente_nome: 'RV Negócios',
                         forma_pagamento: '',
-                        status: 'Pendente',
+                        status: 'ATIVO',
                         status_entrega: '',
                         qtd_entregue: 0,
                         desconto: 0,
