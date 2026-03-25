@@ -572,6 +572,32 @@
         </form>
       </div>
 
+
+      <div id="modal-transf-portal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm border-t-4 border-t-indigo-600">
+            <h3 class="font-bold text-lg mb-2 text-slate-800 flex items-center gap-2">
+                <i data-lucide="send" class="text-indigo-600"></i> Enviar para RV Portal
+            </h3>
+            <p class="text-xs text-slate-500 mb-4">Esta ação vai gerar um orçamento automaticamente no sistema da RV Portal. Digite a senha de autorização:</p>
+            
+            <input type="hidden" id="transf-oc-id">
+            
+            <div class="space-y-3">
+                <div>
+                    <input type="password" id="transf-senha" placeholder="********" class="w-full p-3 border-2 rounded-lg outline-none focus:border-indigo-600 font-bold text-center tracking-widest text-lg">
+                </div>
+            </div>
+            <div class="flex gap-2 mt-6">
+                <button type="button" onclick="document.getElementById('modal-transf-portal').classList.add('hidden')" class="flex-1 p-3 bg-slate-200 text-slate-700 rounded-lg font-bold hover:bg-slate-300">Cancelar</button>
+                <button onclick="executarTransferenciaPortal()" class="flex-1 p-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 shadow-md flex items-center justify-center gap-2">
+                    <i data-lucide="arrow-right-circle" class="w-4 h-4"></i> Transferir
+                </button>
+            </div>
+        </div>
+      </div>
+
+      
+
     </main>
 
     <div id="print-area" class="print-only"></div>
@@ -918,6 +944,7 @@
                             <button onclick="loadOCToCart('${o.id}')" class="p-2 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Editar Itens"><i data-lucide="edit-3" width="14"></i></button>
                             <button onclick="printOC('${o.id}')" class="p-2 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Imprimir"><i data-lucide="printer" width="14"></i></button>
                             <button onclick="downloadOCPDF('${o.id}')" class="p-2 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Baixar PDF"><i data-lucide="download" width="14"></i></button>
+                            <button onclick="abrirModalTransferencia('${o.id}')" class="p-2 border border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded bg-indigo-50/50 font-bold flex items-center gap-1" title="Gerar Orçamento RV Portal"><i data-lucide="send" width="14"></i> RV Portal</button>
                             <button onclick="deleteOC('${o.id}')" class="p-2 border border-red-200 text-red-500 hover:bg-red-50 rounded" title="Excluir"><i data-lucide="trash-2" width="14"></i></button>
                         </div>
                     </td>
@@ -1517,6 +1544,87 @@
             loadData();
         }
 
+// ====== INTEGRAÇÃO RV PORTAL ======
+        function abrirModalTransferencia(ocId) {
+            document.getElementById('transf-oc-id').value = ocId;
+            document.getElementById('transf-senha').value = '';
+            document.getElementById('modal-transf-portal').classList.remove('hidden');
+        }
+
+        async function executarTransferenciaPortal() {
+            const senhaDigitada = document.getElementById('transf-senha').value;
+            const ocId = document.getElementById('transf-oc-id').value;
+            
+            // Defina a sua senha de segurança aqui
+            const senhaSecreta = "123456"; 
+
+            if(senhaDigitada !== senhaSecreta) {
+                return showToast("Senha Incorreta! Transferência abortada.", true);
+            }
+
+            showLoading(true);
+
+            // 1. Pega os itens da O.C. pendente que já estão carregados na memória do RV Negócios
+            const itensOC = STATE.logs.filter(l => String(l.id) === String(ocId) && l.tipo === 'oc_pendente');
+            
+            if(!itensOC.length) {
+                showLoading(false);
+                return showToast("Erro: Itens da O.C. não encontrados.", true);
+            }
+
+            try {
+                // 2. Descobre qual é o próximo "id" (bigint) da tabela logs da RV Portal
+                const { data: ultimosLogs, error: errLogs } = await sb.from('logs').select('id').order('id', { ascending: false }).limit(1);
+                
+                let nextId = 1;
+                if (ultimosLogs && ultimosLogs.length > 0) {
+                    nextId = parseInt(ultimosLogs[0].id) + 1;
+                }
+
+                // A tabela da RV Portal parece usar data em formato de texto. Formatando para DD/MM/AAAA.
+                const dataHojeTexto = new Date().toLocaleDateString('pt-BR');
+
+                // 3. Monta o pacote de dados exatamente como a tabela 'logs' da RV Portal espera
+                const insertsRVPortal = itensOC.map(item => {
+                    return {
+                        uid: crypto.randomUUID(),      // Gera o código único na hora
+                        id: nextId,                   // Agrupa todos no mesmo ID de Orçamento
+                        tipo: 'Orçamento',
+                        produto_nome: item.produto_nome,
+                        quantidade: parseFloat(item.quantidade),
+                        data: dataHojeTexto, 
+                        observacao: item.observacao || 'Gerado automaticamente via RV Negócios',
+                        valor_total: parseFloat(item.valor_total),
+                        cliente_nome: 'RV Negócios',
+                        forma_pagamento: '',
+                        status: 'Pendente',
+                        status_entrega: '',
+                        qtd_entregue: 0,
+                        desconto: 0,
+                        status_financeiro: 'PENDENTE',
+                        vencimento: '',
+                        valor_pago: 0,
+                        endereco_entrega: ''
+                    };
+                });
+
+                // 4. Salva direto na tabela 'logs' (que pertence à RV Portal)
+                const { error: erroInsert } = await sb.from('logs').insert(insertsRVPortal);
+
+                if(erroInsert) throw erroInsert;
+
+                // Sucesso!
+                document.getElementById('modal-transf-portal').classList.add('hidden');
+                showLoading(false);
+                showToast("Sucesso! Orçamento gerado na RV Portal.");
+
+            } catch (erro) {
+                showLoading(false);
+                showToast("Erro na comunicação: " + erro.message, true);
+            }
+        }
+      
+      
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
   </body>
