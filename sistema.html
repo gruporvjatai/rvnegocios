@@ -20,7 +20,6 @@
     <link rel="shortcut icon" type="image/png" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
     
-
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="RV Negócios">
@@ -62,7 +61,7 @@
       </div>
       <nav class="flex-1 mt-4 px-3 space-y-1 overflow-y-auto">
         <button onclick="navigate('dash')" id="nav-dash" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="layout-dashboard"></i> <span class="font-medium text-sm">Visão Geral</span></button>
-        <button onclick="navigate('oc')" id="nav-oc" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="folder-open"></i> <span class="font-medium text-sm">O.C. Pendentes</span></button>
+        <button onclick="navigate('oc')" id="nav-oc" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="folder-open"></i> <span class="font-medium text-sm">Ordens de Compra</span></button>
         <button onclick="navigate('pos')" id="nav-pos" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="shopping-cart"></i> <span class="font-medium text-sm">Nova O.C.</span></button>
         <button onclick="navigate('fin')" id="nav-fin" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="bar-chart-3"></i> <span class="font-medium text-sm">Financeiro Obras</span></button>
         <div class="border-t border-slate-800 my-2 pt-2"></div>
@@ -104,6 +103,7 @@
                           <tr>
                               <th class="p-4 w-24">O.C.</th>
                               <th class="p-4">Fornecedor / Obra</th>
+                              <th class="p-4 text-center">Status</th>
                               <th class="p-4">Produtos</th>
                               <th class="p-4 text-right">Valor Estimado</th>
                               <th class="p-4 text-center">Ações</th>
@@ -116,51 +116,55 @@
       </div>
 
       <div id="view-pos" class="hidden-section">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-100px)]">
-            <div class="lg:col-span-2 flex flex-col gap-4 h-full">
-                
-                <div class="bg-white rounded-xl shadow-sm border p-6 flex justify-between items-center">
-                    <h3 class="font-bold text-slate-700 text-lg flex gap-2 items-center"><i data-lucide="package-plus" class="text-blue-600"></i> Itens da Ordem de Compra</h3>
-                    <button onclick="openPosProductModal()" class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg transition"><i data-lucide="search"></i> Buscar Materiais</button>
-                </div>
-                
-                <div class="bg-white p-4 rounded-xl border flex flex-col flex-1 shadow-sm overflow-hidden">
-                    <h3 class="font-bold text-slate-700 mb-4 flex gap-2 items-center text-sm uppercase border-b pb-2"><i data-lucide="history" class="w-4 h-4"></i> O.C.s Recentes</h3>
-                    <div class="overflow-y-auto flex-1">
-                        <table class="w-full text-sm text-left">
-                            <tbody id="pos-recent-history" class="divide-y"></tbody>
-                        </table>
+        <div class="flex flex-col h-[calc(100vh-100px)]">
+            <div class="bg-white p-0 rounded-xl border shadow-lg flex flex-col h-full overflow-hidden border-t-4 border-t-blue-800">
+                <div class="p-4 bg-slate-50 border-b flex justify-between items-center">
+                    <div class="font-bold text-slate-700 flex gap-2 items-center"><i data-lucide="shopping-cart" class="text-blue-700"></i> NOVA ORDEM DE COMPRA</div>
+                    <div class="flex gap-2">
+                        <button onclick="openPosProductModal()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow-md transition text-sm"><i data-lucide="search" class="w-4 h-4"></i> Buscar Materiais</button>
+                        <button onclick="clearCart()" class="text-xs text-red-500 hover:text-red-700 font-bold border border-red-200 px-3 py-2 rounded-lg bg-white">LIMPAR</button>
                     </div>
                 </div>
-            </div>
-            
-            <div class="bg-white p-0 rounded-xl border shadow-lg flex flex-col h-full overflow-hidden border-t-4 border-t-blue-800">
-                <div class="p-4 bg-slate-50 border-b flex justify-between items-center"><div class="font-bold text-slate-700 flex gap-2 items-center"><i data-lucide="shopping-cart" class="text-blue-700"></i> CARRINHO</div><button onclick="clearCart()" class="text-xs text-red-500 hover:text-red-700 font-bold border border-red-200 px-2 py-1 rounded bg-white">LIMPAR</button></div>
-                <div id="pos-cart-items" class="flex-1 space-y-2 overflow-y-auto p-4 bg-white"></div>
-                <div class="bg-slate-50 p-4 border-t space-y-3 shadow-inner">
-                    <div class="space-y-3">
+                
+                <div id="pos-cart-items" class="flex-1 space-y-2 overflow-y-auto p-4 bg-slate-50"></div>
+                
+                <div class="bg-white p-4 border-t shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                         <div>
-                            <label class="text-[10px] font-bold text-slate-500 uppercase">Destino (Obra)</label>
-                            <select id="pos-obra" class="w-full p-2 border rounded-lg text-sm bg-white font-bold text-slate-700 focus:border-blue-600 outline-none"></select>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Destino (Obra)</label>
+                            <select id="pos-obra" class="w-full p-2 border rounded-lg text-sm bg-slate-50 font-bold text-slate-700 focus:border-blue-600 outline-none"></select>
                         </div>
                         <div>
-                            <label class="text-[10px] font-bold text-slate-500 uppercase">Fornecedor</label>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fornecedor</label>
                             <div class="flex gap-2">
                                 <input type="hidden" id="pos-fornecedor" value="">
-                                <button id="pos-fornecedor-btn" onclick="openPosFornecedorModal()" class="w-full p-2 border rounded text-sm bg-white focus:border-blue-600 text-left flex justify-between items-center text-slate-600 font-bold">
-                                    <span>Selecione Fornecedor</span>
-                                    <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+                                <button id="pos-fornecedor-btn" onclick="openPosFornecedorModal()" class="w-full p-2 border rounded-lg text-sm bg-slate-50 focus:border-blue-600 text-left flex justify-between items-center text-slate-600 font-bold">
+                                    <span class="truncate">Selecione Fornecedor</span>
+                                    <i data-lucide="search" class="w-4 h-4 text-slate-400 shrink-0"></i>
                                 </button>
-                                <button onclick="navigate('fornecedores')" class="p-2 bg-slate-200 rounded hover:bg-slate-300" title="Novo Fornecedor"><i data-lucide="user-plus" class="w-4 h-4"></i></button>
+                                <button onclick="navigate('fornecedores')" class="p-2 bg-slate-200 rounded-lg hover:bg-slate-300 shrink-0" title="Novo Fornecedor"><i data-lucide="user-plus" class="w-4 h-4"></i></button>
                             </div>
                         </div>
                         <div>
-                            <textarea id="pos-custom-obs" rows="2" placeholder="Observações da Cotação..." class="w-full p-2 border rounded-lg text-xs bg-white focus:border-blue-600 outline-none resize-none shadow-inner"></textarea>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Solicitante / Comprador</label>
+                            <input type="text" id="pos-solicitante" placeholder="Nome de quem solicitou..." class="w-full p-2 border rounded-lg text-sm bg-slate-50 focus:border-blue-600 outline-none font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Observações</label>
+                            <textarea id="pos-custom-obs" rows="1" placeholder="Observações da Cotação..." class="w-full p-2 border rounded-lg text-sm bg-slate-50 focus:border-blue-600 outline-none resize-none"></textarea>
                         </div>
                     </div>
                     
-                    <div class="flex justify-between items-end border-t border-slate-300 pt-3"><div class="text-xs text-slate-500">Itens: <span id="cart-count">0</span></div><div class="text-right"><div class="text-xs text-slate-500">Total</div><div id="pos-total-display" class="text-2xl font-bold text-slate-800 leading-none">R$ 0,00</div></div></div>
-                    <div class="pt-2"><button onclick="saveOC()" class="w-full btn-action bg-blue-700 hover:bg-blue-800 text-white py-3 text-sm shadow-lg"><i data-lucide="save"></i> Salvar Ordem de Compra</button></div>
+                    <div class="flex justify-between items-end border-t border-slate-200 pt-3">
+                        <div class="text-sm font-bold text-slate-500">Total de Itens: <span id="cart-count" class="text-blue-700">0</span></div>
+                        <div class="text-right flex items-center gap-4">
+                            <div>
+                                <div class="text-xs text-slate-500 font-bold uppercase">Total da O.C.</div>
+                                <div id="pos-total-display" class="text-3xl font-black text-slate-800 leading-none">R$ 0,00</div>
+                            </div>
+                            <button onclick="saveOC()" class="btn-action bg-blue-700 hover:bg-blue-800 text-white px-8 py-3 rounded-xl shadow-lg text-lg"><i data-lucide="save"></i> Salvar O.C.</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -596,8 +600,6 @@
         </div>
       </div>
 
-      
-
     </main>
 
     <div id="print-area" class="print-only"></div>
@@ -632,7 +634,7 @@
             if(activeBtn) activeBtn.classList.add('bg-blue-800', 'text-white', 'shadow-lg');
             
             if(viewId === 'dash') renderDashboard();
-            if(viewId === 'pos') { renderRecentHistory(); updateSelects(); }
+            if(viewId === 'pos') { updateSelects(); }
             if(viewId === 'oc') renderOCList();
             if(viewId === 'fin') { updateSelects(); renderFinance(); }
             if(viewId === 'fornecedores') renderFornecedores();
@@ -794,23 +796,25 @@
         function renderCart() {
             const box = document.getElementById('pos-cart-items');
             if(!CART.length) { 
-                box.innerHTML='<p class="text-center text-slate-400 mt-10 text-sm">Nenhum item adicionado.</p>'; 
+                box.innerHTML='<div class="flex flex-col items-center justify-center h-full text-slate-400 mt-10"><i data-lucide="shopping-basket" class="w-16 h-16 mb-4 opacity-50"></i><p class="text-sm">Nenhum item adicionado.</p></div>'; 
                 document.getElementById('pos-total-display').innerText=formatMoney(0); 
-                document.getElementById('cart-count').innerText='0'; return; 
+                document.getElementById('cart-count').innerText='0'; 
+                lucide.createIcons();
+                return; 
             }
             let sub = 0;
             box.innerHTML = CART.map((i,idx) => {
                 const totalItem = i.qty * i.price; sub += totalItem;
                 return `
-                <div class="bg-white p-2 border border-slate-200 rounded-lg mb-1.5 flex items-center justify-between gap-2 shadow-sm hover:border-blue-300">
-                    <div class="flex-1 min-w-0"><div class="text-[11px] font-bold text-slate-700 truncate">${i.name}</div></div>
-                    <div class="flex items-center gap-1 shrink-0">
-                        <input type="number" value="${i.qty}" onchange="updateCart(${idx}, 'qty', this.value)" class="w-12 p-1 border rounded bg-slate-50 text-center text-xs font-bold focus:border-blue-500 outline-none">
+                <div class="bg-white p-3 border border-slate-200 rounded-xl mb-2 flex items-center justify-between gap-4 shadow-sm hover:border-blue-300 hover:shadow-md transition">
+                    <div class="flex-1 min-w-0"><div class="text-sm font-bold text-slate-700 truncate">${i.name}</div></div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <input type="number" value="${i.qty}" onchange="updateCart(${idx}, 'qty', this.value)" class="w-16 p-2 border rounded-lg bg-slate-50 text-center text-sm font-bold focus:border-blue-500 outline-none">
                         <span class="text-slate-400 text-xs font-bold">x</span>
-                        <input type="number" step="0.01" value="${i.price}" onchange="updateCart(${idx}, 'price', this.value)" class="w-16 p-1 border rounded bg-slate-50 text-center text-xs font-bold focus:border-blue-500 outline-none">
+                        <input type="number" step="0.01" value="${i.price}" onchange="updateCart(${idx}, 'price', this.value)" class="w-24 p-2 border rounded-lg bg-slate-50 text-center text-sm font-bold focus:border-blue-500 outline-none">
                     </div>
-                    <div class="font-black text-slate-800 w-16 text-right shrink-0 text-xs">${formatMoney(totalItem)}</div>
-                    <button onclick="CART.splice(${idx},1);renderCart()" class="text-red-400 hover:text-red-600 shrink-0 p-1"><i data-lucide="x-circle" width="14"></i></button>
+                    <div class="font-black text-slate-800 w-24 text-right shrink-0 text-sm">${formatMoney(totalItem)}</div>
+                    <button onclick="CART.splice(${idx},1);renderCart()" class="text-red-400 hover:text-red-600 shrink-0 p-2 rounded-lg hover:bg-red-50"><i data-lucide="x-circle" width="18"></i></button>
                 </div>`;
             }).join('');
             document.getElementById('pos-total-display').innerText = formatMoney(sub);
@@ -822,6 +826,7 @@
         function clearCart() { 
             CART=[]; 
             CURRENT_OC_ID=null; 
+            document.getElementById('pos-solicitante').value=''; 
             document.getElementById('pos-custom-obs').value=''; 
             document.getElementById('pos-fornecedor').value = '';
             document.getElementById('pos-fornecedor-btn').querySelector('span').innerText = 'Selecione Fornecedor';
@@ -870,7 +875,7 @@
             closePosFornecedorModal();
         }
 
-        // ====== GERAR ORDEM DE COMPRA (PENDENTE) ======
+        // ====== GERAR ORDEM DE COMPRA ======
         async function saveOC() {
             if(!CART.length) return showToast("Adicione itens à O.C.", true);
             const obraId = document.getElementById('pos-obra').value;
@@ -878,11 +883,15 @@
 
             showLoading(true);
             const fornId = document.getElementById('pos-fornecedor').value || null;
+            const solicitante = document.getElementById('pos-solicitante').value;
             const obs = document.getElementById('pos-custom-obs').value;
             const newId = CURRENT_OC_ID || getNextIdNum(STATE.logs);
             const dt = new Date().toISOString();
 
-            if(CURRENT_OC_ID) await sb.from('jsp_logs').delete().eq('id', CURRENT_OC_ID);
+            // Combina o solicitante com a observação para não quebrar tabelas sem essa coluna
+            const obsFinal = `Solicitante: ${solicitante || 'Não informado'} | Obs: ${obs}`;
+
+            if(CURRENT_OC_ID) await sb.from('jsp_logs').delete().eq('id', CURRENT_OC_ID).eq('tipo', 'oc_pendente');
 
             const inserts = CART.map(i => ({
                 id: newId.toString(),
@@ -895,24 +904,24 @@
                 data: dt,
                 vencimento: dt,
                 status_financeiro: 'PENDENTE',
-                observacao: obs
+                observacao: obsFinal
             }));
 
             const { error } = await sb.from('jsp_logs').insert(inserts);
             if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
 
-            clearCart(); showToast("O.C. Gerada!"); await loadData(); navigate('oc');
+            clearCart(); showToast("O.C. Salva com sucesso!"); await loadData(); navigate('oc');
         }
 
-        // ====== ABA O.C. PENDENTES ======
+        // ====== ABA ORDENS DE COMPRA (Mista Pendentes/Confirmadas) ======
         function renderOCList() {
             const list = document.getElementById('oc-list');
             const term = document.getElementById('oc-search').value.toLowerCase();
             
-            // Agrupar OC
+            // Agrupar OC tanto pendentes quanto confirmadas (compras)
             const ocs = {};
-            STATE.logs.filter(l => l.tipo === 'oc_pendente' && l.status_financeiro !== 'CANCELADO').forEach(l => {
-                if(!ocs[l.id]) ocs[l.id] = { id: l.id, data: l.data, itemsLog: [], itemsText: [], total: 0, obra_id: l.obra_id, forn_id: l.fornecedor_id, obs: l.observacao };
+            STATE.logs.filter(l => (l.tipo === 'oc_pendente' || l.tipo === 'compra') && l.status_financeiro !== 'CANCELADO').forEach(l => {
+                if(!ocs[l.id]) ocs[l.id] = { id: l.id, data: l.data, itemsLog: [], itemsText: [], total: 0, obra_id: l.obra_id, forn_id: l.fornecedor_id, obs: l.observacao, tipo: l.tipo };
                 
                 ocs[l.id].itemsLog.push({ name: l.produto_nome, qty: l.quantidade, price: (parseFloat(l.valor_total) / parseFloat(l.quantidade)) });
                 ocs[l.id].itemsText.push(l.produto_nome + ` (x${l.quantidade})`);
@@ -921,7 +930,7 @@
 
             let arr = Object.values(ocs).sort((a,b)=> new Date(b.data) - new Date(a.data));
             
-            if(arr.length === 0) { list.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">Nenhuma O.C. pendente.</td></tr>`; return; }
+            if(arr.length === 0) { list.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">Nenhuma Ordem de Compra encontrada.</td></tr>`; return; }
 
             list.innerHTML = arr.map(o => {
                 const obra = STATE.obras.find(x=>x.id == o.obra_id);
@@ -936,16 +945,25 @@
                         <div class="font-bold text-slate-800">${forn?.nome || 'Fornecedor A Definir'}</div>
                         <div class="text-[10px] text-blue-600 font-bold uppercase mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome || 'Sem Obra'}</div>
                     </td>
+                    <td class="p-4 text-center">
+                        <span class="px-2 py-1 rounded text-[10px] font-bold ${o.tipo === 'compra' ? 'bg-indigo-100 text-indigo-700' : 'bg-orange-100 text-orange-700'}">${o.tipo === 'compra' ? 'CONFIRMADA' : 'PENDENTE'}</span>
+                    </td>
                     <td class="p-4 text-xs text-slate-500 truncate max-w-[200px]" title="${o.itemsText.join(', ')}">${o.itemsText.join(', ')}</td>
                     <td class="p-4 text-right font-bold text-slate-800">${formatMoney(o.total)}</td>
                     <td class="p-4 text-center">
                         <div class="flex justify-center gap-2">
-                            <button onclick="openConfirmOC('${o.id}')" class="p-2 bg-green-600 text-white rounded hover:bg-green-700 shadow-sm font-bold text-xs">Comprar</button>
-                            <button onclick="loadOCToCart('${o.id}')" class="p-2 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Editar Itens"><i data-lucide="edit-3" width="14"></i></button>
+                            ${o.tipo === 'oc_pendente' ? `
+                                <button onclick="openConfirmOC('${o.id}')" class="p-2 bg-green-600 text-white rounded hover:bg-green-700 shadow-sm font-bold text-xs" title="Confirmar Compra">Comprar</button>
+                                <button onclick="loadOCToCart('${o.id}')" class="p-2 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Editar Itens"><i data-lucide="edit-3" width="14"></i></button>
+                            ` : `
+                                <button onclick="estornarCompra('${o.id}')" class="p-2 border border-orange-300 text-orange-600 hover:bg-orange-50 rounded" title="Estornar Confirmação (Voltar para Pendente)"><i data-lucide="rotate-ccw" width="14"></i></button>
+                            `}
                             <button onclick="printOC('${o.id}')" class="p-2 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Imprimir"><i data-lucide="printer" width="14"></i></button>
                             <button onclick="downloadOCPDF('${o.id}')" class="p-2 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Baixar PDF"><i data-lucide="download" width="14"></i></button>
                             <button onclick="abrirModalTransferencia('${o.id}')" class="p-2 border border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded bg-indigo-50/50 font-bold flex items-center gap-1" title="Gerar Orçamento RV Portal"><i data-lucide="send" width="14"></i></button>
-                            <button onclick="deleteOC('${o.id}')" class="p-2 border border-red-200 text-red-500 hover:bg-red-50 rounded" title="Excluir"><i data-lucide="trash-2" width="14"></i></button>
+                            ${o.tipo === 'oc_pendente' ? `
+                                <button onclick="deleteOC('${o.id}')" class="p-2 border border-red-200 text-red-500 hover:bg-red-50 rounded" title="Excluir"><i data-lucide="trash-2" width="14"></i></button>
+                            ` : ''}
                         </div>
                     </td>
                 </tr>`;
@@ -971,11 +989,34 @@
                 document.getElementById('pos-fornecedor-btn').querySelector('span').innerText = 'Selecione Fornecedor';
             }
 
-            document.getElementById('pos-custom-obs').value = itemsLog[0].observacao || '';
+            const fullObs = itemsLog[0].observacao || '';
+            let sol = '';
+            let justObs = fullObs;
+            if(fullObs.includes(' | Obs: ')) {
+                const parts = fullObs.split(' | Obs: ');
+                sol = parts[0].replace('Solicitante: ', '');
+                justObs = parts[1];
+            }
+            
+            document.getElementById('pos-solicitante').value = sol;
+            document.getElementById('pos-custom-obs').value = justObs;
 
             navigate('pos');
             renderCart();
             showToast(`Editando Ordem de Compra #${id}`);
+        }
+
+        async function estornarCompra(id) {
+            if(!confirm("Deseja estornar a confirmação desta O.C.? Ela voltará a ser Pendente e sairá do quadro Financeiro.")) return;
+            showLoading(true);
+            const { error } = await sb.from('jsp_logs').update({ 
+                tipo: 'oc_pendente', 
+                status_financeiro: 'PENDENTE' 
+            }).eq('id', id).eq('tipo', 'compra');
+
+            if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
+            showToast("O.C. estornada para Pendente!"); 
+            loadData();
         }
 
         async function deleteOC(id) {
@@ -1002,7 +1043,6 @@
             if (formPagto === 'PIX') {
                 statusFinal = 'PAGO';
             } else {
-                // Se for Cartão de Crédito, Débito ou Medição, joga 30 dias pra frente e fica PENDENTE
                 dataVenc.setDate(dataVenc.getDate() + 30);
             }
             
@@ -1017,32 +1057,8 @@
             if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
             
             document.getElementById('modal-confirm-oc').classList.add('hidden');
-            showToast("Compra efetivada no fluxo de caixa!");
+            showToast("Compra confirmada e enviada ao Financeiro!");
             loadData();
-        }
-
-        function renderRecentHistory() {
-             const list = document.getElementById('pos-recent-history');
-             const ocs = {};
-             STATE.logs.filter(l => (l.tipo === 'oc_pendente' || l.tipo === 'compra') && l.status_financeiro !== 'CANCELADO').forEach(l => {
-                 if(!ocs[l.id]) ocs[l.id] = { id: l.id, obra_id: l.obra_id, tipo: l.tipo, total: 0 };
-                 ocs[l.id].total += parseFloat(l.valor_total);
-             });
-             const arr = Object.values(ocs).sort((a,b)=>b.id - a.id).slice(0,10);
-             list.innerHTML = arr.map(o => {
-                 const obra = STATE.obras.find(x=>x.id==o.obra_id);
-                 return `<tr class="border-b hover:bg-slate-50">
-                     <td class="p-2 text-xs font-bold text-slate-600">
-                        <div class="flex items-center gap-1">
-                            #${o.id}
-                            <button onclick="printOC('${o.id}')" class="text-slate-400 hover:text-blue-600 transition ml-1" title="Imprimir 2ª Via"><i data-lucide="printer" class="w-3 h-3"></i></button>
-                        </div>
-                        <span class="text-[9px] text-blue-600">${obra?.nome||''}</span>
-                     </td>
-                     <td class="p-2 text-xs text-right font-bold text-slate-800">${formatMoney(o.total)}<br><span class="text-[9px] ${o.tipo==='compra'?'text-indigo-600':'text-orange-500'}">${o.tipo==='compra'?'COMPRADO':'PENDENTE'}</span></td>
-                 </tr>`;
-             }).join('');
-             lucide.createIcons();
         }
 
         // ====== DASHBOARD OBRAS (VISÃO GERAL) ======
@@ -1053,7 +1069,6 @@
             STATE.obras.forEach(o => custosObras[o.id] = 0);
 
             STATE.logs.forEach(l => {
-                // REGRA: Só entra no somatório do Dashboard se estiver com status PAGO.
                 if(l.obra_id && (l.tipo === 'compra' || l.tipo === 'despesa') && l.status_financeiro === 'PAGO') {
                     custosObras[l.obra_id] += parseFloat(l.valor_total);
                 }
@@ -1092,7 +1107,6 @@
             const start = document.getElementById('relatorio-start').value;
             const end = document.getElementById('relatorio-end').value;
 
-            // Relatório só pega o que já foi PAGO
             let registros = STATE.logs.filter(l => String(l.obra_id) === String(obraId) && (l.tipo === 'compra' || l.tipo === 'despesa') && l.status_financeiro === 'PAGO');
 
             if(start) registros = registros.filter(l => new Date(l.data) >= new Date(start));
@@ -1173,7 +1187,6 @@
             listaDesp.innerHTML = despArr.map(l => {
                 const isPago = l.status_financeiro === 'PAGO';
                 
-                // REGRA: SÓ SOMA SE FOR PAGO!
                 if(isPago) totDesp += parseFloat(l.valor_total);
                 
                 const obra = STATE.obras.find(x=>x.id==l.obra_id);
@@ -1204,8 +1217,6 @@
             
             listaRec.innerHTML = recArr.map(l => {
                 const isPago = l.status_financeiro === 'PAGO';
-                
-                // REGRA: SÓ SOMA SE FOR PAGO!
                 if(isPago) totRec += parseFloat(l.valor_total);
 
                 const obra = STATE.obras.find(x=>x.id==l.obra_id);
@@ -1319,6 +1330,13 @@
             const obra = STATE.obras.find(x => x.id == o.obra_id) || { nome: 'Sem Obra', endereco: '-' };
             const forn = STATE.fornecedores.find(x => x.id == o.fornecedor_id) || { nome: 'A Definir', documento: '', telefone: '' };
             
+            let fullObs = o.observacao || 'Nenhuma observação informada.';
+            let justObs = fullObs;
+            if(fullObs.includes(' | Obs: ')) {
+                const parts = fullObs.split(' | Obs: ');
+                justObs = parts[0] + '<br>' + parts[1];
+            }
+
             let total = 0;
             const linhas = logsOC.map((i, index) => {
                 const valor = parseFloat(i.valor_total);
@@ -1391,7 +1409,7 @@
                         <td valign="top">
                             <div style="border: 1px dashed #cbd5e1; padding: 10px; min-height: 50px;">
                                 <div style="font-size: 10px; font-weight: bold; margin-bottom: 5px;">Observações:</div>
-                                <div style="font-size: 10px;">${o.observacao || 'Nenhuma observação informada.'}</div>
+                                <div style="font-size: 10px;">${justObs}</div>
                             </div>
                         </td>
                         <td width="250" valign="top">
@@ -1544,7 +1562,7 @@
             loadData();
         }
 
-// ====== INTEGRAÇÃO RV PORTAL ======
+        // ====== INTEGRAÇÃO RV PORTAL ======
         function abrirModalTransferencia(ocId) {
             document.getElementById('transf-oc-id').value = ocId;
             document.getElementById('transf-senha').value = '';
@@ -1564,8 +1582,8 @@
 
             showLoading(true);
 
-            // 1. Pega os itens da O.C. pendente que já estão carregados na memória do RV Negócios
-            const itensOC = STATE.logs.filter(l => String(l.id) === String(ocId) && l.tipo === 'oc_pendente');
+            // 1. Pega os itens da O.C. que já estão carregados na memória do RV Negócios
+            const itensOC = STATE.logs.filter(l => String(l.id) === String(ocId) && (l.tipo === 'oc_pendente' || l.tipo === 'compra'));
             
             if(!itensOC.length) {
                 showLoading(false);
@@ -1581,14 +1599,13 @@
                     nextId = parseInt(ultimosLogs[0].id) + 1;
                 }
 
-                // A tabela da RV Portal parece usar data em formato de texto. Formatando para DD/MM/AAAA.
                 const dataHojeTexto = new Date().toLocaleDateString('pt-BR');
 
                 // 3. Monta o pacote de dados exatamente como a tabela 'logs' da RV Portal espera
                 const insertsRVPortal = itensOC.map(item => {
                     return {
-                        uid: crypto.randomUUID(),      // Gera o código único na hora
-                        id: nextId,                   // Agrupa todos no mesmo ID de Orçamento
+                        uid: crypto.randomUUID(),      
+                        id: nextId,                    
                         tipo: 'orcamento',
                         produto_nome: item.produto_nome,
                         quantidade: parseFloat(item.quantidade),
@@ -1613,7 +1630,6 @@
 
                 if(erroInsert) throw erroInsert;
 
-                // Sucesso!
                 document.getElementById('modal-transf-portal').classList.add('hidden');
                 showLoading(false);
                 showToast("Sucesso! Orçamento gerado na RV Portal.");
@@ -1623,7 +1639,6 @@
                 showToast("Erro na comunicação: " + erro.message, true);
             }
         }
-      
       
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
