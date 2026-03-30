@@ -748,8 +748,26 @@
             let totDesp = 0; let totRec = 0;
             
             // Despesas
+            // Despesas (AGRUPAMENTO DE O.C.)
             const listaDesp = document.getElementById('fin-expense-history-list');
-            let despArr = logsFilt.filter(l => l.tipo === 'compra' || l.tipo === 'despesa');
+            let despArrRaw = logsFilt.filter(l => l.tipo === 'compra' || l.tipo === 'despesa');
+            
+            // Lógica de agrupamento das O.C.s
+            let despArr = [];
+            let groupedOCs = {};
+            
+            despArrRaw.forEach(l => {
+                if (l.tipo === 'compra') {
+                    if (!groupedOCs[l.id]) {
+                        groupedOCs[l.id] = { ...l, valor_total: 0, is_oc: true };
+                        despArr.push(groupedOCs[l.id]); 
+                    }
+                    groupedOCs[l.id].valor_total += parseFloat(l.valor_total);
+                } else {
+                    despArr.push(l); // Despesas avulsas entram normal
+                }
+            });
+            
             const expSearch = document.getElementById('exp-search').value.toLowerCase();
             const expStatus = document.getElementById('exp-status').value;
             
@@ -761,12 +779,31 @@
                 const isPago = l.status_financeiro === 'PAGO';
                 if(isPago) totDesp += parseFloat(l.valor_total);
                 const obra = STATE.obras.find(x=>x.id==l.obra_id);
+                
+                // Botões dinâmicos dependendo se é OC agrupada ou Despesa Avulsa
+                let btnAcoes = '';
+                if (!isPago) {
+                    btnAcoes = l.is_oc ? `
+                        <button onclick="baixarLogOC('${l.id}')" class="bg-red-600 text-white px-3 py-1.5 rounded font-bold text-xs flex items-center gap-1 shadow-sm"><i data-lucide="check" class="w-3 h-3"></i> Pagar O.C.</button>
+                        <button onclick="excluirLancamentoOC('${l.id}')" class="bg-slate-100 text-slate-500 px-3 py-1.5 rounded"><i data-lucide="trash" class="w-4 h-4"></i></button>
+                    ` : `
+                        <button onclick="baixarLog('${l.uid}')" class="bg-red-600 text-white px-3 py-1.5 rounded font-bold text-xs flex items-center gap-1 shadow-sm"><i data-lucide="check" class="w-3 h-3"></i> Pagar</button>
+                        <button onclick="excluirLancamento('${l.uid}')" class="bg-slate-100 text-slate-500 px-3 py-1.5 rounded"><i data-lucide="trash" class="w-4 h-4"></i></button>
+                    `;
+                } else {
+                    btnAcoes = l.is_oc ? `
+                        <button onclick="estornarBaixaOC('${l.id}')" class="bg-slate-100 text-slate-500 px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1"><i data-lucide="rotate-ccw" class="w-3 h-3"></i> Estornar O.C.</button>
+                    ` : `
+                        <button onclick="estornarBaixa('${l.uid}')" class="bg-slate-100 text-slate-500 px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1"><i data-lucide="rotate-ccw" class="w-3 h-3"></i> Estornar</button>
+                    `;
+                }
+
                 return `
                 <div class="bg-white p-3 rounded-xl border-l-4 ${isPago?'border-l-green-500':'border-l-red-500'} shadow-sm flex flex-col gap-2">
                     <div class="flex justify-between items-start">
                         <div class="flex-1 pr-2">
                             <span class="text-[10px] font-bold text-slate-400">${formatDate(l.vencimento || l.data)}</span>
-                            <div class="font-bold text-slate-800 text-sm leading-tight">${l.tipo==='compra'?`O.C. #${l.id}`: l.produto_nome}</div>
+                            <div class="font-bold text-slate-800 text-sm leading-tight">${l.is_oc ? `O.C. #${l.id} - Consolidada` : l.produto_nome}</div>
                             <div class="text-[10px] text-blue-700 font-bold uppercase mt-1"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Geral'}</div>
                         </div>
                         <div class="text-right">
@@ -775,15 +812,12 @@
                         </div>
                     </div>
                     <div class="flex justify-end gap-2 border-t border-slate-50 pt-2">
-                        ${!isPago ? `
-                            <button onclick="baixarLog('${l.uid}')" class="bg-red-600 text-white px-3 py-1.5 rounded font-bold text-xs flex items-center gap-1 shadow-sm"><i data-lucide="check" class="w-3 h-3"></i> Pagar</button>
-                            <button onclick="excluirLancamento('${l.uid}')" class="bg-slate-100 text-slate-500 px-3 py-1.5 rounded"><i data-lucide="trash" class="w-4 h-4"></i></button>
-                        ` : `
-                            <button onclick="estornarBaixa('${l.uid}')" class="bg-slate-100 text-slate-500 px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1"><i data-lucide="rotate-ccw" class="w-3 h-3"></i> Estornar</button>
-                        `}
+                        ${btnAcoes}
                     </div>
                 </div>`;
             }).join('');
+
+         
 
             // Receitas
             const listaRec = document.getElementById('fin-receivables-list');
@@ -826,6 +860,35 @@
         async function estornarBaixa(uid) { if(confirm("Estornar para PENDENTE?")) { showLoading(true); await sb.from('jsp_logs').update({ status_financeiro: 'PENDENTE' }).eq('uid', uid); showToast("Estornado!"); loadData(); } }
         async function excluirLancamento(uid) { if(confirm("Cancelar lançamento?")) { showLoading(true); await sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }).eq('uid', uid); showToast("Cancelado!"); loadData(); } }
 
+
+        // NOVAS FUNÇÕES PARA BAIXA EM LOTE DE O.C. (Mobile)
+        async function baixarLogOC(id) { 
+            if(confirm("Baixar TODOS os itens desta O.C.?")) { 
+                showLoading(true); 
+                await sb.from('jsp_logs').update({ status_financeiro: 'PAGO' }).eq('id', id).eq('tipo', 'compra'); 
+                showToast("O.C. Paga!"); loadData(); 
+            } 
+        }
+        async function estornarBaixaOC(id) { 
+            if(confirm("Estornar TODOS os itens desta O.C.?")) { 
+                showLoading(true); 
+                await sb.from('jsp_logs').update({ status_financeiro: 'PENDENTE' }).eq('id', id).eq('tipo', 'compra'); 
+                showToast("O.C. Estornada!"); loadData(); 
+            } 
+        }
+        async function excluirLancamentoOC(id) { 
+            if(confirm("Cancelar O.C. do Financeiro?")) { 
+                showLoading(true); 
+                await sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }).eq('id', id).eq('tipo', 'compra'); 
+                showToast("O.C. Cancelada!"); loadData(); 
+            } 
+        }
+
+
+
+
+
+      
         async function saveExpense() {
             const obra_id = document.getElementById('exp-obra').value || null; const desc = document.getElementById('exp-item').value; const val = parseFloat(document.getElementById('exp-cost').value);
             const dt = document.getElementById('exp-date').value || new Date().toISOString(); const status = document.getElementById('exp-status-val').value;
