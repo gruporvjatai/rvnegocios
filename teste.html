@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RV Obras - Teste de Gestão 360</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background-color: #f8fafc; font-family: 'Segoe UI', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Barras de Progresso */
+        .progress-bg { background-color: #e2e8f0; border-radius: 999px; height: 12px; width: 100%; overflow: hidden; }
+        .progress-bar { height: 100%; transition: width 0.5s ease; }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <header class="bg-slate-900 text-white p-4 shadow-md flex justify-between items-center sticky top-0 z-50">
+        <h1 class="font-bold text-lg flex items-center gap-2 text-blue-400"><i data-lucide="hard-hat"></i> RV GESTÃO 360</h1>
+        <select id="global-obra" onchange="loadData()" class="bg-slate-800 border border-slate-700 text-sm p-2 rounded outline-none text-white font-bold">
+            <option value="">Carregando obras...</option>
+        </select>
+    </header>
+
+    <nav class="bg-white border-b shadow-sm flex overflow-x-auto">
+        <button onclick="nav('dash')" id="btn-dash" class="px-6 py-4 font-bold text-blue-600 border-b-2 border-blue-600 whitespace-nowrap"><i data-lucide="layout-dashboard" class="inline w-4 h-4 mr-1"></i> Farol (Dashboard)</button>
+        <button onclick="nav('orcamento')" id="btn-orcamento" class="px-6 py-4 font-bold text-slate-500 hover:text-slate-800 whitespace-nowrap"><i data-lucide="target" class="inline w-4 h-4 mr-1"></i> 1. Orçamento Base</button>
+        <button onclick="nav('compras')" id="btn-compras" class="px-6 py-4 font-bold text-slate-500 hover:text-slate-800 whitespace-nowrap"><i data-lucide="shopping-cart" class="inline w-4 h-4 mr-1"></i> 2. Compras (Trava)</button>
+        <button onclick="nav('maoobra')" id="btn-maoobra" class="px-6 py-4 font-bold text-slate-500 hover:text-slate-800 whitespace-nowrap"><i data-lucide="users" class="inline w-4 h-4 mr-1"></i> 3. Mão de Obra</button>
+        <button onclick="nav('medicao')" id="btn-medicao" class="px-6 py-4 font-bold text-slate-500 hover:text-slate-800 whitespace-nowrap"><i data-lucide="ruler" class="inline w-4 h-4 mr-1"></i> 4. Medição (Faturamento)</button>
+    </nav>
+
+    <div id="toast" class="hidden fixed top-24 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-full shadow-2xl z-50 font-bold text-sm"></div>
+
+    <main class="max-w-6xl mx-auto p-6">
+        
+        <div id="view-dash" class="tab-content active">
+            <h2 class="text-2xl font-black mb-6">Farol da Obra</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border">
+                    <p class="text-xs font-bold text-slate-500 uppercase mb-1">Teto Orçamentário</p>
+                    <h3 id="dash-orcado" class="text-2xl font-black text-slate-800">R$ 0,00</h3>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border">
+                    <p class="text-xs font-bold text-slate-500 uppercase mb-1">Custo Realizado (Compras + M.O.)</p>
+                    <h3 id="dash-gasto" class="text-2xl font-black text-red-600">R$ 0,00</h3>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border">
+                    <p class="text-xs font-bold text-slate-500 uppercase mb-1">Faturado (Medições)</p>
+                    <h3 id="dash-recebido" class="text-2xl font-black text-green-600">R$ 0,00</h3>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border">
+                <h3 class="font-bold text-lg mb-4">Saúde Financeira</h3>
+                <div class="mb-6">
+                    <div class="flex justify-between text-sm font-bold mb-1">
+                        <span class="text-slate-600">Orçamento Consumido</span>
+                        <span id="dash-perc-gasto" class="text-slate-800">0%</span>
+                    </div>
+                    <div class="progress-bg"><div id="bar-gasto" class="progress-bar bg-blue-500" style="width: 0%"></div></div>
+                </div>
+                
+                <hr class="my-6">
+                
+                <h3 class="font-bold text-lg mb-4 text-red-600"><i data-lucide="alert-triangle" class="inline"></i> Alertas de Estouro</h3>
+                <div id="dash-alertas" class="space-y-2">
+                    </div>
+            </div>
+        </div>
+
+        <div id="view-orcamento" class="tab-content">
+            <h2 class="text-2xl font-black mb-2">1. Orçamento Base (O Teto)</h2>
+            <p class="text-slate-500 mb-6">Defina o limite de preço e quantidade para os insumos principais desta obra.</p>
+            
+            <div class="bg-white p-6 rounded-2xl shadow-sm border mb-6 flex gap-4 items-end">
+                <div class="flex-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase">Insumo/Serviço</label>
+                    <input type="text" id="orc-insumo" placeholder="Ex: Cimento, Aço, Pedreiro..." class="w-full p-3 border rounded-xl bg-slate-50">
+                </div>
+                <div class="w-32">
+                    <label class="text-xs font-bold text-slate-500 uppercase">Qtd Total</label>
+                    <input type="number" id="orc-qtd" placeholder="0" class="w-full p-3 border rounded-xl bg-slate-50">
+                </div>
+                <div class="w-48">
+                    <label class="text-xs font-bold text-slate-500 uppercase">Preço Máx. Unit (R$)</label>
+                    <input type="number" id="orc-preco" placeholder="0,00" class="w-full p-3 border rounded-xl bg-slate-50">
+                </div>
+                <button onclick="salvarOrcamento()" class="bg-blue-600 text-white font-bold p-3 rounded-xl hover:bg-blue-700">Adicionar à Curva ABC</button>
+            </div>
+
+            <table class="w-full bg-white rounded-2xl shadow-sm border text-left overflow-hidden">
+                <thead class="bg-slate-50">
+                    <tr><th class="p-4 font-bold text-slate-600">Insumo Base</th><th class="p-4 font-bold text-slate-600">Qtd Prevista</th><th class="p-4 font-bold text-slate-600">Teto Unitário</th><th class="p-4 font-bold text-slate-600">Teto Total</th></tr>
+                </thead>
+                <tbody id="lista-orcamento" class="divide-y"></tbody>
+            </table>
+        </div>
+
+        <div id="view-compras" class="tab-content">
+            <h2 class="text-2xl font-black mb-2">2. Compras (A Trava)</h2>
+            <p class="text-slate-500 mb-6">O sistema vai checar o preço lançado contra o Orçamento Base.</p>
+            
+            <div class="bg-white p-6 rounded-2xl shadow-sm border mb-6 flex gap-4 items-end">
+                <div class="flex-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase">Qual Insumo?</label>
+                    <select id="compra-insumo" class="w-full p-3 border rounded-xl bg-slate-50 font-bold text-slate-700"></select>
+                </div>
+                <div class="w-32">
+                    <label class="text-xs font-bold text-slate-500 uppercase">Qtd Comprada</label>
+                    <input type="number" id="compra-qtd" placeholder="0" class="w-full p-3 border rounded-xl bg-slate-50">
+                </div>
+                <div class="w-48">
+                    <label class="text-xs font-bold text-red-500 uppercase">Preço Negociado (R$)</label>
+                    <input type="number" id="compra-preco" placeholder="0,00" class="w-full p-3 border rounded-xl bg-slate-50 text-red-600 font-bold">
+                </div>
+                <button onclick="lancarCompra()" class="bg-slate-800 text-white font-bold p-3 rounded-xl hover:bg-slate-900">Lançar Compra</button>
+            </div>
+
+            <div id="alerta-trava" class="hidden bg-red-100 border-l-4 border-red-500 p-4 mb-6 rounded-r-xl">
+                <h3 class="font-bold text-red-800 flex items-center gap-2"><i data-lucide="shield-alert"></i> ATENÇÃO: ESTOURO DE ORÇAMENTO!</h3>
+                <p id="alerta-trava-msg" class="text-sm text-red-700 mt-1"></p>
+            </div>
+
+            <table class="w-full bg-white rounded-2xl shadow-sm border text-left overflow-hidden">
+                <thead class="bg-slate-50"><tr><th class="p-4 font-bold text-slate-600">Data</th><th class="p-4 font-bold text-slate-600">Item Comprado</th><th class="p-4 font-bold text-slate-600">Qtd</th><th class="p-4 font-bold text-slate-600">Preço Pago</th><th class="p-4 font-bold text-slate-600">Total</th></tr></thead>
+                <tbody id="lista-compras" class="divide-y"></tbody>
+            </table>
+        </div>
+
+        <div id="view-maoobra" class="tab-content">
+            <h2 class="text-2xl font-black mb-2">3. Mão de Obra (O Ralo)</h2>
+            <p class="text-slate-500 mb-6">Pagamentos diretos de equipe que drenam o caixa da obra se houver atraso físico.</p>
+            
+            <div class="bg-white p-6 rounded-2xl shadow-sm border mb-6 flex gap-4 items-end">
+                <div class="w-1/3">
+                    <label class="text-xs font-bold text-slate-500 uppercase">Profissional / Equipe</label>
+                    <input type="text" id="mo-nome" placeholder="Ex: Mestre de Obras, Pintor..." class="w-full p-3 border rounded-xl bg-slate-50">
+                </div>
+                <div class="w-1/3">
+                    <label class="text-xs font-bold text-slate-500 uppercase">Etapa (Apropriação)</label>
+                    <select id="mo-etapa" class="w-full p-3 border rounded-xl bg-slate-50">
+                        <option value="Fundação">Fundação</option>
+                        <option value="Alvenaria">Alvenaria</option>
+                        <option value="Acabamento">Acabamento</option>
+                    </select>
+                </div>
+                <div class="w-1/3">
+                    <label class="text-xs font-bold text-slate-500 uppercase">Valor Pago (R$)</label>
+                    <input type="number" id="mo-valor" placeholder="0,00" class="w-full p-3 border rounded-xl bg-slate-50 font-bold">
+                </div>
+                <button onclick="lancarMaoObra()" class="bg-orange-500 text-white font-bold p-3 rounded-xl hover:bg-orange-600">Pagar Equipe</button>
+            </div>
+            
+            <table class="w-full bg-white rounded-2xl shadow-sm border text-left overflow-hidden">
+                <thead class="bg-slate-50"><tr><th class="p-4 font-bold text-slate-600">Data Pgto</th><th class="p-4 font-bold text-slate-600">Equipe</th><th class="p-4 font-bold text-slate-600">Etapa</th><th class="p-4 font-bold text-slate-600">Valor Pago</th></tr></thead>
+                <tbody id="lista-maoobra" class="divide-y"></tbody>
+            </table>
+        </div>
+
+        <div id="view-medicao" class="tab-content">
+            <h2 class="text-2xl font-black mb-2">4. Medição (O Faturamento)</h2>
+            <p class="text-slate-500 mb-6">Avalie o avanço físico da obra para gerar a cobrança ao cliente.</p>
+            
+            <div class="bg-white p-6 rounded-2xl shadow-sm border mb-6 flex gap-4 items-end">
+                <div class="flex-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase">Referência (Ex: BM 13 - Nov/2025)</label>
+                    <input type="text" id="med-ref" placeholder="Nome da medição" class="w-full p-3 border rounded-xl bg-slate-50">
+                </div>
+                <div class="w-32">
+                    <label class="text-xs font-bold text-slate-500 uppercase">Avanço (%)</label>
+                    <input type="number" id="med-perc" placeholder="0%" class="w-full p-3 border rounded-xl bg-slate-50 text-center font-bold text-blue-600">
+                </div>
+                <div class="w-48">
+                    <label class="text-xs font-bold text-slate-500 uppercase">Valor Aprovado (R$)</label>
+                    <input type="number" id="med-valor" placeholder="0,00" class="w-full p-3 border rounded-xl bg-slate-50 font-bold text-green-600">
+                </div>
+                <button onclick="lancarMedicao()" class="bg-green-600 text-white font-bold p-3 rounded-xl hover:bg-green-700">Faturar Medição</button>
+            </div>
+            
+            <table class="w-full bg-white rounded-2xl shadow-sm border text-left overflow-hidden">
+                <thead class="bg-slate-50"><tr><th class="p-4 font-bold text-slate-600">Data</th><th class="p-4 font-bold text-slate-600">Referência do Boletim</th><th class="p-4 text-center font-bold text-slate-600">Avanço Físico</th><th class="p-4 font-bold text-slate-600">Faturado (R$)</th></tr></thead>
+                <tbody id="lista-medicao" class="divide-y"></tbody>
+            </table>
+        </div>
+
+    </main>
+
+    <script>
+        // CONEXÃO SUPABASE
+        const supabaseUrl = 'https://lyieiqhkspbowsrlngvn.supabase.co'; 
+        const supabaseKey = 'sb_publishable_B2a4vA22qf4XGcrxPDRAaw_13rW51uI';
+        const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        let DB_LOGS = [];
+        let DB_OBRAS = [];
+
+        window.onload = async () => {
+            lucide.createIcons();
+            const { data: obras } = await sb.from('jsp_obras').select('*');
+            DB_OBRAS = obras || [];
+            
+            const selectObra = document.getElementById('global-obra');
+            if(DB_OBRAS.length > 0) {
+                selectObra.innerHTML = DB_OBRAS.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
+                await loadData();
+            } else {
+                selectObra.innerHTML = '<option>Nenhuma obra no banco.</option>';
+            }
+        };
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg; t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 3500);
+        }
+
+        function nav(id) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-' + id).classList.add('active');
+            
+            document.querySelectorAll('nav button').forEach(btn => {
+                btn.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
+                btn.classList.add('text-slate-500');
+            });
+            const btn = document.getElementById('btn-' + id);
+            btn.classList.remove('text-slate-500');
+            btn.classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
+        }
+
+        // CARREGAR DADOS E PROCESSAR LÓGICA
+        async function loadData() {
+            const obraId = document.getElementById('global-obra').value;
+            if(!obraId) return;
+
+            const { data: logs } = await sb.from('jsp_logs').select('*').eq('obra_id', obraId);
+            DB_LOGS = logs || [];
+
+            renderOrcamento();
+            renderCompras();
+            renderMaoObra();
+            renderMedicoes();
+            updateDashboard();
+        }
+
+        function getNextIdNum() {
+            let max = 0; DB_LOGS.forEach(l => { if(parseInt(l.id) > max) max = parseInt(l.id); }); return (max + 1).toString();
+        }
+
+        // --- ORÇAMENTO ---
+        function renderOrcamento() {
+            const orcamentos = DB_LOGS.filter(l => l.tipo === 'orcamento');
+            const tbody = document.getElementById('lista-orcamento');
+            const selectCompra = document.getElementById('compra-insumo');
+            
+            if(orcamentos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400">Nenhum limite orçamentário definido.</td></tr>';
+                selectCompra.innerHTML = '<option value="">Cadastre o orçamento base primeiro...</option>';
+                return;
+            }
+
+            tbody.innerHTML = orcamentos.map(o => `
+                <tr class="hover:bg-slate-50 border-b">
+                    <td class="p-4 font-bold text-slate-800">${o.produto_nome}</td>
+                    <td class="p-4">${o.quantidade} un.</td>
+                    <td class="p-4 font-bold text-indigo-600">R$ ${parseFloat(o.valor_total).toFixed(2)}</td>
+                    <td class="p-4 font-black text-slate-600">R$ ${(parseFloat(o.quantidade) * parseFloat(o.valor_total)).toFixed(2)}</td>
+                </tr>
+            `).join('');
+
+            selectCompra.innerHTML = '<option value="">Selecione...</option>' + orcamentos.map(o => `<option value="${o.produto_nome}">[Orçado: R$ ${parseFloat(o.valor_total).toFixed(2)}] - ${o.produto_nome}</option>`).join('');
+        }
+
+        async function salvarOrcamento() {
+            const obra_id = document.getElementById('global-obra').value;
+            const insumo = document.getElementById('orc-insumo').value;
+            const qtd = parseFloat(document.getElementById('orc-qtd').value);
+            const preco = parseFloat(document.getElementById('orc-preco').value);
+
+            if(!insumo || !qtd || !preco) return showToast("Preencha todos os campos do orçamento!");
+
+            // Usa 'valor_total' para guardar o PREÇO UNITÁRIO orçado (truque para usar a mesma tabela)
+            await sb.from('jsp_logs').insert([{ id: getNextIdNum(), obra_id: obra_id, tipo: 'orcamento', produto_nome: insumo, quantidade: qtd, valor_total: preco }]);
+            
+            document.getElementById('orc-insumo').value = ''; document.getElementById('orc-qtd').value = ''; document.getElementById('orc-preco').value = '';
+            showToast("Teto cadastrado!"); loadData();
+        }
+
+        // --- COMPRAS (TRAVA) ---
+        function renderCompras() {
+            const compras = DB_LOGS.filter(l => l.tipo === 'compra' && l.status_financeiro !== 'CANCELADO');
+            const tbody = document.getElementById('lista-compras');
+            if(compras.length === 0) return tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-slate-400">Nenhuma compra registrada.</td></tr>';
+
+            tbody.innerHTML = compras.map(c => {
+                const precoUnit = parseFloat(c.valor_total) / parseFloat(c.quantidade);
+                return `
+                <tr class="hover:bg-slate-50 border-b">
+                    <td class="p-4 text-sm text-slate-500">${new Date(c.data).toLocaleDateString('pt-BR')}</td>
+                    <td class="p-4 font-bold text-slate-800">${c.produto_nome}</td>
+                    <td class="p-4">${c.quantidade}</td>
+                    <td class="p-4 font-bold text-red-600">R$ ${precoUnit.toFixed(2)}</td>
+                    <td class="p-4 font-black text-slate-600">R$ ${parseFloat(c.valor_total).toFixed(2)}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        async function lancarCompra() {
+            const obra_id = document.getElementById('global-obra').value;
+            const insumo = document.getElementById('compra-insumo').value;
+            const qtd = parseFloat(document.getElementById('compra-qtd').value);
+            const precoPago = parseFloat(document.getElementById('compra-preco').value);
+
+            if(!insumo || !qtd || !precoPago) return showToast("Preencha todos os dados da compra!");
+
+            // TRAVA DE ORÇAMENTO
+            const orcamentoBase = DB_LOGS.find(l => l.tipo === 'orcamento' && l.produto_nome === insumo);
+            if(orcamentoBase) {
+                const precoTeto = parseFloat(orcamentoBase.valor_total);
+                if(precoPago > precoTeto) {
+                    document.getElementById('alerta-trava').classList.remove('hidden');
+                    document.getElementById('alerta-trava-msg').innerText = `Você está tentando pagar R$ ${precoPago.toFixed(2)} no ${insumo}, mas o teto da engenharia é R$ ${precoTeto.toFixed(2)}. Margem comprometida!`;
+                    // Em um sistema real, aqui você retornaria e bloquearia a compra. Pro teste, vamos avisar mas deixar passar pra ver o farol.
+                } else {
+                    document.getElementById('alerta-trava').classList.add('hidden');
+                }
+            }
+
+            const total = qtd * precoPago;
+            await sb.from('jsp_logs').insert([{ id: getNextIdNum(), obra_id: obra_id, tipo: 'compra', produto_nome: insumo, quantidade: qtd, valor_total: total, data: new Date().toISOString(), status_financeiro: 'PAGO' }]);
+            
+            document.getElementById('compra-qtd').value = ''; document.getElementById('compra-preco').value = '';
+            showToast("Compra lançada!"); loadData();
+        }
+
+        // --- MÃO DE OBRA ---
+        function renderMaoObra() {
+            const mo = DB_LOGS.filter(l => l.tipo === 'mao_de_obra');
+            const tbody = document.getElementById('lista-maoobra');
+            if(mo.length === 0) return tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400">Nenhum pagamento de equipe lançado.</td></tr>';
+
+            tbody.innerHTML = mo.map(m => `
+                <tr class="hover:bg-slate-50 border-b">
+                    <td class="p-4 text-sm text-slate-500">${new Date(m.data).toLocaleDateString('pt-BR')}</td>
+                    <td class="p-4 font-bold text-slate-800">${m.produto_nome}</td>
+                    <td class="p-4 text-orange-600 font-bold text-xs uppercase">${m.observacao || 'Geral'}</td>
+                    <td class="p-4 font-black text-red-600">R$ ${parseFloat(m.valor_total).toFixed(2)}</td>
+                </tr>`).join('');
+        }
+
+        async function lancarMaoObra() {
+            const obra_id = document.getElementById('global-obra').value;
+            const nome = document.getElementById('mo-nome').value;
+            const etapa = document.getElementById('mo-etapa').value;
+            const valor = parseFloat(document.getElementById('mo-valor').value);
+
+            if(!nome || !valor) return showToast("Preencha equipe e valor!");
+
+            await sb.from('jsp_logs').insert([{ id: getNextIdNum(), obra_id: obra_id, tipo: 'mao_de_obra', produto_nome: nome, observacao: etapa, valor_total: valor, data: new Date().toISOString() }]);
+            
+            document.getElementById('mo-nome').value = ''; document.getElementById('mo-valor').value = '';
+            showToast("Pagamento registrado!"); loadData();
+        }
+
+        // --- MEDIÇÃO ---
+        function renderMedicoes() {
+            const meds = DB_LOGS.filter(l => l.tipo === 'medicao');
+            const tbody = document.getElementById('lista-medicao');
+            if(meds.length === 0) return tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400">Nenhuma medição faturada ainda.</td></tr>';
+
+            tbody.innerHTML = meds.map(m => `
+                <tr class="hover:bg-slate-50 border-b">
+                    <td class="p-4 text-sm text-slate-500">${new Date(m.data).toLocaleDateString('pt-BR')}</td>
+                    <td class="p-4 font-bold text-slate-800">${m.produto_nome}</td>
+                    <td class="p-4 text-center font-black text-blue-600">${m.quantidade}%</td>
+                    <td class="p-4 font-black text-green-600">R$ ${parseFloat(m.valor_total).toFixed(2)}</td>
+                </tr>`).join('');
+        }
+
+        async function lancarMedicao() {
+            const obra_id = document.getElementById('global-obra').value;
+            const ref = document.getElementById('med-ref').value;
+            const perc = parseFloat(document.getElementById('med-perc').value);
+            const valor = parseFloat(document.getElementById('med-valor').value);
+
+            if(!ref || !perc || !valor) return showToast("Preencha todos os dados da medição!");
+
+            await sb.from('jsp_logs').insert([{ id: getNextIdNum(), obra_id: obra_id, tipo: 'medicao', produto_nome: ref, quantidade: perc, valor_total: valor, data: new Date().toISOString() }]);
+            
+            document.getElementById('med-ref').value = ''; document.getElementById('med-perc').value = ''; document.getElementById('med-valor').value = '';
+            showToast("Faturamento registrado!"); loadData();
+        }
+
+        // --- DASHBOARD (CÁLCULOS) ---
+        function updateDashboard() {
+            let orcado = 0; let gasto = 0; let recebido = 0; let alertasHtml = '';
+
+            // Calc Teto
+            DB_LOGS.filter(l => l.tipo === 'orcamento').forEach(o => { orcado += (parseFloat(o.quantidade) * parseFloat(o.valor_total)); });
+            
+            // Calc Gasto Real e Alertas
+            const agrupamentoGasto = {};
+            DB_LOGS.filter(l => l.tipo === 'compra' || l.tipo === 'mao_de_obra').forEach(c => { 
+                const val = parseFloat(c.valor_total);
+                gasto += val; 
+                if(c.tipo === 'compra') {
+                    if(!agrupamentoGasto[c.produto_nome]) agrupamentoGasto[c.produto_nome] = 0;
+                    agrupamentoGasto[c.produto_nome] += val;
+                }
+            });
+
+            // Gerar Alertas se o que gastou num item foi maior que o previsto pro item todo
+            DB_LOGS.filter(l => l.tipo === 'orcamento').forEach(o => {
+                const tetoItem = parseFloat(o.quantidade) * parseFloat(o.valor_total);
+                const gastoItem = agrupamentoGasto[o.produto_nome] || 0;
+                if(gastoItem > tetoItem) {
+                    alertasHtml += `<div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 font-bold">Estouro em ${o.produto_nome}: Previsto R$ ${tetoItem.toFixed(2)} | Gasto R$ ${gastoItem.toFixed(2)}</div>`;
+                }
+            });
+
+            // Calc Faturamento
+            DB_LOGS.filter(l => l.tipo === 'medicao').forEach(m => { recebido += parseFloat(m.valor_total); });
+
+            // Atualiza HTML
+            document.getElementById('dash-orcado').innerText = 'R$ ' + orcado.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            document.getElementById('dash-gasto').innerText = 'R$ ' + gasto.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            document.getElementById('dash-recebido').innerText = 'R$ ' + recebido.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+
+            if(!alertasHtml) alertasHtml = '<p class="text-sm text-green-600 font-bold"><i data-lucide="check-circle" class="inline"></i> Nenhum estouro orçamentário detectado. Tudo sob controle.</p>';
+            document.getElementById('dash-alertas').innerHTML = alertasHtml;
+
+            // Barra de Progresso Financeira
+            let percGasto = orcado > 0 ? (gasto / orcado) * 100 : 0;
+            document.getElementById('dash-perc-gasto').innerText = percGasto.toFixed(1) + '%';
+            
+            const bar = document.getElementById('bar-gasto');
+            bar.style.width = Math.min(percGasto, 100) + '%';
+            if(percGasto > 100) bar.className = 'progress-bar bg-red-600';
+            else if(percGasto > 80) bar.className = 'progress-bar bg-orange-500';
+            else bar.className = 'progress-bar bg-blue-500';
+            
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
