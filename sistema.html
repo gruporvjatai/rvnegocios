@@ -1149,8 +1149,26 @@
             }
 
             // --- CONTAS A PAGAR ---
+            // --- CONTAS A PAGAR ---
             const listaDesp = document.getElementById('fin-expense-history-list');
-            let despArr = logsFilt.filter(l => l.tipo === 'compra' || l.tipo === 'despesa');
+            let despArrRaw = logsFilt.filter(l => l.tipo === 'compra' || l.tipo === 'despesa');
+            
+            // AGRUPAR ITENS DE O.C. PARA EXIBIR COMO UMA ÚNICA DESPESA
+            let despArr = [];
+            let groupedOCs = {};
+            
+            despArrRaw.forEach(l => {
+                if (l.tipo === 'compra') {
+                    if (!groupedOCs[l.id]) {
+                        groupedOCs[l.id] = { ...l, valor_total: 0, is_oc: true };
+                        despArr.push(groupedOCs[l.id]); // Adiciona a referência agrupada
+                    }
+                    // Soma os valores de cada item na O.C. principal
+                    groupedOCs[l.id].valor_total += parseFloat(l.valor_total);
+                } else {
+                    despArr.push(l); // Despesas normais entram direto
+                }
+            });
             
             const expSearch = document.getElementById('exp-search').value.toLowerCase();
             const expStatus = document.getElementById('exp-status').value;
@@ -1165,22 +1183,37 @@
                 if(isPago) totDesp += parseFloat(l.valor_total);
                 
                 const obra = STATE.obras.find(x=>x.id==l.obra_id);
+                
+                // Botões dinâmicos dependendo se é uma O.C. agrupada ou Despesa Simples
+                let btnAcoes = '';
+                if (!isPago) {
+                    btnAcoes = l.is_oc ? `
+                        <button onclick="baixarLogOC('${l.id}')" class="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded shadow flex items-center gap-1 text-[10px] font-bold" title="Pagar O.C. Completa"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> BAIXAR O.C.</button>
+                        <button onclick="excluirLancamentoOC('${l.id}')" class="bg-slate-200 hover:bg-slate-300 text-slate-600 p-1.5 rounded shadow" title="Cancelar Lançamento"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>
+                    ` : `
+                        <button onclick="baixarLog('${l.uid}')" class="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded shadow flex items-center gap-1 text-[10px] font-bold" title="Baixar Despesa"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> BAIXAR</button>
+                        <button onclick="excluirLancamento('${l.uid}')" class="bg-slate-200 hover:bg-slate-300 text-slate-600 p-1.5 rounded shadow" title="Cancelar Lançamento"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>
+                    `;
+                } else {
+                    btnAcoes = l.is_oc ? `
+                        <span class="text-[10px] font-bold text-green-700 bg-green-200 px-2 py-1 rounded">PAGO</span>
+                        <button onclick="estornarBaixaOC('${l.id}')" class="bg-slate-200 hover:bg-slate-300 text-slate-600 p-1.5 rounded shadow" title="Estornar Baixa da O.C."><i data-lucide="rotate-ccw" class="w-3 h-3"></i></button>
+                    ` : `
+                        <span class="text-[10px] font-bold text-green-700 bg-green-200 px-2 py-1 rounded">PAGO</span>
+                        <button onclick="estornarBaixa('${l.uid}')" class="bg-slate-200 hover:bg-slate-300 text-slate-600 p-1.5 rounded shadow" title="Estornar Baixa"><i data-lucide="rotate-ccw" class="w-3 h-3"></i></button>
+                    `;
+                }
+
                 return `<tr class="border-b ${isPago?'bg-green-50':'bg-red-50/20'} transition">
                     <td class="p-3 text-xs font-bold text-slate-700">${formatDate(l.vencimento || l.data)}</td>
                     <td class="p-3">
-                        <div class="font-bold text-slate-800 text-xs">${l.tipo==='compra'?`O.C. #${l.id} - Itens Múltiplos`: l.produto_nome}</div>
+                        <div class="font-bold text-slate-800 text-xs">${l.is_oc ? `O.C. #${l.id} - Compra Consolidada` : l.produto_nome}</div>
                         <div class="text-[10px] text-blue-700 font-bold"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Geral'}</div>
                         ${!isPago ? `<div class="text-[9px] text-slate-500 uppercase mt-0.5">Pagamento via: ${l.forma_pagamento || '-'}</div>` : ''}
                     </td>
                     <td class="p-3 font-bold text-sm ${isPago?'text-slate-500':'text-red-600'}">${formatMoney(l.valor_total)}</td>
                     <td class="p-3 text-right flex items-center justify-end gap-1">
-                        ${!isPago ? `
-                            <button onclick="baixarLog('${l.uid}')" class="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded shadow flex items-center gap-1 text-[10px] font-bold" title="Baixar / Pagar"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> BAIXAR</button>
-                            <button onclick="excluirLancamento('${l.uid}')" class="bg-slate-200 hover:bg-slate-300 text-slate-600 p-1.5 rounded shadow" title="Cancelar Lançamento"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>
-                        ` : `
-                            <span class="text-[10px] font-bold text-green-700 bg-green-200 px-2 py-1 rounded">PAGO</span>
-                            <button onclick="estornarBaixa('${l.uid}')" class="bg-slate-200 hover:bg-slate-300 text-slate-600 p-1.5 rounded shadow" title="Estornar Baixa"><i data-lucide="rotate-ccw" class="w-3 h-3"></i></button>
-                        `}
+                        ${btnAcoes}
                     </td>
                 </tr>`;
             }).join('');
@@ -1281,6 +1314,32 @@
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
             showToast("Lançamento Cancelado!"); loadData();
         }
+
+
+        async function baixarLogOC(id) {
+            if(!confirm("Confirmar a baixa financeira desta O.C.? Todos os itens vinculados serão marcados como pagos.")) return;
+            showLoading(true);
+            const {error} = await sb.from('jsp_logs').update({ status_financeiro: 'PAGO' }).eq('id', id).eq('tipo', 'compra');
+            if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
+            showToast("O.C. Paga com sucesso!"); loadData();
+        }
+
+        async function estornarBaixaOC(id) {
+            if(!confirm("Tem certeza que deseja ESTORNAR a baixa de toda esta O.C.?")) return;
+            showLoading(true);
+            const {error} = await sb.from('jsp_logs').update({ status_financeiro: 'PENDENTE' }).eq('id', id).eq('tipo', 'compra');
+            if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
+            showToast("Baixa da O.C. estornada!"); loadData();
+        }
+
+        async function excluirLancamentoOC(id) {
+            if(!confirm("Deseja CANCELAR esta O.C. no Financeiro? Ela será removida das pendências.")) return;
+            showLoading(true);
+            const {error} = await sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }).eq('id', id).eq('tipo', 'compra');
+            if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
+            showToast("O.C. Cancelada no Financeiro!"); loadData();
+        }
+      
 
         async function saveExpense() {
             const obra_id = document.getElementById('exp-obra').value || null;
