@@ -10,6 +10,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <script>
+        // Se detectar que a tela é de celular ou tablet, joga direto pro mobile.html
         if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 800) {
           window.location.replace("mobile.html");
         }
@@ -33,6 +34,7 @@
       .active-section { display: block !important; animation: fadeIn 0.3s ease-in-out; }
       @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
       
+      /* Loader Azul */
       .loader { border: 3px solid #e2e8f0; border-top: 3px solid #1d4ed8; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
       @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
       .btn-action { transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: bold; border-radius: 8px; }
@@ -179,11 +181,9 @@
             </div>
         </div>
         
-        <div id="fin-cards-container" class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
-            </div>
+        <div id="fin-cards-container" class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-6"></div>
         
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            
             <div class="bg-white rounded-xl border shadow-sm flex flex-col h-[650px]">
                 <div class="p-4 border-b bg-slate-50 rounded-t-xl flex justify-between items-center">
                     <h3 class="font-bold text-slate-700 flex items-center gap-2"><i data-lucide="arrow-up-circle" class="w-5 h-5 text-red-500"></i> Custos / Pagamentos</h3>
@@ -239,7 +239,6 @@
                     </table>
                 </div>
             </div>
-
         </div>
       </div>
 
@@ -585,6 +584,29 @@
         </form>
       </div>
 
+      <div id="modal-transf-portal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm border-t-4 border-t-indigo-600">
+            <h3 class="font-bold text-lg mb-2 text-slate-800 flex items-center gap-2">
+                <i data-lucide="send" class="text-indigo-600"></i> Enviar para RV Portal
+            </h3>
+            <p class="text-xs text-slate-500 mb-4">Esta ação vai gerar um orçamento automaticamente no sistema da RV Portal. Digite a senha de autorização:</p>
+            
+            <input type="hidden" id="transf-oc-id">
+            
+            <div class="space-y-3">
+                <div>
+                    <input type="password" id="transf-senha" placeholder="********" class="w-full p-3 border-2 rounded-lg outline-none focus:border-indigo-600 font-bold text-center tracking-widest text-lg">
+                </div>
+            </div>
+            <div class="flex gap-2 mt-6">
+                <button type="button" onclick="document.getElementById('modal-transf-portal').classList.add('hidden')" class="flex-1 p-3 bg-slate-200 text-slate-700 rounded-lg font-bold hover:bg-slate-300">Cancelar</button>
+                <button onclick="executarTransferenciaPortal()" class="flex-1 p-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 shadow-md flex items-center justify-center gap-2">
+                    <i data-lucide="arrow-right-circle" class="w-4 h-4"></i> Transferir
+                </button>
+            </div>
+        </div>
+      </div>
+
     </main>
 
     <div id="print-area" class="print-only"></div>
@@ -711,7 +733,7 @@
         async function saveObra(e) {
             e.preventDefault(); showLoading(true);
             const isNew = !document.getElementById('obra-id').value;
-            // AQUI É A PARTE DO SALDO/CONTRATO NOVO
+            
             const payload = {
                 nome: document.getElementById('obra-name').value,
                 endereco: document.getElementById('obra-addr').value,
@@ -742,10 +764,7 @@
             }
         }
 
-        // ====== CRUD FORNECEDORES ====== (inalterado)
-        async function saveFornecedor(e) { /*...*/ }
-        function openFornecedorForm(id) { /*...*/ }
-        function renderFornecedores() { /*...*/ }
+        // ====== CRUD FORNECEDORES ======
         async function saveFornecedor(e) {
             e.preventDefault(); showLoading(true);
             const isNew = !document.getElementById('forn-id').value;
@@ -783,7 +802,7 @@
             lucide.createIcons();
         }
 
-        // ====== CARRINHO (NOVA O.C.) ====== (inalterado)
+        // ====== CARRINHO (NOVA O.C.) ======
         function renderCart() {
             const box = document.getElementById('pos-cart-items');
             if(!CART.length) { 
@@ -899,7 +918,7 @@
             clearCart(); showToast("O.C. Salva com sucesso!"); await loadData(); navigate('oc');
         }
 
-        // Aba OC
+        // ====== Aba OC ======
         function renderOCList() {
             const list = document.getElementById('oc-list');
             const term = document.getElementById('oc-search').value.toLowerCase();
@@ -944,6 +963,8 @@
                                 <button onclick="estornarCompra('${o.id}')" class="p-2 border border-orange-300 text-orange-600 hover:bg-orange-50 rounded" title="Estornar Confirmação (Voltar para Pendente)"><i data-lucide="rotate-ccw" width="14"></i></button>
                             `}
                             <button onclick="printOC('${o.id}')" class="p-2 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Imprimir"><i data-lucide="printer" width="14"></i></button>
+                            <button onclick="downloadOCPDF('${o.id}')" class="p-2 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Baixar PDF"><i data-lucide="download" width="14"></i></button>
+                            <button onclick="abrirModalTransferencia('${o.id}')" class="p-2 border border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded bg-indigo-50/50 font-bold flex items-center gap-1" title="Gerar Orçamento RV Portal"><i data-lucide="send" width="14"></i></button>
                             ${o.tipo === 'oc_pendente' ? `
                                 <button onclick="deleteOC('${o.id}')" class="p-2 border border-red-200 text-red-500 hover:bg-red-50 rounded" title="Excluir"><i data-lucide="trash-2" width="14"></i></button>
                             ` : ''}
@@ -1043,7 +1064,6 @@
             showToast("Compra confirmada e enviada ao Financeiro!");
             loadData();
         }
-
 
         // ====== DASHBOARD OBRAS (ATUALIZADO PARA LÓGICA DE CONTRATO MUNICIPAL) ======
         function renderDashboard() {
@@ -1197,7 +1217,6 @@
             // ATUALIZA OS CARDS DO FINANCEIRO
             const cardsContainer = document.getElementById('fin-cards-container');
             if(obraFilter) {
-                // Modo Obra Específica
                 cardsContainer.innerHTML = `
                     <div class="bg-white p-4 rounded-xl border-l-4 border-l-slate-800 shadow-sm">
                         <p class="text-slate-500 text-xs font-bold uppercase">Saldo Contrato</p>
@@ -1221,7 +1240,6 @@
                     </div>
                 `;
             } else {
-                // Modo Geral
                 cardsContainer.innerHTML = `
                     <div class="bg-white p-4 rounded-xl border-l-4 border-l-red-500 shadow-sm md:col-span-1">
                         <p class="text-slate-500 text-xs font-bold uppercase">Total de Custos GERAIS</p>
@@ -1274,6 +1292,7 @@
             if(!desc || isNaN(val)) return showToast("Preencha descrição e valor!", true);
             showLoading(true);
 
+            // ERRO CORRIGIDO AQUI - Faltava o ']' antes do ')'
             const {error} = await sb.from('jsp_logs').insert([{
                 id: getNextIdNum(STATE.logs).toString(),
                 obra_id: obra_id ? parseInt(obra_id) : null,
@@ -1282,7 +1301,8 @@
                 valor_total: val,
                 data: dt, vencimento: dt,
                 status_financeiro: status
-            });
+            }]);
+            
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
             
             document.getElementById('modal-expense').classList.add('hidden');
@@ -1316,8 +1336,7 @@
             showToast("Medição Salva!"); loadData();
         }
 
-
-        // ====== GERADOR DE RELATÓRIOS (A MÁGICA) ======
+        // ====== GERADOR DE RELATÓRIOS ======
         function gerarRelatorio() {
             const obraId = document.getElementById('rep-obra').value;
             const tipo = document.getElementById('rep-tipo').value;
@@ -1360,7 +1379,6 @@
                     </div>
             `;
 
-            // Se for GERAL e tiver Obra selecionada, mostra os saldos bonitos
             if (tipo === 'geral' && obraObj) {
                 const valorContrato = parseFloat(obraObj.valor_contrato) || 0;
                 let recebido = 0; let gasto = 0;
@@ -1391,7 +1409,6 @@
                 `;
             }
 
-            // Tabela Detalhada
             let totalTabela = 0;
             let saldoCorrido = 0;
             const htmlLinhas = logsFilt.map(l => {
@@ -1458,7 +1475,7 @@
             setTimeout(() => window.print(), 300);
         }
 
-        // ====== IMPRESSÃO E PDF DA O.C. ====== (Inalterado, apenas ajustei o nome da const)
+        // ====== IMPRESSÃO E PDF DA O.C. ======
         function buildHTMLOC(id) {
             const logsOC = STATE.logs.filter(l => String(l.id) === String(id) && (l.tipo === 'oc_pendente' || l.tipo === 'compra'));
             if(!logsOC.length) return '';
@@ -1570,7 +1587,28 @@
             setTimeout(() => window.print(), 300);
         }
 
-        // PRODUTOS E USUÁRIOS (inalterado, omiti funções de save aqui pra focar no envio, mas tudo ok no original)
+        function downloadOCPDF(id) {
+            showLoading(true);
+            const htmlString = buildHTMLOC(id);
+            if(!htmlString) { showLoading(false); return; }
+
+            setTimeout(() => {
+                const opt = {
+                    margin: 10, 
+                    filename: `Ordem_Compra_${id}.pdf`, 
+                    image: { type: 'jpeg', quality: 1 },
+                    html2canvas: { scale: 2, useCORS: true },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+                html2pdf().set(opt).from(htmlString).save().then(() => {
+                    showLoading(false); showToast("PDF Baixado com Sucesso!");
+                }).catch(err => {
+                    console.error("Erro PDF:", err); showLoading(false); showToast("Erro ao gerar PDF", true);
+                });
+            }, 500); 
+        }
+
+        // ====== PRODUTOS E USUÁRIOS ======
         function renderProducts() {
             const term = document.getElementById('prod-search').value.toLowerCase();
             const fil = STATE.produtos.filter(p => p.nome.toLowerCase().includes(term));
@@ -1673,6 +1711,79 @@
             document.getElementById('user-form-container').classList.add('hidden');
             showToast("Usuário salvo com sucesso!"); 
             loadData();
+        }
+
+        // ====== INTEGRAÇÃO RV PORTAL ======
+        function abrirModalTransferencia(ocId) {
+            document.getElementById('transf-oc-id').value = ocId;
+            document.getElementById('transf-senha').value = '';
+            document.getElementById('modal-transf-portal').classList.remove('hidden');
+        }
+
+        async function executarTransferenciaPortal() {
+            const senhaDigitada = document.getElementById('transf-senha').value;
+            const ocId = document.getElementById('transf-oc-id').value;
+            
+            const senhaSecreta = "147258369"; 
+
+            if(senhaDigitada !== senhaSecreta) {
+                return showToast("Senha Incorreta! Transferência abortada.", true);
+            }
+
+            showLoading(true);
+
+            const itensOC = STATE.logs.filter(l => String(l.id) === String(ocId) && (l.tipo === 'oc_pendente' || l.tipo === 'compra'));
+            
+            if(!itensOC.length) {
+                showLoading(false);
+                return showToast("Erro: Itens da O.C. não encontrados.", true);
+            }
+
+            try {
+                const { data: ultimosLogs, error: errLogs } = await sb.from('logs').select('id').order('id', { ascending: false }).limit(1);
+                
+                let nextId = 1;
+                if (ultimosLogs && ultimosLogs.length > 0) {
+                    nextId = parseInt(ultimosLogs[0].id) + 1;
+                }
+
+                const dataHojeTexto = new Date().toLocaleDateString('pt-BR');
+
+                const insertsRVPortal = itensOC.map(item => {
+                    return {
+                        uid: crypto.randomUUID(),      
+                        id: nextId,                    
+                        tipo: 'orcamento',
+                        produto_nome: item.produto_nome,
+                        quantidade: parseFloat(item.quantidade),
+                        data: dataHojeTexto, 
+                        observacao: item.observacao || 'Gerado automaticamente via RV Negócios',
+                        valor_total: parseFloat(item.valor_total),
+                        cliente_nome: 'RV Negócios',
+                        forma_pagamento: '',
+                        status: 'ATIVO',
+                        status_entrega: '',
+                        qtd_entregue: 0,
+                        desconto: 0,
+                        status_financeiro: 'PENDENTE',
+                        vencimento: '',
+                        valor_pago: 0,
+                        endereco_entrega: ''
+                    };
+                });
+
+                const { error: erroInsert } = await sb.from('logs').insert(insertsRVPortal);
+
+                if(erroInsert) throw erroInsert;
+
+                document.getElementById('modal-transf-portal').classList.add('hidden');
+                showLoading(false);
+                showToast("Sucesso! Orçamento gerado na RV Portal.");
+
+            } catch (erro) {
+                showLoading(false);
+                showToast("Erro na comunicação: " + erro.message, true);
+            }
         }
 
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
