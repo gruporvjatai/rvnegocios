@@ -65,6 +65,7 @@
         <button onclick="navigate('pos')" id="nav-pos" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="shopping-cart"></i> <span class="font-medium text-sm">Nova O.C.</span></button>
         <button onclick="navigate('fin')" id="nav-fin" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="bar-chart-3"></i> <span class="font-medium text-sm">Financeiro Obras</span></button>
         <div class="border-t border-slate-800 my-2 pt-2"></div>
+        <button onclick="navigate('equipe')" id="nav-equipe" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="users"></i> <span class="font-medium text-sm">Equipe / Mão de Obra</span></button>
         <button onclick="navigate('fornecedores')" id="nav-fornecedores" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="truck"></i> <span class="font-medium text-sm">Fornecedores</span></button>
         <button onclick="navigate('prod')" id="nav-prod" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="package"></i> <span class="font-medium text-sm">Produtos</span></button>
         <button onclick="navigate('reports')" id="nav-reports" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="pie-chart"></i> <span class="font-medium text-sm">Relatórios</span></button>
@@ -187,7 +188,7 @@
             <div class="bg-white rounded-xl border shadow-sm flex flex-col h-[650px]">
                 <div class="p-4 border-b bg-slate-50 rounded-t-xl flex justify-between items-center">
                     <h3 class="font-bold text-slate-700 flex items-center gap-2"><i data-lucide="arrow-up-circle" class="w-5 h-5 text-red-500"></i> Custos / Pagamentos</h3>
-                    <button onclick="document.getElementById('exp-id').value=''; document.getElementById('modal-expense').classList.remove('hidden')" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md transition-all flex items-center gap-1"><i data-lucide="plus" class="w-4 h-4"></i> Lançar Despesa</button>
+                    <button onclick="openExpenseModal()" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md transition-all flex items-center gap-1"><i data-lucide="plus" class="w-4 h-4"></i> Lançar Despesa</button>
                 </div>
                 
                 <div class="p-3 border-b bg-white flex flex-col gap-2">
@@ -240,6 +241,25 @@
                 </div>
             </div>
         </div>
+      </div>
+
+      <div id="view-equipe" class="hidden-section">
+          <div class="flex justify-between items-center mb-4">
+              <h2 class="text-2xl font-bold text-slate-800">Equipe / Mão de Obra</h2>
+              <button onclick="openEquipeForm()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="plus"></i> Cadastrar Membro</button>
+          </div>
+          <div class="mb-4 bg-white p-4 rounded-xl shadow-sm border">
+              <div class="relative w-full">
+                  <i data-lucide="search" class="absolute left-3 top-2.5 text-slate-400 w-5 h-5"></i>
+                  <input type="text" id="eqp-search" placeholder="Buscar por nome ou categoria..." class="w-full pl-10 p-2 border rounded outline-none focus:border-blue-600 font-medium" onkeyup="renderEquipe()">
+              </div>
+          </div>
+          <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
+              <table class="w-full text-sm text-left">
+                  <thead class="bg-slate-100 text-slate-700"><tr><th class="p-4">Nome</th><th class="p-4">Categoria</th><th class="p-4">Telefone</th><th class="p-4 text-center">Ações</th></tr></thead>
+                  <tbody id="equipe-list" class="divide-y"></tbody>
+              </table>
+          </div>
       </div>
 
       <div id="view-fornecedores" class="hidden-section">
@@ -389,6 +409,22 @@
         </div>
       </div>
 
+      <div id="equipe-form-container" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <form onsubmit="saveEquipe(event)" class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
+            <h3 class="font-bold text-lg mb-4 flex items-center gap-2"><i data-lucide="user-plus" class="text-blue-600"></i> Membro da Equipe</h3>
+            <input type="hidden" id="eqp-id">
+            <div class="space-y-3">
+                <input type="text" id="eqp-name" required placeholder="Nome Completo" class="w-full p-2 border rounded focus:border-blue-600 outline-none">
+                <input type="text" id="eqp-cat" placeholder="Categoria (Ex: Mestre de Obras, Pintor...)" class="w-full p-2 border rounded focus:border-blue-600 outline-none">
+                <input type="text" id="eqp-phone" placeholder="Telefone / WhatsApp (Apenas Números)" class="w-full p-2 border rounded focus:border-blue-600 outline-none">
+            </div>
+            <div class="flex gap-2 mt-6">
+                <button type="button" onclick="document.getElementById('equipe-form-container').classList.add('hidden')" class="flex-1 p-2 bg-slate-200 rounded font-bold hover:bg-slate-300 text-slate-700">Cancelar</button>
+                <button type="submit" class="flex-1 p-2 bg-blue-700 text-white rounded font-bold hover:bg-blue-800">Salvar</button>
+            </div>
+        </form>
+      </div>
+
       <div id="fornecedor-form-container" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
         <form onsubmit="saveFornecedor(event)" class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
             <h3 class="font-bold text-lg mb-4">Dados do Fornecedor</h3>
@@ -480,8 +516,37 @@
                     <select id="exp-obra" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none bg-white font-bold text-slate-700"></select>
                 </div>
                 <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Fase da Obra</label>
+                    <select id="exp-fase" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none bg-white font-bold text-slate-700">
+                        <option value="">-- Não especificada / Branco --</option>
+                        <option value="Serviços Preliminares">Serviços Preliminares</option>
+                        <option value="Fundação">Fundação</option>
+                        <option value="Estrutura">Estrutura</option>
+                        <option value="Alvenaria">Alvenaria</option>
+                        <option value="Cobertura">Cobertura</option>
+                        <option value="Instalações Elétricas">Instalações Elétricas</option>
+                        <option value="Instalações Hidráulicas">Instalações Hidráulicas</option>
+                        <option value="Acabamento">Acabamento</option>
+                        <option value="Pintura">Pintura</option>
+                        <option value="Limpeza/Entrega">Limpeza / Entrega</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Tipo de Lançamento</label>
+                    <select id="exp-tipo" onchange="toggleEquipeSelect()" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none bg-white font-bold text-slate-700">
+                        <option value="Material/Produto">Material / Produto</option>
+                        <option value="Mão de Obra">Mão de Obra</option>
+                        <option value="Escritório">Escritório</option>
+                        <option value="Despesa Eventual">Despesa Eventual</option>
+                    </select>
+                </div>
+                <div id="exp-equipe-wrapper" class="hidden">
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Membro da Equipe</label>
+                    <select id="exp-equipe" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none bg-white font-bold text-blue-700"></select>
+                </div>
+                <div>
                     <label class="block text-sm font-bold text-slate-700 mb-1">Descrição da Despesa</label>
-                    <input type="text" id="exp-item" placeholder="Ex: Mão de Obra, Combustível, Taxa..." class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none">
+                    <input type="text" id="exp-item" placeholder="Ex: Combustível, Taxa, Adiantamento..." class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-slate-700 mb-1">Valor Total (R$)</label>
@@ -518,8 +583,24 @@
                     <select id="rev-obra" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none bg-white font-bold text-slate-700"></select>
                 </div>
                 <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Fase da Obra</label>
+                    <select id="rev-fase" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none bg-white font-bold text-slate-700">
+                        <option value="">-- Não especificada / Branco --</option>
+                        <option value="Serviços Preliminares">Serviços Preliminares</option>
+                        <option value="Fundação">Fundação</option>
+                        <option value="Estrutura">Estrutura</option>
+                        <option value="Alvenaria">Alvenaria</option>
+                        <option value="Cobertura">Cobertura</option>
+                        <option value="Instalações Elétricas">Instalações Elétricas</option>
+                        <option value="Instalações Hidráulicas">Instalações Hidráulicas</option>
+                        <option value="Acabamento">Acabamento</option>
+                        <option value="Pintura">Pintura</option>
+                        <option value="Limpeza/Entrega">Limpeza / Entrega</option>
+                    </select>
+                </div>
+                <div>
                     <label class="block text-sm font-bold text-slate-700 mb-1">Descrição da Medição</label>
-                    <input type="text" id="rev-desc" placeholder="Ex: Medição 01 - Fundação, Aporte Prefeitura..." class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none bg-white">
+                    <input type="text" id="rev-desc" placeholder="Ex: Medição 01 - Aporte Prefeitura..." class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none bg-white">
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-slate-700 mb-1">Valor Recebido (R$)</label>
@@ -652,7 +733,7 @@
         const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
 
         // ====== VARIÁVEIS DE ESTADO ======
-        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], users: [] };
+        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], users: [], equipe: [] };
         let CART = [];
         let CURRENT_OC_ID = null; 
 
@@ -673,6 +754,7 @@
             if(viewId === 'pos') { updateSelects(); }
             if(viewId === 'oc') renderOCList();
             if(viewId === 'fin') { updateSelects(); renderFinance(); }
+            if(viewId === 'equipe') renderEquipe();
             if(viewId === 'fornecedores') renderFornecedores();
             if(viewId === 'prod') renderProducts();
             if(viewId === 'reports') { updateSelects(); }
@@ -687,6 +769,14 @@
             const t=document.getElementById('toast'); 
             t.textContent=msg; t.className=`fixed top-5 right-5 px-6 py-3 rounded-lg shadow-xl text-white font-medium z-50 ${isError?'bg-red-600':'bg-slate-800'}`; 
             t.style.display='block'; setTimeout(()=>t.style.display='none',3000); 
+        }
+
+        function getTodayDate() {
+            const d = new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         }
 
         async function fetchAllRecords(table) {
@@ -705,17 +795,19 @@
 
         async function loadData() {
             try {
-                const [resObras, resForn, resProd, resLog] = await Promise.all([
+                const [resObras, resForn, resProd, resLog, resEqp] = await Promise.all([
                     fetchAllRecords('jsp_obras'),
                     fetchAllRecords('jsp_fornecedores'),
                     fetchAllRecords('jsp_produtos'),
-                    fetchAllRecords('jsp_logs')
+                    fetchAllRecords('jsp_logs'),
+                    fetchAllRecords('jsp_equipe').catch(() => ({ data: [] }))
                 ]);
 
                 STATE.obras = resObras.data || [];
                 STATE.fornecedores = resForn.data || [];
                 STATE.produtos = resProd.data || [];
                 STATE.logs = resLog.data || [];
+                STATE.equipe = resEqp.data || [];
 
                 if (dadosUsuario.nivel === 'admin') {
                     const navUsersBtn = document.getElementById('nav-users');
@@ -756,6 +848,81 @@
                     if(currentVal) el.value = currentVal;
                 }
             });
+        }
+
+        // ====== CRUD EQUIPE ======
+        function renderEquipe() {
+            const term = document.getElementById('eqp-search').value.toLowerCase();
+            const list = document.getElementById('equipe-list');
+            const fil = STATE.equipe.filter(e => e.nome.toLowerCase().includes(term) || (e.categoria||'').toLowerCase().includes(term));
+            
+            list.innerHTML = fil.map(e => {
+                const phoneClean = (e.telefone||'').replace(/\D/g,'');
+                const wppBtn = phoneClean ? `<a href="https://wa.me/55${phoneClean}" target="_blank" class="p-2 border border-green-200 text-green-600 hover:bg-green-50 rounded" title="WhatsApp"><i data-lucide="message-circle" width="16"></i></a>` : '';
+                
+                return `<tr class="border-b hover:bg-slate-50 transition">
+                    <td class="p-4 font-bold text-slate-700">${e.nome}</td>
+                    <td class="p-4">
+                        <span class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-1 rounded uppercase font-bold">${e.categoria||'Geral'}</span>
+                    </td>
+                    <td class="p-4 text-slate-600">${e.telefone||'-'}</td>
+                    <td class="p-4 text-center">
+                        <div class="flex items-center justify-center gap-2">
+                            <button onclick="openEquipeForm('${e.id}')" class="p-2 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar"><i data-lucide="edit-3" width="16"></i></button>
+                            ${wppBtn}
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function openEquipeForm(id) {
+            document.getElementById('equipe-form-container').classList.remove('hidden');
+            if(id) {
+                const e = STATE.equipe.find(x => x.id == id);
+                document.getElementById('eqp-id').value = e.id;
+                document.getElementById('eqp-name').value = e.nome;
+                document.getElementById('eqp-cat').value = e.categoria || '';
+                document.getElementById('eqp-phone').value = e.telefone || '';
+            } else {
+                document.getElementById('equipe-form-container').querySelector('form').reset();
+                document.getElementById('eqp-id').value = '';
+            }
+        }
+
+        async function saveEquipe(e) {
+            e.preventDefault(); showLoading(true);
+            const isNew = !document.getElementById('eqp-id').value;
+            const payload = {
+                nome: document.getElementById('eqp-name').value,
+                categoria: document.getElementById('eqp-cat').value,
+                telefone: document.getElementById('eqp-phone').value
+            };
+            
+            if(!isNew) {
+                payload.id = document.getElementById('eqp-id').value;
+            } else {
+                payload.id = crypto.randomUUID(); // Gerar ID em texto (já que você criou text PRIMARY KEY)
+            }
+
+            const { error } = await sb.from('jsp_equipe').upsert(payload);
+            if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
+            
+            document.getElementById('equipe-form-container').classList.add('hidden');
+            showToast("Membro salvo na equipe!"); loadData();
+        }
+
+        function toggleEquipeSelect() {
+            const tipo = document.getElementById('exp-tipo').value;
+            const wrap = document.getElementById('exp-equipe-wrapper');
+            if(tipo === 'Mão de Obra') {
+                wrap.classList.remove('hidden');
+                document.getElementById('exp-equipe').innerHTML = '<option value="">-- Selecione o membro (Opcional) --</option>' + STATE.equipe.map(e => `<option value="${e.nome}">${e.nome} (${e.categoria || 'Geral'})</option>`).join('');
+            } else {
+                wrap.classList.add('hidden');
+                document.getElementById('exp-equipe').value = '';
+            }
         }
 
         // ====== CRUD OBRAS ======
@@ -1095,7 +1262,7 @@
             loadData();
         }
 
-        // ====== DASHBOARD OBRAS (ATUALIZADO PARA LÓGICA DE CONTRATO MUNICIPAL) ======
+        // ====== DASHBOARD OBRAS ======
         function renderDashboard() {
             const grid = document.getElementById('dash-grid');
             const custosObras = {};
@@ -1165,6 +1332,25 @@
         }
 
         // ====== FINANCEIRO MANUAL ======
+        function openExpenseModal() {
+            document.getElementById('exp-id').value = '';
+            document.getElementById('exp-item').value = '';
+            document.getElementById('exp-cost').value = '';
+            document.getElementById('exp-date').value = getTodayDate();
+            document.getElementById('exp-tipo').value = 'Material/Produto';
+            document.getElementById('exp-fase').value = '';
+            toggleEquipeSelect();
+            document.getElementById('modal-expense').classList.remove('hidden');
+        }
+
+        function openRevenueModal() {
+            document.getElementById('rev-desc').value = '';
+            document.getElementById('rev-val').value = '';
+            document.getElementById('rev-due').value = getTodayDate();
+            document.getElementById('rev-fase').value = '';
+            document.getElementById('modal-revenue').classList.remove('hidden');
+        }
+
         function renderFinance() {
             const obraFilter = document.getElementById('fin-obra-filter').value;
             let logsFilt = STATE.logs.filter(l => l.tipo !== 'oc_pendente' && l.status_financeiro !== 'CANCELADO');
@@ -1178,7 +1364,6 @@
                 if(o) valorContratoFiltrado = parseFloat(o.valor_contrato) || 0;
             }
 
-            // --- CONTAS A PAGAR ---
             // --- CONTAS A PAGAR ---
             const listaDesp = document.getElementById('fin-expense-history-list');
             let despArrRaw = logsFilt.filter(l => l.tipo === 'compra' || l.tipo === 'despesa');
@@ -1213,7 +1398,8 @@
                 if(isPago) totDesp += parseFloat(l.valor_total);
                 
                 const obra = STATE.obras.find(x=>x.id==l.obra_id);
-                
+                const extraInfo = (!l.is_oc && l.observacao) ? `<div class="text-[9px] text-slate-500 font-bold uppercase mt-0.5">${l.observacao}</div>` : '';
+
                 // Botões dinâmicos dependendo se é uma O.C. agrupada ou Despesa Simples
                 let btnAcoes = '';
                 if (!isPago) {
@@ -1239,6 +1425,7 @@
                     <td class="p-3">
                         <div class="font-bold text-slate-800 text-xs">${l.is_oc ? `O.C. #${l.id} - Compra Consolidada` : l.produto_nome}</div>
                         <div class="text-[10px] text-blue-700 font-bold"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Geral'}</div>
+                        ${extraInfo}
                         ${!isPago ? `<div class="text-[9px] text-slate-500 uppercase mt-0.5">Pagamento via: ${l.forma_pagamento || '-'}</div>` : ''}
                     </td>
                     <td class="p-3 font-bold text-sm ${isPago?'text-slate-500':'text-red-600'}">${formatMoney(l.valor_total)}</td>
@@ -1258,11 +1445,14 @@
                 if(isPago) totRec += parseFloat(l.valor_total);
 
                 const obra = STATE.obras.find(x=>x.id==l.obra_id);
+                const extraInfo = (l.observacao) ? `<div class="text-[9px] text-slate-500 font-bold uppercase mt-0.5">${l.observacao}</div>` : '';
+
                 return `<tr class="border-b ${isPago?'bg-green-50':'bg-orange-50/20'} transition">
                     <td class="p-3 text-xs font-bold text-slate-700">${formatDate(l.vencimento || l.data)}</td>
                     <td class="p-3">
                         <div class="font-bold text-slate-800 text-xs">${l.produto_nome}</div>
                         <div class="text-[10px] text-blue-700 font-bold"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Geral'}</div>
+                        ${extraInfo}
                     </td>
                     <td class="p-3 font-bold text-sm text-green-700">${formatMoney(l.valor_total)}</td>
                     <td class="p-3 text-right flex items-center justify-end gap-1">
@@ -1369,7 +1559,7 @@
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
             showToast("O.C. Cancelada no Financeiro!"); loadData();
         }
-      
+        
 
         async function saveExpense() {
             const obra_id = document.getElementById('exp-obra').value || null;
@@ -1377,11 +1567,21 @@
             const val = parseFloat(document.getElementById('exp-cost').value);
             const dt = document.getElementById('exp-date').value || new Date().toISOString();
             const status = document.getElementById('exp-status-val').value;
+            
+            const tipoLancamento = document.getElementById('exp-tipo').value;
+            const equipeNome = document.getElementById('exp-equipe').value;
+            const faseObra = document.getElementById('exp-fase').value;
 
             if(!desc || isNaN(val)) return showToast("Preencha descrição e valor!", true);
             showLoading(true);
 
-            // ERRO CORRIGIDO AQUI - Faltava o ']' antes do ')'
+            let obsArr = [];
+            if(faseObra) obsArr.push(`Fase: ${faseObra}`);
+            obsArr.push(`Tipo: ${tipoLancamento}`);
+            if(tipoLancamento === 'Mão de Obra' && equipeNome) obsArr.push(`Equipe: ${equipeNome}`);
+            
+            const obsFinal = obsArr.join(' | ');
+
             const {error} = await sb.from('jsp_logs').insert([{
                 id: getNextIdNum(STATE.logs).toString(),
                 obra_id: obra_id ? parseInt(obra_id) : null,
@@ -1389,7 +1589,8 @@
                 produto_nome: desc,
                 valor_total: val,
                 data: dt, vencimento: dt,
-                status_financeiro: status
+                status_financeiro: status,
+                observacao: obsFinal
             }]);
             
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
@@ -1398,18 +1599,19 @@
             showToast("Despesa Salva!"); loadData();
         }
 
-        function openRevenueModal() { document.getElementById('modal-revenue').classList.remove('hidden'); }
-
         async function saveRevenue() {
             const obra_id = document.getElementById('rev-obra').value || null;
             const desc = document.getElementById('rev-desc').value;
             const val = parseFloat(document.getElementById('rev-val').value);
             const dt = document.getElementById('rev-due').value || new Date().toISOString();
             const status = document.getElementById('rev-status-val').value;
+            const faseObra = document.getElementById('rev-fase').value;
 
             if(!desc || isNaN(val)) return showToast("Preencha descrição e valor!", true);
             showLoading(true);
             
+            const obsFinal = faseObra ? `Fase: ${faseObra}` : '';
+
             const {error} = await sb.from('jsp_logs').insert([{
                 id: getNextIdNum(STATE.logs).toString(),
                 obra_id: obra_id ? parseInt(obra_id) : null,
@@ -1417,7 +1619,8 @@
                 produto_nome: desc,
                 valor_total: val,
                 data: dt, vencimento: dt,
-                status_financeiro: status
+                status_financeiro: status,
+                observacao: obsFinal
             }]);
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
             
@@ -1863,7 +2066,7 @@
             document.getElementById('modal-prod-history').classList.remove('hidden');
             lucide.createIcons();
         }
-      
+        
         function openProductForm(id) {
             document.getElementById('prod-form-container').classList.remove('hidden');
             if(id) {
