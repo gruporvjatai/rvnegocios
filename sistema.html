@@ -53,7 +53,10 @@
   <body>
 
     <div class="w-64 bg-slate-900 text-white h-screen fixed left-0 top-0 flex flex-col shadow-2xl z-20 hidden md:flex no-print">
-      <div class="p-6 flex flex-col items-center border-b border-slate-800 bg-slate-900">
+      <div class="p-6 flex flex-col items-center border-b border-slate-800 bg-slate-900 relative">
+        <button onclick="location.reload()" class="absolute top-2 right-2 p-1.5 bg-slate-800/50 hover:bg-slate-700 text-blue-400 rounded-lg transition-colors border border-slate-700" title="Atualizar Sistema">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+        </button>
         <div class="w-20 h-20 rounded-full border-4 border-blue-600 mb-3 shadow-lg overflow-hidden p-1 bg-white">
             <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" class="w-full h-full object-contain" />
         </div>
@@ -68,6 +71,7 @@
         <button onclick="navigate('equipe')" id="nav-equipe" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="users"></i> <span class="font-medium text-sm">Equipe / Mão de Obra</span></button>
         <button onclick="navigate('fornecedores')" id="nav-fornecedores" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="truck"></i> <span class="font-medium text-sm">Fornecedores</span></button>
         <button onclick="navigate('prod')" id="nav-prod" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="package"></i> <span class="font-medium text-sm">Produtos</span></button>
+        <button onclick="navigate('fases')" id="nav-fases" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="layers"></i> <span class="font-medium text-sm">Fases de Obra</span></button>
         <button onclick="navigate('reports')" id="nav-reports" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="pie-chart"></i> <span class="font-medium text-sm">Relatórios</span></button>
         <button onclick="navigate('users')" id="nav-users" class="nav-btn w-full hidden flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="shield"></i> <span class="font-medium text-sm">Usuários</span></button>
        </nav>
@@ -76,7 +80,7 @@
 
     <main class="flex-1 md:ml-64 p-4 md:p-6 overflow-y-auto h-screen no-print bg-slate-50">
       
-      <div id="loading" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center">
+      <div id="loading" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
          <div class="bg-white p-6 rounded-xl flex flex-col items-center shadow-2xl"><div class="loader mb-4"></div><span class="font-bold text-slate-700">Processando...</span></div>
       </div>
       <div id="toast" class="hidden fixed top-5 right-5 px-6 py-3 rounded-lg shadow-xl text-white font-medium z-50 transition-opacity duration-300"></div>
@@ -139,36 +143,6 @@
                             <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fase da Obra</label>
                             <select id="pos-fase" class="w-full p-2 border rounded-lg text-sm bg-slate-50 font-bold text-slate-700 focus:border-blue-600 outline-none">
                                 <option value="">-- Não especificada --</option>
-                                <option value="SERVIÇOS PRELIMINARES">SERVIÇOS PRELIMINARES</option>
-                                <option value="SERVIÇO EM TERRA">SERVIÇO EM TERRA</option>
-                                <option value="MURO">MURO</option>
-                                <option value="LAJE">LAJE</option>
-                                <option value="FUNDAÇÃO">FUNDAÇÃO</option>
-                                <option value="ESTRUTURA">ESTRUTURA</option>
-                                <option value="INSTALAÇÕES ELÉTRICAS">INSTALAÇÕES ELÉTRICAS</option>
-                                <option value="INSTALAÇÕES HIDRÁULICAS E SANITÁRIAS">INSTALAÇÕES HIDRÁULICAS E SANITÁRIAS</option>
-                                <option value="ALVENARIA">ALVENARIA</option>
-                                <option value="REVESTIMENTO DE PAREDES">REVESTIMENTO DE PAREDES</option>
-                                <option value="COBERTURA">COBERTURA</option>
-                                <option value="ESQUADRIAS">ESQUADRIAS</option>
-                                <option value="REVESTIMENTO DE PISOS">REVESTIMENTO DE PISOS</option>
-                                <option value="PINTURA">PINTURA</option>
-                                <option value="REVESTIMENTO DE LAJE E FORRO">REVESTIMENTO DE LAJE E FORRO</option>
-                                <option value="ADMINISTRAÇÃO">ADMINISTRAÇÃO</option>
-                                <option value="GRADIL">GRADIL</option>
-                                <option value="DIVERSOS">DIVERSOS</option>
-                                <option value="ABRIGO DE BOMBA A VÁCUO">ABRIGO DE BOMBA A VÁCUO</option>
-                                <option value="ALTERAÇÕES NA COBERTURA">ALTERAÇÕES NA COBERTURA</option>
-                                <option value="ALAMBRADO PARA ISOLAMENTO DO CMEI">ALAMBRADO PARA ISOLAMENTO DO CMEI</option>
-                                <option value="RETIRADA DE ESTACAS DO MURO DE DIVISA">RETIRADA DE ESTACAS DO MURO DE DIVISA</option>
-                                <option value="ALTERAÇÕES DOS ABRIGOS DE RESÍDUOS E ABRIGO DE BOMBAS">ALTERAÇÕES DOS ABRIGOS DE RESÍDUOS E ABRIGO DE BOMBAS</option>
-                                <option value="REFORÇO DE VERGAS">REFORÇO DE VERGAS</option>
-                                <option value="SHAFTS PARA SISTEMAS PLUVIAIS">SHAFTS PARA SISTEMAS PLUVIAIS</option>
-                                <option value="DIFERENÇA DOS MUROS DE DIVISA">DIFERENÇA DOS MUROS DE DIVISA</option>
-                                <option value="DIFERENÇA DOS GRADIS">DIFERENÇA DOS GRADIS</option>
-                                <option value="PISOS SPDA">PISOS SPDA</option>
-                                <option value="MELHORIAS PARA JANELAS">MELHORIAS PARA JANELAS</option>
-                                <option value="DIVISÓRIAS PARA SALA ODONTOLÓGICA">DIVISÓRIAS PARA SALA ODONTOLÓGICA</option>
                             </select>
                         </div>
                         <div>
@@ -334,6 +308,25 @@
           </div>
       </div>
 
+      <div id="view-fases" class="hidden-section">
+          <div class="flex justify-between items-center mb-4">
+              <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i data-lucide="layers" class="text-blue-700"></i> Fases de Obra</h2>
+              <button onclick="openFaseForm()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="plus"></i> Nova Fase</button>
+          </div>
+          <div class="mb-4 bg-white p-4 rounded-xl shadow-sm border">
+              <div class="relative w-full">
+                  <i data-lucide="search" class="absolute left-3 top-2.5 text-slate-400 w-5 h-5"></i>
+                  <input type="text" id="fase-search" placeholder="Buscar fase por nome..." class="w-full pl-10 p-2 border rounded outline-none focus:border-blue-600 font-medium" onkeyup="renderFases()">
+              </div>
+          </div>
+          <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
+              <table class="w-full text-sm text-left">
+                  <thead class="bg-slate-100 text-slate-700"><tr><th class="p-4 w-24 text-center">Ordem</th><th class="p-4">Nome da Fase</th><th class="p-4 text-center w-32">Ações</th></tr></thead>
+                  <tbody id="fases-list" class="divide-y"></tbody>
+              </table>
+          </div>
+      </div>
+
       <div id="view-reports" class="hidden-section">
           <div class="flex justify-between items-center mb-6">
               <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
@@ -343,10 +336,16 @@
 
           <div class="bg-white p-6 rounded-xl shadow-sm border mb-6">
               <h3 class="text-sm font-bold text-slate-500 uppercase mb-4">Filtros do Relatório</h3>
-              <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                   <div>
                       <label class="block text-xs font-bold text-slate-700 mb-1">Obra</label>
                       <select id="rep-obra" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-600 outline-none text-sm font-medium"></select>
+                  </div>
+                  <div>
+                      <label class="block text-xs font-bold text-slate-700 mb-1">Fase da Obra</label>
+                      <select id="rep-fase" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-600 outline-none text-sm font-medium">
+                          <option value="">Todas as Fases</option>
+                      </select>
                   </div>
                   <div>
                       <label class="block text-xs font-bold text-slate-700 mb-1">Tipo de Relatório</label>
@@ -400,7 +399,7 @@
       </div>
 
 
-      <div id="obra-form-container" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div id="obra-form-container" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
         <form onsubmit="saveObra(event)" class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
             <h3 class="font-bold text-lg mb-4 text-blue-800 flex items-center gap-2"><i data-lucide="building"></i> Dados da Obra</h3>
             <input type="hidden" id="obra-id">
@@ -421,7 +420,7 @@
         </form>
       </div>
 
-      <div id="modal-confirm-oc" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div id="modal-confirm-oc" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
             <h3 class="font-bold text-lg mb-4 text-slate-800 flex items-center gap-2"><i data-lucide="check-circle" class="text-blue-600"></i> Confirmar Compra</h3>
             <p class="text-sm text-slate-600 mb-4">Selecione a forma de pagamento. PIX já entra como pago no caixa. Cartões ou Medição entram como pendente para daqui a 30 dias.</p>
@@ -445,7 +444,7 @@
         </div>
       </div>
 
-      <div id="equipe-form-container" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div id="equipe-form-container" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
         <form onsubmit="saveEquipe(event)" class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
             <h3 class="font-bold text-lg mb-4 flex items-center gap-2"><i data-lucide="user-plus" class="text-blue-600"></i> Membro da Equipe</h3>
             <input type="hidden" id="eqp-id">
@@ -461,7 +460,7 @@
         </form>
       </div>
 
-      <div id="fornecedor-form-container" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div id="fornecedor-form-container" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
         <form onsubmit="saveFornecedor(event)" class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
             <h3 class="font-bold text-lg mb-4">Dados do Fornecedor</h3>
             <input type="hidden" id="forn-id">
@@ -478,7 +477,7 @@
         </form>
       </div>
 
-      <div id="pos-fornecedor-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div id="pos-fornecedor-modal" class="hidden fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]">
             <div class="p-4 border-b flex justify-between items-center bg-slate-50 rounded-t-2xl">
                 <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2"><i data-lucide="users" class="text-blue-600"></i> Selecionar Fornecedor</h3>
@@ -499,7 +498,7 @@
         </div>
       </div>
 
-      <div id="prod-form-container" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div id="prod-form-container" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
         <form onsubmit="saveProduct(event)" class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
             <h3 class="font-bold text-lg mb-4">Material / Insumo</h3>
             <input type="hidden" id="prd-id">
@@ -517,8 +516,29 @@
             </div>
         </form>
       </div>
+      
+      <div id="fase-form-container" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+        <form onsubmit="saveFase(event)" class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
+            <h3 class="font-bold text-lg mb-4 flex items-center gap-2"><i data-lucide="layers" class="text-blue-600"></i> Fase da Obra</h3>
+            <input type="hidden" id="fas-id">
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase">Ordem de Exibição (Ex: 1, 2, 3...)</label>
+                    <input type="number" id="fas-ordem" required placeholder="1" class="w-full p-2 border rounded font-bold text-blue-700 bg-blue-50 focus:border-blue-600 outline-none">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase">Nome da Fase (Ex: LAJE, ALVENARIA)</label>
+                    <input type="text" id="fas-name" required placeholder="Nome da Fase" class="w-full p-2 border rounded uppercase focus:border-blue-600 outline-none">
+                </div>
+            </div>
+            <div class="flex gap-2 mt-6">
+                <button type="button" onclick="document.getElementById('fase-form-container').classList.add('hidden')" class="flex-1 p-2 bg-slate-200 rounded font-bold hover:bg-slate-300 text-slate-700">Cancelar</button>
+                <button type="submit" class="flex-1 p-2 bg-blue-700 text-white rounded font-bold hover:bg-blue-800 shadow-md">Salvar</button>
+            </div>
+        </form>
+      </div>
 
-      <div id="pos-product-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div id="pos-product-modal" class="hidden fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]">
             <div class="p-4 border-b flex justify-between items-center bg-slate-50 rounded-t-2xl">
                 <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2"><i data-lucide="package-search" class="text-blue-600"></i> Selecionar Material</h3>
@@ -539,7 +559,7 @@
         </div>
       </div>
 
-      <div id="modal-expense" class="hidden fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
+      <div id="modal-expense" class="hidden fixed inset-0 bg-black/60 z-50 flex justify-center items-center p-4">
         <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
             <div class="p-5 border-b flex justify-between items-center bg-slate-50">
                 <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i data-lucide="minus-circle" class="text-red-500"></i> Lançar Despesa / Custo</h3>
@@ -555,36 +575,6 @@
                     <label class="block text-sm font-bold text-slate-700 mb-1">Fase da Obra</label>
                     <select id="exp-fase" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none bg-white font-bold text-slate-700">
                         <option value="">-- Não especificada --</option>
-                        <option value="SERVIÇOS PRELIMINARES">SERVIÇOS PRELIMINARES</option>
-                        <option value="SERVIÇO EM TERRA">SERVIÇO EM TERRA</option>
-                        <option value="MURO">MURO</option>
-                        <option value="LAJE">LAJE</option>
-                        <option value="FUNDAÇÃO">FUNDAÇÃO</option>
-                        <option value="ESTRUTURA">ESTRUTURA</option>
-                        <option value="INSTALAÇÕES ELÉTRICAS">INSTALAÇÕES ELÉTRICAS</option>
-                        <option value="INSTALAÇÕES HIDRÁULICAS E SANITÁRIAS">INSTALAÇÕES HIDRÁULICAS E SANITÁRIAS</option>
-                        <option value="ALVENARIA">ALVENARIA</option>
-                        <option value="REVESTIMENTO DE PAREDES">REVESTIMENTO DE PAREDES</option>
-                        <option value="COBERTURA">COBERTURA</option>
-                        <option value="ESQUADRIAS">ESQUADRIAS</option>
-                        <option value="REVESTIMENTO DE PISOS">REVESTIMENTO DE PISOS</option>
-                        <option value="PINTURA">PINTURA</option>
-                        <option value="REVESTIMENTO DE LAJE E FORRO">REVESTIMENTO DE LAJE E FORRO</option>
-                        <option value="ADMINISTRAÇÃO">ADMINISTRAÇÃO</option>
-                        <option value="GRADIL">GRADIL</option>
-                        <option value="DIVERSOS">DIVERSOS</option>
-                        <option value="ABRIGO DE BOMBA A VÁCUO">ABRIGO DE BOMBA A VÁCUO</option>
-                        <option value="ALTERAÇÕES NA COBERTURA">ALTERAÇÕES NA COBERTURA</option>
-                        <option value="ALAMBRADO PARA ISOLAMENTO DO CMEI">ALAMBRADO PARA ISOLAMENTO DO CMEI</option>
-                        <option value="RETIRADA DE ESTACAS DO MURO DE DIVISA">RETIRADA DE ESTACAS DO MURO DE DIVISA</option>
-                        <option value="ALTERAÇÕES DOS ABRIGOS DE RESÍDUOS E ABRIGO DE BOMBAS">ALTERAÇÕES DOS ABRIGOS DE RESÍDUOS E ABRIGO DE BOMBAS</option>
-                        <option value="REFORÇO DE VERGAS">REFORÇO DE VERGAS</option>
-                        <option value="SHAFTS PARA SISTEMAS PLUVIAIS">SHAFTS PARA SISTEMAS PLUVIAIS</option>
-                        <option value="DIFERENÇA DOS MUROS DE DIVISA">DIFERENÇA DOS MUROS DE DIVISA</option>
-                        <option value="DIFERENÇA DOS GRADIS">DIFERENÇA DOS GRADIS</option>
-                        <option value="PISOS SPDA">PISOS SPDA</option>
-                        <option value="MELHORIAS PARA JANELAS">MELHORIAS PARA JANELAS</option>
-                        <option value="DIVISÓRIAS PARA SALA ODONTOLÓGICA">DIVISÓRIAS PARA SALA ODONTOLÓGICA</option>
                     </select>
                 </div>
                 <div>
@@ -631,7 +621,7 @@
         </div>
       </div>
 
-      <div id="modal-revenue" class="hidden fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
+      <div id="modal-revenue" class="hidden fixed inset-0 bg-black/60 z-50 flex justify-center items-center p-4">
         <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
             <div class="p-5 border-b flex justify-between items-center bg-slate-50">
                 <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i data-lucide="plus-circle" class="text-green-600"></i> Lançar Medição (Receita)</h3>
@@ -646,36 +636,6 @@
                     <label class="block text-sm font-bold text-slate-700 mb-1">Fase da Obra</label>
                     <select id="rev-fase" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none bg-white font-bold text-slate-700">
                         <option value="">-- Não especificada --</option>
-                        <option value="SERVIÇOS PRELIMINARES">SERVIÇOS PRELIMINARES</option>
-                        <option value="SERVIÇO EM TERRA">SERVIÇO EM TERRA</option>
-                        <option value="MURO">MURO</option>
-                        <option value="LAJE">LAJE</option>
-                        <option value="FUNDAÇÃO">FUNDAÇÃO</option>
-                        <option value="ESTRUTURA">ESTRUTURA</option>
-                        <option value="INSTALAÇÕES ELÉTRICAS">INSTALAÇÕES ELÉTRICAS</option>
-                        <option value="INSTALAÇÕES HIDRÁULICAS E SANITÁRIAS">INSTALAÇÕES HIDRÁULICAS E SANITÁRIAS</option>
-                        <option value="ALVENARIA">ALVENARIA</option>
-                        <option value="REVESTIMENTO DE PAREDES">REVESTIMENTO DE PAREDES</option>
-                        <option value="COBERTURA">COBERTURA</option>
-                        <option value="ESQUADRIAS">ESQUADRIAS</option>
-                        <option value="REVESTIMENTO DE PISOS">REVESTIMENTO DE PISOS</option>
-                        <option value="PINTURA">PINTURA</option>
-                        <option value="REVESTIMENTO DE LAJE E FORRO">REVESTIMENTO DE LAJE E FORRO</option>
-                        <option value="ADMINISTRAÇÃO">ADMINISTRAÇÃO</option>
-                        <option value="GRADIL">GRADIL</option>
-                        <option value="DIVERSOS">DIVERSOS</option>
-                        <option value="ABRIGO DE BOMBA A VÁCUO">ABRIGO DE BOMBA A VÁCUO</option>
-                        <option value="ALTERAÇÕES NA COBERTURA">ALTERAÇÕES NA COBERTURA</option>
-                        <option value="ALAMBRADO PARA ISOLAMENTO DO CMEI">ALAMBRADO PARA ISOLAMENTO DO CMEI</option>
-                        <option value="RETIRADA DE ESTACAS DO MURO DE DIVISA">RETIRADA DE ESTACAS DO MURO DE DIVISA</option>
-                        <option value="ALTERAÇÕES DOS ABRIGOS DE RESÍDUOS E ABRIGO DE BOMBAS">ALTERAÇÕES DOS ABRIGOS DE RESÍDUOS E ABRIGO DE BOMBAS</option>
-                        <option value="REFORÇO DE VERGAS">REFORÇO DE VERGAS</option>
-                        <option value="SHAFTS PARA SISTEMAS PLUVIAIS">SHAFTS PARA SISTEMAS PLUVIAIS</option>
-                        <option value="DIFERENÇA DOS MUROS DE DIVISA">DIFERENÇA DOS MUROS DE DIVISA</option>
-                        <option value="DIFERENÇA DOS GRADIS">DIFERENÇA DOS GRADIS</option>
-                        <option value="PISOS SPDA">PISOS SPDA</option>
-                        <option value="MELHORIAS PARA JANELAS">MELHORIAS PARA JANELAS</option>
-                        <option value="DIVISÓRIAS PARA SALA ODONTOLÓGICA">DIVISÓRIAS PARA SALA ODONTOLÓGICA</option>
                     </select>
                 </div>
                 <div>
@@ -705,7 +665,7 @@
         </div>
       </div>
 
-      <div id="user-form-container" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div id="user-form-container" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
         <form onsubmit="saveUser(event)" class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
             <h3 class="font-bold text-lg mb-4 text-slate-800 flex items-center gap-2"><i data-lucide="user-plus" class="text-blue-600"></i> Dados do Usuário</h3>
             <input type="hidden" id="usr-id">
@@ -746,7 +706,7 @@
         </form>
       </div>
 
-      <div id="modal-transf-portal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div id="modal-transf-portal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm border-t-4 border-t-indigo-600">
             <h3 class="font-bold text-lg mb-2 text-slate-800 flex items-center gap-2">
                 <i data-lucide="send" class="text-indigo-600"></i> Enviar para RV Portal
@@ -769,7 +729,7 @@
         </div>
       </div>
 
-      <div id="modal-prod-history" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div id="modal-prod-history" class="hidden fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh] overflow-hidden">
             <div class="p-4 border-b flex justify-between items-center bg-slate-50">
                 <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2">
@@ -813,7 +773,7 @@
         const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
 
         // ====== VARIÁVEIS DE ESTADO ======
-        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], users: [], equipe: [] };
+        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], users: [], equipe: [], fases: [] };
         let CART = [];
         let CURRENT_OC_ID = null; 
 
@@ -837,6 +797,7 @@
             if(viewId === 'equipe') renderEquipe();
             if(viewId === 'fornecedores') renderFornecedores();
             if(viewId === 'prod') renderProducts();
+            if(viewId === 'fases') renderFases();
             if(viewId === 'reports') { updateSelects(); }
             if(viewId === 'users') renderUsers(); 
             lucide.createIcons();
@@ -875,12 +836,13 @@
 
         async function loadData() {
             try {
-                const [resObras, resForn, resProd, resLog, resEqp] = await Promise.all([
+                const [resObras, resForn, resProd, resLog, resEqp, resFases] = await Promise.all([
                     fetchAllRecords('jsp_obras'),
                     fetchAllRecords('jsp_fornecedores'),
                     fetchAllRecords('jsp_produtos'),
                     fetchAllRecords('jsp_logs'),
-                    fetchAllRecords('jsp_equipe').catch(() => ({ data: [] }))
+                    fetchAllRecords('jsp_equipe').catch(() => ({ data: [] })),
+                    fetchAllRecords('jsp_fase').catch(() => ({ data: [] }))
                 ]);
 
                 STATE.obras = resObras.data || [];
@@ -888,6 +850,8 @@
                 STATE.produtos = resProd.data || [];
                 STATE.logs = resLog.data || [];
                 STATE.equipe = resEqp.data || [];
+                // Ordenar as fases pelo campo "ordem"
+                STATE.fases = (resFases.data || []).sort((a,b) => a.ordem - b.ordem);
 
                 if (dadosUsuario.nivel === 'admin') {
                     const navUsersBtn = document.getElementById('nav-users');
@@ -913,6 +877,7 @@
         }
 
         function updateSelects() {
+            // Selects de Obras
             const selectsObra = ['pos-obra', 'fin-obra-filter', 'exp-obra', 'rev-obra', 'rep-obra'];
             const htmlObras = '<option value="">-- Selecione uma Obra --</option>' + STATE.obras.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
             
@@ -928,7 +893,88 @@
                     if(currentVal) el.value = currentVal;
                 }
             });
+
+            // Selects de Fases
+            const selectsFase = ['pos-fase', 'exp-fase', 'rev-fase', 'rep-fase'];
+            const htmlFasesOpcoes = STATE.fases.map(f => `<option value="${f.ordem} - ${f.nome}">${f.ordem} - ${f.nome}</option>`).join('');
+            
+            selectsFase.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) {
+                    const currentVal = el.value;
+                    if(id === 'rep-fase') {
+                        el.innerHTML = '<option value="">Todas as Fases</option>' + htmlFasesOpcoes;
+                    } else {
+                        el.innerHTML = '<option value="">-- Não especificada --</option>' + htmlFasesOpcoes;
+                    }
+                    if(currentVal) el.value = currentVal;
+                }
+            });
         }
+
+        // ====== CRUD FASES DE OBRA ======
+        function renderFases() {
+            const term = document.getElementById('fase-search').value.toLowerCase();
+            const list = document.getElementById('fases-list');
+            const fil = STATE.fases.filter(f => f.nome.toLowerCase().includes(term) || String(f.ordem).includes(term));
+            
+            list.innerHTML = fil.map(f => `
+            <tr class="border-b hover:bg-slate-50 transition">
+                <td class="p-4 text-center font-black text-blue-700 text-lg">${f.ordem}</td>
+                <td class="p-4 font-bold text-slate-700 uppercase">${f.nome}</td>
+                <td class="p-4 text-center">
+                    <button onclick="openFaseForm('${f.id}')" class="p-2 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar"><i data-lucide="edit-3" width="16"></i></button>
+                    <button onclick="deleteFase('${f.id}')" class="p-2 border border-red-200 text-red-500 hover:bg-red-50 rounded ml-1" title="Excluir"><i data-lucide="trash-2" width="16"></i></button>
+                </td>
+            </tr>`).join('');
+            lucide.createIcons();
+        }
+
+        function openFaseForm(id) {
+            document.getElementById('fase-form-container').classList.remove('hidden');
+            if(id) {
+                const f = STATE.fases.find(x => x.id == id);
+                document.getElementById('fas-id').value = f.id;
+                document.getElementById('fas-ordem').value = f.ordem;
+                document.getElementById('fas-name').value = f.nome;
+            } else {
+                document.getElementById('fase-form-container').querySelector('form').reset();
+                document.getElementById('fas-id').value = '';
+                // Sugerir próxima ordem
+                const maxOrdem = STATE.fases.reduce((max, f) => (f.ordem > max ? f.ordem : max), 0);
+                document.getElementById('fas-ordem').value = maxOrdem + 1;
+            }
+        }
+
+        async function saveFase(e) {
+            e.preventDefault(); showLoading(true);
+            const isNew = !document.getElementById('fas-id').value;
+            const payload = {
+                ordem: parseInt(document.getElementById('fas-ordem').value),
+                nome: document.getElementById('fas-name').value.toUpperCase()
+            };
+            
+            if(!isNew) {
+                payload.id = document.getElementById('fas-id').value;
+            } else {
+                payload.id = crypto.randomUUID();
+            }
+
+            const { error } = await sb.from('jsp_fase').upsert(payload);
+            if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
+            
+            document.getElementById('fase-form-container').classList.add('hidden');
+            showToast("Fase de Obra salva com sucesso!"); loadData();
+        }
+
+        async function deleteFase(id) {
+            if(!confirm("Tem certeza que deseja excluir esta fase? Ela deixará de aparecer nas opções.")) return;
+            showLoading(true);
+            const { error } = await sb.from('jsp_fase').delete().eq('id', id);
+            if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
+            showToast("Fase Excluída!"); loadData();
+        }
+
 
         // ====== CRUD EQUIPE ======
         function renderEquipe() {
@@ -1730,6 +1776,7 @@
         // ====== GERADOR DE RELATÓRIOS ======
         function gerarRelatorio() {
             const obraId = document.getElementById('rep-obra').value;
+            const faseFiltro = document.getElementById('rep-fase').value;
             const tipo = document.getElementById('rep-tipo').value;
             const mes = document.getElementById('rep-mes').value;
             const ano = document.getElementById('rep-ano').value;
@@ -1739,6 +1786,9 @@
             let logsFilt = STATE.logs.filter(l => l.status_financeiro === 'PAGO' && l.tipo !== 'oc_pendente');
             
             if (obraId) logsFilt = logsFilt.filter(l => String(l.obra_id) === String(obraId));
+            
+            // NOVO: Filtro por Fase
+            if (faseFiltro) logsFilt = logsFilt.filter(l => l.fase_obra === faseFiltro);
             
             if (mes || ano) {
                 logsFilt = logsFilt.filter(l => {
@@ -1760,13 +1810,14 @@
             const obraObj = STATE.obras.find(o => String(o.id) === String(obraId));
             const tituloObra = obraObj ? obraObj.nome : "Todas as Obras (Geral)";
             const tituloPeriodo = (mes ? mes + '/' : '') + (ano ? ano : 'Todo o Período');
+            const tituloFase = faseFiltro ? ` | Fase: ${faseFiltro}` : '';
 
             let htmlReport = `
                 <div id="printable-report" style="font-family: Arial, sans-serif; color: #333; width: 100%;">
                     <div style="text-align: center; border-bottom: 2px solid #1d4ed8; padding-bottom: 10px; margin-bottom: 20px;">
                         <h2 style="margin: 0; color: #1e293b; font-size: 24px;">Relatório de Acompanhamento - RV Negócios</h2>
                         <h3 style="margin: 5px 0 0 0; color: #1d4ed8;">Obra: ${tituloObra}</h3>
-                        <p style="margin: 5px 0 0 0; font-size: 14px; color: #64748b;">Período Filtrado: ${tituloPeriodo} | Tipo: ${tipo.toUpperCase()}</p>
+                        <p style="margin: 5px 0 0 0; font-size: 14px; color: #64748b;">Período Filtrado: ${tituloPeriodo} | Tipo: ${tipo.toUpperCase()}${tituloFase}</p>
                     </div>
             `;
 
@@ -1783,7 +1834,9 @@
                 }
             });
 
-            if (tipo === 'geral' && obraObj) {
+            // Se filtrou fase, o saldo do contrato não faz sentido mostrar inteiro para uma fase só.
+            // Então vamos mostrar o resumo financeiro apenas se for GERAL ou se não houver filtro de fase
+            if (tipo === 'geral' && obraObj && !faseFiltro) {
                 const valorContrato = parseFloat(obraObj.valor_contrato) || 0;
                 htmlReport += `
                     <div style="display: flex; gap: 10px; margin-bottom: 20px;">
@@ -1801,6 +1854,23 @@
                         </div>
                         <div style="flex: 1; padding: 15px; border: 1px solid #bfdbfe; border-radius: 8px; background-color: #eff6ff;">
                             <div style="font-size: 11px; font-weight: bold; color: #1e40af; text-transform: uppercase;">Caixa da Obra</div>
+                            <div style="font-size: 20px; font-weight: bold; color: #1d4ed8;">${formatMoney(recebido - gasto)}</div>
+                        </div>
+                    </div>
+                `;
+            } else if (tipo === 'geral') {
+                 htmlReport += `
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <div style="flex: 1; padding: 15px; border: 1px solid #bbf7d0; border-radius: 8px; background-color: #f0fdf4;">
+                            <div style="font-size: 11px; font-weight: bold; color: #166534; text-transform: uppercase;">Total Receitas (Filtro)</div>
+                            <div style="font-size: 20px; font-weight: bold; color: #15803d;">${formatMoney(recebido)}</div>
+                        </div>
+                        <div style="flex: 1; padding: 15px; border: 1px solid #fecaca; border-radius: 8px; background-color: #fef2f2;">
+                            <div style="font-size: 11px; font-weight: bold; color: #991b1b; text-transform: uppercase;">Total Despesas (Filtro)</div>
+                            <div style="font-size: 20px; font-weight: bold; color: #b91c1c;">${formatMoney(gasto)}</div>
+                        </div>
+                        <div style="flex: 1; padding: 15px; border: 1px solid #bfdbfe; border-radius: 8px; background-color: #eff6ff;">
+                            <div style="font-size: 11px; font-weight: bold; color: #1e40af; text-transform: uppercase;">Saldo Líquido (Filtro)</div>
                             <div style="font-size: 20px; font-weight: bold; color: #1d4ed8;">${formatMoney(recebido - gasto)}</div>
                         </div>
                     </div>
