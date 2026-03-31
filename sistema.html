@@ -1128,7 +1128,7 @@
                 ocs[l.id].total += parseFloat(l.valor_total);
             });
 
-            let arr = Object.values(ocs).sort((a,b)=> new Date(b.data) - new Date(a.data));
+           let arr = Object.values(ocs).sort((a,b)=> parseInt(b.id) - parseInt(a.id));
             
             if(arr.length === 0) { list.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">Nenhuma Ordem de Compra encontrada.</td></tr>`; return; }
 
