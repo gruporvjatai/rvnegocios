@@ -130,10 +130,46 @@
                 <div id="pos-cart-items" class="flex-1 space-y-2 overflow-y-auto p-4 bg-slate-50"></div>
                 
                 <div class="bg-white p-4 border-t shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
                         <div>
                             <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Destino (Obra)</label>
                             <select id="pos-obra" class="w-full p-2 border rounded-lg text-sm bg-slate-50 font-bold text-slate-700 focus:border-blue-600 outline-none"></select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fase da Obra</label>
+                            <select id="pos-fase" class="w-full p-2 border rounded-lg text-sm bg-slate-50 font-bold text-slate-700 focus:border-blue-600 outline-none">
+                                <option value="">-- Não especificada --</option>
+                                <option value="SERVIÇOS PRELIMINARES">SERVIÇOS PRELIMINARES</option>
+                                <option value="SERVIÇO EM TERRA">SERVIÇO EM TERRA</option>
+                                <option value="MURO">MURO</option>
+                                <option value="LAJE">LAJE</option>
+                                <option value="FUNDAÇÃO">FUNDAÇÃO</option>
+                                <option value="ESTRUTURA">ESTRUTURA</option>
+                                <option value="INSTALAÇÕES ELÉTRICAS">INSTALAÇÕES ELÉTRICAS</option>
+                                <option value="INSTALAÇÕES HIDRÁULICAS E SANITÁRIAS">INSTALAÇÕES HIDRÁULICAS E SANITÁRIAS</option>
+                                <option value="ALVENARIA">ALVENARIA</option>
+                                <option value="REVESTIMENTO DE PAREDES">REVESTIMENTO DE PAREDES</option>
+                                <option value="COBERTURA">COBERTURA</option>
+                                <option value="ESQUADRIAS">ESQUADRIAS</option>
+                                <option value="REVESTIMENTO DE PISOS">REVESTIMENTO DE PISOS</option>
+                                <option value="PINTURA">PINTURA</option>
+                                <option value="REVESTIMENTO DE LAJE E FORRO">REVESTIMENTO DE LAJE E FORRO</option>
+                                <option value="ADMINISTRAÇÃO">ADMINISTRAÇÃO</option>
+                                <option value="GRADIL">GRADIL</option>
+                                <option value="DIVERSOS">DIVERSOS</option>
+                                <option value="ABRIGO DE BOMBA A VÁCUO">ABRIGO DE BOMBA A VÁCUO</option>
+                                <option value="ALTERAÇÕES NA COBERTURA">ALTERAÇÕES NA COBERTURA</option>
+                                <option value="ALAMBRADO PARA ISOLAMENTO DO CMEI">ALAMBRADO PARA ISOLAMENTO DO CMEI</option>
+                                <option value="RETIRADA DE ESTACAS DO MURO DE DIVISA">RETIRADA DE ESTACAS DO MURO DE DIVISA</option>
+                                <option value="ALTERAÇÕES DOS ABRIGOS DE RESÍDUOS E ABRIGO DE BOMBAS">ALTERAÇÕES DOS ABRIGOS DE RESÍDUOS E ABRIGO DE BOMBAS</option>
+                                <option value="REFORÇO DE VERGAS">REFORÇO DE VERGAS</option>
+                                <option value="SHAFTS PARA SISTEMAS PLUVIAIS">SHAFTS PARA SISTEMAS PLUVIAIS</option>
+                                <option value="DIFERENÇA DOS MUROS DE DIVISA">DIFERENÇA DOS MUROS DE DIVISA</option>
+                                <option value="DIFERENÇA DOS GRADIS">DIFERENÇA DOS GRADIS</option>
+                                <option value="PISOS SPDA">PISOS SPDA</option>
+                                <option value="MELHORIAS PARA JANELAS">MELHORIAS PARA JANELAS</option>
+                                <option value="DIVISÓRIAS PARA SALA ODONTOLÓGICA">DIVISÓRIAS PARA SALA ODONTOLÓGICA</option>
+                            </select>
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fornecedor</label>
@@ -151,7 +187,7 @@
                             <input type="text" id="pos-solicitante" placeholder="Nome de quem solicitou..." class="w-full p-2 border rounded-lg text-sm bg-slate-50 focus:border-blue-600 outline-none font-medium">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Observações</label>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Observações (Recados)</label>
                             <textarea id="pos-custom-obs" rows="1" placeholder="Observações da Cotação..." class="w-full p-2 border rounded-lg text-sm bg-slate-50 focus:border-blue-600 outline-none resize-none"></textarea>
                         </div>
                     </div>
@@ -207,10 +243,10 @@
 
                 <div class="overflow-y-auto flex-1 p-0">
                     <table class="w-full text-sm text-left">
-                        <thead class="text-slate-500 bg-slate-100 sticky top-0 border-b">
+                        <thead class="text-slate-500 bg-slate-100 sticky top-0 border-b z-10">
                             <tr>
                                 <th class="p-3 font-semibold">Venc/Data</th>
-                                <th class="p-3 font-semibold">Descrição / Obra</th>
+                                <th class="p-3 font-semibold">Descrição / Categoria / Obra</th>
                                 <th class="p-3 font-semibold">Valor</th>
                                 <th class="p-3 font-semibold text-right w-28">Ações</th>
                             </tr>
@@ -228,10 +264,10 @@
                 
                 <div class="overflow-y-auto flex-1 p-0">
                     <table class="w-full text-sm text-left">
-                        <thead class="text-slate-500 bg-slate-100 sticky top-0 border-b">
+                        <thead class="text-slate-500 bg-slate-100 sticky top-0 border-b z-10">
                             <tr>
                                 <th class="p-3 font-semibold">Venc/Data</th>
-                                <th class="p-3 font-semibold">Descrição/Origem</th>
+                                <th class="p-3 font-semibold">Descrição / Origem</th>
                                 <th class="p-3 font-semibold">Valor</th>
                                 <th class="p-3 font-semibold text-right w-28">Ações</th>
                             </tr>
@@ -518,18 +554,42 @@
                 <div>
                     <label class="block text-sm font-bold text-slate-700 mb-1">Fase da Obra</label>
                     <select id="exp-fase" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none bg-white font-bold text-slate-700">
-                        <option value="">-- Não especificada / Branco --</option>
-                        <option value="Serviços Preliminares">Serviços Preliminares</option>
-                        <option value="Fundação">Fundação</option>
-                        <option value="Estrutura">Estrutura</option>
-                        <option value="Alvenaria">Alvenaria</option>
-                        <option value="Cobertura">Cobertura</option>
-                        <option value="Instalações Elétricas">Instalações Elétricas</option>
-                        <option value="Instalações Hidráulicas">Instalações Hidráulicas</option>
-                        <option value="Acabamento">Acabamento</option>
-                        <option value="Pintura">Pintura</option>
-                        <option value="Limpeza/Entrega">Limpeza / Entrega</option>
+                        <option value="">-- Não especificada --</option>
+                        <option value="SERVIÇOS PRELIMINARES">SERVIÇOS PRELIMINARES</option>
+                        <option value="SERVIÇO EM TERRA">SERVIÇO EM TERRA</option>
+                        <option value="MURO">MURO</option>
+                        <option value="LAJE">LAJE</option>
+                        <option value="FUNDAÇÃO">FUNDAÇÃO</option>
+                        <option value="ESTRUTURA">ESTRUTURA</option>
+                        <option value="INSTALAÇÕES ELÉTRICAS">INSTALAÇÕES ELÉTRICAS</option>
+                        <option value="INSTALAÇÕES HIDRÁULICAS E SANITÁRIAS">INSTALAÇÕES HIDRÁULICAS E SANITÁRIAS</option>
+                        <option value="ALVENARIA">ALVENARIA</option>
+                        <option value="REVESTIMENTO DE PAREDES">REVESTIMENTO DE PAREDES</option>
+                        <option value="COBERTURA">COBERTURA</option>
+                        <option value="ESQUADRIAS">ESQUADRIAS</option>
+                        <option value="REVESTIMENTO DE PISOS">REVESTIMENTO DE PISOS</option>
+                        <option value="PINTURA">PINTURA</option>
+                        <option value="REVESTIMENTO DE LAJE E FORRO">REVESTIMENTO DE LAJE E FORRO</option>
+                        <option value="ADMINISTRAÇÃO">ADMINISTRAÇÃO</option>
+                        <option value="GRADIL">GRADIL</option>
+                        <option value="DIVERSOS">DIVERSOS</option>
+                        <option value="ABRIGO DE BOMBA A VÁCUO">ABRIGO DE BOMBA A VÁCUO</option>
+                        <option value="ALTERAÇÕES NA COBERTURA">ALTERAÇÕES NA COBERTURA</option>
+                        <option value="ALAMBRADO PARA ISOLAMENTO DO CMEI">ALAMBRADO PARA ISOLAMENTO DO CMEI</option>
+                        <option value="RETIRADA DE ESTACAS DO MURO DE DIVISA">RETIRADA DE ESTACAS DO MURO DE DIVISA</option>
+                        <option value="ALTERAÇÕES DOS ABRIGOS DE RESÍDUOS E ABRIGO DE BOMBAS">ALTERAÇÕES DOS ABRIGOS DE RESÍDUOS E ABRIGO DE BOMBAS</option>
+                        <option value="REFORÇO DE VERGAS">REFORÇO DE VERGAS</option>
+                        <option value="SHAFTS PARA SISTEMAS PLUVIAIS">SHAFTS PARA SISTEMAS PLUVIAIS</option>
+                        <option value="DIFERENÇA DOS MUROS DE DIVISA">DIFERENÇA DOS MUROS DE DIVISA</option>
+                        <option value="DIFERENÇA DOS GRADIS">DIFERENÇA DOS GRADIS</option>
+                        <option value="PISOS SPDA">PISOS SPDA</option>
+                        <option value="MELHORIAS PARA JANELAS">MELHORIAS PARA JANELAS</option>
+                        <option value="DIVISÓRIAS PARA SALA ODONTOLÓGICA">DIVISÓRIAS PARA SALA ODONTOLÓGICA</option>
                     </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Categoria</label>
+                    <input type="text" id="exp-categoria" placeholder="Ex: Ferragem, Hidráulica, Acabamento" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none bg-white font-medium">
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-slate-700 mb-1">Tipo de Lançamento</label>
@@ -585,17 +645,37 @@
                 <div>
                     <label class="block text-sm font-bold text-slate-700 mb-1">Fase da Obra</label>
                     <select id="rev-fase" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none bg-white font-bold text-slate-700">
-                        <option value="">-- Não especificada / Branco --</option>
-                        <option value="Serviços Preliminares">Serviços Preliminares</option>
-                        <option value="Fundação">Fundação</option>
-                        <option value="Estrutura">Estrutura</option>
-                        <option value="Alvenaria">Alvenaria</option>
-                        <option value="Cobertura">Cobertura</option>
-                        <option value="Instalações Elétricas">Instalações Elétricas</option>
-                        <option value="Instalações Hidráulicas">Instalações Hidráulicas</option>
-                        <option value="Acabamento">Acabamento</option>
-                        <option value="Pintura">Pintura</option>
-                        <option value="Limpeza/Entrega">Limpeza / Entrega</option>
+                        <option value="">-- Não especificada --</option>
+                        <option value="SERVIÇOS PRELIMINARES">SERVIÇOS PRELIMINARES</option>
+                        <option value="SERVIÇO EM TERRA">SERVIÇO EM TERRA</option>
+                        <option value="MURO">MURO</option>
+                        <option value="LAJE">LAJE</option>
+                        <option value="FUNDAÇÃO">FUNDAÇÃO</option>
+                        <option value="ESTRUTURA">ESTRUTURA</option>
+                        <option value="INSTALAÇÕES ELÉTRICAS">INSTALAÇÕES ELÉTRICAS</option>
+                        <option value="INSTALAÇÕES HIDRÁULICAS E SANITÁRIAS">INSTALAÇÕES HIDRÁULICAS E SANITÁRIAS</option>
+                        <option value="ALVENARIA">ALVENARIA</option>
+                        <option value="REVESTIMENTO DE PAREDES">REVESTIMENTO DE PAREDES</option>
+                        <option value="COBERTURA">COBERTURA</option>
+                        <option value="ESQUADRIAS">ESQUADRIAS</option>
+                        <option value="REVESTIMENTO DE PISOS">REVESTIMENTO DE PISOS</option>
+                        <option value="PINTURA">PINTURA</option>
+                        <option value="REVESTIMENTO DE LAJE E FORRO">REVESTIMENTO DE LAJE E FORRO</option>
+                        <option value="ADMINISTRAÇÃO">ADMINISTRAÇÃO</option>
+                        <option value="GRADIL">GRADIL</option>
+                        <option value="DIVERSOS">DIVERSOS</option>
+                        <option value="ABRIGO DE BOMBA A VÁCUO">ABRIGO DE BOMBA A VÁCUO</option>
+                        <option value="ALTERAÇÕES NA COBERTURA">ALTERAÇÕES NA COBERTURA</option>
+                        <option value="ALAMBRADO PARA ISOLAMENTO DO CMEI">ALAMBRADO PARA ISOLAMENTO DO CMEI</option>
+                        <option value="RETIRADA DE ESTACAS DO MURO DE DIVISA">RETIRADA DE ESTACAS DO MURO DE DIVISA</option>
+                        <option value="ALTERAÇÕES DOS ABRIGOS DE RESÍDUOS E ABRIGO DE BOMBAS">ALTERAÇÕES DOS ABRIGOS DE RESÍDUOS E ABRIGO DE BOMBAS</option>
+                        <option value="REFORÇO DE VERGAS">REFORÇO DE VERGAS</option>
+                        <option value="SHAFTS PARA SISTEMAS PLUVIAIS">SHAFTS PARA SISTEMAS PLUVIAIS</option>
+                        <option value="DIFERENÇA DOS MUROS DE DIVISA">DIFERENÇA DOS MUROS DE DIVISA</option>
+                        <option value="DIFERENÇA DOS GRADIS">DIFERENÇA DOS GRADIS</option>
+                        <option value="PISOS SPDA">PISOS SPDA</option>
+                        <option value="MELHORIAS PARA JANELAS">MELHORIAS PARA JANELAS</option>
+                        <option value="DIVISÓRIAS PARA SALA ODONTOLÓGICA">DIVISÓRIAS PARA SALA ODONTOLÓGICA</option>
                     </select>
                 </div>
                 <div>
@@ -699,7 +779,7 @@
             </div>
             <div class="flex-1 overflow-y-auto p-0 bg-white">
                 <table class="w-full text-sm text-left">
-                    <thead class="bg-slate-100 text-slate-700 sticky top-0 border-b shadow-sm">
+                    <thead class="bg-slate-100 text-slate-700 sticky top-0 border-b shadow-sm z-10">
                         <tr>
                             <th class="p-3 font-semibold">Data da Compra</th>
                             <th class="p-3 font-semibold">Fornecedor</th>
@@ -903,7 +983,7 @@
             if(!isNew) {
                 payload.id = document.getElementById('eqp-id').value;
             } else {
-                payload.id = crypto.randomUUID(); // Gerar ID em texto (já que você criou text PRIMARY KEY)
+                payload.id = crypto.randomUUID();
             }
 
             const { error } = await sb.from('jsp_equipe').upsert(payload);
@@ -1013,7 +1093,10 @@
                 const totalItem = i.qty * i.price; sub += totalItem;
                 return `
                 <div class="bg-white p-3 border border-slate-200 rounded-xl mb-2 flex items-center justify-between gap-4 shadow-sm hover:border-blue-300 hover:shadow-md transition">
-                    <div class="flex-1 min-w-0"><div class="text-sm font-bold text-slate-700 truncate">${i.name}</div></div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-bold text-slate-700 truncate">${i.name}</div>
+                        <div class="text-[10px] text-slate-400 uppercase font-bold">${i.cat || 'Geral'}</div>
+                    </div>
                     <div class="flex items-center gap-2 shrink-0">
                         <input type="number" value="${i.qty}" onchange="updateCart(${idx}, 'qty', this.value)" class="w-16 p-2 border rounded-lg bg-slate-50 text-center text-sm font-bold focus:border-blue-500 outline-none">
                         <span class="text-slate-400 text-xs font-bold">x</span>
@@ -1035,6 +1118,7 @@
             document.getElementById('pos-custom-obs').value=''; 
             document.getElementById('pos-fornecedor').value = '';
             document.getElementById('pos-fornecedor-btn').querySelector('span').innerText = 'Selecione Fornecedor';
+            document.getElementById('pos-fase').value = '';
             renderCart(); 
         }
 
@@ -1046,7 +1130,10 @@
             const fil = STATE.produtos.filter(p => p.nome.toLowerCase().includes(term));
             grid.innerHTML = fil.map(p => `
                 <div class="p-4 border border-slate-200 rounded-xl hover:shadow-md bg-white flex items-center justify-between">
-                    <h4 class="font-black text-sm text-slate-800 w-1/2 truncate">${p.nome}</h4>
+                    <div class="w-1/2">
+                        <h4 class="font-black text-sm text-slate-800 truncate">${p.nome}</h4>
+                        <span class="text-[10px] text-slate-500 uppercase">${p.categoria || 'Geral'}</span>
+                    </div>
                     <div class="flex items-center gap-3 w-1/2 justify-end">
                         <span class="text-slate-500 font-bold text-xs">${formatMoney(p.preco)}</span>
                         <button onclick="addCartModal(${p.id}, '${p.nome.replace(/'/g,"")}', ${p.preco})" class="bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white p-2 rounded-lg transition"><i data-lucide="plus" width="16"></i></button>
@@ -1055,8 +1142,10 @@
             lucide.createIcons();
         }
         function addCartModal(id, name, price) {
+            const p = STATE.produtos.find(x => x.id == id);
+            const cat = p ? p.categoria : 'Geral';
             const exist = CART.find(x => x.id == id);
-            if(exist) exist.qty += 1; else CART.push({id, name, price, qty: 1});
+            if(exist) exist.qty += 1; else CART.push({id, name, price, qty: 1, cat: cat});
             showToast(`${name} adicionado!`); renderCart();
         }
 
@@ -1085,6 +1174,7 @@
 
             showLoading(true);
             const fornId = document.getElementById('pos-fornecedor').value || null;
+            const faseObra = document.getElementById('pos-fase').value;
             const solicitante = document.getElementById('pos-solicitante').value;
             const obs = document.getElementById('pos-custom-obs').value;
             const newId = CURRENT_OC_ID || getNextIdNum(STATE.logs);
@@ -1105,6 +1195,8 @@
                 data: dt,
                 vencimento: dt,
                 status_financeiro: 'PENDENTE',
+                fase_obra: faseObra,
+                categoria: i.cat || 'Geral',
                 observacao: obsFinal
             }));
 
@@ -1121,14 +1213,14 @@
             
             const ocs = {};
             STATE.logs.filter(l => (l.tipo === 'oc_pendente' || l.tipo === 'compra') && l.status_financeiro !== 'CANCELADO').forEach(l => {
-                if(!ocs[l.id]) ocs[l.id] = { id: l.id, data: l.data, itemsLog: [], itemsText: [], total: 0, obra_id: l.obra_id, forn_id: l.fornecedor_id, obs: l.observacao, tipo: l.tipo };
+                if(!ocs[l.id]) ocs[l.id] = { id: l.id, data: l.data, itemsLog: [], itemsText: [], total: 0, obra_id: l.obra_id, forn_id: l.fornecedor_id, obs: l.observacao, tipo: l.tipo, fase: l.fase_obra };
                 
                 ocs[l.id].itemsLog.push({ name: l.produto_nome, qty: l.quantidade, price: (parseFloat(l.valor_total) / parseFloat(l.quantidade)) });
                 ocs[l.id].itemsText.push(l.produto_nome + ` (x${l.quantidade})`);
                 ocs[l.id].total += parseFloat(l.valor_total);
             });
 
-            let arr = Object.values(ocs).sort((a,b)=> new Date(b.data) - new Date(a.data));
+           let arr = Object.values(ocs).sort((a,b)=> parseInt(b.id) - parseInt(a.id));
             
             if(arr.length === 0) { list.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">Nenhuma Ordem de Compra encontrada.</td></tr>`; return; }
 
@@ -1144,6 +1236,7 @@
                     <td class="p-4">
                         <div class="font-bold text-slate-800">${forn?.nome || 'Fornecedor A Definir'}</div>
                         <div class="text-[10px] text-blue-600 font-bold uppercase mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome || 'Sem Obra'}</div>
+                        ${o.fase ? `<div class="text-[9px] text-slate-500 font-bold uppercase mt-0.5"><i data-lucide="layers" class="inline w-3 h-3"></i> ${o.fase}</div>` : ''}
                     </td>
                     <td class="p-4 text-center">
                         <span class="px-2 py-1 rounded text-[10px] font-bold ${o.tipo === 'compra' ? 'bg-indigo-100 text-indigo-700' : 'bg-orange-100 text-orange-700'}">${o.tipo === 'compra' ? 'CONFIRMADA' : 'PENDENTE'}</span>
@@ -1176,10 +1269,11 @@
             const itemsLog = STATE.logs.filter(l => String(l.id) === String(id) && l.tipo === 'oc_pendente');
             if(!itemsLog.length) return;
 
-            CART = itemsLog.map(i => ({ name: i.produto_nome, qty: parseFloat(i.quantidade), price: (parseFloat(i.valor_total)/parseFloat(i.quantidade)), total: parseFloat(i.valor_total) }));
+            CART = itemsLog.map(i => ({ name: i.produto_nome, qty: parseFloat(i.quantidade), price: (parseFloat(i.valor_total)/parseFloat(i.quantidade)), total: parseFloat(i.valor_total), cat: i.categoria }));
             CURRENT_OC_ID = id;
             
             document.getElementById('pos-obra').value = itemsLog[0].obra_id || '';
+            document.getElementById('pos-fase').value = itemsLog[0].fase_obra || '';
             
             const fornObj = STATE.fornecedores.find(f => f.id == itemsLog[0].fornecedor_id);
             if(fornObj) {
@@ -1339,6 +1433,7 @@
             document.getElementById('exp-date').value = getTodayDate();
             document.getElementById('exp-tipo').value = 'Material/Produto';
             document.getElementById('exp-fase').value = '';
+            document.getElementById('exp-categoria').value = '';
             toggleEquipeSelect();
             document.getElementById('modal-expense').classList.remove('hidden');
         }
@@ -1375,11 +1470,11 @@
             despArrRaw.forEach(l => {
                 if (l.tipo === 'compra') {
                     if (!groupedOCs[l.id]) {
-                        groupedOCs[l.id] = { ...l, valor_total: 0, is_oc: true };
+                        groupedOCs[l.id] = { ...l, valor_total: 0, is_oc: true, categorias_oc: new Set() };
                         despArr.push(groupedOCs[l.id]); // Adiciona a referência agrupada
                     }
-                    // Soma os valores de cada item na O.C. principal
                     groupedOCs[l.id].valor_total += parseFloat(l.valor_total);
+                    if(l.categoria) groupedOCs[l.id].categorias_oc.add(l.categoria);
                 } else {
                     despArr.push(l); // Despesas normais entram direto
                 }
@@ -1388,7 +1483,7 @@
             const expSearch = document.getElementById('exp-search').value.toLowerCase();
             const expStatus = document.getElementById('exp-status').value;
             
-            if(expSearch) despArr = despArr.filter(l => (l.produto_nome && l.produto_nome.toLowerCase().includes(expSearch)) || String(l.id).includes(expSearch));
+            if(expSearch) despArr = despArr.filter(l => (l.produto_nome && l.produto_nome.toLowerCase().includes(expSearch)) || String(l.id).includes(expSearch) || (l.categoria && l.categoria.toLowerCase().includes(expSearch)));
             if(expStatus) despArr = despArr.filter(l => l.status_financeiro === expStatus);
             
             despArr.sort((a,b)=> new Date(b.vencimento || b.data) - new Date(a.vencimento || a.data));
@@ -1400,7 +1495,8 @@
                 const obra = STATE.obras.find(x=>x.id==l.obra_id);
                 const extraInfo = (!l.is_oc && l.observacao) ? `<div class="text-[9px] text-slate-500 font-bold uppercase mt-0.5">${l.observacao}</div>` : '';
 
-                // Botões dinâmicos dependendo se é uma O.C. agrupada ou Despesa Simples
+                let strCategoria = l.is_oc ? (l.categorias_oc.size > 0 ? Array.from(l.categorias_oc).join(', ') : 'Várias Categorias') : (l.categoria || 'Geral');
+
                 let btnAcoes = '';
                 if (!isPago) {
                     btnAcoes = l.is_oc ? `
@@ -1424,7 +1520,8 @@
                     <td class="p-3 text-xs font-bold text-slate-700">${formatDate(l.vencimento || l.data)}</td>
                     <td class="p-3">
                         <div class="font-bold text-slate-800 text-xs">${l.is_oc ? `O.C. #${l.id} - Compra Consolidada` : l.produto_nome}</div>
-                        <div class="text-[10px] text-blue-700 font-bold"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Geral'}</div>
+                        <div class="text-[9px] text-purple-600 font-bold uppercase mt-1"><i data-lucide="tag" class="inline w-3 h-3"></i> ${strCategoria} | <i data-lucide="layers" class="inline w-3 h-3"></i> ${l.fase_obra || 'Geral'}</div>
+                        <div class="text-[10px] text-blue-700 font-bold mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Geral'}</div>
                         ${extraInfo}
                         ${!isPago ? `<div class="text-[9px] text-slate-500 uppercase mt-0.5">Pagamento via: ${l.forma_pagamento || '-'}</div>` : ''}
                     </td>
@@ -1451,6 +1548,7 @@
                     <td class="p-3 text-xs font-bold text-slate-700">${formatDate(l.vencimento || l.data)}</td>
                     <td class="p-3">
                         <div class="font-bold text-slate-800 text-xs">${l.produto_nome}</div>
+                        ${l.fase_obra ? `<div class="text-[9px] text-purple-600 font-bold uppercase mt-1"><i data-lucide="layers" class="inline w-3 h-3"></i> ${l.fase_obra}</div>` : ''}
                         <div class="text-[10px] text-blue-700 font-bold"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Geral'}</div>
                         ${extraInfo}
                     </td>
@@ -1535,7 +1633,6 @@
             showToast("Lançamento Cancelado!"); loadData();
         }
 
-
         async function baixarLogOC(id) {
             if(!confirm("Confirmar a baixa financeira desta O.C.? Todos os itens vinculados serão marcados como pagos.")) return;
             showLoading(true);
@@ -1560,7 +1657,6 @@
             showToast("O.C. Cancelada no Financeiro!"); loadData();
         }
         
-
         async function saveExpense() {
             const obra_id = document.getElementById('exp-obra').value || null;
             const desc = document.getElementById('exp-item').value;
@@ -1571,12 +1667,12 @@
             const tipoLancamento = document.getElementById('exp-tipo').value;
             const equipeNome = document.getElementById('exp-equipe').value;
             const faseObra = document.getElementById('exp-fase').value;
+            const categoria = document.getElementById('exp-categoria').value;
 
             if(!desc || isNaN(val)) return showToast("Preencha descrição e valor!", true);
             showLoading(true);
 
             let obsArr = [];
-            if(faseObra) obsArr.push(`Fase: ${faseObra}`);
             obsArr.push(`Tipo: ${tipoLancamento}`);
             if(tipoLancamento === 'Mão de Obra' && equipeNome) obsArr.push(`Equipe: ${equipeNome}`);
             
@@ -1590,6 +1686,8 @@
                 valor_total: val,
                 data: dt, vencimento: dt,
                 status_financeiro: status,
+                fase_obra: faseObra,
+                categoria: categoria || 'Geral',
                 observacao: obsFinal
             }]);
             
@@ -1610,7 +1708,7 @@
             if(!desc || isNaN(val)) return showToast("Preencha descrição e valor!", true);
             showLoading(true);
             
-            const obsFinal = faseObra ? `Fase: ${faseObra}` : '';
+            const obsFinal = 'Medição de Receita';
 
             const {error} = await sb.from('jsp_logs').insert([{
                 id: getNextIdNum(STATE.logs).toString(),
@@ -1620,6 +1718,7 @@
                 valor_total: val,
                 data: dt, vencimento: dt,
                 status_financeiro: status,
+                fase_obra: faseObra,
                 observacao: obsFinal
             }]);
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
@@ -1671,14 +1770,21 @@
                     </div>
             `;
 
+            let recebido = 0; let gasto = 0;
+            const gastosPorCategoria = {};
+
+            logsFilt.forEach(l => {
+                if (l.tipo === 'receita') recebido += parseFloat(l.valor_total);
+                else {
+                    gasto += parseFloat(l.valor_total);
+                    const cat = l.categoria || 'Outros / Sem Categoria';
+                    if(!gastosPorCategoria[cat]) gastosPorCategoria[cat] = 0;
+                    gastosPorCategoria[cat] += parseFloat(l.valor_total);
+                }
+            });
+
             if (tipo === 'geral' && obraObj) {
                 const valorContrato = parseFloat(obraObj.valor_contrato) || 0;
-                let recebido = 0; let gasto = 0;
-                logsFilt.forEach(l => {
-                    if (l.tipo === 'receita') recebido += parseFloat(l.valor_total);
-                    else gasto += parseFloat(l.valor_total);
-                });
-
                 htmlReport += `
                     <div style="display: flex; gap: 10px; margin-bottom: 20px;">
                         <div style="flex: 1; padding: 15px; border: 1px solid #cbd5e1; border-radius: 8px; background-color: #f8fafc;">
@@ -1701,6 +1807,35 @@
                 `;
             }
 
+            // Gráfico de Barras por Categoria (HTML)
+            if (tipo === 'despesas' || tipo === 'todos' || tipo === 'geral') {
+                const catArray = Object.keys(gastosPorCategoria).map(k => ({ nome: k, valor: gastosPorCategoria[k] })).sort((a,b) => b.valor - a.valor);
+                const maxCatValor = catArray.length > 0 ? catArray[0].valor : 0;
+
+                if(catArray.length > 0) {
+                    htmlReport += `
+                    <div style="margin-bottom: 30px; border: 1px solid #cbd5e1; padding: 20px; border-radius: 8px; background-color: #fff;">
+                        <h4 style="margin: 0 0 15px 0; color: #1e293b; font-size: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">📊 Distribuição de Custos por Categoria</h4>
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            ${catArray.map(c => {
+                                const pct = gasto > 0 ? ((c.valor / gasto) * 100).toFixed(1) : 0;
+                                const w = maxCatValor > 0 ? ((c.valor / maxCatValor) * 100) : 0;
+                                return `
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                                        <span style="font-weight: bold; color: #475569; text-transform: uppercase;">${c.nome}</span>
+                                        <span style="font-weight: bold; color: #1e293b;">${formatMoney(c.valor)} <span style="color: #64748b; font-weight: normal;">(${pct}%)</span></span>
+                                    </div>
+                                    <div style="width: 100%; background-color: #f1f5f9; border-radius: 4px; height: 10px; overflow: hidden;">
+                                        <div style="width: ${w}%; background-color: #3b82f6; height: 100%; border-radius: 4px;"></div>
+                                    </div>
+                                </div>`;
+                            }).join('')}
+                        </div>
+                    </div>`;
+                }
+            }
+
             let totalTabela = 0;
             let saldoCorrido = 0;
             const htmlLinhas = logsFilt.map(l => {
@@ -1714,12 +1849,16 @@
                 else if(tipo === 'receitas') totalTabela += valor;
 
                 const forn = STATE.fornecedores.find(x => x.id == l.fornecedor_id)?.nome || '-';
+                const faseBadge = l.fase_obra ? `<br><span style="font-size: 10px; color: #7e22ce; font-weight: bold;">[${l.fase_obra}]</span>` : '';
+                const catBadge = l.categoria && !isReceita ? `<br><span style="font-size: 10px; color: #475569; font-weight: bold;">CAT: ${l.categoria}</span>` : '';
+
                 return `
                 <tr>
                     <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 12px;">${formatDate(l.data)}</td>
                     <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 12px;">
                         <strong>${isReceita ? 'Medição' : (l.tipo==='compra' ? `O.C. #${l.id}` : 'Despesa Avulsa')}</strong><br>
                         <span style="color: #64748b;">${l.produto_nome || '-'}</span>
+                        ${faseBadge} ${catBadge}
                     </td>
                     <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 12px;">${forn}</td>
                     <td align="right" style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 12px; font-weight: bold; color: ${isReceita ? '#15803d' : '#b91c1c'};">
@@ -1750,7 +1889,7 @@
             if (tipo === 'despesas' || tipo === 'receitas') {
                 htmlReport += `
                 <div style="text-align: right; margin-top: 20px; font-size: 18px; font-weight: bold;">
-                    TOTAL DO RELATÓRIO: <span style="color: ${tipo === 'receitas' ? '#15803d' : '#b91c1c'};">${formatMoney(totalTabela)}</span>
+                    TOTAL DA LISTA ACIMA: <span style="color: ${tipo === 'receitas' ? '#15803d' : '#b91c1c'};">${formatMoney(totalTabela)}</span>
                 </div>`;
             }
 
@@ -1813,6 +1952,7 @@
                             <h2 style="margin: 0 0 5px 0; font-size: 16px; font-weight: 900;">ORDEM DE COMPRA</h2>
                             <div style="font-size: 11px;"><strong>Nº:</strong> ${o.id}</div>
                             <div style="font-size: 11px;"><strong>Emissão:</strong> ${formatDate(o.data)}</div>
+                            <div style="font-size: 11px;"><strong>Fase:</strong> ${o.fase_obra || '-'}</div>
                         </td>
                     </tr>
                 </table>
@@ -1945,6 +2085,7 @@
                             <h2 style="margin: 0 0 5px 0; font-size: 16px; font-weight: 900; background-color: #0f172a; color: white; padding: 5px 10px; display: inline-block;">ROMANEIO DE RETIRADA</h2>
                             <div style="font-size: 12px; margin-top: 5px;"><strong>O.C. Referência Nº:</strong> ${o.id}</div>
                             <div style="font-size: 12px;"><strong>Emissão:</strong> ${formatDate(o.data)}</div>
+                            <div style="font-size: 12px;"><strong>Fase:</strong> ${o.fase_obra || '-'}</div>
                         </td>
                     </tr>
                 </table>
