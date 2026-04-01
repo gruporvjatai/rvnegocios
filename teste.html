@@ -863,8 +863,19 @@
       async function compartilharNative(id, isRomaneio = false) {
             showLoading(true);
 
-            const htmlString = buildHTMLOC(id, isRomaneio);
-            if (!htmlString) { showLoading(false); return; }
+            // Garante que o HTML venha montado e seja encapsulado perfeitamente
+            let rawHtml = buildHTMLOC(id, isRomaneio);
+            if (!rawHtml) { 
+                showLoading(false); 
+                return showToast("O.C. não encontrada", true); 
+            }
+
+            // Encapsulamento de segurança para o html2pdf renderizar 100% no mobile
+            const htmlString = `
+                <div style="background-color: #ffffff; width: 100%; box-sizing: border-box; overflow: hidden; position: relative; z-index: 1;">
+                    ${rawHtml}
+                </div>
+            `;
 
             const fileName = `OC_${id}${isRomaneio ? '_Romaneio' : ''}.pdf`;
             const tituloDoc = isRomaneio ? `Romaneio OC #${id}` : `Ordem de Compra #${id}`;
@@ -873,27 +884,37 @@
                 margin: 5, 
                 filename: fileName, 
                 image: { type: 'jpeg', quality: 0.98 }, 
-                html2canvas: { scale: 2, useCORS: true, letterRendering: true }, 
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff' }, 
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
             };
             
             try {
-                // O segredo do outro código: dar um respiro pro navegador mobile processar
+                // Timeout idêntico ao que funciona (500ms de respiro pro navegador)
                 setTimeout(async () => {
                     try {
-                        // Usa await direto para gerar o blob
                         const pdfBlob = await html2pdf().set(opt).from(htmlString).output('blob');
                         const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
                         
-                        // Chama o share nativo
                         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                            await navigator.share({
-                                title: tituloDoc,
-                                files: [file]
-                            });
-                            showLoading(false);
+                            try {
+                                await navigator.share({
+                                    title: tituloDoc,
+                                    text: `Segue em anexo: ${tituloDoc}`,
+                                    files: [file]
+                                });
+                                showLoading(false);
+                            } catch (shareError) {
+                                console.log("Erro no share (geralmente cancelado pelo user):", shareError);
+                                // Se o usuário apenas cancelou a janela de share, não fazemos nada.
+                                // Se for outro erro de permissão (AbortError), forçamos o download local.
+                                if (shareError.name !== 'AbortError') {
+                                    await html2pdf().set(opt).from(htmlString).save();
+                                    showToast("Arquivo baixado localmente.");
+                                }
+                                showLoading(false);
+                            }
                         } else {
-                            // Fallback usando o save nativo do html2pdf, igual no código base
+                            // Se o navegador do celular for antigo/incompatível
                             await html2pdf().set(opt).from(htmlString).save();
                             showLoading(false);
                             showToast("PDF Baixado! Seu celular não suporta envio direto.");
@@ -909,7 +930,6 @@
                 showToast("Erro fatal no PDF", true);
             }
         }
-
         // ====== FINANCEIRO ======
         function renderFinance() {
             const obraFilter = document.getElementById('fin-obra-filter').value;
