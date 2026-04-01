@@ -860,157 +860,70 @@
             openModal('modal-view-oc');
         }
 
-     async function compartilharNative(id, isRomaneio = false) {
+    async function compartilharNative(id, isRomaneio = false) {
             showLoading(true);
 
-            const logsOC = STATE.logs.filter(l => String(l.id) === String(id) && (l.tipo === 'oc_pendente' || l.tipo === 'compra'));
-            if (!logsOC.length) { 
-                showLoading(false); 
-                return; 
-            }
-            
-            const o = logsOC[0]; 
-            const obra = STATE.obras.find(x => x.id == o.obra_id) || { nome: 'Sem Obra', endereco: '-' }; 
-            const forn = STATE.fornecedores.find(x => x.id == o.fornecedor_id) || { nome: 'A Definir', documento: '', telefone: '' };
-            
-            let total = 0;
-            const itemsHtml = logsOC.map((i) => {
-                const valor = parseFloat(i.valor_total); 
-                total += valor; 
-                const price = valor / parseFloat(i.quantidade); 
-                const colPreco = isRomaneio ? '' : `<td align="right" style="border-bottom: 1px solid #000; padding: 8px;">${formatMoney(price)}</td><td align="right" style="border-bottom: 1px solid #000; padding: 8px;">${formatMoney(valor)}</td>`;
-                return `
-                    <tr>
-                        <td style="border-bottom: 1px solid #000; padding: 8px;">${i.produto_nome}</td>
-                        <td align="center" style="border-bottom: 1px solid #000; padding: 8px;">${i.quantidade}</td>
-                        ${colPreco}
-                    </tr>`;
-            }).join('');
-
-            const cabecalhoPreco = isRomaneio ? '' : `<th align="right" style="background-color: #0f172a; color: #ffffff; padding: 8px; width: 90px;">Unit.</th><th align="right" style="background-color: #0f172a; color: #ffffff; padding: 8px; width: 90px;">Total</th>`;
-            const rodapePreco = isRomaneio ? '' : `
-                <table width="100%" style="font-size: 11px; border-collapse: collapse;">
-                    <tr>
-                        <td style="padding: 10px 10px 10px 0; font-size: 12px; font-weight: 900; border-top: 2px solid #0f172a; background-color: #f1f5f9;">TOTAL ESTIMADO:</td>
-                        <td align="right" style="padding: 10px; font-size: 14px; font-weight: 900; border-top: 2px solid #0f172a; background-color: #f1f5f9;">${formatMoney(total)}</td>
-                    </tr>
-                </table>`;
-            
-            const tituloDoc = isRomaneio ? 'ROMANEIO DE ENTREGA' : 'ORDEM DE COMPRA';
-            const obsText = o.observacao || 'Nenhuma observação informada.';
-
-            // HTML idêntico à estrutura do RV Portal
-            const htmlString = `
-                <div style="font-family: 'Helvetica', 'Arial', sans-serif; color: #1e293b; padding: 15px; background-color: #ffffff; width: 100%; box-sizing: border-box; border: 1px solid #000; min-height: 27.5cm; position: relative; z-index: 1;">
-                    
-                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 450px; height: 450px; opacity: 0.1; z-index: -1;">
-                        <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" crossorigin="anonymous" style="width: 100%; height: 100%; object-fit: contain;" />
-                    </div>
-
-                    <table width="100%" style="border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px;">
-                        <tr>
-                            <td width="130" valign="middle" style="border-right: 1px solid #e2e8f0; padding-right: 15px;">
-                                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" crossorigin="anonymous" style="max-height: 80px; max-width: 120px; display: block; margin: 0 auto;" />
-                            </td>
-                            <td valign="middle" style="padding-left: 15px;">
-                                <h2 style="margin: 0; color: #1d4ed8; font-size: 20px; font-weight: 800;">RV NEGÓCIOS E COMPANHIA</h2>
-                                <div style="font-size: 11px; color: #475569; margin-top: 5px; line-height: 1.4;">CNPJ: 61.893.912/0001-24</div>
-                                <div style="font-size: 11px; color: #475569; line-height: 1.4;">Rua Mineiros, 530 | Jataí - GO | (64) 99981-5852</div>
-                            </td>
-                            <td align="right" valign="top">
-                                <h2 style="margin: 0 0 5px 0; font-size: 16px; font-weight: 900; color: #0f172a;">${tituloDoc}</h2>
-                                <div style="font-size: 11px; margin-bottom: 2px;"><strong>Nº:</strong> ${o.id}</div>
-                                <div style="font-size: 11px;"><strong>Data:</strong> ${formatDate(o.data)}</div>
-                            </td>
-                        </tr>
-                    </table>
-
-                    <table width="100%" style="margin-bottom: 20px; border-spacing: 0;">
-                        <tr>
-                            <td width="48%" valign="top" style="border: 1px solid #000; border-radius: 6px; padding: 0; overflow: hidden;">
-                                <div style="background-color: #f1f5f9; padding: 5px 10px; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #64748b; border-bottom: 1px solid #000;">Dados do Fornecedor</div>
-                                <div style="padding: 10px; font-size: 11px; line-height: 1.5;">
-                                    <strong>${forn.nome}</strong><br>${forn.documento || '-'}<br>${forn.telefone || '-'}
-                                </div>
-                            </td>
-                            <td width="4%"></td>
-                            <td width="48%" valign="top" style="border: 1px solid #000; border-radius: 6px; padding: 0; overflow: hidden;">
-                                <div style="background-color: #f1f5f9; padding: 5px 10px; font-size: 10px; font-weight: bold; text-transform: uppercase; color: #64748b; border-bottom: 1px solid #000;">Destino (Obra)</div>
-                                <div style="padding: 10px; font-size: 11px; line-height: 1.5;">
-                                    <strong>${obra.nome}</strong><br>${obra.endereco || '-'}<br>Fase: ${o.fase_obra || '-'}
-                                </div>
-                            </td>
-                        </tr>
-                    </table>
-
-                    <table width="100%" style="border-collapse: collapse; margin-bottom: 20px; font-size: 11px;">
-                        <thead>
-                            <tr>
-                                <th align="left" style="background-color: #0f172a; color: #ffffff; padding: 8px;">Descrição</th>
-                                <th align="center" style="background-color: #0f172a; color: #ffffff; padding: 8px; width: 50px;">Qtd</th>
-                                ${cabecalhoPreco}
-                            </tr>
-                        </thead>
-                        <tbody>${itemsHtml}</tbody>
-                    </table>
-
-                    <table width="100%" style="margin-top: 10px;">
-                        <tr>
-                            <td valign="top" style="padding-right: 30px;">
-                                <div style="border: 1px dashed #cbd5e1; border-radius: 6px; padding: 10px;">
-                                    <div style="font-size: 10px; font-weight: bold; color: #64748b; margin-bottom: 5px;">Observações:</div>
-                                    <div style="font-size: 10px; color: #334155;">${obsText}</div>
-                                </div>
-                            </td>
-                            <td width="250" valign="top">
-                                ${rodapePreco}
-                            </td>
-                        </tr>
-                    </table>
-                    
-                    <div style="margin-top: 40px; text-align: center; width: 200px; border-top: 1px solid #000; padding-top: 5px; font-size: 10px; font-weight: bold; margin-left: auto; margin-right: auto;">
-                        ASSINATURA RESPONSÁVEL
-                    </div>
-                </div>
-            `;
-
-            const filename = `Documento_${o.id}_${forn.nome.replace(/\s+/g, '_')}.pdf`;
-            const opt = {
-                margin: 10,
-                filename: filename,
-                image: { type: 'jpeg', quality: 1 },
-                html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-
             try {
-                setTimeout(async () => {
-                    try {
-                        const pdfBlob = await html2pdf().set(opt).from(htmlString).output('blob');
+                // 1. Aproveita a SUA função que já funciona rápido e perfeitamente
+                const rawHtml = buildHTMLOC(id, isRomaneio);
+                
+                if (!rawHtml) {
+                    showLoading(false);
+                    return showToast("Erro ao gerar visualização", true);
+                }
 
-                        const file = new File([pdfBlob], filename, { type: 'application/pdf' });
+                // 2. Colocamos um fundo branco obrigatório pro PDF não sair com fundo preto/transparente
+                const htmlString = `
+                    <div style="background-color: #ffffff; width: 100%; box-sizing: border-box; padding: 10px;">
+                        ${rawHtml}
+                    </div>
+                `;
 
-                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                            await navigator.share({
-                                title: `${tituloDoc} #${o.id}`,
-                                text: `Olá ${forn.nome}, segue o documento solicitado.`,
-                                files: [file]
-                            });
-                            showLoading(false);
-                        } else {
-                            await html2pdf().set(opt).from(htmlString).save();
-                            showLoading(false);
-                            showToast("PDF Baixado! Seu celular não suporta envio direto.");
-                        }
-                    } catch (err) {
-                        console.error("Erro PDF", err);
-                        showLoading(false);
-                        showToast("Falha ao gerar o PDF", true);
-                    }
-                }, 500);
+                const fileName = `OC_${id}${isRomaneio ? '_Romaneio' : ''}.pdf`;
+                const tituloDoc = isRomaneio ? `Romaneio OC #${id}` : `Ordem de Compra #${id}`;
+
+                const opt = {
+                    margin: 5,
+                    filename: fileName,
+                    image: { type: 'jpeg', quality: 1 },
+                    html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+
+                // 3. SEM SETTIMEOUT NENHUM. Vai direto pra conversão!
+                const pdfBlob = await html2pdf().set(opt).from(htmlString).output('blob');
+                const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+                // 4. Tenta abrir a gavetinha do WhatsApp
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({
+                        title: tituloDoc,
+                        text: `Segue em anexo: ${tituloDoc}`,
+                        files: [file]
+                    });
+                } else {
+                    // Se o celular for antigo e não tiver a gavetinha
+                    await html2pdf().set(opt).from(htmlString).save();
+                    showToast("Celular não suporta envio direto. PDF baixado.");
+                }
+
             } catch (err) {
+                console.error("Erro PDF:", err);
+                
+                // Se o erro for o navegador bloqueando por causa do tempo (NotAllowedError)
+                if (err.name !== 'AbortError') {
+                    showToast("Lentidão do aparelho bloqueou o envio. Baixando PDF...", true);
+                    
+                    // Fallback: Baixa o arquivo na marra já que não deixou compartilhar
+                    try {
+                        const rawHtml = buildHTMLOC(id, isRomaneio);
+                        const opt = { margin: 5, filename: `OC_${id}.pdf`, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+                        await html2pdf().set(opt).from(`<div style="background:#fff">${rawHtml}</div>`).save();
+                    } catch(e) {}
+                }
+            } finally {
+                // Tira o "Aguarde..." da tela no final de tudo
                 showLoading(false);
-                showToast("Falha ao gerar o PDF", true);
             }
         }
       
