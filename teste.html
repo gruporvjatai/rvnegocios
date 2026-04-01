@@ -856,9 +856,9 @@
         }
 
         function verOC(id) {
+          prepararPDF(id); 
             document.getElementById('modal-view-oc-content').innerHTML = buildHTMLOC(id, false);
-            openModal('modal-view-oc');
-          prepararPDF(id);
+            openModal('modal-view-oc');          
         }
 
       // ==============================================================================================================================================================
