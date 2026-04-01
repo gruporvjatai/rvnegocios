@@ -863,72 +863,62 @@
       
 
     async function compartilharNative(id, isRomaneio = false) {
-            showLoading(true);
+    showLoading(true);
 
-            // 1. Pega o HTML exato que já funciona bonitinho na sua tela de visualização
-            const rawHtml = buildHTMLOC(id, isRomaneio);
-            if (!rawHtml) {
-                showLoading(false);
-                return showToast("Erro ao gerar visualização", true);
-            }
+    const rawHtml = buildHTMLOC(id, isRomaneio);
+    if (!rawHtml) {
+        showLoading(false);
+        return showToast("Erro ao gerar visualização", true);
+    }
 
-            // 2. Coloca um fundo branco limpo pra não bugar no PDF
-            const htmlString = `
-                <div style="background-color: #ffffff; width: 100%; box-sizing: border-box; padding: 10px;">
-                    ${rawHtml}
-                </div>
-            `;
+    const htmlString = `
+        <div style="background-color: #ffffff; width: 100%; box-sizing: border-box; padding: 10px;">
+            ${rawHtml}
+        </div>
+    `;
 
-            const filename = `Documento_OC_${id}.pdf`;
-            
-            // 3. As MESMAS opções do seu outro app que funciona
-            const opt = {
-                margin: 10,
-                filename: filename,
-                image: { type: 'jpeg', quality: 1 },
-                html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
+    const filename = `Documento_OC_${id}.pdf`;
 
-            // 4. A MESMA lógica de compartilhamento do seu shareQuote
-            try {
-                setTimeout(async () => {
-                    try {
-                        const pdfBlob = await html2pdf().set(opt).from(htmlString).output('blob');
-                        const file = new File([pdfBlob], filename, { type: 'application/pdf' });
+    const opt = {
+        margin: 10,
+        filename: filename,
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
 
-                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                            await navigator.share({
-                                title: `OC #${id}`,
-                                text: `Segue o documento solicitado.`,
-                                files: [file]
-                            });
-                            showLoading(false);
-                        } else {
-                            await html2pdf().set(opt).from(htmlString).save();
-                            showLoading(false);
-                            showToast("PDF Baixado! Seu celular não suporta envio direto.");
-                        }
-                    } catch (err) {
-                        console.error("Erro PDF", err);
-                        
-                        // Proteção extra: Se o celular der aquele erro de bloqueio de tempo (NotAllowedError), 
-                        // ele não dá falha, ele salva o PDF direto pra você não perder.
-                        if (err.name === 'NotAllowedError') {
-                            await html2pdf().set(opt).from(htmlString).save();
-                            showLoading(false);
-                            showToast("Lentidão no aparelho. Arquivo baixado automaticamente.");
-                        } else {
-                            showLoading(false);
-                            showToast("Falha ao gerar o PDF", true);
-                        }
-                    }
-                }, 500);
-            } catch (err) {
-                showLoading(false);
-                showToast("Falha ao gerar o PDF", true);
-            }
+    try {
+        // ⚠️ REMOVE O setTimeout (ESSA É A CORREÇÃO PRINCIPAL)
+        const pdfBlob = await html2pdf().set(opt).from(htmlString).output('blob');
+        const file = new File([pdfBlob], filename, { type: 'application/pdf' });
+
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+                title: `OC #${id}`,
+                text: `Segue o documento solicitado.`,
+                files: [file]
+            });
+            showLoading(false);
+        } else {
+            await html2pdf().set(opt).from(htmlString).save();
+            showLoading(false);
+            showToast("PDF Baixado! Seu celular não suporta envio direto.");
         }
+
+    } catch (err) {
+        console.error("Erro compartilhar:", err);
+
+        try {
+            // fallback garantido
+            await html2pdf().set(opt).from(htmlString).save();
+            showToast("Arquivo baixado como alternativa.");
+        } catch (e) {
+            showToast("Falha ao gerar o PDF", true);
+        }
+
+        showLoading(false);
+    }
+}
       
         // ====== FINANCEIRO ======
         function renderFinance() {
