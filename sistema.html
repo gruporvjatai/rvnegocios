@@ -1978,12 +1978,15 @@
 
         // ====== IMPRESSÃO E PDF DA O.C. ======
         function buildHTMLOC(id) {
-            const logsOC = STATE.logs.filter(l => String(l.id) === String(id) && (l.tipo === 'oc_pendente' || l.tipo === 'compra'));
-            if(!logsOC.length) return '';
-            
-            const o = logsOC[0];
-            const obra = STATE.obras.find(x => x.id == o.obra_id) || { nome: 'Sem Obra', endereco: '-' };
-            const forn = STATE.fornecedores.find(x => x.id == o.fornecedor_id) || { nome: 'A Definir', documento: '', telefone: '' };
+    const logsOC = STATE.logs.filter(l => String(l.id) === String(id) && (l.tipo === 'oc_pendente' || l.tipo === 'compra'));
+    if(!logsOC.length) return '';
+    
+    const o = logsOC[0];
+    const obra = STATE.obras.find(x => x.id == o.obra_id) || { nome: 'Sem Obra', endereco: '-' };
+    const forn = STATE.fornecedores.find(x => x.id == o.fornecedor_id) || { nome: 'A Definir', documento: '', telefone: '' };
+    
+    // GERA A URL ABSOLUTA DA LOGO AUTOMATICAMENTE (ex: https://seu-github.io/repo/logo.png)
+    const logoUrl = new URL('logo.png', document.baseURI).href;
             
             let fullObs = o.observacao || 'Nenhuma observação informada.';
             let justObs = fullObs;
@@ -2011,7 +2014,9 @@
                 <table width="100%" style="border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px;">
                     <tr>
                         <td width="130" valign="middle" style="border-right: 1px solid #e2e8f0; padding-right: 15px;">
-                            <img src="logo.png" style="max-height: 80px; display: block; margin: 0 auto;" />
+                            <td width="130" valign="middle" style="border-right: 1px solid #e2e8f0; padding-right: 15px;">
+                                <img src="${logoUrl}" style="max-height: 80px; display: block; margin: 0 auto;" />
+                            </td>
                         </td>
                         <td valign="middle" style="padding-left: 15px;">
                         <h2 style="margin: 0; color: #1d4ed8; font-size: 20px; font-weight: 800;">RV NEGÓCIOS E COMPANHIA</h2>
@@ -2116,9 +2121,10 @@
             const logsOC = STATE.logs.filter(l => String(l.id) === String(id) && (l.tipo === 'oc_pendente' || l.tipo === 'compra'));
             if(!logsOC.length) return '';
             
-            const o = logsOC[0];
-            const obra = STATE.obras.find(x => x.id == o.obra_id) || { nome: 'Sem Obra', endereco: '-' };
-            const forn = STATE.fornecedores.find(x => x.id == o.fornecedor_id) || { nome: 'A Definir', documento: '', telefone: '' };
+            // GERA A URL ABSOLUTA
+            const logoUrl = new URL('logo.png', document.baseURI).href;
+
+    // ...
             
             let fullObs = o.observacao || 'Nenhuma observação informada.';
             let justObs = fullObs;
@@ -2144,7 +2150,9 @@
                 <table width="100%" style="border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px;">
                     <tr>
                         <td width="130" valign="middle" style="border-right: 1px solid #e2e8f0; padding-right: 15px;">
-                            <img src="logo.png" style="max-height: 80px; display: block; margin: 0 auto;" />
+                            <td width="130" valign="middle" style="border-right: 1px solid #e2e8f0; padding-right: 15px;">
+                                <img src="${logoUrl}" style="max-height: 80px; display: block; margin: 0 auto;" />
+                            </td>
                         </td>
                         <td valign="middle" style="padding-left: 15px;">
                             <h2 style="margin: 0; color: #1d4ed8; font-size: 20px; font-weight: 800;">RV NEGÓCIOS E COMPANHIA</h2>
