@@ -860,36 +860,57 @@
             openModal('modal-view-oc');
         }
 
-        async function compartilharNative(id, isRomaneio = false) {
+       async function compartilharNative(id, isRomaneio = false) {
             showLoading(true);
             const htmlString = buildHTMLOC(id, isRomaneio);
             if(!htmlString) { showLoading(false); return; }
             
-            const opt = { margin: 5, filename: `OC_${id}${isRomaneio ? '_Romaneio' : ''}.pdf`, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+            const fileName = `OC_${id}${isRomaneio ? '_Romaneio' : ''}.pdf`;
+            const opt = { 
+                margin: 5, 
+                filename: fileName, 
+                image: { type: 'jpeg', quality: 0.98 }, 
+                html2canvas: { scale: 2, useCORS: true }, 
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
+            };
             
             try {
-                // Gera o Blob do PDF
-                const pdfBlob = await html2pdf().set(opt).from(htmlString).outputPdf('blob');
-                showLoading(false);
+                // Forma segura de extrair o Blob pegando direto da engine do jsPDF
+                html2pdf().set(opt).from(htmlString).toPdf().get('pdf').then((pdf) => {
+                    const pdfBlob = pdf.output('blob');
+                    const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+                    
+                    showLoading(false); // Tira o loading ANTES de chamar o share para evitar travar a tela
 
-                const file = new File([pdfBlob], `OC_${id}${isRomaneio ? '_Romaneio' : ''}.pdf`, { type: 'application/pdf' });
-                
-                // Tenta compartilhar nativamente
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    try {
-                        await navigator.share({ files: [file], title: isRomaneio ? `Romaneio OC #${id}` : `Ordem de Compra #${id}` });
-                    } catch(e) { console.log('Share cancelado', e); }
-                } else {
-                    // Fallback para download padrão se o navegador não suportar share
-                    const url = URL.createObjectURL(pdfBlob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `OC_${id}${isRomaneio ? '_Romaneio' : ''}.pdf`;
-                    a.click();
-                    showToast("Download iniciado!");
-                }
+                    // Dispara o compartilhamento nativo do celular
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        navigator.share({
+                            files: [file],
+                            title: isRomaneio ? `Romaneio OC #${id}` : `Ordem de Compra #${id}`
+                        }).catch(err => { 
+                            console.log('Compartilhamento cancelado pelo usuário.', err); 
+                        });
+                    } else {
+                        // Fallback (Plano B): Se o navegador não suportar share de arquivo, faz o download normal
+                        const url = URL.createObjectURL(pdfBlob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = fileName;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        showToast("PDF Baixado com sucesso!");
+                    }
+                }).catch(err => {
+                    showLoading(false); 
+                    console.error(err);
+                    showToast("Erro ao processar PDF", true);
+                });
             } catch (err) {
-                showLoading(false); showToast("Erro ao processar PDF", true);
+                showLoading(false); 
+                console.error(err);
+                showToast("Erro geral no PDF", true);
             }
         }
 
