@@ -863,101 +863,80 @@
       // ==============================================================================================================================================================
 
 
-
-    let PDF_OC_CACHE = {};
-
-      async function prepararPDF(id, isRomaneio = false) {
-    const rawHtml = buildHTMLOC(id, isRomaneio);
-    if (!rawHtml) return;
-
-    const htmlString = `
-        <div style="background:#fff; padding:10px;">
-            ${rawHtml}
-        </div>
-    `;
-
-    const opt = {
-        margin: 10,
-        filename: `OC_${id}.pdf`,
-        image: { type: 'jpeg', quality: 1 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    try {
-        const blob = await html2pdf().set(opt).from(htmlString).output('blob');
-        PDF_OC_CACHE[id] = blob;
-        console.log("PDF pronto:", id);
-    } catch (e) {
-        console.error("Erro ao gerar PDF", e);
-    }
-}
-
-
-          
+      
 
    async function compartilharNative(id, isRomaneio = false) {
+            // 1. Aciona o loading na mesma hora
             showLoading(true);
 
+            // SURPRESA 1: O Pulo do Gato do Processador.
+            // Isso força o celular a parar por uma fração de segundo e DESENHAR o "Aguarde..." na tela
+            // ANTES de começar o trabalho pesado do PDF. Acaba o congelamento.
+            await new Promise(resolve => setTimeout(resolve, 100));
+
             try {
-                // 1. Aproveita a sua função que já gera o visual perfeitamente
+                // Pega seu HTML que já é rápido
                 const rawHtml = buildHTMLOC(id, isRomaneio);
-                if (!rawHtml) {
-                    showLoading(false);
-                    return showToast("O.C. não encontrada.", true);
-                }
+                if (!rawHtml) throw new Error("Erro ao ler dados da OC");
 
-                // 2. Coloca um fundo branco pra garantir que o PDF não saia com fundo preto no celular
-                const htmlString = `
-                    <div style="background-color: #ffffff; width: 100%; box-sizing: border-box; padding: 10px;">
-                        ${rawHtml}
-                    </div>
-                `;
+                // Cria uma "caixa" invisível super limpa na memória do celular
+                const divApp = document.createElement('div');
+                divApp.innerHTML = `<div style="background: white; padding: 10px; color: black; width: 100%;">${rawHtml}</div>`;
 
-                const docTitle = isRomaneio ? `Romaneio OC #${id}` : `OC #${id}`;
-                const fileName = `Documento_${id}${isRomaneio ? '_Romaneio' : ''}.pdf`;
-
+                // SURPRESA 2: O Modo Turbo
+                // - scale 1.2: Qualidade perfeita pro celular, mas processa 60% mais rápido que o scale 2.
+                // - imageTimeout: Se a logo do Postimages demorar mais de 1.5s pra responder, ele não trava por 40 segundos, ele simplesmente segue em frente.
                 const opt = {
                     margin: 5,
-                    filename: fileName,
-                    image: { type: 'jpeg', quality: 1 },
-                    html2canvas: { scale: 2, useCORS: true },
+                    filename: `OC_${id}.pdf`,
+                    image: { type: 'jpeg', quality: 0.8 },
+                    html2canvas: { 
+                        scale: 1.2, 
+                        useCORS: true, 
+                        logging: false,
+                        imageTimeout: 1500 
+                    },
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
 
-                // 3. Gera o arquivo na hora
-                const pdfBlob = await html2pdf().set(opt).from(htmlString).output('blob');
-                const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+                // Gera o PDF a jato
+                const pdfBlob = await html2pdf().set(opt).from(divApp).output('blob');
+                const file = new File([pdfBlob], `OC_${id}.pdf`, { type: 'application/pdf' });
 
-                // 4. Compartilha ou Baixa (Plano B automático)
+                const docTitle = isRomaneio ? `Romaneio OC #${id}` : `OC #${id}`;
+
+                // SURPRESA 3: Compartilhamento ou Download forçado sem depender do html2pdf no fallback
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    try {
-                        await navigator.share({
-                            title: docTitle,
-                            text: `Segue o documento: ${docTitle}`,
-                            files: [file]
-                        });
-                    } catch (shareErr) {
-                        // Se o usuário só fechou a aba do zap, o erro é AbortError (ignoramos).
-                        // Se for erro de lentidão do navegador, a gente baixa o arquivo pra não dar falha!
-                        if (shareErr.name !== 'AbortError') {
-                            showToast("Envio direto bloqueado. Baixando PDF...");
-                            await html2pdf().set(opt).from(htmlString).save();
-                        }
-                    }
+                    await navigator.share({
+                        title: docTitle,
+                        text: `Segue o documento: ${docTitle}`,
+                        files: [file]
+                    });
                 } else {
-                    // Celulares que não suportam a gaveta de compartilhamento
-                    await html2pdf().set(opt).from(htmlString).save();
-                    showToast("Celular sem suporte a envio. PDF Baixado!");
+                    // Se o celular não suportar a gavetinha do Zap, fazemos o download raiz pelo navegador
+                    const url = URL.createObjectURL(pdfBlob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `OC_${id}.pdf`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                    showToast("Celular não suporta envio direto. PDF baixado!");
                 }
 
             } catch (err) {
-                console.error("Erro geral no PDF:", err);
-                showToast("Erro ao processar o arquivo.", true);
+                console.error("Erro na conversão:", err);
+                // Ignora o erro se o usuário apenas fechou a gavetinha do zap sem enviar
+                if (err.name !== 'AbortError') {
+                    showToast("Falha ao gerar o arquivo.", true);
+                }
             } finally {
+                // Remove o loading SEMPRE, dando certo ou errado
                 showLoading(false);
             }
         }
+      
       
         // ====== FINANCEIRO ==========================================================================================================================================
         function renderFinance() {
