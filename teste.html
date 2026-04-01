@@ -862,61 +862,60 @@
 
       
 
-    async function compartilharNative(id, isRomaneio = false) {
+   async function compartilharNative(id, isRomaneio = false) {
     showLoading(true);
 
     const rawHtml = buildHTMLOC(id, isRomaneio);
     if (!rawHtml) {
         showLoading(false);
-        return showToast("Erro ao gerar visualização", true);
+        return showToast("Erro ao gerar documento", true);
     }
 
     const htmlString = `
-        <div style="background-color: #ffffff; width: 100%; box-sizing: border-box; padding: 10px;">
+        <div style="background:#fff; padding:10px;">
             ${rawHtml}
         </div>
     `;
 
-    const filename = `Documento_OC_${id}.pdf`;
-
     const opt = {
         margin: 10,
-        filename: filename,
+        filename: `OC_${id}.pdf`,
         image: { type: 'jpeg', quality: 1 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
     try {
-        // ⚠️ REMOVE O setTimeout (ESSA É A CORREÇÃO PRINCIPAL)
+        // 👉 Gera o PDF como blob
         const pdfBlob = await html2pdf().set(opt).from(htmlString).output('blob');
-        const file = new File([pdfBlob], filename, { type: 'application/pdf' });
 
-        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({
-                title: `OC #${id}`,
-                text: `Segue o documento solicitado.`,
-                files: [file]
-            });
-            showLoading(false);
-        } else {
-            await html2pdf().set(opt).from(htmlString).save();
-            showLoading(false);
-            showToast("PDF Baixado! Seu celular não suporta envio direto.");
+        // 👉 cria URL temporária
+        const blobUrl = URL.createObjectURL(pdfBlob);
+
+        // 👉 TENTA COMPARTILHAR LINK (mais estável que file em vários celulares)
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: `OC #${id}`,
+                    text: `Segue o documento`,
+                    url: blobUrl
+                });
+                showLoading(false);
+                return;
+            } catch (err) {
+                console.warn("Share cancelado ou falhou", err);
+            }
         }
+
+        // 👉 fallback: abre o PDF (usuário compartilha manual)
+        window.open(blobUrl, '_blank');
+        showToast("Abrindo PDF...");
+        showLoading(false);
 
     } catch (err) {
-        console.error("Erro compartilhar:", err);
-
-        try {
-            // fallback garantido
-            await html2pdf().set(opt).from(htmlString).save();
-            showToast("Arquivo baixado como alternativa.");
-        } catch (e) {
-            showToast("Falha ao gerar o PDF", true);
-        }
-
+        console.error(err);
         showLoading(false);
+        showToast("Erro ao gerar PDF", true);
     }
 }
       
