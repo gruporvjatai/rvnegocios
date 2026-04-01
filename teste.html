@@ -860,78 +860,54 @@
             openModal('modal-view-oc');
         }
 
-       async function compartilharNative(id, isRomaneio = false) {
+      async function compartilharNative(id, isRomaneio = false) {
             showLoading(true);
+
+            const htmlString = buildHTMLOC(id, isRomaneio);
+            if (!htmlString) { showLoading(false); return; }
+
+            const fileName = `OC_${id}${isRomaneio ? '_Romaneio' : ''}.pdf`;
+            const tituloDoc = isRomaneio ? `Romaneio OC #${id}` : `Ordem de Compra #${id}`;
+
+            const opt = { 
+                margin: 5, 
+                filename: fileName, 
+                image: { type: 'jpeg', quality: 0.98 }, 
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true }, 
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
+            };
+            
             try {
-                const htmlString = buildHTMLOC(id, isRomaneio);
-                if (!htmlString) { showLoading(false); return; }
-
-                // 1. Criar um elemento temporário na tela para o html2canvas ler sem travar
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = htmlString;
-                tempDiv.style.position = 'absolute';
-                tempDiv.style.top = '-9999px';
-                tempDiv.style.left = '-9999px';
-                tempDiv.style.width = '800px'; // Força largura para o PDF não quebrar
-                document.body.appendChild(tempDiv);
-
-                const fileName = `OC_${id}${isRomaneio ? '_Romaneio' : ''}.pdf`;
-                const opt = { 
-                    margin: 5, 
-                    filename: fileName, 
-                    image: { type: 'jpeg', quality: 0.98 }, 
-                    html2canvas: { scale: 2, useCORS: true, logging: false }, 
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
-                };
-                
-                // 2. Extrair o Blob de forma nativa e limpa usando o elemento físico
-                html2pdf().set(opt).from(tempDiv).output('blob').then(async (pdfBlob) => {
-                    document.body.removeChild(tempDiv); // Limpa o elemento temporário
-                    
-                    const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
-                    showLoading(false); 
-
-                    // 3. Tentar compartilhar nativamente
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        try {
+                // O segredo do outro código: dar um respiro pro navegador mobile processar
+                setTimeout(async () => {
+                    try {
+                        // Usa await direto para gerar o blob
+                        const pdfBlob = await html2pdf().set(opt).from(htmlString).output('blob');
+                        const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+                        
+                        // Chama o share nativo
+                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
                             await navigator.share({
-                                files: [file],
-                                title: isRomaneio ? `Romaneio OC #${id}` : `Ordem de Compra #${id}`
+                                title: tituloDoc,
+                                files: [file]
                             });
-                        } catch (shareErr) {
-                            console.log('Share cancelado ou bloqueado:', shareErr);
-                            // Se o erro NÃO for porque você fechou a janela do share (ex: bloqueio de segurança do celular), faz o download
-                            if (shareErr.name !== 'AbortError') {
-                                baixarPDFManual(pdfBlob, fileName);
-                            }
+                            showLoading(false);
+                        } else {
+                            // Fallback usando o save nativo do html2pdf, igual no código base
+                            await html2pdf().set(opt).from(htmlString).save();
+                            showLoading(false);
+                            showToast("PDF Baixado! Seu celular não suporta envio direto.");
                         }
-                    } else {
-                        // Navegador não suporta envio de arquivos (alguns webviews de Android antigo)
-                        baixarPDFManual(pdfBlob, fileName);
+                    } catch (err) {
+                        console.error("Erro PDF", err);
+                        showLoading(false); 
+                        showToast("Falha ao gerar o PDF", true);
                     }
-                }).catch(err => {
-                    showLoading(false); 
-                    if(document.body.contains(tempDiv)) document.body.removeChild(tempDiv);
-                    showToast("Erro ao processar PDF", true);
-                });
-
+                }, 500);
             } catch (err) {
                 showLoading(false); 
                 showToast("Erro fatal no PDF", true);
             }
-        }
-
-        // Função auxiliar caso o compartilhamento nativo seja bloqueado
-        function baixarPDFManual(blob, filename) {
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-            showToast("Arquivo salvo no dispositivo!");
         }
 
         // ====== FINANCEIRO ======
