@@ -52,7 +52,7 @@
     <header class="bg-slate-900 text-white p-4 sticky top-0 z-30 shadow-md flex justify-between items-center no-print">
       <div class="flex items-center gap-3">
         <div class="w-8 h-8 rounded-full bg-white p-0.5 overflow-hidden">
-          <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" class="w-full h-full object-contain" />
+          <img src="logo.png" class="w-full h-full object-contain" />
         </div>
         <h1 class="font-bold tracking-wide text-blue-400">RV NEGÓCIOS</h1>
       </div>
@@ -829,7 +829,7 @@
             <div style="font-family: 'Helvetica', sans-serif; padding: 10px; width: 100%; border: 1px solid #000; background: #fff; min-height: 27.5cm;">
                 <table width="100%" style="border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
                     <tr>
-                        <td width="100" valign="middle" style="border-right: 1px solid #e2e8f0; padding-right: 10px;"><img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" crossorigin="anonymous" style="max-height: 60px; display: block; margin: 0 auto;" /></td>
+                        <td width="100" valign="middle" style="border-right: 1px solid #e2e8f0; padding-right: 10px;"><img src="logo.png" style="max-height: 60px; display: block; margin: 0 auto;" /></td>
                         <td valign="middle" style="padding-left: 10px;"><h2 style="margin: 0; color: #1d4ed8; font-size: 16px; font-weight: 800;">RV NEGÓCIOS E COMPANHIA</h2><div style="font-size: 9px; color: #475569; margin-top: 3px;">CNPJ: 61.893.912/0001-24</div><div style="font-size: 9px; color: #475569;">Rua Mineiros, 530 | Jataí - GO | (64) 99981-5852</div></td>
                         <td align="right" valign="top"><h2 style="margin: 0 0 5px 0; font-size: 14px; font-weight: 900;">${docTitle}</h2><div style="font-size: 10px;"><strong>Nº:</strong> ${o.id}</div><div style="font-size: 10px;"><strong>Emissão:</strong> ${formatDate(o.data)}</div></td>
                     </tr>
@@ -864,21 +864,6 @@
 
 
       
-        async function getLogoBase64() {
-            try {
-                const res = await fetch('https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png');
-                const blob = await res.blob();
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result);
-                    reader.readAsDataURL(blob);
-                });
-            } catch (e) {
-                // Se a internet falhar, não trava! Retorna o link original e torce pro PDF aceitar
-                return 'https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png'; 
-            }
-        }
-
    // 1. Função auxiliar apenas para baixar o arquivo rápido se o Compartilhar falhar
         function baixarBlobNativo(blob, filename) {
             const url = URL.createObjectURL(blob);
@@ -894,121 +879,56 @@
         // 2. A função principal blindada contra o Tailwind
         async function compartilharNative(id, isRomaneio = false) {
             showLoading(true);
-            
-            // Pausa de 50ms para garantir que o Loading apareça na tela antes do bloqueio de CPU
-            await new Promise(r => setTimeout(r, 50)); 
 
-            try {
-                const logsOC = STATE.logs.filter(l => String(l.id) === String(id) && (l.tipo === 'oc_pendente' || l.tipo === 'compra'));
-                if(!logsOC.length) throw new Error("OC não encontrada");
+            // 1. Pega o HTML que agora tá usando a logo local levinha
+            const htmlString = buildHTMLOC(id, isRomaneio);
+            if (!htmlString) {
+                showLoading(false);
+                return showToast("Erro ao gerar O.C.");
+            }
 
-                const logoSrc = await getLogoBase64();
-                
-                const o = logsOC[0]; 
-                const obra = STATE.obras.find(x => x.id == o.obra_id) || { nome: 'Sem Obra', endereco: '-' }; 
-                const forn = STATE.fornecedores.find(x => x.id == o.fornecedor_id) || { nome: 'A Definir', documento: '', telefone: '' };
-                let total = 0;
-                
-                const linhas = logsOC.map((i, index) => {
-                    const valor = parseFloat(i.valor_total); total += valor; const price = valor / parseFloat(i.quantidade); const bg = index % 2 === 0 ? '#ffffff' : '#f8fafc';
-                    const colPreco = isRomaneio ? '' : `<td align="right" style="border-bottom: 1px solid #000; padding: 6px;">${formatMoney(price)}</td><td align="right" style="border-bottom: 1px solid #000; padding: 6px;">${formatMoney(valor)}</td>`;
-                    return `<tr style="background-color: ${bg};"><td style="border-bottom: 1px solid #000; padding: 6px;">${i.produto_nome}</td><td align="center" style="border-bottom: 1px solid #000; padding: 6px;">${i.quantidade}</td>${colPreco}</tr>`;
-                }).join('');
+            const docTitle = isRomaneio ? `Romaneio OC #${id}` : `OC #${id}`;
+            const filename = `Documento_${id}.pdf`;
 
-                const cabecalhoPreco = isRomaneio ? '' : `<th align="right" style="background-color: #0f172a; color: #ffffff; padding: 6px;">Unit. Estimado</th><th align="right" style="background-color: #0f172a; color: #ffffff; padding: 6px;">Total Estimado</th>`;
-                const rodapePreco = isRomaneio ? '' : `<table width="100%" style="font-size: 11px; border-collapse: collapse;"><tr><td style="padding: 10px 0; font-weight: 900;">TOTAL ESTIMADO:</td><td align="right" style="padding: 10px 0; font-size: 13px; font-weight: 900;">${formatMoney(total)}</td></tr></table>`;
-                const docTitle = isRomaneio ? 'ROMANEIO DE ENTREGA' : 'ORDEM DE COMPRA';
-                const filename = `Documento_${o.id}${isRomaneio ? '_Romaneio' : ''}.pdf`;
+            // 2. Configurações iguaizinhas às do seu shareQuote
+            const opt = {
+                margin: 10,
+                filename: filename,
+                image: { type: 'jpeg', quality: 1 },
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
 
-                const htmlString = `
-                    <div style="font-family: 'Helvetica', 'Arial', sans-serif; padding: 15px; width: 100%; box-sizing: border-box; border: 1px solid #000; background-color: #ffffff; min-height: 27.5cm;">
-                        <table width="100%" style="border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
-                            <tr>
-                                <td width="100" valign="middle" style="border-right: 1px solid #e2e8f0; padding-right: 10px;">
-                                    <img src="${logoSrc}" crossorigin="anonymous" style="max-height: 60px; display: block; margin: 0 auto;" />
-                                </td>
-                                <td valign="middle" style="padding-left: 10px;"><h2 style="margin: 0; color: #1d4ed8; font-size: 16px; font-weight: 800;">RV NEGÓCIOS E COMPANHIA</h2><div style="font-size: 9px; color: #475569; margin-top: 3px;">CNPJ: 61.893.912/0001-24</div><div style="font-size: 9px; color: #475569;">Rua Mineiros, 530 | Jataí - GO | (64) 99981-5852</div></td>
-                                <td align="right" valign="top"><h2 style="margin: 0 0 5px 0; font-size: 14px; font-weight: 900;">${docTitle}</h2><div style="font-size: 10px;"><strong>Nº:</strong> ${o.id}</div><div style="font-size: 10px;"><strong>Emissão:</strong> ${formatDate(o.data)}</div></td>
-                            </tr>
-                        </table>
-                        <table width="100%" style="margin-bottom: 15px; border-spacing: 0;">
-                            <tr>
-                                <td width="48%" valign="top" style="border: 1px solid #000; padding: 0;"><div style="background-color: #f1f5f9; padding: 4px; font-size: 9px; font-weight: bold; border-bottom: 1px solid #000;">DADOS DO FORNECEDOR</div><div style="padding: 8px; font-size: 10px;"><strong>${forn.nome}</strong><br>Doc: ${forn.documento || '-'}<br>Tel: ${forn.telefone || '-'}</div></td>
-                                <td width="4%"></td> 
-                                <td width="48%" valign="top" style="border: 1px solid #000; padding: 0;"><div style="background-color: #f1f5f9; padding: 4px; font-size: 9px; font-weight: bold; border-bottom: 1px solid #000;">DESTINO (OBRA)</div><div style="padding: 8px; font-size: 10px;"><strong>${obra.nome}</strong><br>Endereço: ${obra.endereco || '-'}<br>Solicitante: ${o.solicitante || obra.solicitante || '-'} | Fase: ${o.fase_obra || '-'}</div></td>
-                            </tr>
-                        </table>
-                        <table width="100%" style="border-collapse: collapse; margin-bottom: 15px; font-size: 10px;">
-                            <thead><tr><th align="left" style="background-color: #0f172a; color: #ffffff; padding: 6px;">Descrição</th><th align="center" style="background-color: #0f172a; color: #ffffff; padding: 6px;">Qtd</th>${cabecalhoPreco}</tr></thead>
-                            <tbody>${linhas}</tbody>
-                        </table>
-                        <table width="100%">
-                            <tr>
-                                <td valign="top"><div style="border: 1px dashed #cbd5e1; padding: 8px; min-height: 40px;"><div style="font-size: 9px; font-weight: bold; margin-bottom: 4px;">Observações (Condições):</div><div style="font-size: 9px; white-space: pre-wrap;">${o.observacao || 'Nenhuma observação informada.'}</div></div></td>
-                                <td width="220" valign="top">${rodapePreco}</td>
-                            </tr>
-                        </table>
-                        <div style="margin-top: 40px; text-align: center; width: 200px; border-top: 1px solid #000; padding-top: 5px; font-size: 9px; font-weight: bold; margin-left: auto; margin-right: auto;">ASSINATURA RESPONSÁVEL</div>
-                    </div>
-                `;
+            // 3. O famoso setTimeout salvador de 500ms
+            setTimeout(async () => {
+                try {
+                    const pdfBlob = await html2pdf().set(opt).from(htmlString).output('blob');
+                    const file = new File([pdfBlob], filename, { type: 'application/pdf' });
 
-                // A MÁGICA REAL (Isolamento do Tailwind CDN)
-                // Criamos um iframe zerado e limpo. O html2pdf não vai enxergar o Tailwind da sua página e vai voar.
-                const iframe = document.createElement('iframe');
-                iframe.style.width = '800px';
-                iframe.style.height = '0';
-                iframe.style.position = 'absolute';
-                iframe.style.left = '-9999px';
-                iframe.style.border = 'none';
-                document.body.appendChild(iframe);
-
-                const idoc = iframe.contentWindow.document;
-                idoc.open();
-                idoc.write('<!DOCTYPE html><html><head><style>body { margin: 0; background: #fff; }</style></head><body>' + htmlString + '</body></html>');
-                idoc.close();
-
-                const opt = {
-                    margin: 10,
-                    filename: filename,
-                    image: { type: 'jpeg', quality: 1 },
-                    html2canvas: { scale: 2, useCORS: true, logging: false },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                };
-
-                // Puxa o conteúdo a jato de dentro do Iframe Fantasma
-                const pdfBlob = await html2pdf().set(opt).from(idoc.body).output('blob');
-                
-                // Extermina o Iframe para não pesar
-                document.body.removeChild(iframe);
-
-                const file = new File([pdfBlob], filename, { type: 'application/pdf' });
-
-                // Tenta compartilhar
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    try {
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
                         await navigator.share({
                             title: docTitle,
                             text: `Segue o documento: ${docTitle}`,
                             files: [file]
                         });
-                    } catch(shareErr) {
-                        // Se o celular bloquear pelo tempo ou usuário cancelar, NÃO GERA DE NOVO. Baixa o blob imediato.
-                        if (shareErr.name !== 'AbortError') {
-                            showToast("Baixando arquivo...");
-                            baixarBlobNativo(pdfBlob, filename);
-                        }
+                    } else {
+                        // Faz o download direto se o celular não suportar a gavetinha
+                        const url = URL.createObjectURL(pdfBlob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = filename;
+                        link.click();
+                        URL.revokeObjectURL(url);
+                        showToast("PDF salvo no aparelho!");
                     }
-                } else {
-                    showToast("Celular sem suporte. Baixando...");
-                    baixarBlobNativo(pdfBlob, filename);
+                } catch (err) {
+                    console.error("Erro PDF:", err);
+                    showToast("Falha ao gerar o PDF", true);
+                } finally {
+                    // Tira o loading sempre no final
+                    showLoading(false);
                 }
-
-            } catch (err) {
-                console.error("Erro PDF:", err);
-                showToast("Falha ao gerar o PDF", true);
-            } finally {
-                showLoading(false);
-            }
+            }, 500);
         }
       
       
