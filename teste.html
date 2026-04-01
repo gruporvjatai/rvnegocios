@@ -373,8 +373,7 @@
 
         window.onload = function() { 
             if (dadosUsuario) { showLoading(true); loadData(); }
-            lucide.createIcons();
-            prepararPDF(id);
+            lucide.createIcons();          
         };
 
         // ====== UTILITÁRIOS ======
@@ -898,35 +897,67 @@
           
 
    async function compartilharNative(id, isRomaneio = false) {
-    showLoading(true);
+            showLoading(true);
 
-    try {
-        const blob = PDF_OC_CACHE[id];
+            try {
+                // 1. Aproveita a sua função que já gera o visual perfeitamente
+                const rawHtml = buildHTMLOC(id, isRomaneio);
+                if (!rawHtml) {
+                    showLoading(false);
+                    return showToast("O.C. não encontrada.", true);
+                }
 
-        if (!blob) {
-            showLoading(false);
-            return showToast("Aguarde 2s e tente novamente...");
+                // 2. Coloca um fundo branco pra garantir que o PDF não saia com fundo preto no celular
+                const htmlString = `
+                    <div style="background-color: #ffffff; width: 100%; box-sizing: border-box; padding: 10px;">
+                        ${rawHtml}
+                    </div>
+                `;
+
+                const docTitle = isRomaneio ? `Romaneio OC #${id}` : `OC #${id}`;
+                const fileName = `Documento_${id}${isRomaneio ? '_Romaneio' : ''}.pdf`;
+
+                const opt = {
+                    margin: 5,
+                    filename: fileName,
+                    image: { type: 'jpeg', quality: 1 },
+                    html2canvas: { scale: 2, useCORS: true },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+
+                // 3. Gera o arquivo na hora
+                const pdfBlob = await html2pdf().set(opt).from(htmlString).output('blob');
+                const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+                // 4. Compartilha ou Baixa (Plano B automático)
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            title: docTitle,
+                            text: `Segue o documento: ${docTitle}`,
+                            files: [file]
+                        });
+                    } catch (shareErr) {
+                        // Se o usuário só fechou a aba do zap, o erro é AbortError (ignoramos).
+                        // Se for erro de lentidão do navegador, a gente baixa o arquivo pra não dar falha!
+                        if (shareErr.name !== 'AbortError') {
+                            showToast("Envio direto bloqueado. Baixando PDF...");
+                            await html2pdf().set(opt).from(htmlString).save();
+                        }
+                    }
+                } else {
+                    // Celulares que não suportam a gaveta de compartilhamento
+                    await html2pdf().set(opt).from(htmlString).save();
+                    showToast("Celular sem suporte a envio. PDF Baixado!");
+                }
+
+            } catch (err) {
+                console.error("Erro geral no PDF:", err);
+                showToast("Erro ao processar o arquivo.", true);
+            } finally {
+                showLoading(false);
+            }
         }
-
-        const file = new File([blob], `OC_${id}.pdf`, { type: 'application/pdf' });
-
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({
-                title: `OC #${id}`,
-                text: `Segue o documento`,
-                files: [file]
-            });
-        } else {
-            showToast("Celular não suporta compartilhamento direto");
-        }
-
-    } catch (err) {
-        console.error(err);
-        showToast("Erro ao compartilhar");
-    }
-
-    showLoading(false);
-}
       
         // ====== FINANCEIRO ==========================================================================================================================================
         function renderFinance() {
