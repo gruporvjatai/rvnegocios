@@ -858,18 +858,18 @@
         function verOC(id) {
             document.getElementById('modal-view-oc-content').innerHTML = buildHTMLOC(id, false);
             openModal('modal-view-oc');
+          prepararPDF(id);
         }
 
-      
+      // ==============================================================================================================================================================
 
-   async function compartilharNative(id, isRomaneio = false) {
-    showLoading(true);
 
+
+    let PDF_OC_CACHE = {};
+
+      async function prepararPDF(id, isRomaneio = false) {
     const rawHtml = buildHTMLOC(id, isRomaneio);
-    if (!rawHtml) {
-        showLoading(false);
-        return showToast("Erro ao gerar documento", true);
-    }
+    if (!rawHtml) return;
 
     const htmlString = `
         <div style="background:#fff; padding:10px;">
@@ -886,40 +886,49 @@
     };
 
     try {
-        // 👉 Gera o PDF como blob
-        const pdfBlob = await html2pdf().set(opt).from(htmlString).output('blob');
+        const blob = await html2pdf().set(opt).from(htmlString).output('blob');
+        PDF_OC_CACHE[id] = blob;
+        console.log("PDF pronto:", id);
+    } catch (e) {
+        console.error("Erro ao gerar PDF", e);
+    }
+}
 
-        // 👉 cria URL temporária
-        const blobUrl = URL.createObjectURL(pdfBlob);
 
-        // 👉 TENTA COMPARTILHAR LINK (mais estável que file em vários celulares)
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: `OC #${id}`,
-                    text: `Segue o documento`,
-                    url: blobUrl
-                });
-                showLoading(false);
-                return;
-            } catch (err) {
-                console.warn("Share cancelado ou falhou", err);
-            }
+          
+
+   async function compartilharNative(id, isRomaneio = false) {
+    showLoading(true);
+
+    try {
+        const blob = PDF_OC_CACHE[id];
+
+        if (!blob) {
+            showLoading(false);
+            return showToast("Aguarde 2s e tente novamente...");
         }
 
-        // 👉 fallback: abre o PDF (usuário compartilha manual)
-        window.open(blobUrl, '_blank');
-        showToast("Abrindo PDF...");
-        showLoading(false);
+        const file = new File([blob], `OC_${id}.pdf`, { type: 'application/pdf' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+                title: `OC #${id}`,
+                text: `Segue o documento`,
+                files: [file]
+            });
+        } else {
+            showToast("Celular não suporta compartilhamento direto");
+        }
 
     } catch (err) {
         console.error(err);
-        showLoading(false);
-        showToast("Erro ao gerar PDF", true);
+        showToast("Erro ao compartilhar");
     }
+
+    showLoading(false);
 }
       
-        // ====== FINANCEIRO ======
+        // ====== FINANCEIRO ==========================================================================================================================================
         function renderFinance() {
             const obraFilter = document.getElementById('fin-obra-filter').value;
             const faseFilter = document.getElementById('fin-fase-filter').value;
