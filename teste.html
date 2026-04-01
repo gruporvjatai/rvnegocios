@@ -864,6 +864,20 @@
 
 
       
+        async function getLogoBase64() {
+            try {
+                const res = await fetch('https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png');
+                const blob = await res.blob();
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.readAsDataURL(blob);
+                });
+            } catch (e) {
+                // Se a internet falhar, não trava! Retorna o link original e torce pro PDF aceitar
+                return 'https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png'; 
+            }
+        }
 
    // 1. Função auxiliar apenas para baixar o arquivo rápido se o Compartilhar falhar
         function baixarBlobNativo(blob, filename) {
