@@ -921,12 +921,14 @@
 
                 const filename = `Documento_${id}.pdf`;
                 const opt = {
-                    margin: 10,
-                    filename: filename,
-                    image: { type: 'jpeg', quality: 1 },
-                    html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                };
+                margin: 5,
+                filename: filename,
+                // Reduzimos a qualidade do JPEG de 1 para 0.8. A diferença visual é imperceptível, mas o arquivo fica muito menor e gera bem mais rápido.
+                image: { type: 'jpeg', quality: 0.8 }, 
+                // Reduzimos a escala de 2 para 1.5. Corta o tempo de processamento e a exigência de memória RAM do celular quase pela metade.
+                html2canvas: { scale: 1.5, useCORS: true, letterRendering: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
 
                 // 3. SEM SETTIMEOUT. Gera o blob e chama o share imediatamente!
                 const pdfBlob = await html2pdf().set(opt).from(htmlString).output('blob');
