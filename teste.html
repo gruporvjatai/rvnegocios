@@ -863,73 +863,103 @@
       async function compartilharNative(id, isRomaneio = false) {
             showLoading(true);
 
-            // Garante que o HTML venha montado e seja encapsulado perfeitamente
-            let rawHtml = buildHTMLOC(id, isRomaneio);
-            if (!rawHtml) { 
+            // 1. Busca os dados diretamente dentro da função (sem depender de nada externo)
+            const logsOC = STATE.logs.filter(l => String(l.id) === String(id) && (l.tipo === 'oc_pendente' || l.tipo === 'compra'));
+            if(!logsOC.length) { 
                 showLoading(false); 
                 return showToast("O.C. não encontrada", true); 
             }
-
-            // Encapsulamento de segurança para o html2pdf renderizar 100% no mobile
-            const htmlString = `
-                <div style="background-color: #ffffff; width: 100%; box-sizing: border-box; overflow: hidden; position: relative; z-index: 1;">
-                    ${rawHtml}
-                </div>
-            `;
-
-            const fileName = `OC_${id}${isRomaneio ? '_Romaneio' : ''}.pdf`;
-            const tituloDoc = isRomaneio ? `Romaneio OC #${id}` : `Ordem de Compra #${id}`;
-
-            const opt = { 
-                margin: 5, 
-                filename: fileName, 
-                image: { type: 'jpeg', quality: 0.98 }, 
-                html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff' }, 
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
-            };
             
+            const o = logsOC[0]; 
+            const obra = STATE.obras.find(x => x.id == o.obra_id) || { nome: 'Sem Obra', endereco: '-' }; 
+            const forn = STATE.fornecedores.find(x => x.id == o.fornecedor_id) || { nome: 'A Definir', documento: '', telefone: '' };
+            
+            let total = 0;
+            const linhas = logsOC.map((i, index) => {
+                const valor = parseFloat(i.valor_total); 
+                total += valor; 
+                const price = valor / parseFloat(i.quantidade); 
+                const bg = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+                const colPreco = isRomaneio ? '' : `<td align="right" style="border-bottom: 1px solid #000; padding: 6px;">${formatMoney(price)}</td><td align="right" style="border-bottom: 1px solid #000; padding: 6px;">${formatMoney(valor)}</td>`;
+                return `<tr style="background-color: ${bg};"><td style="border-bottom: 1px solid #000; padding: 6px;">${i.produto_nome}</td><td align="center" style="border-bottom: 1px solid #000; padding: 6px;">${i.quantidade}</td>${colPreco}</tr>`;
+            }).join('');
+
+            const cabecalhoPreco = isRomaneio ? '' : `<th align="right" style="background-color: #0f172a; color: #fff; padding: 6px;">Unit. Estimado</th><th align="right" style="background-color: #0f172a; color: #fff; padding: 6px;">Total Estimado</th>`;
+            const rodapePreco = isRomaneio ? '' : `<table width="100%" style="font-size: 11px; border-collapse: collapse;"><tr><td style="padding: 10px 0; font-weight: 900;">TOTAL ESTIMADO:</td><td align="right" style="padding: 10px 0; font-size: 13px; font-weight: 900;">${formatMoney(total)}</td></tr></table>`;
+            const docTitle = isRomaneio ? 'ROMANEIO DE ENTREGA' : 'ORDEM DE COMPRA';
+
+            // 2. O HTML montado e encapsulado aqui mesmo
+            const htmlString = `
+                <div style="font-family: 'Helvetica', sans-serif; padding: 10px; width: 100%; border: 1px solid #000; background: #fff; min-height: 27.5cm;">
+                    <table width="100%" style="border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
+                        <tr>
+                            <td width="100" valign="middle" style="border-right: 1px solid #e2e8f0; padding-right: 10px;"><img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" crossorigin="anonymous" style="max-height: 60px; display: block; margin: 0 auto;" /></td>
+                            <td valign="middle" style="padding-left: 10px;"><h2 style="margin: 0; color: #1d4ed8; font-size: 16px; font-weight: 800;">RV NEGÓCIOS E COMPANHIA</h2><div style="font-size: 9px; color: #475569; margin-top: 3px;">CNPJ: 61.893.912/0001-24</div><div style="font-size: 9px; color: #475569;">Rua Mineiros, 530 | Jataí - GO | (64) 99981-5852</div></td>
+                            <td align="right" valign="top"><h2 style="margin: 0 0 5px 0; font-size: 14px; font-weight: 900;">${docTitle}</h2><div style="font-size: 10px;"><strong>Nº:</strong> ${o.id}</div><div style="font-size: 10px;"><strong>Emissão:</strong> ${formatDate(o.data)}</div></td>
+                        </tr>
+                    </table>
+                    <table width="100%" style="margin-bottom: 15px;">
+                        <tr>
+                            <td width="48%" valign="top" style="border: 1px solid #000; padding: 0;"><div style="background-color: #f1f5f9; padding: 4px; font-size: 9px; font-weight: bold; border-bottom: 1px solid #000;">DADOS DO FORNECEDOR</div><div style="padding: 8px; font-size: 10px;"><strong>${forn.nome}</strong><br>Doc: ${forn.documento || '-'}<br>Tel: ${forn.telefone || '-'}</div></td>
+                            <td width="4%"></td> 
+                            <td width="48%" valign="top" style="border: 1px solid #000; padding: 0;"><div style="background-color: #f1f5f9; padding: 4px; font-size: 9px; font-weight: bold; border-bottom: 1px solid #000;">DESTINO (OBRA)</div><div style="padding: 8px; font-size: 10px;"><strong>${obra.nome}</strong><br>Endereço: ${obra.endereco || '-'}<br>Solicitante: ${o.solicitante || obra.solicitante || '-'} | Fase: ${o.fase_obra || '-'}</div></td>
+                        </tr>
+                    </table>
+                    <table width="100%" style="border-collapse: collapse; margin-bottom: 15px; font-size: 10px;">
+                        <thead><tr><th align="left" style="background-color: #0f172a; color: #fff; padding: 6px;">Descrição</th><th align="center" style="background-color: #0f172a; color: #fff; padding: 6px;">Qtd</th>${cabecalhoPreco}</tr></thead>
+                        <tbody>${linhas}</tbody>
+                    </table>
+                    <table width="100%">
+                        <tr>
+                            <td valign="top"><div style="border: 1px dashed #cbd5e1; padding: 8px; min-height: 40px;"><div style="font-size: 9px; font-weight: bold; margin-bottom: 4px;">Observações (Condições):</div><div style="font-size: 9px; white-space: pre-wrap;">${o.observacao || 'Nenhuma observação informada.'}</div></div></td>
+                            <td width="220" valign="top">${rodapePreco}</td>
+                        </tr>
+                    </table>
+                    <div style="margin-top: 40px; text-align: center; width: 200px; border-top: 1px solid #000; padding-top: 5px; font-size: 9px; font-weight: bold; margin-left: auto; margin-right: auto;">ASSINATURA RESPONSÁVEL</div>
+                </div>`;
+
+            const filename = `Documento_${id}.pdf`;
+            const opt = {
+                margin: 10,
+                filename: filename,
+                image: { type: 'jpeg', quality: 1 },
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // 3. A mesmíssima lógica implacável do outro projeto
             try {
-                // Timeout idêntico ao que funciona (500ms de respiro pro navegador)
                 setTimeout(async () => {
                     try {
                         const pdfBlob = await html2pdf().set(opt).from(htmlString).output('blob');
-                        const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
-                        
+                        const file = new File([pdfBlob], filename, { type: 'application/pdf' });
+
                         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                            try {
-                                await navigator.share({
-                                    title: tituloDoc,
-                                    text: `Segue em anexo: ${tituloDoc}`,
-                                    files: [file]
-                                });
-                                showLoading(false);
-                            } catch (shareError) {
-                                console.log("Erro no share (geralmente cancelado pelo user):", shareError);
-                                // Se o usuário apenas cancelou a janela de share, não fazemos nada.
-                                // Se for outro erro de permissão (AbortError), forçamos o download local.
-                                if (shareError.name !== 'AbortError') {
-                                    await html2pdf().set(opt).from(htmlString).save();
-                                    showToast("Arquivo baixado localmente.");
-                                }
-                                showLoading(false);
-                            }
+                            await navigator.share({
+                                title: `${docTitle} #${id}`,
+                                text: `Segue o documento: ${docTitle}`,
+                                files: [file]
+                            });
+                            showLoading(false);
                         } else {
-                            // Se o navegador do celular for antigo/incompatível
                             await html2pdf().set(opt).from(htmlString).save();
                             showLoading(false);
                             showToast("PDF Baixado! Seu celular não suporta envio direto.");
                         }
                     } catch (err) {
                         console.error("Erro PDF", err);
-                        showLoading(false); 
+                        showLoading(false);
                         showToast("Falha ao gerar o PDF", true);
                     }
                 }, 500);
             } catch (err) {
-                showLoading(false); 
-                showToast("Erro fatal no PDF", true);
+                showLoading(false);
+                showToast("Falha ao gerar o PDF", true);
             }
         }
+
+
+      
         // ====== FINANCEIRO ======
         function renderFinance() {
             const obraFilter = document.getElementById('fin-obra-filter').value;
