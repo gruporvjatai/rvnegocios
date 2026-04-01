@@ -860,70 +860,73 @@
             openModal('modal-view-oc');
         }
 
+      
+
     async function compartilharNative(id, isRomaneio = false) {
             showLoading(true);
 
-            try {
-                // 1. Aproveita a SUA função que já funciona rápido e perfeitamente
-                const rawHtml = buildHTMLOC(id, isRomaneio);
-                
-                if (!rawHtml) {
-                    showLoading(false);
-                    return showToast("Erro ao gerar visualização", true);
-                }
-
-                // 2. Colocamos um fundo branco obrigatório pro PDF não sair com fundo preto/transparente
-                const htmlString = `
-                    <div style="background-color: #ffffff; width: 100%; box-sizing: border-box; padding: 10px;">
-                        ${rawHtml}
-                    </div>
-                `;
-
-                const fileName = `OC_${id}${isRomaneio ? '_Romaneio' : ''}.pdf`;
-                const tituloDoc = isRomaneio ? `Romaneio OC #${id}` : `Ordem de Compra #${id}`;
-
-                const opt = {
-                    margin: 5,
-                    filename: fileName,
-                    image: { type: 'jpeg', quality: 1 },
-                    html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                };
-
-                // 3. SEM SETTIMEOUT NENHUM. Vai direto pra conversão!
-                const pdfBlob = await html2pdf().set(opt).from(htmlString).output('blob');
-                const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
-
-                // 4. Tenta abrir a gavetinha do WhatsApp
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    await navigator.share({
-                        title: tituloDoc,
-                        text: `Segue em anexo: ${tituloDoc}`,
-                        files: [file]
-                    });
-                } else {
-                    // Se o celular for antigo e não tiver a gavetinha
-                    await html2pdf().set(opt).from(htmlString).save();
-                    showToast("Celular não suporta envio direto. PDF baixado.");
-                }
-
-            } catch (err) {
-                console.error("Erro PDF:", err);
-                
-                // Se o erro for o navegador bloqueando por causa do tempo (NotAllowedError)
-                if (err.name !== 'AbortError') {
-                    showToast("Lentidão do aparelho bloqueou o envio. Baixando PDF...", true);
-                    
-                    // Fallback: Baixa o arquivo na marra já que não deixou compartilhar
-                    try {
-                        const rawHtml = buildHTMLOC(id, isRomaneio);
-                        const opt = { margin: 5, filename: `OC_${id}.pdf`, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
-                        await html2pdf().set(opt).from(`<div style="background:#fff">${rawHtml}</div>`).save();
-                    } catch(e) {}
-                }
-            } finally {
-                // Tira o "Aguarde..." da tela no final de tudo
+            // 1. Pega o HTML exato que já funciona bonitinho na sua tela de visualização
+            const rawHtml = buildHTMLOC(id, isRomaneio);
+            if (!rawHtml) {
                 showLoading(false);
+                return showToast("Erro ao gerar visualização", true);
+            }
+
+            // 2. Coloca um fundo branco limpo pra não bugar no PDF
+            const htmlString = `
+                <div style="background-color: #ffffff; width: 100%; box-sizing: border-box; padding: 10px;">
+                    ${rawHtml}
+                </div>
+            `;
+
+            const filename = `Documento_OC_${id}.pdf`;
+            
+            // 3. As MESMAS opções do seu outro app que funciona
+            const opt = {
+                margin: 10,
+                filename: filename,
+                image: { type: 'jpeg', quality: 1 },
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // 4. A MESMA lógica de compartilhamento do seu shareQuote
+            try {
+                setTimeout(async () => {
+                    try {
+                        const pdfBlob = await html2pdf().set(opt).from(htmlString).output('blob');
+                        const file = new File([pdfBlob], filename, { type: 'application/pdf' });
+
+                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                            await navigator.share({
+                                title: `OC #${id}`,
+                                text: `Segue o documento solicitado.`,
+                                files: [file]
+                            });
+                            showLoading(false);
+                        } else {
+                            await html2pdf().set(opt).from(htmlString).save();
+                            showLoading(false);
+                            showToast("PDF Baixado! Seu celular não suporta envio direto.");
+                        }
+                    } catch (err) {
+                        console.error("Erro PDF", err);
+                        
+                        // Proteção extra: Se o celular der aquele erro de bloqueio de tempo (NotAllowedError), 
+                        // ele não dá falha, ele salva o PDF direto pra você não perder.
+                        if (err.name === 'NotAllowedError') {
+                            await html2pdf().set(opt).from(htmlString).save();
+                            showLoading(false);
+                            showToast("Lentidão no aparelho. Arquivo baixado automaticamente.");
+                        } else {
+                            showLoading(false);
+                            showToast("Falha ao gerar o PDF", true);
+                        }
+                    }
+                }, 500);
+            } catch (err) {
+                showLoading(false);
+                showToast("Falha ao gerar o PDF", true);
             }
         }
       
