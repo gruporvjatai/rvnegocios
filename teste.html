@@ -374,6 +374,7 @@
         window.onload = function() { 
             if (dadosUsuario) { showLoading(true); loadData(); }
             lucide.createIcons();
+            prepararPDF(id);
         };
 
         // ====== UTILITÁRIOS ======
@@ -855,8 +856,7 @@
             </div>`;
         }
 
-        function verOC(id) {
-          prepararPDF(id); 
+        function verOC(id) {        
             document.getElementById('modal-view-oc-content').innerHTML = buildHTMLOC(id, false);
             openModal('modal-view-oc');          
         }
