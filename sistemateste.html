@@ -1165,8 +1165,11 @@
                     <td class="p-2 text-right">
                         <div class="font-black text-sm ${isPago ? 'text-slate-400' : 'text-green-700'}">${formatMoney(total)}</div>
                     </td>
-                    <td class="p-2 text-center">
-                        <span class="px-2 py-1 rounded text-[9px] font-bold ${isPago ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">${isPago ? 'PAGO' : 'PENDENTE'}</span>
+                   <td class="p-2 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            <span class="px-2 py-1 rounded text-[9px] font-bold ${isPago ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">${isPago ? 'PAGO' : 'PENDENTE'}</span>
+                            ${isPago ? `<button onclick="estornarPagamentoPonto('${pt?.id}', '${e.id}')" class="text-slate-400 hover:text-red-500 transition ml-1" title="Estornar Pagamento e Cancelar Despesa"><i data-lucide="rotate-ccw" width="12"></i></button>` : ''}
+                        </div>
                     </td>
                     <td class="p-2 text-center">
                         <div class="flex items-center justify-center gap-1">
@@ -3095,6 +3098,50 @@
                 showLoading(false);
                 showToast("Erro na comunicação: " + erro.message, true);
             }
+        }
+
+      async function estornarPagamentoPonto(ponto_id, equipe_id) {
+            if(!confirm("Tem certeza que deseja ESTORNAR este pagamento? O status voltará para PENDENTE e a despesa gerada no Financeiro será cancelada.")) return;
+            
+            showLoading(true);
+
+            const mes = document.getElementById('eqp-filter-mes').value;
+            const ano = document.getElementById('eqp-filter-ano').value;
+            const e = STATE.equipe.find(x => x.id == equipe_id);
+
+            if(!e) { 
+                showLoading(false); 
+                return showToast("Dados do funcionário não encontrados.", true); 
+            }
+
+            // 1. Volta o status do Ponto para PENDENTE
+            const { error: errPt } = await sb.from('jsp_ponto')
+                .update({ status: 'PENDENTE', data_pagamento: null })
+                .eq('id', ponto_id);
+                
+            if(errPt) { 
+                showLoading(false); 
+                return showToast("Erro ao estornar ponto: " + errPt.message, true); 
+            }
+
+            // 2. Busca o lançamento gerado no Financeiro para cancelar e não furar o caixa
+            const descProcurada = `Pagamento Mensal (${mes}/${ano}) - ${e.nome}`;
+            const logVinculado = STATE.logs.find(l => 
+                l.tipo === 'despesa' && 
+                l.produto_nome === descProcurada && 
+                l.status_financeiro === 'PAGO'
+            );
+            
+            if(logVinculado) {
+                // Se encontrar a despesa, cancela ela
+                await sb.from('jsp_logs')
+                    .update({ status_financeiro: 'CANCELADO' })
+                    .eq('id', logVinculado.id)
+                    .eq('tipo', 'despesa');
+            }
+
+            showToast("Pagamento estornado com sucesso!");
+            loadData();
         }
 
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
