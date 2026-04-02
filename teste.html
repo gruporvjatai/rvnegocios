@@ -7,7 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="shortcut icon" type="image/png" href="logo.png">
@@ -862,121 +863,209 @@
 
       // ==============================================================================================================================================================
 
-
       
-   // Variáveis para segurar o arquivo na memória
-        let arquivoProntoParaEnvio = null;
-        let tituloDocumentoCache = "";
-
         async function compartilharNative(id, isRomaneio = false) {
-            showLoading(true);
+    showLoading(true);
 
-            try {
-                const htmlString = buildHTMLOC(id, isRomaneio);
-                if (!htmlString) throw new Error("Erro no HTML");
+    try {
+        // 1. Busca os dados
+        const logsOC = STATE.logs.filter(l => String(l.id) === String(id) && (l.tipo === 'oc_pendente' || l.tipo === 'compra'));
+        if(!logsOC.length) { showLoading(false); return showToast("O.C. não encontrada", true); }
+        
+        const o = logsOC[0];
+        const obra = STATE.obras.find(x => x.id == o.obra_id) || { nome: 'Sem Obra', endereco: '-' };
+        const forn = STATE.fornecedores.find(x => x.id == o.fornecedor_id) || { nome: 'A Definir', documento: '', telefone: '' };
+        
+        let justObs = o.observacao || 'Nenhuma observação informada.';
+        if(justObs.includes(' | Obs: ')) {
+            const parts = justObs.split(' | Obs: ');
+            justObs = parts[0] + '\n' + parts[1];
+        }
 
-                tituloDocumentoCache = isRomaneio ? `Romaneio OC #${id}` : `OC #${id}`;
-                const filename = `Documento_${id}.pdf`;
+        // 2. Monta as linhas da tabela (Verifica se é Romaneio para omitir preços)
+        let total = 0;
+        const bodyTabela = [];
+        
+        // Cabeçalhos Dinâmicos
+        const headerRow = [
+            { text: 'Descrição', style: 'tableHeader', alignment: 'left' },
+            { text: 'Qtd', style: 'tableHeader', alignment: 'center' }
+        ];
+        if(!isRomaneio) {
+            headerRow.push({ text: 'Unit. Estimado', style: 'tableHeader', alignment: 'right' });
+            headerRow.push({ text: 'Total Estimado', style: 'tableHeader', alignment: 'right' });
+        }
+        bodyTabela.push(headerRow);
 
-                // CRIA A BOLHA DE RENDERIZAÇÃO (Iframe sem o Tailwind para voar)
-                const iframe = document.createElement('iframe');
-                iframe.style.position = 'absolute';
-                iframe.style.width = '800px'; // Largura fixa boa pra PDF
-                iframe.style.height = '0px';
-                iframe.style.left = '-9999px';
-                iframe.style.border = 'none';
-                document.body.appendChild(iframe);
+        logsOC.forEach((i, index) => {
+            const valor = parseFloat(i.valor_total);
+            total += valor;
+            const price = valor / parseFloat(i.quantidade);
+            const bgColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
 
-                const idoc = iframe.contentWindow.document;
-                idoc.open();
-                // Injeta um HTML purinho, sem CDN de Tailwind
-                idoc.write('<!DOCTYPE html><html><head><style>body { margin: 0; padding: 0; background: #fff; }</style></head><body>' + htmlString + '</body></html>');
-                idoc.close();
-
-                const opt = {
-                    margin: 10,
-                    filename: filename,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    // Diminui o scale de 2 para 1.5. A qualidade fica ótima e gera 2x mais rápido
-                    html2canvas: { scale: 1.5, useCORS: true, logging: false }, 
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                };
-
-                // Tira a "foto" de dentro do Iframe isolado
-                const pdfBlob = await html2pdf().set(opt).from(idoc.body).output('blob');
-                
-                // Extermina o iframe
-                document.body.removeChild(iframe);
-
-                // Salva na memória global para o Gatilho
-                arquivoProntoParaEnvio = new File([pdfBlob], filename, { type: 'application/pdf' });
-
-                showLoading(false);
-                abrirTelaGatilho();
-
-            } catch(e) {
-                console.error(e);
-                showLoading(false);
-                showToast("Erro ao montar PDF", true);
+            const row = [
+                { text: i.produto_nome, fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 },
+                { text: i.quantidade.toString(), alignment: 'center', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 }
+            ];
+            
+            if(!isRomaneio) {
+                row.push({ text: formatMoney(price), alignment: 'right', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 });
+                row.push({ text: formatMoney(valor), alignment: 'right', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 });
             }
-        }
-        // Essa é a tela surpresa que dribla a segurança do navegador
-        function abrirTelaGatilho() {
-            const div = document.createElement('div');
-            div.id = 'tela-gatilho-share';
-            div.className = 'fixed inset-0 bg-slate-900/90 z-[999] flex flex-col items-center justify-center p-6 text-center backdrop-blur-sm';
-            div.innerHTML = `
-                <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm flex flex-col items-center">
-                    <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4">
-                        <i data-lucide="check-circle" class="w-8 h-8"></i>
-                    </div>
-                    <h2 class="text-xl font-black text-slate-800 mb-2">PDF Gerado!</h2>
-                    <p class="text-xs text-slate-500 mb-8">O documento está pronto na memória para ser compartilhado.</p>
-                    
-                    <button onclick="dispararShareImediato()" class="w-full bg-green-500 active:bg-green-600 text-white font-black text-lg py-4 rounded-xl shadow-lg mb-3 flex items-center justify-center gap-2">
-                        <i data-lucide="share-2" class="w-5 h-5"></i> ENVIAR AGORA
-                    </button>
-                    <button onclick="fecharTelaGatilho()" class="p-2 text-slate-400 font-bold text-sm underline mt-2">Cancelar</button>
-                </div>
-            `;
-            document.body.appendChild(div);
-            lucide.createIcons();
+            bodyTabela.push(row);
+        });
+
+        // 3. Conversor da Logo (URL) em Base64
+        async function getLogoBase64(url) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = 'Anonymous';
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = () => resolve(null);
+                img.src = url;
+            });
         }
 
-        // Esse é o clique final que o celular NÃO consegue bloquear porque ocorre em 0.001 segundos
-        async function dispararShareImediato() {
-            // Se o celular for tão antigo que não tem a gaveta, a gente baixa.
-            if (!navigator.canShare || !navigator.canShare({ files: [arquivoProntoParaEnvio] })) {
-                const url = URL.createObjectURL(arquivoProntoParaEnvio);
+        const logoBase64 = await getLogoBase64("https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png");
+        const docTitle = isRomaneio ? 'ROMANEIO DE ENTREGA' : 'ORDEM DE COMPRA';
+
+        // 4. Define a estrutura
+        const docDefinition = {
+            pageSize: 'A4',
+            pageMargins: [40, 40, 40, 40],
+            defaultStyle: { font: 'Roboto' },
+            background: function (currentPage, pageCount) {
+                return { canvas: [ { type: 'rect', x: 25, y: 25, w: 545.28, h: 791.89, lineWidth: 1, lineColor: '#000000' } ] };
+            },
+            content: [
+                // CABEÇALHO
+                {
+                    table: {
+                        widths: [90, '*', 'auto'],
+                        body: [
+                            [
+                                logoBase64 ? { image: logoBase64, width: 80, alignment: 'center', margin: [0, 0, 10, 0] } : '',
+                                {
+                                    text: [
+                                        { text: 'RV NEGÓCIOS E COMPANHIA\n', fontSize: 16, bold: true, color: '#1d4ed8' },
+                                        { text: 'CNPJ: 61.893.912/0001-24\n', fontSize: 9, color: '#475569', lineHeight: 1.3 },
+                                        { text: 'Rua Mineiros, 530 | Jataí - GO | (64) 99981-5852', fontSize: 9, color: '#475569', lineHeight: 1.3 }
+                                    ],
+                                    margin: [0, 10, 0, 0]
+                                },
+                                {
+                                    text: [
+                                        { text: docTitle + '\n', fontSize: 13, bold: true },
+                                        { text: `Nº: ${o.id}\n`, fontSize: 9 },
+                                        { text: `Emissão: ${formatDate(o.data)}\n`, fontSize: 9 },
+                                        { text: `Fase: ${o.fase_obra || '-'}`, fontSize: 9 }
+                                    ],
+                                    alignment: 'right',
+                                    margin: [0, 10, 0, 0]
+                                }
+                            ]
+                        ]
+                    },
+                    layout: 'noBorders',
+                    margin: [0, 0, 0, 10]
+                },
+                { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 2 }], margin: [0, 0, 0, 20] },
+                
+                // CAIXAS
+                {
+                    columns: [
+                        {
+                            width: '48%',
+                            table: { widths: ['*'], body: [ [{ text: 'DADOS DO FORNECEDOR', fillColor: '#f1f5f9', bold: true, fontSize: 8, margin: [4, 4, 4, 4] }], [{ text: `${forn.nome}\nDoc: ${forn.documento || '-'}\nTel: ${forn.telefone || '-'}`, fontSize: 9, margin: [6, 8, 6, 8] }] ] },
+                            layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000000', vLineColor: () => '#000000' }
+                        },
+                        { width: '4%', text: '' }, 
+                        {
+                            width: '48%',
+                            table: { widths: ['*'], body: [ [{ text: 'DESTINO (OBRA)', fillColor: '#f1f5f9', bold: true, fontSize: 8, margin: [4, 4, 4, 4] }], [{ text: `${obra.nome}\nEndereço: ${obra.endereco || '-'}\nSolicitante: ${o.solicitante || obra.solicitante || '-'} | Fase: ${o.fase_obra || '-'}`, fontSize: 9, margin: [6, 8, 6, 8] }] ] },
+                            layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000000', vLineColor: () => '#000000' }
+                        }
+                    ],
+                    margin: [0, 0, 0, 20]
+                },
+
+                // TABELA DE ITENS
+                {
+                    table: {
+                        headerRows: 1,
+                        widths: isRomaneio ? ['*', 'auto'] : ['*', 'auto', 'auto', 'auto'],
+                        body: bodyTabela
+                    },
+                    layout: { hLineWidth: (i, node) => (i === 0 || i === node.table.body.length) ? 0 : 1, vLineWidth: () => 0, hLineColor: () => '#000000', paddingLeft: () => 4, paddingRight: () => 4 },
+                    margin: [0, 0, 0, 20]
+                },
+
+                // OBSERVAÇÕES E TOTAIS
+                {
+                    columns: [
+                        {
+                            width: isRomaneio ? '100%' : '60%',
+                            table: { widths: ['*'], body: [ [{ text: [ { text: 'Observações:\n', fontSize: 9, bold: true }, { text: justObs, fontSize: 9 } ], margin: [6, 6, 6, 25] }] ] },
+                            layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#cbd5e1', vLineColor: () => '#cbd5e1', hLineStyle: () => ({dash: {length: 4, space: 4}}), vLineStyle: () => ({dash: {length: 4, space: 4}}) }
+                        },
+                        isRomaneio ? '' : {
+                            width: '40%', alignment: 'right', margin: [0, 10, 0, 0], text: [ { text: 'TOTAL ESTIMADO:   ', bold: true, fontSize: 10 }, { text: formatMoney(total), bold: true, fontSize: 13 } ]
+                        }
+                    ],
+                    margin: [0, 0, 0, 60]
+                },
+
+                // ASSINATURA
+                { text: '_________________________________________________\nASSINATURA RESPONSÁVEL', alignment: 'center', fontSize: 9, bold: true }
+            ],
+            styles: { tableHeader: { bold: true, fontSize: 10, color: 'white', fillColor: '#0f172a', margin: [4, 6, 4, 6] } }
+        };
+
+        // 5. Gera o PDF em Blob e aciona o compartilhamento nativo na mesma hora
+        const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+        pdfDocGenerator.getBlob(async (blob) => {
+            const filename = `Documento_${id}.pdf`;
+            const file = new File([blob], filename, { type: 'application/pdf' });
+            
+            showLoading(false);
+            
+            const tituloShare = isRomaneio ? `Romaneio OC #${id}` : `OC #${id}`;
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        title: tituloShare,
+                        text: "Segue o documento.",
+                        files: [file]
+                    });
+                } catch (err) {
+                    console.log("Compartilhamento cancelado.");
+                }
+            } else {
+                // Se for um celular muuuuito antigo que não suporta o botão de compartilhar arquivos
+                const url = URL.createObjectURL(file);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = arquivoProntoParaEnvio.name;
+                a.download = filename;
                 a.click();
                 URL.revokeObjectURL(url);
-                fecharTelaGatilho();
                 showToast("Seu celular não tem suporte nativo. Arquivo baixado!");
-                return;
             }
+        });
 
-            try {
-                // Abre o Zap a jato
-                await navigator.share({
-                    title: tituloDocumentoCache,
-                    text: "Segue o documento solicitado.",
-                    files: [arquivoProntoParaEnvio]
-                });
-                fecharTelaGatilho();
-            } catch (e) {
-                // Se o usuário clicar fora ou cancelar a gaveta do zap, fecha a tela e segue a vida
-                fecharTelaGatilho();
-            }
-        }
-
-        function fecharTelaGatilho() {
-            const el = document.getElementById('tela-gatilho-share');
-            if(el) el.remove();
-            arquivoProntoParaEnvio = null; // Limpa a memória
-        }
+    } catch(e) {
+        console.error(e);
+        showLoading(false);
+        showToast("Erro ao montar PDF", true);
+    }
+}
       
       
         // ====== FINANCEIRO ==========================================================================================================================================
