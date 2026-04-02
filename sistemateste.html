@@ -7,7 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 
     <script>
         // Se detectar que a tela é de celular ou tablet, joga direto pro mobile.html
@@ -2090,25 +2091,197 @@
         }
 
         function downloadOCPDF(id) {
-            showLoading(true);
-            const htmlString = buildHTMLOC(id);
-            if(!htmlString) { showLoading(false); return; }
+    showLoading(true);
 
-            setTimeout(() => {
-                const opt = {
-                    margin: 10, 
-                    filename: `Ordem_Compra_${id}.pdf`, 
-                    image: { type: 'jpeg', quality: 1 },
-                    html2canvas: { scale: 2, useCORS: true },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                };
-                html2pdf().set(opt).from(htmlString).save().then(() => {
-                    showLoading(false); showToast("PDF Baixado com Sucesso!");
-                }).catch(err => {
-                    console.error("Erro PDF:", err); showLoading(false); showToast("Erro ao gerar PDF", true);
-                });
-            }, 500); 
+    // 1. Busca os dados (mesma lógica que você já usa)
+    const logsOC = STATE.logs.filter(l => String(l.id) === String(id) && (l.tipo === 'oc_pendente' || l.tipo === 'compra'));
+    if(!logsOC.length) { showLoading(false); return showToast("O.C. não encontrada", true); }
+    
+    const o = logsOC[0];
+    const obra = STATE.obras.find(x => x.id == o.obra_id) || { nome: 'Sem Obra', endereco: '-' };
+    const forn = STATE.fornecedores.find(x => x.id == o.fornecedor_id) || { nome: 'A Definir', documento: '', telefone: '' };
+    
+    let justObs = o.observacao || 'Nenhuma observação informada.';
+    if(justObs.includes(' | Obs: ')) {
+        const parts = justObs.split(' | Obs: ');
+        justObs = parts[0] + '\n' + parts[1];
+    }
+
+    // 2. Monta as linhas da tabela
+    let total = 0;
+    const bodyTabela = [
+        // Cabeçalho da tabela
+        [
+            { text: 'Descrição', style: 'tableHeader', alignment: 'left' },
+            { text: 'Qtd', style: 'tableHeader', alignment: 'center' },
+            { text: 'Unit. Estimado', style: 'tableHeader', alignment: 'right' },
+            { text: 'Total Estimado', style: 'tableHeader', alignment: 'right' }
+        ]
+    ];
+
+    // Popula com os itens
+    logsOC.forEach((i, index) => {
+        const valor = parseFloat(i.valor_total);
+        total += valor;
+        const price = valor / parseFloat(i.quantidade);
+        const bgColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+
+        bodyTabela.push([
+            { text: i.produto_nome, fillColor: bgColor, margin: [0, 4, 0, 4] },
+            { text: i.quantidade.toString(), alignment: 'center', fillColor: bgColor, margin: [0, 4, 0, 4] },
+            { text: formatMoney(price), alignment: 'right', fillColor: bgColor, margin: [0, 4, 0, 4] },
+            { text: formatMoney(valor), alignment: 'right', fillColor: bgColor, margin: [0, 4, 0, 4] }
+        ]);
+    });
+
+    // 3. Define a estrutura do PDF
+    const docDefinition = {
+        pageSize: 'A4',
+        pageMargins: [30, 30, 30, 30],
+        content: [
+            // Cabelho Principal (Colunas)
+            {
+                columns: [
+                    {
+                        width: '60%',
+                        text: [
+                            { text: 'RV NEGÓCIOS E COMPANHIA\n', fontSize: 16, bold: true, color: '#1d4ed8' },
+                            { text: 'CNPJ: 61.893.912/0001-24\n', fontSize: 10, color: '#475569' },
+                            { text: 'Rua Mineiros, 530 | Jataí - GO | (64) 99981-5852', fontSize: 10, color: '#475569' }
+                        ]
+                    },
+                    {
+                        width: '40%',
+                        alignment: 'right',
+                        text: [
+                            { text: 'ORDEM DE COMPRA\n', fontSize: 14, bold: true },
+                            { text: `Nº: ${o.id}\n`, fontSize: 10 },
+                            { text: `Emissão: ${formatDate(o.data)}\n`, fontSize: 10 },
+                            { text: `Fase: ${o.fase_obra || '-'}`, fontSize: 10 }
+                        ]
+                    }
+                ],
+                margin: [0, 0, 0, 20]
+            },
+            
+            // Caixas de Fornecedor e Obra
+            {
+                columns: [
+                    // Fornecedor
+                    {
+                        width: '48%',
+                        table: {
+                            widths: ['*'],
+                            body: [
+                                [{ text: 'DADOS DO FORNECEDOR', fillColor: '#f1f5f9', bold: true, fontSize: 9 }],
+                                [{ text: `${forn.nome}\nDoc: ${forn.documento || '-'}\nTel: ${forn.telefone || '-'}`, fontSize: 10, margin: [5, 5, 5, 5] }]
+                            ]
+                        },
+                        layout: 'lightHorizontalLines'
+                    },
+                    { width: '4%', text: '' }, // Espaçador
+                    // Obra
+                    {
+                        width: '48%',
+                        table: {
+                            widths: ['*'],
+                            body: [
+                                [{ text: 'DESTINO (OBRA)', fillColor: '#f1f5f9', bold: true, fontSize: 9 }],
+                                [{ text: `${obra.nome}\nEndereço: ${obra.endereco || '-'}`, fontSize: 10, margin: [5, 5, 5, 5] }]
+                            ]
+                        },
+                        layout: 'lightHorizontalLines'
+                    }
+                ],
+                margin: [0, 0, 0, 20]
+            },
+
+            // Tabela de Produtos
+            {
+                table: {
+                    headerRows: 1,
+                    widths: ['*', 'auto', 'auto', 'auto'],
+                    body: bodyTabela
+                },
+                layout: {
+                    hLineWidth: function (i, node) { return (i === 0 || i === node.table.body.length) ? 1 : 0.5; },
+                    vLineWidth: function (i, node) { return 0; },
+                    hLineColor: function (i, node) { return '#cbd5e1'; },
+                    paddingLeft: function(i, node) { return 8; },
+                    paddingRight: function(i, node) { return 8; }
+                },
+                margin: [0, 0, 0, 20]
+            },
+
+            // Observações e Total Estimado
+            {
+                columns: [
+                    {
+                        width: '60%',
+                        table: {
+                            widths: ['*'],
+                            body: [
+                                [
+                                    {
+                                        border: [true, true, true, true],
+                                        margin: [5, 5, 5, 20],
+                                        text: [
+                                            { text: 'Observações:\n', fontSize: 10, bold: true },
+                                            { text: justObs, fontSize: 10 }
+                                        ]
+                                    }
+                                ]
+                            ]
+                        },
+                        layout: {
+                            defaultBorder: false,
+                            hLineWidth: function(i, node) { return 1; },
+                            vLineWidth: function(i, node) { return 1; },
+                            hLineColor: function(i, node) { return '#cbd5e1'; },
+                            vLineColor: function(i, node) { return '#cbd5e1'; },
+                            hLineStyle: function (i, node) { return {dash: {length: 4, space: 4}}; },
+                            vLineStyle: function (i, node) { return {dash: {length: 4, space: 4}}; }
+                        }
+                    },
+                    {
+                        width: '40%',
+                        alignment: 'right',
+                        margin: [0, 10, 0, 0],
+                        text: [
+                            { text: 'TOTAL ESTIMADO: ', bold: true, fontSize: 12 },
+                            { text: formatMoney(total), bold: true, fontSize: 14 }
+                        ]
+                    }
+                ],
+                margin: [0, 0, 0, 50]
+            },
+
+            // Assinatura
+            {
+                text: '_________________________________________________\nASSINATURA RESPONSÁVEL',
+                alignment: 'center',
+                fontSize: 10,
+                bold: true
+            }
+        ],
+        styles: {
+            tableHeader: {
+                bold: true,
+                fontSize: 11,
+                color: 'white',
+                fillColor: '#0f172a',
+                margin: [0, 5, 0, 5]
+            }
         }
+    };
+
+    // 4. Gera o PDF e faz o download
+    setTimeout(() => {
+        pdfMake.createPdf(docDefinition).download(`Ordem_Compra_${id}.pdf`);
+        showLoading(false);
+        showToast("PDF Baixado com Sucesso!");
+    }, 100);
+}
 
 
       // ====== IMPRESSÃO ROMANEIO (MOTORISTA / SEM VALORES) ======
