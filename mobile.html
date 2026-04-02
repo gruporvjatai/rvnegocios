@@ -149,16 +149,11 @@
             <div>
                 <label class="text-[9px] font-bold text-slate-500 uppercase mb-1 block">Condição de Pagamento</label>
                 <select id="pos-cond-pagamento" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none mb-2 font-bold text-slate-700">
-                    <option value="">A Definir / Padrão</option>
-                    <option value="A Vista (PIX)">A Vista (PIX)</option>
-                    <option value="A Vista (Boleto)">A Vista (Boleto)</option>
-                    <option value="Boleto 15 Dias">Boleto 15 Dias</option>
-                    <option value="Boleto 30 Dias">Boleto 30 Dias</option>
-                    <option value="Boleto 30/60 Dias">Boleto 30/60 Dias</option>
-                    <option value="Boleto 30/60/90 Dias">Boleto 30/60/90 Dias</option>
-                    <option value="Cartão de Crédito">Cartão de Crédito</option>
-                    <option value="Cartão de Débito">Cartão de Débito</option>
-                    <option value="Transferência">Transferência</option>
+                    <option value="PIX">PIX</option>
+                        <option value="Cartão de Crédito">Cartão de Crédito</option>
+                        <option value="Cartão de Débito">Cartão de Débito</option>
+                        <option value="Boleto">Boleto</option>
+                        <option value="Medição">Medição </option>
                 </select>
                 
                 <label class="text-[9px] font-bold text-slate-500 uppercase mb-1 block">Observações Gerais</label>
@@ -342,11 +337,11 @@
             <p class="text-xs text-slate-500 mb-4">Escolha o pagamento. PIX já entra como pago.</p>
             <input type="hidden" id="confirm-oc-id">
             <select id="confirm-oc-payment" class="w-full p-3 border rounded-xl font-bold text-slate-700 bg-slate-50 mb-4 text-sm">
-                <option value="PIX">PIX</option>
-                <option value="Boleto">Boleto</option>
-                <option value="Cartão de Crédito">Cartão de Crédito</option>
-                <option value="Cartão de Débito">Cartão de Débito</option>
-                <option value="Transferência">Transferência</option>
+                        <option value="PIX">PIX</option>
+                        <option value="Cartão de Crédito">Cartão de Crédito</option>
+                        <option value="Cartão de Débito">Cartão de Débito</option>
+                        <option value="Boleto">Boleto</option>
+                        <option value="Medição">Medição </option>
             </select>
             <div class="flex gap-2">
                 <button type="button" onclick="closeOverlayForm('modal-confirm-oc')" class="w-1/3 p-3 bg-slate-200 rounded-xl font-bold text-sm">Voltar</button>
