@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
   <head>
@@ -12,7 +11,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 
     <script>
-        // Se detectar que a tela é de celular ou tablet, joga direto pro mobile.html
         if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 800) {
           window.location.replace("mobile.html");
         }
@@ -36,13 +34,11 @@
       .active-section { display: block !important; animation: fadeIn 0.3s ease-in-out; }
       @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
       
-      /* Loader Azul */
       .loader { border: 3px solid #e2e8f0; border-top: 3px solid #1d4ed8; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
       @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
       .btn-action { transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: bold; border-radius: 8px; }
       .btn-action:active { transform: scale(0.98); }
 
-      /* IMPRESSÃO */
       @media print {
         @page { size: A4; margin: 10mm; }
         body { background: white; margin: 0; padding: 0; font-family: 'Helvetica', 'Arial', sans-serif; color: #1e293b; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -50,6 +46,10 @@
         .print-only { display: block !important; }
       }
       .print-only { display: none; }
+      
+      /* Toggle Day Ponto */
+      .day-btn { cursor: pointer; transition: all 0.2s; user-select: none; }
+      .day-btn.active { background-color: #1d4ed8; color: white; border-color: #1e40af; }
     </style>
   </head>
   <body>
@@ -70,7 +70,7 @@
         <button onclick="navigate('pos')" id="nav-pos" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="shopping-cart"></i> <span class="font-medium text-sm">Nova O.C.</span></button>
         <button onclick="navigate('fin')" id="nav-fin" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="bar-chart-3"></i> <span class="font-medium text-sm">Financeiro Obras</span></button>
         <div class="border-t border-slate-800 my-2 pt-2"></div>
-        <button onclick="navigate('equipe')" id="nav-equipe" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="users"></i> <span class="font-medium text-sm">Equipe / Mão de Obra</span></button>
+        <button onclick="navigate('equipe')" id="nav-equipe" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="users"></i> <span class="font-medium text-sm">Equipe</span></button>
         <button onclick="navigate('fornecedores')" id="nav-fornecedores" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="truck"></i> <span class="font-medium text-sm">Fornecedores</span></button>
         <button onclick="navigate('prod')" id="nav-prod" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="package"></i> <span class="font-medium text-sm">Produtos</span></button>
         <button onclick="navigate('fases')" id="nav-fases" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="layers"></i> <span class="font-medium text-sm">Fases de Obra</span></button>
@@ -256,21 +256,69 @@
       </div>
 
       <div id="view-equipe" class="hidden-section">
-          <div class="flex justify-between items-center mb-4">
-              <h2 class="text-2xl font-bold text-slate-800">Equipe / Mão de Obra</h2>
-              <button onclick="openEquipeForm()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="plus"></i> Cadastrar Membro</button>
-          </div>
-          <div class="mb-4 bg-white p-4 rounded-xl shadow-sm border">
-              <div class="relative w-full">
-                  <i data-lucide="search" class="absolute left-3 top-2.5 text-slate-400 w-5 h-5"></i>
-                  <input type="text" id="eqp-search" placeholder="Buscar por nome ou categoria..." class="w-full pl-10 p-2 border rounded outline-none focus:border-blue-600 font-medium" onkeyup="renderEquipe()">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+              <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i data-lucide="users" class="text-blue-700"></i> Equipe </h2>
+              <div class="flex gap-2 w-full md:w-auto">
+                  <button onclick="imprimirFolha()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="printer" class="w-4 h-4"></i> Imprimir Folha</button>
+                  <button onclick="openEquipeForm()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Cadastrar Membro</button>
               </div>
           </div>
+
+          <div class="mb-4 bg-white p-4 rounded-xl shadow-sm border grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
+                  <select id="eqp-filter-status" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
+                      <option value="true">Ativos</option>
+                      <option value="false">Desativados</option>
+                      <option value="todos">Todos</option>
+                  </select>
+              </div>
+              <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mês</label>
+                  <select id="eqp-filter-mes" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
+                      <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option>
+                      <option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option>
+                      <option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option>
+                      <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+                  </select>
+              </div>
+              <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Ano</label>
+                  <input type="number" id="eqp-filter-ano" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
+              </div>
+              <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Filtrar por Obra</label>
+                  <select id="eqp-obra-filter" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
+                      <option value="">Todas as Obras</option>
+                  </select>
+              </div>
+              <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Buscar Nome</label>
+                  <div class="relative w-full">
+                      <i data-lucide="search" class="absolute left-3 top-2.5 text-slate-400 w-5 h-5"></i>
+                      <input type="text" id="eqp-search" placeholder="Buscar funcionário..." class="w-full pl-10 p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onkeyup="renderEquipe()">
+                  </div>
+              </div>
+          </div>
+        
+
           <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
-              <table class="w-full text-sm text-left">
-                  <thead class="bg-slate-100 text-slate-700"><tr><th class="p-4">Nome</th><th class="p-4">Categoria</th><th class="p-4">Telefone</th><th class="p-4 text-center">Ações</th></tr></thead>
-                  <tbody id="equipe-list" class="divide-y"></tbody>
-              </table>
+              <div class="overflow-x-auto">
+                  <table class="w-full text-sm text-left whitespace-nowrap">
+                      <thead class="bg-slate-100 text-slate-700 border-b">
+                          <tr>
+                              <th class="p-4">Funcionário / Categoria</th>
+                              <th class="p-4">Obra Vinculada</th>
+                              <th class="p-4 text-center">Diária (R$)</th>
+                              <th class="p-4 text-center">Dias Trab.</th>
+                              <th class="p-4 text-right">Total a Pagar</th>
+                              <th class="p-4 text-center">Status</th>
+                              <th class="p-4 text-center">Ações</th>
+                          </tr>
+                      </thead>
+                      <tbody id="equipe-list" class="divide-y"></tbody>
+                  </table>
+              </div>
           </div>
       </div>
 
@@ -435,7 +483,7 @@
                         <option value="Cartão de Crédito">Cartão de Crédito</option>
                         <option value="Cartão de Débito">Cartão de Débito</option>
                         <option value="Boleto">Boleto</option>
-                        <option value="Medição">Medição </option>
+                        <option value="Medição">Medição</option>
                     </select>
                 </div>
             </div>
@@ -447,19 +495,67 @@
       </div>
 
       <div id="equipe-form-container" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-        <form onsubmit="saveEquipe(event)" class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
+        <form onsubmit="saveEquipe(event)" class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <h3 class="font-bold text-lg mb-4 flex items-center gap-2"><i data-lucide="user-plus" class="text-blue-600"></i> Membro da Equipe</h3>
             <input type="hidden" id="eqp-id">
             <div class="space-y-3">
-                <input type="text" id="eqp-name" required placeholder="Nome Completo" class="w-full p-2 border rounded focus:border-blue-600 outline-none">
-                <input type="text" id="eqp-cat" placeholder="Categoria (Ex: Mestre de Obras, Pintor...)" class="w-full p-2 border rounded focus:border-blue-600 outline-none">
-                <input type="text" id="eqp-phone" placeholder="Telefone / WhatsApp (Apenas Números)" class="w-full p-2 border rounded focus:border-blue-600 outline-none">
+                <div><label class="block text-[10px] font-bold text-slate-500 uppercase">Nome Completo</label><input type="text" id="eqp-name" required class="w-full p-2 border rounded focus:border-blue-600 outline-none bg-slate-50"></div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-[10px] font-bold text-slate-500 uppercase">Categoria / Função</label><input type="text" id="eqp-cat" class="w-full p-2 border rounded focus:border-blue-600 outline-none bg-slate-50"></div>
+                    <div><label class="block text-[10px] font-bold text-slate-500 uppercase">Telefone</label><input type="text" id="eqp-phone" class="w-full p-2 border rounded focus:border-blue-600 outline-none bg-slate-50"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-[10px] font-bold text-slate-500 uppercase">CPF</label><input type="text" id="eqp-cpf" class="w-full p-2 border rounded focus:border-blue-600 outline-none bg-slate-50"></div>
+                    <div><label class="block text-[10px] font-bold text-slate-500 uppercase">RG</label><input type="text" id="eqp-rg" class="w-full p-2 border rounded focus:border-blue-600 outline-none bg-slate-50"></div>
+                </div>
+                <div><label class="block text-[10px] font-bold text-slate-500 uppercase">Endereço Completo</label><input type="text" id="eqp-endereco" class="w-full p-2 border rounded focus:border-blue-600 outline-none bg-slate-50"></div>
+                <div class="grid grid-cols-2 gap-3 pt-2 border-t mt-2">
+                    <div class="col-span-2"><label class="block text-[10px] font-bold text-slate-500 uppercase">Obra Vinculada (Atual)</label><select id="eqp-obra" class="w-full p-2 border rounded focus:border-blue-600 outline-none font-bold text-blue-700 bg-blue-50"></select></div>
+                    <div class="col-span-2"><label class="block text-[10px] font-bold text-slate-500 uppercase">Valor da Diária Combinada (R$)</label><input type="number" step="0.01" id="eqp-diaria" class="w-full p-2 border rounded focus:border-blue-600 outline-none font-black text-green-700 bg-green-50"></div>
+                </div>
             </div>
             <div class="flex gap-2 mt-6">
                 <button type="button" onclick="document.getElementById('equipe-form-container').classList.add('hidden')" class="flex-1 p-2 bg-slate-200 rounded font-bold hover:bg-slate-300 text-slate-700">Cancelar</button>
                 <button type="submit" class="flex-1 p-2 bg-blue-700 text-white rounded font-bold hover:bg-blue-800">Salvar</button>
             </div>
         </form>
+      </div>
+      
+
+      <div id="ponto-modal" class="hidden fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden">
+            <div class="p-4 border-b flex justify-between items-center bg-slate-50">
+                <div>
+                    <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2"><i data-lucide="calendar-clock" class="text-blue-600"></i> Folha de Ponto</h3>
+                    <p class="text-xs text-slate-500 mt-1" id="ponto-modal-subtitle"></p>
+                </div>
+                <button onclick="document.getElementById('ponto-modal').classList.add('hidden')" class="text-slate-400 hover:text-red-500"><i data-lucide="x"></i></button>
+            </div>
+            <div class="p-6">
+                <input type="hidden" id="ponto-equipe-id">
+                
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Selecione os dias trabalhados no mês:</label>
+                    <div id="ponto-grid" class="grid grid-cols-7 gap-2">
+                        </div>
+                </div>
+
+                <div class="flex justify-between items-center bg-slate-100 p-4 rounded-xl border border-slate-200">
+                    <div>
+                        <div class="text-[10px] text-slate-500 font-bold uppercase">Total de Dias</div>
+                        <div class="text-2xl font-black text-blue-700" id="ponto-total-dias">0</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-[10px] text-slate-500 font-bold uppercase">Valor a Receber</div>
+                        <div class="text-2xl font-black text-green-600" id="ponto-total-valor">R$ 0,00</div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 border-t bg-slate-50 flex gap-2">
+                <button onclick="document.getElementById('ponto-modal').classList.add('hidden')" class="flex-1 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition">Cancelar</button>
+                <button onclick="savePonto()" class="flex-1 py-3 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-xl shadow-md transition">Salvar Ponto</button>
+            </div>
+        </div>
       </div>
 
       <div id="fornecedor-form-container" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
@@ -759,6 +855,41 @@
         </div>
       </div>
 
+
+
+      <div id="modal-docs-equipe" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
+            <h3 class="font-bold text-lg mb-2 text-slate-800 flex items-center gap-2"><i data-lucide="file-text" class="text-blue-600"></i> Documentos e Contratos</h3>
+            <p id="doc-equipe-nome" class="text-sm font-bold text-slate-500 mb-4"></p>
+            <input type="hidden" id="doc-equipe-id">
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Selecione o Documento</label>
+                    <select id="doc-tipo-select" class="w-full p-2 border rounded font-bold text-slate-700 outline-none">
+                        <option value="contrato1">Contrato de Trabalho - Modelo 1</option>
+                        <option value="contrato2">Contrato de Trabalho - Modelo Empreitada</option>
+                        <option value="epi">Comprovante de Entrega de EPI's</option>
+                    </select>
+                </div>
+                
+                <button onclick="imprimirDocumento()" class="w-full p-3 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-900 flex items-center justify-center gap-2">
+                    <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Documento Selecionado
+                </button>
+
+                <div class="border-t pt-4">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Status do Contrato</label>
+                    <button id="btn-assinar-doc" onclick="marcarContratoAssinado()" class="w-full p-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 flex items-center justify-center gap-2">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i> Marcar como Assinado
+                    </button>
+                </div>
+            </div>
+            
+            <button onclick="document.getElementById('modal-docs-equipe').classList.add('hidden')" class="w-full mt-4 p-3 bg-slate-200 text-slate-700 rounded-lg font-bold hover:bg-slate-300">Fechar</button>
+        </div>
+      </div>
+
+      
     </main>
 
     <div id="print-area" class="print-only"></div>
@@ -775,12 +906,15 @@
         const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
 
         // ====== VARIÁVEIS DE ESTADO ======
-        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], users: [], equipe: [], fases: [] };
+        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], users: [], equipe: [], fases: [], ponto: [] };
         let CART = [];
         let CURRENT_OC_ID = null; 
 
         // ====== INICIALIZAÇÃO ======
         window.onload = function() { 
+            const hoje = new Date();
+            document.getElementById('eqp-filter-mes').value = String(hoje.getMonth() + 1).padStart(2, '0');
+            document.getElementById('eqp-filter-ano').value = hoje.getFullYear();
             if (dadosUsuario) { showLoading(true); loadData(); }
         };
 
@@ -838,13 +972,14 @@
 
         async function loadData() {
             try {
-                const [resObras, resForn, resProd, resLog, resEqp, resFases] = await Promise.all([
+                const [resObras, resForn, resProd, resLog, resEqp, resFases, resPonto] = await Promise.all([
                     fetchAllRecords('jsp_obras'),
                     fetchAllRecords('jsp_fornecedores'),
                     fetchAllRecords('jsp_produtos'),
                     fetchAllRecords('jsp_logs'),
                     fetchAllRecords('jsp_equipe').catch(() => ({ data: [] })),
-                    fetchAllRecords('jsp_fase').catch(() => ({ data: [] }))
+                    fetchAllRecords('jsp_fase').catch(() => ({ data: [] })),
+                    fetchAllRecords('jsp_ponto').catch(() => ({ data: [] }))
                 ]);
 
                 STATE.obras = resObras.data || [];
@@ -852,8 +987,8 @@
                 STATE.produtos = resProd.data || [];
                 STATE.logs = resLog.data || [];
                 STATE.equipe = resEqp.data || [];
-                // Ordenar as fases pelo campo "ordem"
                 STATE.fases = (resFases.data || []).sort((a,b) => a.ordem - b.ordem);
+                STATE.ponto = resPonto.data || [];
 
                 if (dadosUsuario.nivel === 'admin') {
                     const navUsersBtn = document.getElementById('nav-users');
@@ -880,14 +1015,14 @@
 
         function updateSelects() {
             // Selects de Obras
-            const selectsObra = ['pos-obra', 'fin-obra-filter', 'exp-obra', 'rev-obra', 'rep-obra'];
+            const selectsObra = ['pos-obra', 'fin-obra-filter', 'exp-obra', 'rev-obra', 'rep-obra', 'eqp-obra', 'eqp-obra-filter'];
             const htmlObras = '<option value="">-- Selecione uma Obra --</option>' + STATE.obras.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
             
             selectsObra.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
                     const currentVal = el.value;
-                    if(id === 'fin-obra-filter' || id === 'rep-obra') {
+                    if(id === 'fin-obra-filter' || id === 'rep-obra' || id === 'eqp-obra-filter') {
                         el.innerHTML = '<option value="">Todas as Obras / Geral</option>' + STATE.obras.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
                     } else {
                         el.innerHTML = htmlObras;
@@ -942,7 +1077,6 @@
             } else {
                 document.getElementById('fase-form-container').querySelector('form').reset();
                 document.getElementById('fas-id').value = '';
-                // Sugerir próxima ordem
                 const maxOrdem = STATE.fases.reduce((max, f) => (f.ordem > max ? f.ordem : max), 0);
                 document.getElementById('fas-ordem').value = maxOrdem + 1;
             }
@@ -978,25 +1112,73 @@
         }
 
 
-        // ====== CRUD EQUIPE ======
-        function renderEquipe() {
+        // ====== CRUD EQUIPE E PONTO ======
+       function renderEquipe() {
             const term = document.getElementById('eqp-search').value.toLowerCase();
+            const obraFiltro = document.getElementById('eqp-obra-filter').value;
+            const mes = document.getElementById('eqp-filter-mes').value;
+            const ano = document.getElementById('eqp-filter-ano').value;
+            const statusFiltro = document.getElementById('eqp-filter-status').value;
+            
             const list = document.getElementById('equipe-list');
-            const fil = STATE.equipe.filter(e => e.nome.toLowerCase().includes(term) || (e.categoria||'').toLowerCase().includes(term));
+            
+            // Filtros
+            let fil = STATE.equipe.filter(e => e.nome.toLowerCase().includes(term) || (e.categoria||'').toLowerCase().includes(term));
+            if(obraFiltro) fil = fil.filter(e => e.obra_atual_id == obraFiltro);
+            
+            // Filtro de Ativo/Inativo
+            if (statusFiltro !== "todos") {
+                const isAtivo = statusFiltro === "true";
+                fil = fil.filter(e => e.ativo === isAtivo || (isAtivo && e.ativo === undefined)); // undefined trata os antigos como ativos
+            }
+
+            fil.sort((a, b) => a.nome.localeCompare(b.nome));
             
             list.innerHTML = fil.map(e => {
                 const phoneClean = (e.telefone||'').replace(/\D/g,'');
-                const wppBtn = phoneClean ? `<a href="https://wa.me/55${phoneClean}" target="_blank" class="p-2 border border-green-200 text-green-600 hover:bg-green-50 rounded" title="WhatsApp"><i data-lucide="message-circle" width="16"></i></a>` : '';
+                const wppBtn = phoneClean ? `<a href="https://wa.me/55${phoneClean}" target="_blank" class="p-1.5 border border-green-200 text-green-600 hover:bg-green-50 rounded bg-green-50/50" title="WhatsApp"><i data-lucide="message-circle" width="14"></i></a>` : '';
                 
-                return `<tr class="border-b hover:bg-slate-50 transition">
-                    <td class="p-4 font-bold text-slate-700">${e.nome}</td>
-                    <td class="p-4">
-                        <span class="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-1 rounded uppercase font-bold">${e.categoria||'Geral'}</span>
+                const obraAtual = STATE.obras.find(o => o.id == e.obra_atual_id);
+                const nomeObra = obraAtual ? obraAtual.nome : '<span class="text-slate-400 italic">Sem obra fixa</span>';
+                const diaria = parseFloat(e.valor_diaria || 0);
+                
+                let pt = STATE.ponto.find(x => x.equipe_id == e.id && x.mes === mes && x.ano === ano);
+                let dias = pt ? parseFloat(pt.total_dias || 0) : 0;
+                let total = pt ? parseFloat(pt.valor_total || 0) : (dias * diaria);
+                let status = pt ? pt.status : 'PENDENTE';
+                let isPago = status === 'PAGO';
+                let btnDocColor = e.contrato_assinado ? 'bg-green-600 text-white' : 'bg-slate-800 text-white';
+
+                // Mudança 3: Classes p-2 ao invés de p-4 para diminuir altura do card
+                return `<tr class="border-b hover:bg-slate-50 transition ${e.ativo === false ? 'opacity-60 bg-red-50' : ''}">
+                    <td class="p-2">
+                        <div class="font-bold text-slate-800 text-sm">${e.nome} ${e.ativo === false ? '<span class="text-[9px] text-red-500 font-bold">(DESATIVADO)</span>' : ''}</div>
+                        <div class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded uppercase font-bold inline-block mt-0.5">${e.categoria||'Geral'}</div>
                     </td>
-                    <td class="p-4 text-slate-600">${e.telefone||'-'}</td>
-                    <td class="p-4 text-center">
-                        <div class="flex items-center justify-center gap-2">
-                            <button onclick="openEquipeForm('${e.id}')" class="p-2 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar"><i data-lucide="edit-3" width="16"></i></button>
+                    <td class="p-2 text-xs font-bold text-blue-700"><i data-lucide="building" class="w-3 h-3 inline"></i> ${nomeObra}</td>
+                    <td class="p-2 text-center">
+                        <div class="font-bold text-slate-700 text-xs">${formatMoney(diaria)} <span class="text-[9px] text-slate-400 font-normal">/dia</span></div>
+                    </td>
+                    <td class="p-2 text-center">
+                        <div class="text-xs font-black ${dias > 0 ? 'text-indigo-600' : 'text-slate-400'}">${dias} dias</div>
+                    </td>
+                    <td class="p-2 text-right">
+                        <div class="font-black text-sm ${isPago ? 'text-slate-400' : 'text-green-700'}">${formatMoney(total)}</div>
+                    </td>
+                   <td class="p-2 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            <span class="px-2 py-1 rounded text-[9px] font-bold ${isPago ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">${isPago ? 'PAGO' : 'PENDENTE'}</span>
+                            ${isPago ? `<button onclick="estornarPagamentoPonto('${pt?.id}', '${e.id}')" class="text-slate-400 hover:text-red-500 transition ml-1" title="Estornar Pagamento e Cancelar Despesa"><i data-lucide="rotate-ccw" width="12"></i></button>` : ''}
+                        </div>
+                    </td>
+                    <td class="p-2 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            ${!isPago ? `<button onclick="openPontoModal('${e.id}')" class="p-1.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded shadow font-bold text-[10px] flex items-center gap-1"><i data-lucide="calendar-check-2" width="12"></i> PONTO</button>` : ''}
+                            ${!isPago && total > 0 ? `<button onclick="pagarMesPonto('${pt?.id}', '${e.id}')" class="p-1.5 bg-green-600 text-white hover:bg-green-700 rounded shadow font-bold text-[10px] flex items-center gap-1"><i data-lucide="check-circle" width="12"></i> PAGAR</button>` : ''}
+                            <button onclick="imprimirRecibo('${e.id}', '${pt?.id}')" class="p-1.5 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Gerar Recibo"><i data-lucide="receipt" width="14"></i></button>
+                            <button onclick="abrirModalDocumentos('${e.id}')" class="p-1.5 ${btnDocColor} rounded shadow" title="Contratos e Documentos"><i data-lucide="file-signature" width="14"></i></button>
+                            <button onclick="openEquipeForm('${e.id}')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar"><i data-lucide="edit-3" width="14"></i></button>
+                            <button onclick="toggleStatusEquipe('${e.id}', ${e.ativo !== false})" class="p-1.5 border ${e.ativo !== false ? 'border-red-200 text-red-500 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'} rounded" title="${e.ativo !== false ? 'Desativar / Demitir' : 'Reativar'}"><i data-lucide="power" width="14"></i></button>
                             ${wppBtn}
                         </div>
                     </td>
@@ -1013,6 +1195,11 @@
                 document.getElementById('eqp-name').value = e.nome;
                 document.getElementById('eqp-cat').value = e.categoria || '';
                 document.getElementById('eqp-phone').value = e.telefone || '';
+                document.getElementById('eqp-cpf').value = e.cpf || '';
+                document.getElementById('eqp-rg').value = e.rg || '';
+                document.getElementById('eqp-endereco').value = e.endereco || '';
+                document.getElementById('eqp-obra').value = e.obra_atual_id || '';
+                document.getElementById('eqp-diaria').value = e.valor_diaria || '';
             } else {
                 document.getElementById('equipe-form-container').querySelector('form').reset();
                 document.getElementById('eqp-id').value = '';
@@ -1025,13 +1212,20 @@
             const payload = {
                 nome: document.getElementById('eqp-name').value,
                 categoria: document.getElementById('eqp-cat').value,
-                telefone: document.getElementById('eqp-phone').value
+                telefone: document.getElementById('eqp-phone').value,
+                cpf: document.getElementById('eqp-cpf').value,
+                rg: document.getElementById('eqp-rg').value,
+                endereco: document.getElementById('eqp-endereco').value,
+                obra_atual_id: document.getElementById('eqp-obra').value || null,
+                valor_diaria: parseFloat(document.getElementById('eqp-diaria').value) || 0
             };
             
-            if(!isNew) {
-                payload.id = document.getElementById('eqp-id').value;
-            } else {
+            if(isNew) {
                 payload.id = crypto.randomUUID();
+                payload.ativo = true;
+                payload.contrato_assinado = false;
+            } else {
+                payload.id = document.getElementById('eqp-id').value;
             }
 
             const { error } = await sb.from('jsp_equipe').upsert(payload);
@@ -1040,6 +1234,340 @@
             document.getElementById('equipe-form-container').classList.add('hidden');
             showToast("Membro salvo na equipe!"); loadData();
         }
+
+        async function toggleStatusEquipe(id, isAtivo) {
+            const acao = isAtivo ? "DESATIVAR (Demitir)" : "REATIVAR";
+            if(!confirm(`Tem certeza que deseja ${acao} este colaborador? Ele ${isAtivo ? 'não aparecerá' : 'voltará a aparecer'} na lista padrão.`)) return;
+            
+            showLoading(true);
+            const { error } = await sb.from('jsp_equipe').update({ ativo: !isAtivo }).eq('id', id);
+            if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
+            showToast(`Status atualizado com sucesso!`); loadData();
+        }
+
+        // --- Lógica do Ponto ---
+        let currentPontoDias = [];
+        let currentPontoDiaria = 0;
+
+        function getDiasNoMes(mes, ano) { return new Date(ano, mes, 0).getDate(); }
+
+        function openPontoModal(equipe_id) {
+            const e = STATE.equipe.find(x => x.id == equipe_id);
+            if(!e) return;
+
+            const mes = document.getElementById('eqp-filter-mes').value;
+            const ano = document.getElementById('eqp-filter-ano').value;
+            currentPontoDiaria = parseFloat(e.valor_diaria || 0);
+
+            document.getElementById('ponto-modal-subtitle').innerText = `${e.nome} - Mês: ${mes}/${ano} - Diária: ${formatMoney(currentPontoDiaria)}`;
+            document.getElementById('ponto-equipe-id').value = e.id;
+
+            let pt = STATE.ponto.find(x => x.equipe_id == e.id && x.mes === mes && x.ano === ano);
+            if(pt && pt.dias_marcados) {
+                currentPontoDias = Array.isArray(pt.dias_marcados) ? pt.dias_marcados : JSON.parse(pt.dias_marcados);
+            } else {
+                currentPontoDias = [];
+            }
+
+            renderPontoGrid(mes, ano);
+            document.getElementById('ponto-modal').classList.remove('hidden');
+        }
+
+        function renderPontoGrid(mes, ano) {
+            const numDias = getDiasNoMes(parseInt(mes), parseInt(ano));
+            const grid = document.getElementById('ponto-grid');
+            let html = '';
+            for(let i = 1; i <= numDias; i++) {
+                const ativo = currentPontoDias.includes(i);
+                html += `<div onclick="toggleDiaPonto(${i})" class="day-btn border rounded-lg text-center p-2 font-bold text-sm ${ativo ? 'active' : 'bg-white text-slate-600 hover:bg-slate-100'}">${i}</div>`;
+            }
+            grid.innerHTML = html;
+            updatePontoTotais();
+        }
+
+        function toggleDiaPonto(dia) {
+            if(currentPontoDias.includes(dia)) {
+                currentPontoDias = currentPontoDias.filter(d => d !== dia);
+            } else {
+                currentPontoDias.push(dia);
+            }
+            const mes = document.getElementById('eqp-filter-mes').value;
+            const ano = document.getElementById('eqp-filter-ano').value;
+            renderPontoGrid(mes, ano);
+        }
+
+        function updatePontoTotais() {
+            const totalDias = currentPontoDias.length;
+            const valor = totalDias * currentPontoDiaria;
+            document.getElementById('ponto-total-dias').innerText = totalDias;
+            document.getElementById('ponto-total-valor').innerText = formatMoney(valor);
+        }
+
+        async function savePonto() {
+            showLoading(true);
+            const equipe_id = document.getElementById('ponto-equipe-id').value;
+            const e = STATE.equipe.find(x => x.id == equipe_id);
+            const mes = document.getElementById('eqp-filter-mes').value;
+            const ano = document.getElementById('eqp-filter-ano').value;
+            
+            const totalDias = currentPontoDias.length;
+            const valorTotal = totalDias * currentPontoDiaria;
+
+            let pt = STATE.ponto.find(x => x.equipe_id == equipe_id && x.mes === mes && x.ano === ano);
+            const isNew = !pt;
+
+            const payload = {
+                equipe_id: equipe_id,
+                obra_id: e.obra_atual_id,
+                mes: mes,
+                ano: ano,
+                dias_marcados: currentPontoDias,
+                total_dias: totalDias,
+                valor_diaria: currentPontoDiaria,
+                valor_total: valorTotal,
+                status: pt ? pt.status : 'PENDENTE'
+            };
+
+            if(!isNew) payload.id = pt.id;
+
+            const { error } = await sb.from('jsp_ponto').upsert(payload);
+            if(error) { showLoading(false); return showToast("Erro ao salvar ponto: " + error.message, true); }
+            
+            document.getElementById('ponto-modal').classList.add('hidden');
+            showToast("Ponto salvo com sucesso!"); loadData();
+        }
+
+        async function pagarMesPonto(ponto_id, equipe_id) {
+            if(!confirm("Deseja confirmar o pagamento deste mês? Isso criará uma Despesa automática na Obra atual do funcionário.")) return;
+            showLoading(true);
+
+            const mes = document.getElementById('eqp-filter-mes').value;
+            const ano = document.getElementById('eqp-filter-ano').value;
+            const e = STATE.equipe.find(x => x.id == equipe_id);
+            const pt = STATE.ponto.find(x => x.id == ponto_id);
+
+            if(!e || !pt) { showLoading(false); return showToast("Dados inconsistentes", true); }
+            if(!e.obra_atual_id) { showLoading(false); return showToast("Funcionário precisa estar vinculado a uma obra para lançar a despesa.", true); }
+
+            const dtPagamento = new Date().toISOString();
+            
+            // 1. Atualizar status do Ponto para PAGO
+            const { error: errPt } = await sb.from('jsp_ponto').update({ status: 'PAGO', data_pagamento: dtPagamento }).eq('id', ponto_id);
+            if(errPt) { showLoading(false); return showToast("Erro: " + errPt.message, true); }
+
+            // 2. Lançar no Financeiro
+            const desc = `Pagamento Mensal (${mes}/${ano}) - ${e.nome}`;
+            const { error: errFin } = await sb.from('jsp_logs').insert([{
+                id: getNextIdNum(STATE.logs).toString(),
+                obra_id: parseInt(e.obra_atual_id),
+                tipo: 'despesa',
+                produto_nome: desc,
+                valor_total: parseFloat(pt.valor_total),
+                data: dtPagamento, vencimento: dtPagamento,
+                status_financeiro: 'PAGO',
+                categoria: 'Mão de Obra',
+                observacao: `Tipo: Mão de Obra | Equipe: ${e.nome} | Dias Trab: ${pt.total_dias}`
+            }]);
+
+            if(errFin) { showLoading(false); return showToast("Erro financeiro: " + errFin.message, true); }
+            
+            showToast("Pagamento e Despesa lançados com sucesso!"); loadData();
+        }
+
+        function imprimirFolha() {
+            const mes = document.getElementById('eqp-filter-mes').value;
+            const ano = document.getElementById('eqp-filter-ano').value;
+            const term = document.getElementById('eqp-search').value.toLowerCase();
+            const obraFiltro = document.getElementById('eqp-obra-filter').value;
+            const statusFiltro = document.getElementById('eqp-filter-status').value;
+            
+            let fil = STATE.equipe.filter(e => e.nome.toLowerCase().includes(term) || (e.categoria||'').toLowerCase().includes(term));
+            if(obraFiltro) fil = fil.filter(e => e.obra_atual_id == obraFiltro);
+            if (statusFiltro !== "todos") {
+                const isAtivo = statusFiltro === "true";
+                fil = fil.filter(e => e.ativo === isAtivo || (isAtivo && e.ativo === undefined));
+            }
+
+            let htmlReport = `
+                <div style="font-family: Arial, sans-serif; color: #333; width: 100%;">
+                    <div style="text-align: center; border-bottom: 2px solid #1d4ed8; padding-bottom: 10px; margin-bottom: 20px;">
+                        <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px; margin-bottom: 10px;" />
+                        <h2 style="margin: 0; color: #1e293b; font-size: 20px; font-weight: 900;">RELATÓRIO DE FREQUÊNCIA E PAGAMENTO</h2>
+                        <h3 style="margin: 5px 0 0 0; color: #1d4ed8;">Competência: ${mes}/${ano}</h3>
+                        ${obraFiltro ? `<p style="margin: 5px 0 0 0; font-size: 14px; color: #64748b;">Obra: ${STATE.obras.find(o=>o.id==obraFiltro)?.nome}</p>` : ''}
+                    </div>
+                    <table width="100%" style="border-collapse: collapse; text-align: left; font-size: 11px;">
+                        <thead>
+                            <tr style="background-color: #f1f5f9; color: #1e293b;">
+                                <th style="padding: 8px; border: 1px solid #cbd5e1;">Funcionário / Função</th>
+                                <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">Diária</th>
+                                <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">Dias Trabalhados</th>
+                                <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: right;">Total R$ (Subtotal)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            let somaTotal = 0;
+            fil.forEach(e => {
+                let pt = STATE.ponto.find(x => x.equipe_id == e.id && x.mes === mes && x.ano === ano);
+                let dias = pt ? parseFloat(pt.total_dias || 0) : 0;
+                let diaria = parseFloat(e.valor_diaria || 0);
+                let total = pt ? parseFloat(pt.valor_total || 0) : (dias * diaria);
+                somaTotal += total;
+
+                // Mudança 4: Tirado o campo assinatura e diminuído os paddings (linhas menores)
+                htmlReport += `
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #cbd5e1;"><strong>${e.nome}</strong><br><span style="font-size: 9px; color:#64748b; text-transform: uppercase;">${e.categoria||'Geral'}</span></td>
+                        <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${formatMoney(diaria)}</td>
+                        <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #1d4ed8;">${dias}</td>
+                        <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: right; font-weight: bold; font-size: 12px;">${formatMoney(total)}</td>
+                    </tr>
+                `;
+            });
+
+            htmlReport += `
+                        </tbody>
+                    </table>
+                    <div style="margin-top: 20px; text-align: right; font-size: 16px;">
+                        <strong>TOTAL GERAL PAGO: <span style="color: #b91c1c;">${formatMoney(somaTotal)}</span></strong>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('print-area').innerHTML = htmlReport;
+            setTimeout(() => window.print(), 300);
+        }
+
+        function imprimirRecibo(equipe_id, ponto_id) {
+            const mes = document.getElementById('eqp-filter-mes').value;
+            const ano = document.getElementById('eqp-filter-ano').value;
+            const e = STATE.equipe.find(x => x.id == equipe_id);
+            let pt = STATE.ponto.find(x => x.id == ponto_id);
+            
+            let dias = pt ? parseFloat(pt.total_dias || 0) : 0;
+            let diaria = parseFloat(e.valor_diaria || 0);
+            let total = pt ? parseFloat(pt.valor_total || 0) : (dias * diaria);
+            
+            const hoje = new Date().toLocaleDateString('pt-BR');
+
+            const htmlRecibo = `
+                <div style="font-family: Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
+                        <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
+                        <div style="text-align: right;">
+                            <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO DE PAGAMENTO</h1>
+                            <p style="margin: 5px 0 0 0; font-size: 18px; color: #1d4ed8; font-weight: bold;">VALOR: ${formatMoney(total)}</p>
+                        </div>
+                    </div>
+                    
+                    <div style="font-size: 14px; line-height: 1.8; text-align: justify; margin-bottom: 40px;">
+                        Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA</strong> (CNPJ: 61.893.912/0001-24), a importância supra de <strong>${formatMoney(total)}</strong>, 
+                        referente ao pagamento de prestação de serviços (${e.categoria || 'Serviços Gerais'}), contabilizando <strong>${dias} dias trabalhados</strong> 
+                        com a diária acordada em <strong>${formatMoney(diaria)}</strong>, durante a competência de <strong>${mes}/${ano}</strong>.
+                    </div>
+                    
+                    <div style="font-size: 14px; margin-bottom: 40px;">
+                        Para maior clareza, firmo(amos) o presente recibo para que produza os seus efeitos legais.
+                    </div>
+                    
+                    <div style="text-align: center; margin-bottom: 30px; font-size: 14px;">
+                        Jataí - GO, ${hoje}.
+                    </div>
+                    
+                    <div style="margin-top: 60px; display: flex; justify-content: center;">
+                        <div style="text-align: center; width: 60%; border-top: 1px solid #000; padding-top: 10px;">
+                            <strong>${e.nome}</strong><br>
+                            <span style="font-size: 12px; color: #64748b;">CPF: ${e.cpf || '_______________________'} | RG: ${e.rg || '_______________________'}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('print-area').innerHTML = htmlRecibo;
+            setTimeout(() => window.print(), 300);
+        }
+
+        function abrirModalDocumentos(equipe_id) {
+            const e = STATE.equipe.find(x => x.id == equipe_id);
+            document.getElementById('doc-equipe-id').value = e.id;
+            document.getElementById('doc-equipe-nome').innerText = `Colaborador: ${e.nome}`;
+            
+            const btnAssinar = document.getElementById('btn-assinar-doc');
+            if(e.contrato_assinado) {
+                btnAssinar.innerHTML = `<i data-lucide="check-double" class="w-4 h-4"></i> Contrato Já Assinado`;
+                btnAssinar.classList.replace('bg-green-600', 'bg-emerald-700');
+                btnAssinar.classList.replace('hover:bg-green-700', 'hover:bg-emerald-800');
+            } else {
+                btnAssinar.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i> Marcar como Assinado`;
+                btnAssinar.classList.replace('bg-emerald-700', 'bg-green-600');
+                btnAssinar.classList.replace('hover:bg-emerald-800', 'hover:bg-green-700');
+            }
+            
+            document.getElementById('modal-docs-equipe').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        async function marcarContratoAssinado() {
+            const id = document.getElementById('doc-equipe-id').value;
+            showLoading(true);
+            const { error } = await sb.from('jsp_equipe').update({ contrato_assinado: true }).eq('id', id);
+            if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
+            showToast("Contrato marcado como assinado com sucesso!");
+            document.getElementById('modal-docs-equipe').classList.add('hidden');
+            loadData();
+        }
+
+        function imprimirDocumento() {
+            const id = document.getElementById('doc-equipe-id').value;
+            const tipo = document.getElementById('doc-tipo-select').value;
+            const e = STATE.equipe.find(x => x.id == id);
+            const hoje = new Date().toLocaleDateString('pt-BR');
+            
+            let titulo = "";
+            let corpoTexto = "";
+
+            if (tipo === 'epi') {
+                titulo = "COMPROVANTE DE ENTREGA DE EPI's";
+                corpoTexto = `Declaro para os devidos fins que recebi da empresa RV NEGÓCIOS E COMPANHIA, de forma gratuita, 
+                os Equipamentos de Proteção Individual (EPI) necessários para a execução das minhas atividades. 
+                Comprometo-me a usá-los apenas para a finalidade a que se destinam, responsabilizando-me por sua guarda e conservação.`;
+            } else {
+                titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS (${tipo.toUpperCase()})`;
+                corpoTexto = `[ESTRUTURA PRONTA - Quando você me mandar o PDF do modelo oficial, vamos substituir este texto aqui com as cláusulas reais.]<br><br>
+                <strong>CONTRATADA:</strong> ${e.nome}, portador do CPF nº ${e.cpf || '____'}, RG nº ${e.rg || '____'}, residente em ${e.endereco || '____'}.`;
+            }
+
+            const htmlDoc = `
+                <div style="font-family: Arial, sans-serif; width: 100%; padding: 20px;">
+                    <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 30px;">
+                        <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px; margin-bottom: 10px;" />
+                        <h2 style="margin: 0; font-size: 18px; font-weight: 900;">${titulo}</h2>
+                    </div>
+                    
+                    <div style="font-size: 14px; line-height: 1.8; text-align: justify; margin-bottom: 40px; min-height: 400px;">
+                        ${corpoTexto}
+                    </div>
+                    
+                    <div style="text-align: center; margin-bottom: 50px; font-size: 14px;">
+                        Jataí - GO, ${hoje}.
+                    </div>
+                    
+                    <div style="margin-top: 60px; display: flex; justify-content: center;">
+                        <div style="text-align: center; width: 60%; border-top: 1px solid #000; padding-top: 10px;">
+                            <strong>${e.nome}</strong><br>
+                            <span style="font-size: 12px; color: #64748b;">CPF: ${e.cpf || '_______________________'}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('print-area').innerHTML = htmlDoc;
+            setTimeout(() => window.print(), 300);
+        }      
+
+      
 
         function toggleEquipeSelect() {
             const tipo = document.getElementById('exp-tipo').value;
@@ -1053,7 +1581,6 @@
             }
         }
 
-        // ====== CRUD OBRAS ======
         async function saveObra(e) {
             e.preventDefault(); showLoading(true);
             const isNew = !document.getElementById('obra-id').value;
@@ -1088,7 +1615,6 @@
             }
         }
 
-        // ====== CRUD FORNECEDORES ======
         async function saveFornecedor(e) {
             e.preventDefault(); showLoading(true);
             const isNew = !document.getElementById('forn-id').value;
@@ -1254,7 +1780,6 @@
             clearCart(); showToast("O.C. Salva com sucesso!"); await loadData(); navigate('oc');
         }
 
-        // ====== Aba OC ======
         function renderOCList() {
             const list = document.getElementById('oc-list');
             const term = document.getElementById('oc-search').value.toLowerCase();
@@ -1404,7 +1929,6 @@
             loadData();
         }
 
-        // ====== DASHBOARD OBRAS ======
         function renderDashboard() {
             const grid = document.getElementById('dash-grid');
             const custosObras = {};
@@ -1473,7 +1997,6 @@
             lucide.createIcons();
         }
 
-        // ====== FINANCEIRO MANUAL ======
         function openExpenseModal() {
             document.getElementById('exp-id').value = '';
             document.getElementById('exp-item').value = '';
@@ -1507,11 +2030,9 @@
                 if(o) valorContratoFiltrado = parseFloat(o.valor_contrato) || 0;
             }
 
-            // --- CONTAS A PAGAR ---
             const listaDesp = document.getElementById('fin-expense-history-list');
             let despArrRaw = logsFilt.filter(l => l.tipo === 'compra' || l.tipo === 'despesa');
             
-            // AGRUPAR ITENS DE O.C. PARA EXIBIR COMO UMA ÚNICA DESPESA
             let despArr = [];
             let groupedOCs = {};
             
@@ -1519,12 +2040,12 @@
                 if (l.tipo === 'compra') {
                     if (!groupedOCs[l.id]) {
                         groupedOCs[l.id] = { ...l, valor_total: 0, is_oc: true, categorias_oc: new Set() };
-                        despArr.push(groupedOCs[l.id]); // Adiciona a referência agrupada
+                        despArr.push(groupedOCs[l.id]);
                     }
                     groupedOCs[l.id].valor_total += parseFloat(l.valor_total);
                     if(l.categoria) groupedOCs[l.id].categorias_oc.add(l.categoria);
                 } else {
-                    despArr.push(l); // Despesas normais entram direto
+                    despArr.push(l);
                 }
             });
             
@@ -1580,7 +2101,6 @@
                 </tr>`;
             }).join('');
 
-            // --- CONTAS A RECEBER ---
             const listaRec = document.getElementById('fin-receivables-list');
             let recArr = logsFilt.filter(l => l.tipo === 'receita');
             recArr.sort((a,b)=> new Date(b.vencimento || b.data) - new Date(a.vencimento || a.data));
@@ -1613,7 +2133,6 @@
                 </tr>`;
             }).join('');
 
-            // ATUALIZA OS CARDS DO FINANCEIRO
             const cardsContainer = document.getElementById('fin-cards-container');
             if(obraFilter) {
                 cardsContainer.innerHTML = `
@@ -1775,7 +2294,6 @@
             showToast("Medição Salva!"); loadData();
         }
 
-        // ====== GERADOR DE RELATÓRIOS ======
         function gerarRelatorio() {
             const obraId = document.getElementById('rep-obra').value;
             const faseFiltro = document.getElementById('rep-fase').value;
@@ -1788,8 +2306,6 @@
             let logsFilt = STATE.logs.filter(l => l.status_financeiro === 'PAGO' && l.tipo !== 'oc_pendente');
             
             if (obraId) logsFilt = logsFilt.filter(l => String(l.obra_id) === String(obraId));
-            
-            // NOVO: Filtro por Fase
             if (faseFiltro) logsFilt = logsFilt.filter(l => l.fase_obra === faseFiltro);
             
             if (mes || ano) {
@@ -1836,8 +2352,6 @@
                 }
             });
 
-            // Se filtrou fase, o saldo do contrato não faz sentido mostrar inteiro para uma fase só.
-            // Então vamos mostrar o resumo financeiro apenas se for GERAL ou se não houver filtro de fase
             if (tipo === 'geral' && obraObj && !faseFiltro) {
                 const valorContrato = parseFloat(obraObj.valor_contrato) || 0;
                 htmlReport += `
@@ -1879,7 +2393,6 @@
                 `;
             }
 
-            // Gráfico de Barras por Categoria (HTML)
             if (tipo === 'despesas' || tipo === 'todos' || tipo === 'geral') {
                 const catArray = Object.keys(gastosPorCategoria).map(k => ({ nome: k, valor: gastosPorCategoria[k] })).sort((a,b) => b.valor - a.valor);
                 const maxCatValor = catArray.length > 0 ? catArray[0].valor : 0;
@@ -1978,7 +2491,6 @@
             setTimeout(() => window.print(), 300);
         }
 
-        // ====== IMPRESSÃO E PDF DA O.C. ======
         function buildHTMLOC(id) {
             const logsOC = STATE.logs.filter(l => String(l.id) === String(id) && (l.tipo === 'oc_pendente' || l.tipo === 'compra'));
             if(!logsOC.length) return '';
@@ -2028,7 +2540,6 @@
                         </td>
                     </tr>
                 </table>
-
                 <table width="100%" style="margin-bottom: 20px;">
                     <tr>
                         <td width="48%" valign="top" style="border: 1px solid #000; padding: 0;">
@@ -2049,7 +2560,6 @@
                         </td>
                     </tr>
                 </table>
-
                 <table width="100%" style="border-collapse: collapse; margin-bottom: 20px; font-size: 11px;">
                     <thead>
                         <tr>
@@ -2061,7 +2571,6 @@
                     </thead>
                     <tbody>${linhas}</tbody>
                 </table>
-
                 <table width="100%">
                     <tr>
                         <td valign="top">
@@ -2092,241 +2601,180 @@
         }
 
         async function downloadOCPDF(id) {
-    showLoading(true);
+            showLoading(true);
+            const logsOC = STATE.logs.filter(l => String(l.id) === String(id) && (l.tipo === 'oc_pendente' || l.tipo === 'compra'));
+            if(!logsOC.length) { showLoading(false); return showToast("O.C. não encontrada", true); }
+            
+            const o = logsOC[0];
+            const obra = STATE.obras.find(x => x.id == o.obra_id) || { nome: 'Sem Obra', endereco: '-' };
+            const forn = STATE.fornecedores.find(x => x.id == o.fornecedor_id) || { nome: 'A Definir', documento: '', telefone: '' };
+            
+            let justObs = o.observacao || 'Nenhuma observação informada.';
+            if(justObs.includes(' | Obs: ')) {
+                const parts = justObs.split(' | Obs: ');
+                justObs = parts[0] + '\n' + parts[1];
+            }
 
-    // 1. Busca os dados
-    const logsOC = STATE.logs.filter(l => String(l.id) === String(id) && (l.tipo === 'oc_pendente' || l.tipo === 'compra'));
-    if(!logsOC.length) { showLoading(false); return showToast("O.C. não encontrada", true); }
-    
-    const o = logsOC[0];
-    const obra = STATE.obras.find(x => x.id == o.obra_id) || { nome: 'Sem Obra', endereco: '-' };
-    const forn = STATE.fornecedores.find(x => x.id == o.fornecedor_id) || { nome: 'A Definir', documento: '', telefone: '' };
-    
-    let justObs = o.observacao || 'Nenhuma observação informada.';
-    if(justObs.includes(' | Obs: ')) {
-        const parts = justObs.split(' | Obs: ');
-        justObs = parts[0] + '\n' + parts[1];
-    }
-
-    // 2. Monta as linhas da tabela
-    let total = 0;
-    const bodyTabela = [
-        [
-            { text: 'Descrição', style: 'tableHeader', alignment: 'left' },
-            { text: 'Qtd', style: 'tableHeader', alignment: 'center' },
-            { text: 'Unit. Estimado', style: 'tableHeader', alignment: 'right' },
-            { text: 'Total Estimado', style: 'tableHeader', alignment: 'right' }
-        ]
-    ];
-
-    logsOC.forEach((i, index) => {
-        const valor = parseFloat(i.valor_total);
-        total += valor;
-        const price = valor / parseFloat(i.quantidade);
-        const bgColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
-
-        bodyTabela.push([
-            { text: i.produto_nome, fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 },
-            { text: i.quantidade.toString(), alignment: 'center', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 },
-            { text: formatMoney(price), alignment: 'right', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 },
-            { text: formatMoney(valor), alignment: 'right', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 }
-        ]);
-    });
-
-    // 3. Conversor da Logo (URL) em Base64
-    async function getLogoBase64(url) {
-        return new Promise((resolve) => {
-            const img = new Image();
-            img.crossOrigin = 'Anonymous';
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                resolve(canvas.toDataURL('image/png'));
-            };
-            img.onerror = () => resolve(null);
-            img.src = url;
-        });
-    }
-
-    const logoBase64 = await getLogoBase64("https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png");
-
-    // 4. Define a estrutura
-    const docDefinition = {
-        pageSize: 'A4',
-        pageMargins: [40, 40, 40, 40], // Margem interna do texto
-        defaultStyle: { font: 'Roboto' },
-        
-        // DESENHA A BORDA NA PÁGINA INTEIRA
-        background: function (currentPage, pageCount) {
-            return {
-                canvas: [
-                    {
-                        type: 'rect',
-                        x: 25, // Margem esquerda da linha
-                        y: 25, // Margem superior da linha
-                        w: 545.28, // Largura total do A4 (595.28) - 50
-                        h: 791.89, // Altura total do A4 (841.89) - 50
-                        lineWidth: 1,
-                        lineColor: '#000000'
-                    }
+            let total = 0;
+            const bodyTabela = [
+                [
+                    { text: 'Descrição', style: 'tableHeader', alignment: 'left' },
+                    { text: 'Qtd', style: 'tableHeader', alignment: 'center' },
+                    { text: 'Unit. Estimado', style: 'tableHeader', alignment: 'right' },
+                    { text: 'Total Estimado', style: 'tableHeader', alignment: 'right' }
                 ]
-            };
-        },
+            ];
 
-        content: [
-            // CABEÇALHO
-            {
-                table: {
-                    widths: [90, '*', 'auto'],
-                    body: [
-                        [
-                            logoBase64 ? { image: logoBase64, width: 80, alignment: 'center', margin: [0, 0, 10, 0] } : '',
+            logsOC.forEach((i, index) => {
+                const valor = parseFloat(i.valor_total);
+                total += valor;
+                const price = valor / parseFloat(i.quantidade);
+                const bgColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+
+                bodyTabela.push([
+                    { text: i.produto_nome, fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 },
+                    { text: i.quantidade.toString(), alignment: 'center', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 },
+                    { text: formatMoney(price), alignment: 'right', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 },
+                    { text: formatMoney(valor), alignment: 'right', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 }
+                ]);
+            });
+
+            async function getLogoBase64(url) {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.crossOrigin = 'Anonymous';
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        resolve(canvas.toDataURL('image/png'));
+                    };
+                    img.onerror = () => resolve(null);
+                    img.src = url;
+                });
+            }
+
+            const logoBase64 = await getLogoBase64("https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png");
+
+            const docDefinition = {
+                pageSize: 'A4',
+                pageMargins: [40, 40, 40, 40],
+                defaultStyle: { font: 'Roboto' },
+                
+                background: function (currentPage, pageCount) {
+                    return {
+                        canvas: [
                             {
-                                text: [
-                                    { text: 'RV NEGÓCIOS E COMPANHIA\n', fontSize: 16, bold: true, color: '#1d4ed8' },
-                                    { text: 'CNPJ: 61.893.912/0001-24\n', fontSize: 9, color: '#475569', lineHeight: 1.3 },
-                                    { text: 'Rua Mineiros, 530 | Jataí - GO | (64) 99981-5852', fontSize: 9, color: '#475569', lineHeight: 1.3 }
-                                ],
-                                margin: [0, 10, 0, 0]
-                            },
-                            {
-                                text: [
-                                    { text: 'ORDEM DE COMPRA\n', fontSize: 13, bold: true },
-                                    { text: `Nº: ${o.id}\n`, fontSize: 9 },
-                                    { text: `Emissão: ${formatDate(o.data)}\n`, fontSize: 9 },
-                                    { text: `Fase: ${o.fase_obra || '-'}`, fontSize: 9 }
-                                ],
-                                alignment: 'right',
-                                margin: [0, 10, 0, 0]
+                                type: 'rect',
+                                x: 25, y: 25, w: 545.28, h: 791.89,
+                                lineWidth: 1, lineColor: '#000000'
                             }
                         ]
-                    ]
+                    };
                 },
-                layout: 'noBorders',
-                margin: [0, 0, 0, 10]
-            },
-            
-            // Linha divisória do cabeçalho
-            {
-                canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 2 }],
-                margin: [0, 0, 0, 20]
-            },
-            
-            // CAIXAS FORNECEDOR / OBRA
-            {
-                columns: [
-                    {
-                        width: '48%',
-                        table: {
-                            widths: ['*'],
-                            body: [
-                                [{ text: 'DADOS DO FORNECEDOR', fillColor: '#f1f5f9', bold: true, fontSize: 8, margin: [4, 4, 4, 4] }],
-                                [{ text: `${forn.nome}\nDoc: ${forn.documento || '-'}\nTel: ${forn.telefone || '-'}`, fontSize: 9, margin: [6, 8, 6, 8] }]
-                            ]
-                        },
-                        layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000000', vLineColor: () => '#000000' }
-                    },
-                    { width: '4%', text: '' }, 
-                    {
-                        width: '48%',
-                        table: {
-                            widths: ['*'],
-                            body: [
-                                [{ text: 'DESTINO (OBRA)', fillColor: '#f1f5f9', bold: true, fontSize: 8, margin: [4, 4, 4, 4] }],
-                                [{ text: `${obra.nome}\nEndereço: ${obra.endereco || '-'}`, fontSize: 9, margin: [6, 8, 6, 8] }]
-                            ]
-                        },
-                        layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000000', vLineColor: () => '#000000' }
-                    }
-                ],
-                margin: [0, 0, 0, 20]
-            },
 
-            // TABELA DE ITENS
-            {
-                table: {
-                    headerRows: 1,
-                    widths: ['*', 'auto', 'auto', 'auto'],
-                    body: bodyTabela
-                },
-                layout: {
-                    hLineWidth: function (i, node) { return (i === 0 || i === node.table.body.length) ? 0 : 1; },
-                    vLineWidth: function () { return 0; },
-                    hLineColor: function () { return '#000000'; },
-                    paddingLeft: function() { return 4; },
-                    paddingRight: function() { return 4; }
-                },
-                margin: [0, 0, 0, 20]
-            },
-
-            // OBSERVAÇÕES E TOTAIS
-            {
-                columns: [
+                content: [
                     {
-                        width: '60%',
                         table: {
-                            widths: ['*'],
+                            widths: [90, '*', 'auto'],
                             body: [
                                 [
+                                    logoBase64 ? { image: logoBase64, width: 80, alignment: 'center', margin: [0, 0, 10, 0] } : '',
                                     {
                                         text: [
-                                            { text: 'Observações:\n', fontSize: 9, bold: true },
-                                            { text: justObs, fontSize: 9 }
+                                            { text: 'RV NEGÓCIOS E COMPANHIA\n', fontSize: 16, bold: true, color: '#1d4ed8' },
+                                            { text: 'CNPJ: 61.893.912/0001-24\n', fontSize: 9, color: '#475569', lineHeight: 1.3 },
+                                            { text: 'Rua Mineiros, 530 | Jataí - GO | (64) 99981-5852', fontSize: 9, color: '#475569', lineHeight: 1.3 }
                                         ],
-                                        margin: [6, 6, 6, 25]
+                                        margin: [0, 10, 0, 0]
+                                    },
+                                    {
+                                        text: [
+                                            { text: 'ORDEM DE COMPRA\n', fontSize: 13, bold: true },
+                                            { text: `Nº: ${o.id}\n`, fontSize: 9 },
+                                            { text: `Emissão: ${formatDate(o.data)}\n`, fontSize: 9 },
+                                            { text: `Fase: ${o.fase_obra || '-'}`, fontSize: 9 }
+                                        ],
+                                        alignment: 'right', margin: [0, 10, 0, 0]
                                     }
                                 ]
                             ]
                         },
-                        layout: {
-                            hLineWidth: () => 1, vLineWidth: () => 1,
-                            hLineColor: () => '#cbd5e1', vLineColor: () => '#cbd5e1',
-                            hLineStyle: () => ({dash: {length: 4, space: 4}}),
-                            vLineStyle: () => ({dash: {length: 4, space: 4}})
-                        }
+                        layout: 'noBorders', margin: [0, 0, 0, 10]
+                    },
+                    { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 2 }], margin: [0, 0, 0, 20] },
+                    {
+                        columns: [
+                            {
+                                width: '48%',
+                                table: {
+                                    widths: ['*'],
+                                    body: [
+                                        [{ text: 'DADOS DO FORNECEDOR', fillColor: '#f1f5f9', bold: true, fontSize: 8, margin: [4, 4, 4, 4] }],
+                                        [{ text: `${forn.nome}\nDoc: ${forn.documento || '-'}\nTel: ${forn.telefone || '-'}`, fontSize: 9, margin: [6, 8, 6, 8] }]
+                                    ]
+                                },
+                                layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000000', vLineColor: () => '#000000' }
+                            },
+                            { width: '4%', text: '' }, 
+                            {
+                                width: '48%',
+                                table: {
+                                    widths: ['*'],
+                                    body: [
+                                        [{ text: 'DESTINO (OBRA)', fillColor: '#f1f5f9', bold: true, fontSize: 8, margin: [4, 4, 4, 4] }],
+                                        [{ text: `${obra.nome}\nEndereço: ${obra.endereco || '-'}`, fontSize: 9, margin: [6, 8, 6, 8] }]
+                                    ]
+                                },
+                                layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000000', vLineColor: () => '#000000' }
+                            }
+                        ],
+                        margin: [0, 0, 0, 20]
                     },
                     {
-                        width: '40%',
-                        alignment: 'right',
-                        margin: [0, 10, 0, 0],
-                        text: [
-                            { text: 'TOTAL ESTIMADO:   ', bold: true, fontSize: 10 },
-                            { text: formatMoney(total), bold: true, fontSize: 13 }
-                        ]
-                    }
+                        table: { headerRows: 1, widths: ['*', 'auto', 'auto', 'auto'], body: bodyTabela },
+                        layout: {
+                            hLineWidth: function (i, node) { return (i === 0 || i === node.table.body.length) ? 0 : 1; },
+                            vLineWidth: function () { return 0; },
+                            hLineColor: function () { return '#000000'; },
+                            paddingLeft: function() { return 4; }, paddingRight: function() { return 4; }
+                        },
+                        margin: [0, 0, 0, 20]
+                    },
+                    {
+                        columns: [
+                            {
+                                width: '60%',
+                                table: {
+                                    widths: ['*'],
+                                    body: [
+                                        [{ text: [ { text: 'Observações:\n', fontSize: 9, bold: true }, { text: justObs, fontSize: 9 } ], margin: [6, 6, 6, 25] }]
+                                    ]
+                                },
+                                layout: {
+                                    hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#cbd5e1', vLineColor: () => '#cbd5e1',
+                                    hLineStyle: () => ({dash: {length: 4, space: 4}}), vLineStyle: () => ({dash: {length: 4, space: 4}})
+                                }
+                            },
+                            {
+                                width: '40%', alignment: 'right', margin: [0, 10, 0, 0],
+                                text: [ { text: 'TOTAL ESTIMADO:   ', bold: true, fontSize: 10 }, { text: formatMoney(total), bold: true, fontSize: 13 } ]
+                            }
+                        ],
+                        margin: [0, 0, 0, 60]
+                    },
+                    { text: '_________________________________________________\nASSINATURA RESPONSÁVEL', alignment: 'center', fontSize: 9, bold: true }
                 ],
-                margin: [0, 0, 0, 60]
-            },
+                styles: { tableHeader: { bold: true, fontSize: 10, color: 'white', fillColor: '#0f172a', margin: [4, 6, 4, 6] } }
+            };
 
-            // ASSINATURA
-            {
-                text: '_________________________________________________\nASSINATURA RESPONSÁVEL',
-                alignment: 'center',
-                fontSize: 9,
-                bold: true
-            }
-        ],
-        styles: {
-            tableHeader: {
-                bold: true,
-                fontSize: 10,
-                color: 'white',
-                fillColor: '#0f172a',
-                margin: [4, 6, 4, 6]
-            }
+            pdfMake.createPdf(docDefinition).download(`Ordem_Compra_${id}.pdf`);
+            showLoading(false);
+            showToast("PDF Baixado com Sucesso!");
         }
-    };
 
-    // 5. Gera e baixa o PDF
-    pdfMake.createPdf(docDefinition).download(`Ordem_Compra_${id}.pdf`);
-    showLoading(false);
-    showToast("PDF Baixado com Sucesso!");
-}
-
-      // ====== IMPRESSÃO ROMANEIO (MOTORISTA / SEM VALORES) ======
         function buildHTMLRomaneio(id) {
             const logsOC = STATE.logs.filter(l => String(l.id) === String(id) && (l.tipo === 'oc_pendente' || l.tipo === 'compra'));
             if(!logsOC.length) return '';
@@ -2342,7 +2790,6 @@
                 justObs = parts[0] + '<br>' + parts[1];
             }
 
-            // Gera as linhas da tabela apenas com CHECK, QTD e DESCRIÇÃO
             const linhas = logsOC.map((i, index) => {
                 const bg = index % 2 === 0 ? '#ffffff' : '#f8fafc';
                 return `<tr style="background-color: ${bg};">
@@ -2374,7 +2821,6 @@
                         </td>
                     </tr>
                 </table>
-
                 <table width="100%" style="margin-bottom: 20px;">
                     <tr>
                         <td width="48%" valign="top" style="border: 1px solid #000; padding: 0;">
@@ -2395,7 +2841,6 @@
                         </td>
                     </tr>
                 </table>
-
                 <table width="100%" style="border-collapse: collapse; margin-bottom: 20px;">
                     <thead>
                         <tr>
@@ -2406,12 +2851,10 @@
                     </thead>
                     <tbody>${linhas}</tbody>
                 </table>
-
                 <div style="border: 1px dashed #cbd5e1; padding: 10px; min-height: 50px; margin-bottom: 40px;">
                     <div style="font-size: 10px; font-weight: bold; margin-bottom: 5px;">Observações da Cotação:</div>
                     <div style="font-size: 11px;">${justObs}</div>
                 </div>
-
                 <table width="100%" style="margin-top: 80px;">
                     <tr>
                         <td align="center" width="45%">
@@ -2435,7 +2878,6 @@
             setTimeout(() => window.print(), 300);
         }
 
-        // ====== PRODUTOS E USUÁRIOS ======
         function renderProducts() {
             const term = document.getElementById('prod-search').value.toLowerCase();
             const fil = STATE.produtos.filter(p => p.nome.toLowerCase().includes(term));
@@ -2457,25 +2899,19 @@
             lucide.createIcons();
         }
 
-      // NOVA FUNÇÃO: Puxa o histórico de compras de um item específico
         function openProductHistory(prodNome) {
             document.getElementById('hist-prod-name').innerText = prodNome;
             const tbody = document.getElementById('hist-prod-list');
             
-            // Filtra os logs procurando apenas compras (confirmadas) que tenham o nome exato do produto
             let historico = STATE.logs.filter(l => l.tipo === 'compra' && l.produto_nome === prodNome);
             
             if(historico.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400 font-medium">Nenhuma compra registrada para este material ainda.</td></tr>`;
             } else {
-                // Ordena da compra mais recente para a mais antiga
                 historico.sort((a,b) => new Date(b.data) - new Date(a.data));
-                
                 tbody.innerHTML = historico.map(h => {
                     const forn = STATE.fornecedores.find(x => x.id == h.fornecedor_id);
                     const nomeForn = forn ? forn.nome : 'Fornecedor A Definir';
-                    
-                    // Calcula o preço que foi pago na unidade no dia da compra
                     const precoUnit = parseFloat(h.valor_total) / parseFloat(h.quantidade);
                     
                     return `
@@ -2488,7 +2924,6 @@
                     </tr>`;
                 }).join('');
             }
-            
             document.getElementById('modal-prod-history').classList.remove('hidden');
             lucide.createIcons();
         }
@@ -2506,6 +2941,7 @@
                 document.getElementById('prd-id').value = '';
             }
         }
+
         async function saveProduct(e) {
             e.preventDefault(); showLoading(true);
             const isNew = !document.getElementById('prd-id').value;
@@ -2536,6 +2972,7 @@
             </tr>`).join('');
             lucide.createIcons();
         }
+
         function openUserForm(id) {
             document.getElementById('user-form-container').classList.remove('hidden');
             const passField = document.getElementById('usr-pass');
@@ -2556,6 +2993,7 @@
                 passField.placeholder = "Senha apenas números";
             }
         }
+
         async function saveUser(e) {
             e.preventDefault(); 
             showLoading(true);
@@ -2591,7 +3029,6 @@
             loadData();
         }
 
-        // ====== INTEGRAÇÃO RV PORTAL ======
         function abrirModalTransferencia(ocId) {
             document.getElementById('transf-oc-id').value = ocId;
             document.getElementById('transf-senha').value = '';
@@ -2601,7 +3038,6 @@
         async function executarTransferenciaPortal() {
             const senhaDigitada = document.getElementById('transf-senha').value;
             const ocId = document.getElementById('transf-oc-id').value;
-            
             const senhaSecreta = "147258369"; 
 
             if(senhaDigitada !== senhaSecreta) {
@@ -2662,6 +3098,50 @@
                 showLoading(false);
                 showToast("Erro na comunicação: " + erro.message, true);
             }
+        }
+
+      async function estornarPagamentoPonto(ponto_id, equipe_id) {
+            if(!confirm("Tem certeza que deseja ESTORNAR este pagamento? O status voltará para PENDENTE e a despesa gerada no Financeiro será cancelada.")) return;
+            
+            showLoading(true);
+
+            const mes = document.getElementById('eqp-filter-mes').value;
+            const ano = document.getElementById('eqp-filter-ano').value;
+            const e = STATE.equipe.find(x => x.id == equipe_id);
+
+            if(!e) { 
+                showLoading(false); 
+                return showToast("Dados do funcionário não encontrados.", true); 
+            }
+
+            // 1. Volta o status do Ponto para PENDENTE
+            const { error: errPt } = await sb.from('jsp_ponto')
+                .update({ status: 'PENDENTE', data_pagamento: null })
+                .eq('id', ponto_id);
+                
+            if(errPt) { 
+                showLoading(false); 
+                return showToast("Erro ao estornar ponto: " + errPt.message, true); 
+            }
+
+            // 2. Busca o lançamento gerado no Financeiro para cancelar e não furar o caixa
+            const descProcurada = `Pagamento Mensal (${mes}/${ano}) - ${e.nome}`;
+            const logVinculado = STATE.logs.find(l => 
+                l.tipo === 'despesa' && 
+                l.produto_nome === descProcurada && 
+                l.status_financeiro === 'PAGO'
+            );
+            
+            if(logVinculado) {
+                // Se encontrar a despesa, cancela ela
+                await sb.from('jsp_logs')
+                    .update({ status_financeiro: 'CANCELADO' })
+                    .eq('id', logVinculado.id)
+                    .eq('tipo', 'despesa');
+            }
+
+            showToast("Pagamento estornado com sucesso!");
+            loadData();
         }
 
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
