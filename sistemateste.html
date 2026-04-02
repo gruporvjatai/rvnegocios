@@ -1086,6 +1086,9 @@
             
             let fil = STATE.equipe.filter(e => e.nome.toLowerCase().includes(term) || (e.categoria||'').toLowerCase().includes(term));
             if(obraFiltro) fil = fil.filter(e => e.obra_atual_id == obraFiltro);
+
+        // --- ADICIONE ESTA LINHA AQUI TAMBÉM ---
+            fil.sort((a, b) => a.nome.localeCompare(b.nome));
             
             list.innerHTML = fil.map(e => {
                 const phoneClean = (e.telefone||'').replace(/\D/g,'');
