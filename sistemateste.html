@@ -2107,7 +2107,7 @@
         justObs = parts[0] + '\n' + parts[1];
     }
 
-    // 2. Monta as linhas da tabela idênticas ao original
+    // 2. Monta as linhas da tabela
     let total = 0;
     const bodyTabela = [
         [
@@ -2132,7 +2132,7 @@
         ]);
     });
 
-    // 3. Função auxiliar para converter a Logo (URL) em Base64 para o PDF
+    // 3. Conversor da Logo (URL) em Base64
     async function getLogoBase64(url) {
         return new Promise((resolve) => {
             const img = new Image();
@@ -2145,18 +2145,36 @@
                 ctx.drawImage(img, 0, 0);
                 resolve(canvas.toDataURL('image/png'));
             };
-            img.onerror = () => resolve(null); // Se falhar, segue sem logo
+            img.onerror = () => resolve(null);
             img.src = url;
         });
     }
 
     const logoBase64 = await getLogoBase64("https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png");
 
-    // 4. Define a estrutura idêntica ao HTML
+    // 4. Define a estrutura
     const docDefinition = {
         pageSize: 'A4',
-        pageMargins: [40, 40, 40, 40],
+        pageMargins: [40, 40, 40, 40], // Margem interna do texto
         defaultStyle: { font: 'Roboto' },
+        
+        // DESENHA A BORDA NA PÁGINA INTEIRA
+        background: function (currentPage, pageCount) {
+            return {
+                canvas: [
+                    {
+                        type: 'rect',
+                        x: 25, // Margem esquerda da linha
+                        y: 25, // Margem superior da linha
+                        w: 545.28, // Largura total do A4 (595.28) - 50
+                        h: 791.89, // Altura total do A4 (841.89) - 50
+                        lineWidth: 1,
+                        lineColor: '#000000'
+                    }
+                ]
+            };
+        },
+
         content: [
             // CABEÇALHO
             {
@@ -2189,6 +2207,7 @@
                 layout: 'noBorders',
                 margin: [0, 0, 0, 10]
             },
+            
             // Linha divisória do cabeçalho
             {
                 canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 2 }],
@@ -2207,12 +2226,9 @@
                                 [{ text: `${forn.nome}\nDoc: ${forn.documento || '-'}\nTel: ${forn.telefone || '-'}`, fontSize: 9, margin: [6, 8, 6, 8] }]
                             ]
                         },
-                        layout: {
-                            hLineWidth: () => 1, vLineWidth: () => 1,
-                            hLineColor: () => '#000000', vLineColor: () => '#000000'
-                        }
+                        layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000000', vLineColor: () => '#000000' }
                     },
-                    { width: '4%', text: '' }, // Espaço central
+                    { width: '4%', text: '' }, 
                     {
                         width: '48%',
                         table: {
@@ -2222,10 +2238,7 @@
                                 [{ text: `${obra.nome}\nEndereço: ${obra.endereco || '-'}`, fontSize: 9, margin: [6, 8, 6, 8] }]
                             ]
                         },
-                        layout: {
-                            hLineWidth: () => 1, vLineWidth: () => 1,
-                            hLineColor: () => '#000000', vLineColor: () => '#000000'
-                        }
+                        layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000000', vLineColor: () => '#000000' }
                     }
                 ],
                 margin: [0, 0, 0, 20]
@@ -2311,7 +2324,6 @@
     showLoading(false);
     showToast("PDF Baixado com Sucesso!");
 }
-
 
       // ====== IMPRESSÃO ROMANEIO (MOTORISTA / SEM VALORES) ======
         function buildHTMLRomaneio(id) {
