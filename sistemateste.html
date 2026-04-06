@@ -1524,7 +1524,20 @@
         function imprimirDocumento() {
     const id = document.getElementById('doc-equipe-id').value;
     const tipo = document.getElementById('doc-tipo-select').value;
+    
+    // TRAVA: Se clicar em imprimir sem escolher nada na lista, avisa e para.
+    if (!tipo) {
+        alert("Por favor, selecione um documento na lista antes de imprimir.");
+        return;
+    }
+
     const e = STATE.equipe.find(x => x.id == id);
+    
+    // TRAVA: Segurança extra caso não ache o colaborador
+    if (!e) {
+        alert("Erro ao encontrar os dados do colaborador.");
+        return;
+    }
     
     // Gerar data por extenso para o fechamento do contrato
     const dataAtual = new Date();
@@ -1542,13 +1555,14 @@
     
     let titulo = "";
     let corpoTexto = "";
+    let nomeContratanteAssinatura = "";
 
     if (tipo === 'epi') {
         titulo = "FICHA DE EPI / TERMO DE RECEBIMENTO";
         nomeContratanteAssinatura = "RV NEGÓCIOS E COMPANHIA LTDA";
         
         corpoTexto = `
-        <div style="font-size: 12pt; line-height: 1.6; text-align: justify;">
+        <div style="font-size: 11pt; line-height: 1.6; text-align: justify;">
             <p style="margin-bottom: 5px;"><strong>Nome do Prestador de Serviços:</strong> ${(e.nome || '').toUpperCase()}</p>
             <p style="margin-bottom: 15px;"><strong>Atividade a ser desenvolvida:</strong> ${(e.categoria || 'Geral').toUpperCase()}</p>
             
@@ -1588,7 +1602,7 @@
         titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS PARA FORNECIMENTO DE MÃO DE OBRA QUALIFICADA PARA SERVIÇOS DE CONSTRUÇÃO CIVIL<br><br>SEM VÍNCULO EMPREGATÍCIO Nº ___/2026 <br> JATAÍ – GOIÁS`;
         
         corpoTexto = `
-        <div style="text-align: justify; font-size: 12pt; line-height: 1.6;">
+        <div style="text-align: justify; font-size: 11pt; line-height: 1.6;">
             <p style="text-indent: 40px; margin-bottom: 20px;">Contrato de Prestação de Serviços celebrado entre as seguintes partes:</p>
 
             <p style="margin-bottom: 5px;"><strong>CONTRATANTE</strong></p>
@@ -1671,7 +1685,7 @@
         nomeContratanteAssinatura = "RV NEGOCIOS E COMPANHIA LTDA";
         
         corpoTexto = `
-        <div style="text-align: justify; font-size: 12pt; line-height: 1.6;">
+        <div style="text-align: justify; font-size: 11pt; line-height: 1.6;">
             <p style="text-indent: 40px; margin-bottom: 20px;">Contrato de Prestação de Serviços celebrado entre as seguintes partes:</p>
 
             <p style="margin-bottom: 5px;"><strong>CONTRATANTE</strong></p>
@@ -1785,7 +1799,13 @@
     `;
     
     document.getElementById('print-area').innerHTML = htmlDoc;
-    setTimeout(() => window.print(), 500);
+    
+    // TEMPO AUMENTADO PARA A RENDERIZAÇÃO FUNCIONAR BEM DE PRIMEIRA
+    setTimeout(() => {
+        requestAnimationFrame(() => {
+            window.print();
+        });
+    }, 800);
 }
       
 
