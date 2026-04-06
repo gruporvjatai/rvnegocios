@@ -1525,6 +1525,11 @@
             const e = STATE.equipe.find(x => x.id == id);
             const hoje = new Date().toLocaleDateString('pt-BR');
             
+            // Busca a obra para preencher o local de prestação de serviços
+            const obraVinculada = STATE.obras.find(o => o.id == e.obra_atual_id);
+            const enderecoObra = obraVinculada ? (obraVinculada.endereco || obraVinculada.nome) : 'Endereço não informado / Obra não definida';
+            const diariaTexto = formatMoney(e.valor_diaria || 0);
+            
             let titulo = "";
             let corpoTexto = "";
 
@@ -1533,31 +1538,91 @@
                 corpoTexto = `Declaro para os devidos fins que recebi da empresa RV NEGÓCIOS E COMPANHIA, de forma gratuita, 
                 os Equipamentos de Proteção Individual (EPI) necessários para a execução das minhas atividades. 
                 Comprometo-me a usá-los apenas para a finalidade a que se destinam, responsabilizando-me por sua guarda e conservação.`;
+            } else if (tipo === 'contrato1') {
+                titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS PARA FORNECIMENTO DE MÃO DE OBRA QUALIFICADA PARA SERVIÇOS DE CONSTRUÇÃO CIVIL<br>SEM VÍNCULO EMPREGATÍCIO`;
+                
+                corpoTexto = `
+                <div style="text-align: justify; font-size: 12px; line-height: 1.6;">
+                    <p>Contrato de Prestação de Serviços celebrado entre as seguintes partes:</p>
+
+                    <p><strong>CONTRATANTE</strong><br>
+                    <strong>ELIOMAR DOS SANTOS MARQUES</strong>, pessoa jurídica de direito privado, inscrita no CNPJ nº 24.946.979/0001-53, com sede na Avenida Pedro Bento, nº 528, CEP 75.804-340, Bairro Setor José Bento, no Município de Jataí, Estado de Goiás, neste ato representada por seu titular ELIOMAR DOS SANTOS MARQUES, brasileiro, portador do RG nº 3.794.100 DGPC/GO, residente e domiciliado na Avenida Pedro Bento, nº 528, CEP 75.804-340, Bairro Setor José Bento, Município de Jataí, Estado de Goiás, doravante denominado(a) simplesmente <strong>CONTRATANTE</strong>.</p>
+
+                    <p><strong>CONTRATADO</strong><br>
+                    <strong>${(e.nome || '').toUpperCase()}</strong>, portador(a) do RG nº ${e.rg || '______________'}, inscrito(a) no CPF nº ${e.cpf || '______________'}, residente e domiciliado(a) na ${e.endereco || '____________________________________________________'}, doravante denominado simplesmente <strong>CONTRATADO</strong>.</p>
+
+                    <p>As partes acima qualificadas celebram o presente Contrato de Prestação de Serviços, regido pelas cláusulas a seguir:</p>
+
+                    <p><strong>CLÁUSULA PRIMEIRA – DO OBJETO</strong><br>
+                    O objeto do presente contrato é a prestação de serviços de construção civil pelo CONTRATADO à CONTRATANTE, especificamente na função de <strong>${(e.categoria || 'SERVIÇOS GERAIS').toUpperCase()}</strong>, na obra localizada em: <strong>${enderecoObra}</strong>.</p>
+
+                    <p><strong>CLÁUSULA SEGUNDA – DAS OBRIGAÇÕES DO CONTRATADO</strong><br>
+                    São obrigações do CONTRATADO:<br>
+                    2.1. Executar os serviços com zelo, eficiência e técnica adequada.<br>
+                    2.2. Cumprir os prazos estipulados para a execução de cada etapa da obra.<br>
+                    2.3. Utilizar corretamente os Equipamentos de Proteção Individual (EPIs) fornecidos.<br>
+                    2.4. Refazer, sem custo adicional, os serviços que apresentarem defeitos de execução.</p>
+
+                    <p><strong>CLÁUSULA TERCEIRA – DAS OBRIGAÇÕES DA CONTRATANTE</strong><br>
+                    São obrigações da CONTRATANTE:<br>
+                    3.1. Fornecer os materiais e equipamentos necessários para a execução dos serviços.<br>
+                    3.2. Efetuar os pagamentos nos prazos e condições acordados.<br>
+                    3.3. Garantir condições de segurança no ambiente de trabalho.</p>
+
+                    <p><strong>CLÁUSULA QUARTA – DA REMUNERAÇÃO E CONDIÇÕES DE PAGAMENTO</strong><br>
+                    4.1. A remuneração será baseada no valor de <strong>${diariaTexto}</strong>, por diária completa.<br>
+                    4.2. O pagamento será efetuado a cada 18 (dezoito) dias corridos, com medição quinzenal.<br>
+                    4.3. O pagamento será realizado via transferência bancária para a conta indicada pelo CONTRATADO.</p>
+
+                    <p><strong>CLÁUSULA QUINTA – DO PRAZO</strong><br>
+                    O contrato terá início em ${hoje} e término estipulado para a conclusão das etapas solicitadas, podendo ser prorrogado até o limite de 24 (vinte e quatro) meses.</p>
+
+                    <p><strong>CLÁUSULA SEXTA – DA RESCISÃO</strong><br>
+                    O contrato poderá ser rescindido por qualquer das partes mediante aviso prévio de 5 (cinco) dias, ou de forma imediata nos casos previstos neste instrumento.</p>
+
+                    <p><strong>CLÁUSULA SÉTIMA – DA NATUREZA DO CONTRATO</strong><br>
+                    O presente contrato possui natureza civil, não gerando vínculo empregatício, sendo o CONTRATADO integralmente responsável por obrigações fiscais, previdenciárias e trabalhistas.</p>
+
+                    <p><strong>CLÁUSULA OITAVA – DO SIGILO</strong><br>
+                    O CONTRATADO compromete-se a manter sigilo sobre informações da CONTRATANTE.</p>
+
+                    <p><strong>CLÁUSULA NONA – DO ABANDONO DA OBRA</strong><br>
+                    Em caso de abandono injustificado, valores pendentes somente serão pagos após conclusão da etapa por terceiros e recebimento integral pela CONTRATANTE.</p>
+
+                    <p><strong>CLÁUSULA DÉCIMA – DAS DISPOSIÇÕES GERAIS</strong><br>
+                    O contrato obriga as partes e seus sucessores.<br>
+                    10.1. Alterações somente por escrito.<br>
+                    Fica eleito o foro da comarca de Jataí-GO, para dirimir quaisquer controvérsias.</p>
+                </div>`;
             } else {
                 titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS (${tipo.toUpperCase()})`;
-                corpoTexto = `[ESTRUTURA PRONTA - Quando você me mandar o PDF do modelo oficial, vamos substituir este texto aqui com as cláusulas reais.]<br><br>
-                <strong>CONTRATADA:</strong> ${e.nome}, portador do CPF nº ${e.cpf || '____'}, RG nº ${e.rg || '____'}, residente em ${e.endereco || '____'}.`;
+                corpoTexto = `[ESTRUTURA PRONTA - Modelo pendente de configuração.]<br><br>
+                <strong>CONTRATADO(A):</strong> ${e.nome}, portador do CPF nº ${e.cpf || '____'}, RG nº ${e.rg || '____'}, residente em ${e.endereco || '____'}.`;
             }
 
             const htmlDoc = `
                 <div style="font-family: Arial, sans-serif; width: 100%; padding: 20px;">
-                    <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 30px;">
+                    <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px;">
                         <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px; margin-bottom: 10px;" />
-                        <h2 style="margin: 0; font-size: 18px; font-weight: 900;">${titulo}</h2>
+                        <h2 style="margin: 0; font-size: 15px; font-weight: 900; line-height: 1.3;">${titulo}</h2>
                     </div>
                     
-                    <div style="font-size: 14px; line-height: 1.8; text-align: justify; margin-bottom: 40px; min-height: 400px;">
+                    <div style="font-size: 13px; line-height: 1.8; text-align: justify; margin-bottom: 30px; min-height: 400px;">
                         ${corpoTexto}
                     </div>
                     
-                    <div style="text-align: center; margin-bottom: 50px; font-size: 14px;">
+                    <div style="text-align: center; margin-bottom: 40px; font-size: 13px;">
                         Jataí - GO, ${hoje}.
                     </div>
                     
-                    <div style="margin-top: 60px; display: flex; justify-content: center;">
-                        <div style="text-align: center; width: 60%; border-top: 1px solid #000; padding-top: 10px;">
+                    <div style="margin-top: 50px; display: flex; justify-content: space-around;">
+                        <div style="text-align: center; width: 45%; border-top: 1px solid #000; padding-top: 10px;">
+                            <strong>ELIOMAR DOS SANTOS MARQUES</strong><br>
+                            <span style="font-size: 11px; color: #64748b;">CONTRATANTE</span>
+                        </div>
+                        <div style="text-align: center; width: 45%; border-top: 1px solid #000; padding-top: 10px;">
                             <strong>${e.nome}</strong><br>
-                            <span style="font-size: 12px; color: #64748b;">CPF: ${e.cpf || '_______________________'}</span>
+                            <span style="font-size: 11px; color: #64748b;">CONTRATADO(A) - CPF: ${e.cpf || '_________________'}</span>
                         </div>
                     </div>
                 </div>
@@ -1565,7 +1630,7 @@
             
             document.getElementById('print-area').innerHTML = htmlDoc;
             setTimeout(() => window.print(), 300);
-        }      
+        }
 
       
 
