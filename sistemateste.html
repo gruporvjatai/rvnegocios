@@ -1542,10 +1542,46 @@
     let corpoTexto = "";
 
     if (tipo === 'epi') {
-        titulo = "COMPROVANTE DE ENTREGA DE EPI's";
-        corpoTexto = `<p style="text-indent: 40px; margin-bottom: 15px;">Declaro para os devidos fins que recebi da empresa RV NEGÓCIOS E COMPANHIA, de forma gratuita, 
-        os Equipamentos de Proteção Individual (EPI) necessários para a execução das minhas atividades. 
-        Comprometo-me a usá-los apenas para a finalidade a que se destinam, responsabilizando-me por sua guarda e conservação.</p>`;
+        titulo = "FICHA DE EPI / TERMO DE RECEBIMENTO";
+        nomeContratanteAssinatura = "RV NEGÓCIOS E COMPANHIA LTDA";
+        
+        corpoTexto = `
+        <div style="font-size: 11pt; line-height: 1.6; text-align: justify;">
+            <p style="margin-bottom: 5px;"><strong>Nome do Prestador de Serviços:</strong> ${(e.nome || '').toUpperCase()}</p>
+            <p style="margin-bottom: 15px;"><strong>Atividade a ser desenvolvida:</strong> ${(e.categoria || 'Geral').toUpperCase()}</p>
+            
+            <p style="margin-bottom: 20px;">"Declaro ter recebido orientação sobre o uso correto dos Equipamentos de Segurança, bem como, estou ciente de que sou obrigado a usá-los sob pena de SUSPENSÃO ou CANCELAMENTO do contrato de prestação dos serviços de autônomo."</p>
+            
+            <h3 style="text-align: center; font-size: 12pt; margin-bottom: 10px; font-weight: bold;">RECEBIMENTO</h3>
+            
+            <table style="width: 100%; border-collapse: collapse; text-align: center; border: 1px solid #000; font-size: 10pt; margin-bottom: 20px;">
+                <thead>
+                    <tr style="background-color: #f1f5f9;">
+                        <th style="border: 1px solid #000; padding: 6px;">DATA</th>
+                        <th style="border: 1px solid #000; padding: 6px;">EPI (Descrição)</th>
+                        <th style="border: 1px solid #000; padding: 6px;">C.A.</th>
+                        <th style="border: 1px solid #000; padding: 6px;">QUANT.</th>
+                        <th style="border: 1px solid #000; padding: 6px;">Motivo da retirada</th>
+                        <th style="border: 1px solid #000; padding: 6px;">Assinatura</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;">Capacete</td><td style="border: 1px solid #000; padding: 6px;">21420</td><td style="border: 1px solid #000; padding: 6px;">1</td><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;"></td></tr>
+                    <tr><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;">Sapato de segurança</td><td style="border: 1px solid #000; padding: 6px;">24312</td><td style="border: 1px solid #000; padding: 6px;">1</td><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;"></td></tr>
+                    <tr><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;">Óculos</td><td style="border: 1px solid #000; padding: 6px;">07732</td><td style="border: 1px solid #000; padding: 6px;">2</td><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;"></td></tr>
+                    <tr><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;">Protetor auricular</td><td style="border: 1px solid #000; padding: 6px;">07790</td><td style="border: 1px solid #000; padding: 6px;">1</td><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;"></td></tr>
+                    <tr><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;">Luva</td><td style="border: 1px solid #000; padding: 6px;">00501</td><td style="border: 1px solid #000; padding: 6px;">1</td><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;"></td></tr>
+                    <tr><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td></tr>
+                    <tr><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td></tr>
+                    <tr><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td></tr>
+                </tbody>
+            </table>
+
+            <p style="margin-bottom: 10px;">Eu, <strong>${(e.nome || '').toUpperCase()}</strong>, declaro ter recebido os equipamentos de proteção necessários para execução da função ao qual irei exercer COMO <strong>${(e.categoria || 'SERVENTE').toUpperCase()}</strong> POR OBRA CERTA OU PRAZO DETERMINADO, bem como, o treinamento de utilização da forma correta.</p>
+            
+            <p>Por fim, estando ciente e de acordo assino este termo de compromisso em duas vias.</p>
+        </div>
+        `;
     } else if (tipo === 'contrato1') {
         titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS PARA FORNECIMENTO DE MÃO DE OBRA QUALIFICADA PARA SERVIÇOS DE CONSTRUÇÃO CIVIL<br><br>SEM VÍNCULO EMPREGATÍCIO Nº ___/2026 <br> JATAÍ – GOIÁS`;
         
