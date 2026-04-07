@@ -3384,6 +3384,104 @@
             loadData();
         }
 
+
+      // =====================================================================
+// MOTOR DE CÁLCULO DE HORAS (QR CODE) PARA DIÁRIAS
+// =====================================================================
+async function calcularDiariasPorHora(funcionarioId, obraId, dataInicioIso, dataFimIso) {
+    try {
+        const { data, error } = await sb.from('jsp_ponto_diario')
+            .select('*')
+            .eq('funcionario_id', funcionarioId)
+            .eq('obra_id', obraId)
+            .eq('status', 'VALIDADO')
+            .gte('hora_registro', dataInicioIso + 'T00:00:00Z')
+            .lte('hora_registro', dataFimIso + 'T23:59:59Z')
+            .order('hora_registro', { ascending: true });
+
+        if (error) throw error;
+        if (!data || data.length === 0) return 0;
+
+        let diasTrabalhados = {};
+        
+        data.forEach(ponto => {
+            const dataDia = new Date(ponto.hora_registro).toLocaleDateString('pt-BR');
+            if(!diasTrabalhados[dataDia]) diasTrabalhados[dataDia] = { entradas: [], saidas: [] };
+            
+            if(ponto.tipo === 'ENTRADA') diasTrabalhados[dataDia].entradas.push(new Date(ponto.hora_registro));
+            if(ponto.tipo === 'SAIDA') diasTrabalhados[dataDia].saidas.push(new Date(ponto.hora_registro));
+        });
+
+        let totalDiarias = 0;
+        const JORNADA_BASE_HORAS = 8; // Mude para 9 se for o caso da sua obra
+
+        for (let dia in diasTrabalhados) {
+            let registro = diasTrabalhados[dia];
+            
+            if (registro.entradas.length > 0 && registro.saidas.length > 0) {
+                let primeiraEntrada = registro.entradas[0]; 
+                let ultimaSaida = registro.saidas[registro.saidas.length - 1]; 
+                
+                let diffMilisegundos = ultimaSaida - primeiraEntrada;
+                let horasBrutas = diffMilisegundos / (1000 * 60 * 60);
+
+                // Desconta 1h de almoço se trabalhou mais de 6h
+                if (horasBrutas >= 6) horasBrutas -= 1;
+
+                let fracao = horasBrutas / JORNADA_BASE_HORAS;
+
+                if (fracao > 0.90) fracao = 1;
+                else if (fracao < 0) fracao = 0;
+                else fracao = parseFloat(fracao.toFixed(2));
+
+                totalDiarias += fracao;
+            }
+        }
+        return totalDiarias;
+    } catch (err) {
+        console.error("Erro ao calcular: ", err);
+        return 0;
+    }
+}
+
+      // =====================================================================
+// INTEGRAÇÃO COM O FINANCEIRO (FECHAMENTO DA QUINZENA/MÊS)
+// =====================================================================
+async function preencherFechamentoAutomatico(funcionarioId, obraId, mes, ano) {
+    showLoading(true);
+    
+    // 1. Define o período do cálculo (Exemplo: 01 até o último dia do mês)
+    // Se você usa quinzena, basta ajustar as datas (ex: dia 01 ao 15, ou 16 ao 30)
+    let dataInicio = `${ano}-${mes.padStart(2, '0')}-01`;
+    let ultimoDia = new Date(ano, mes, 0).getDate();
+    let dataFim = `${ano}-${mes.padStart(2, '0')}-${ultimoDia}`;
+
+    // 2. Roda o motor de cálculo
+    let diariasCalculadas = await calcularDiariasPorHora(funcionarioId, obraId, dataInicio, dataFim);
+
+    // 3. Busca o valor da diária do funcionário no banco de equipe
+    const { data: func } = await sb.from('jsp_equipe').select('valor_diaria').eq('id', funcionarioId).single();
+    let valorDiaria = func ? func.valor_diaria : 0;
+
+    // 4. Calcula o valor final em Dinheiro
+    let valorTotalPagar = diariasCalculadas * valorDiaria;
+
+    showLoading(false);
+
+    // 5. Joga os valores na sua tela de pagamento!
+    // ATENÇÃO: Troque os IDs abaixo pelos IDs reais dos inputs que você usa no seu modal de pagamento/recibo
+    
+    if(document.getElementById('input-qtd-diarias')) {
+        document.getElementById('input-qtd-diarias').value = diariasCalculadas;
+    }
+    
+    if(document.getElementById('input-valor-total')) {
+        document.getElementById('input-valor-total').value = valorTotalPagar.toFixed(2);
+    }
+    
+    showToast(`Cálculo concluído: ${diariasCalculadas} diárias confirmadas!`);
+}
+
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
   </body>
