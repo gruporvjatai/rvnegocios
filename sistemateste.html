@@ -522,48 +522,64 @@
       </div>
       
 
-      <div id="ponto-modal" class="hidden fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden">
-          <div class="mb-4 bg-blue-50 p-4 rounded-lg border border-blue-200">
-    <p class="text-xs font-bold text-blue-800 uppercase mb-2">Ponto Eletrônico (QR Code)</p>
-    <button type="button" onclick="puxarHorasDoPontoEletronico()" class="w-full p-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 flex items-center justify-center gap-2 shadow-sm transition-all">
-        <i data-lucide="smartphone" class="w-5 h-5"></i>
-        Calcular Diárias Automaticamente
-    </button>
-</div>
-            <div class="p-4 border-b flex justify-between items-center bg-slate-50">
-                <div>
-                    <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2"><i data-lucide="calendar-clock" class="text-blue-600"></i> Folha de Ponto</h3>
-                    <p class="text-xs text-slate-500 mt-1" id="ponto-modal-subtitle"></p>
-                </div>
-                <button onclick="document.getElementById('ponto-modal').classList.add('hidden')" class="text-slate-400 hover:text-red-500"><i data-lucide="x"></i></button>
+      <div id="ponto-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[95vh]">
+        
+        <div class="bg-indigo-600 p-4 text-white flex justify-between items-center shrink-0">
+            <div>
+                <h3 class="font-black text-lg flex items-center gap-2">
+                    <i data-lucide="calendar-check-2" class="w-5 h-5"></i> Fechamento de Ponto
+                </h3>
+                <p id="ponto-modal-subtitle" class="text-[11px] font-medium opacity-80 mt-0.5">Carregando...</p>
             </div>
-            <div class="p-6">
-                <input type="hidden" id="ponto-equipe-id">
-                
-                <div class="mb-4">
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Selecione os dias trabalhados no mês:</label>
-                    <div id="ponto-grid" class="grid grid-cols-7 gap-2">
-                        </div>
+            <button onclick="document.getElementById('ponto-modal').classList.add('hidden')" class="text-white hover:bg-white/20 p-2 rounded-lg transition" title="Fechar">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <div class="p-6 overflow-y-auto flex-1 custom-scrollbar">
+            <input type="hidden" id="ponto-equipe-id">
+            
+            <div class="mb-6">
+                <button type="button" onclick="puxarHorasDoPontoEletronico()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 px-4 rounded-xl shadow-md flex items-center justify-center gap-2 transition border border-blue-800">
+                    <i data-lucide="smartphone-nfc" class="w-5 h-5"></i>
+                    Puxar do Ponto Eletrônico (QR Code)
+                </button>
+                <p class="text-[10px] text-center text-slate-400 mt-2">Calcula automaticamente as diárias baseadas nas entradas e saídas.</p>
+            </div>
+
+            <div class="flex items-center gap-4 mb-4">
+                <hr class="flex-1 border-slate-200">
+                <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Ou marque manualmente</span>
+                <hr class="flex-1 border-slate-200">
+            </div>
+
+            <div id="ponto-grid" class="grid grid-cols-7 gap-2 mb-6">
                 </div>
 
-                <div class="flex justify-between items-center bg-slate-100 p-4 rounded-xl border border-slate-200">
-                    <div>
-                        <div class="text-[10px] text-slate-500 font-bold uppercase">Total de Dias</div>
-                        <div class="text-2xl font-black text-blue-700" id="ponto-total-dias">0</div>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-[10px] text-slate-500 font-bold uppercase">Valor a Receber</div>
-                        <div class="text-2xl font-black text-green-600" id="ponto-total-valor">R$ 0,00</div>
-                    </div>
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-inner">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs font-bold text-slate-500 uppercase">Total de Diárias:</span>
+                    <span id="ponto-total-dias" class="font-black text-indigo-700 text-xl">0</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold text-slate-500 uppercase">Valor a Pagar:</span>
+                    <span id="ponto-total-valor" class="font-black text-green-600 text-2xl">R$ 0,00</span>
                 </div>
             </div>
-            <div class="p-4 border-t bg-slate-50 flex gap-2">
-                <button onclick="document.getElementById('ponto-modal').classList.add('hidden')" class="flex-1 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition">Cancelar</button>
-                <button onclick="savePonto()" class="flex-1 py-3 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-xl shadow-md transition">Salvar Ponto</button>
-            </div>
         </div>
-      </div>
+
+        <div class="p-4 bg-slate-100 border-t border-slate-200 flex justify-end gap-3 shrink-0">
+            <button type="button" onclick="document.getElementById('ponto-modal').classList.add('hidden')" class="px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition">
+                Cancelar
+            </button>
+            <button type="button" onclick="savePonto()" class="px-5 py-2.5 text-sm font-black bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md flex items-center gap-2 transition">
+                <i data-lucide="check-circle" class="w-4 h-4"></i> Salvar e Fechar
+            </button>
+        </div>
+        
+    </div>
+</div>
 
       <div id="fornecedor-form-container" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
         <form onsubmit="saveFornecedor(event)" class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
@@ -1312,40 +1328,51 @@
             document.getElementById('ponto-total-valor').innerText = formatMoney(valor);
         }
 
-        async function savePonto() {
-            showLoading(true);
-            const equipe_id = document.getElementById('ponto-equipe-id').value;
-            const e = STATE.equipe.find(x => x.id == equipe_id);
-            const mes = document.getElementById('eqp-filter-mes').value;
-            const ano = document.getElementById('eqp-filter-ano').value;
-            
-            const totalDias = currentPontoDias.length;
-            const valorTotal = totalDias * currentPontoDiaria;
+async function savePonto() {
+    showLoading(true);
+    const equipe_id = document.getElementById('ponto-equipe-id').value;
+    const e = STATE.equipe.find(x => x.id == equipe_id);
+    const mes = document.getElementById('eqp-filter-mes').value;
+    const ano = document.getElementById('eqp-filter-ano').value;
+    
+    // REGRA NOVA: Verifica se usamos o ponto eletrônico ou o manual
+    let totalDias = 0;
+    if (window.diariasEletronicasAtivas !== undefined) {
+        totalDias = window.diariasEletronicasAtivas; // Pega o valor quebrado (ex: 12.5)
+    } else {
+        totalDias = currentPontoDias.length; // Fallback para o modo manual antigo
+    }
 
-            let pt = STATE.ponto.find(x => x.equipe_id == equipe_id && x.mes === mes && x.ano === ano);
-            const isNew = !pt;
+    const valorTotal = totalDias * currentPontoDiaria;
 
-            const payload = {
-                equipe_id: equipe_id,
-                obra_id: e.obra_atual_id,
-                mes: mes,
-                ano: ano,
-                dias_marcados: currentPontoDias,
-                total_dias: totalDias,
-                valor_diaria: currentPontoDiaria,
-                valor_total: valorTotal,
-                status: pt ? pt.status : 'PENDENTE'
-            };
+    let pt = STATE.ponto.find(x => x.equipe_id == equipe_id && x.mes === mes && x.ano === ano);
+    const isNew = !pt;
 
-            if(!isNew) payload.id = pt.id;
+    const payload = {
+        equipe_id: equipe_id,
+        obra_id: e.obra_atual_id,
+        mes: mes,
+        ano: ano,
+        dias_marcados: currentPontoDias, // Pode manter vazio ou com os cliques manuais
+        total_dias: totalDias, // Agora aceita decimais
+        valor_diaria: currentPontoDiaria,
+        valor_total: valorTotal,
+        status: pt ? pt.status : 'PENDENTE'
+    };
 
-            const { error } = await sb.from('jsp_ponto').upsert(payload);
-            if(error) { showLoading(false); return showToast("Erro ao salvar ponto: " + error.message, true); }
-            
-            document.getElementById('ponto-modal').classList.add('hidden');
-            showToast("Ponto salvo com sucesso!"); loadData();
-        }
+    if(!isNew) payload.id = pt.id;
 
+    const { error } = await sb.from('jsp_ponto').upsert(payload);
+    
+    // Limpa a variável global após salvar para não interferir no próximo funcionário
+    window.diariasEletronicasAtivas = undefined; 
+
+    if(error) { showLoading(false); return showToast("Erro ao salvar ponto: " + error.message, true); }
+    
+    document.getElementById('ponto-modal').classList.add('hidden');
+    showToast("Ponto fechado com sucesso!"); 
+    loadData();
+}
         async function pagarMesPonto(ponto_id, equipe_id) {
             if(!confirm("Deseja confirmar o pagamento deste mês? Isso criará uma Despesa automática na Obra atual do funcionário.")) return;
             showLoading(true);
@@ -3457,53 +3484,40 @@ async function calcularDiariasPorHora(funcionarioId, obraId, dataInicioIso, data
 async function preencherFechamentoAutomatico(funcionarioId, obraId, mes, ano) {
     showLoading(true);
     
-    // 1. Define o período do cálculo (Exemplo: 01 até o último dia do mês)
-    // Se você usa quinzena, basta ajustar as datas (ex: dia 01 ao 15, ou 16 ao 30)
-    let dataInicio = `${ano}-${mes.padStart(2, '0')}-01`;
+    let dataInicio = `${ano}-${String(mes).padStart(2, '0')}-01`;
     let ultimoDia = new Date(ano, mes, 0).getDate();
-    let dataFim = `${ano}-${mes.padStart(2, '0')}-${ultimoDia}`;
+    let dataFim = `${ano}-${String(mes).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
 
-    // 2. Roda o motor de cálculo
     let diariasCalculadas = await calcularDiariasPorHora(funcionarioId, obraId, dataInicio, dataFim);
 
-    // 3. Busca o valor da diária do funcionário no banco de equipe
-    const { data: func } = await sb.from('jsp_equipe').select('valor_diaria').eq('id', funcionarioId).single();
-    let valorDiaria = func ? func.valor_diaria : 0;
-
-    // 4. Calcula o valor final em Dinheiro
+    const func = STATE.equipe.find(x => x.id == funcionarioId);
+    let valorDiaria = parseFloat(func.valor_diaria || 0);
     let valorTotalPagar = diariasCalculadas * valorDiaria;
 
-    showLoading(false);
+    // Atualiza a interface visual do Modal do ERP
+    document.getElementById('ponto-total-dias').innerText = diariasCalculadas.toFixed(2);
+    document.getElementById('ponto-total-valor').innerText = formatMoney(valorTotalPagar);
 
-    // 5. Joga os valores na sua tela de pagamento!
-    // ATENÇÃO: Troque os IDs abaixo pelos IDs reais dos inputs que você usa no seu modal de pagamento/recibo
-    
-    if(document.getElementById('input-qtd-diarias')) {
-        document.getElementById('input-qtd-diarias').value = diariasCalculadas;
-    }
-    
-    if(document.getElementById('input-valor-total')) {
-        document.getElementById('input-valor-total').value = valorTotalPagar.toFixed(2);
-    }
-    
-    showToast(`Cálculo concluído: ${diariasCalculadas} diárias confirmadas!`);
+    // Salva na memória global para a função savePonto capturar depois
+    window.diariasEletronicasAtivas = diariasCalculadas;
+
+    showLoading(false);
+    showToast(`Ponto Eletrônico: ${diariasCalculadas.toFixed(2)} diárias confirmadas!`);
 }
 
       // Gatilho do botão que puxa os dados da tela e chama o motor
 async function puxarHorasDoPontoEletronico() {
-    // ATENÇÃO: Verifique se os IDs abaixo são os mesmos que você usa nos campos ocultos/selects do seu modal de pagamento atual!
-    const funcId = document.getElementById('recibo-funcionario-id').value; 
-    const obraId = document.getElementById('recibo-obra-id').value;
-    const mes = document.getElementById('filtro-mes-ponto').value; // Ou o mês do modal
-    const ano = document.getElementById('filtro-ano-ponto').value; // Ou o ano do modal
+    // Pegamos os dados reais que o ERP já colocou no modal
+    const funcId = document.getElementById('ponto-equipe-id').value;
+    const e = STATE.equipe.find(x => x.id == funcId);
+    const mes = document.getElementById('eqp-filter-mes').value;
+    const ano = document.getElementById('eqp-filter-ano').value;
 
-    if (!funcId || !obraId || !mes || !ano) {
-        return showToast("Faltam dados (Obra, Funcionário ou Mês/Ano) para calcular.", true);
+    if (!funcId || !e.obra_atual_id) {
+        return showToast("Funcionário precisa estar vinculado a uma obra para puxar o ponto eletrônico.", true);
     }
 
-    // Chama aquela função principal que te mandei antes
-    await preencherFechamentoAutomatico(funcId, obraId, mes, ano);
-    lucide.createIcons();
+    await preencherFechamentoAutomatico(funcId, e.obra_atual_id, mes, ano);
 }
 
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
