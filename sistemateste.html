@@ -523,14 +523,17 @@
       
 
       <div id="ponto-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[95vh]">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[95vh]">
         
         <div class="bg-indigo-600 p-4 text-white flex justify-between items-center shrink-0">
-            <div>
-                <h3 class="font-black text-lg flex items-center gap-2">
-                    <i data-lucide="calendar-check-2" class="w-5 h-5"></i> Fechamento de Ponto
-                </h3>
-                <p id="ponto-modal-subtitle" class="text-[11px] font-medium opacity-80 mt-0.5">Carregando...</p>
+            <div class="flex items-center gap-3">
+                <button id="ponto-btn-voltar" onclick="selecionarModoPonto('selecao')" class="hidden bg-indigo-700 hover:bg-indigo-800 p-1.5 rounded-lg transition" title="Voltar">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                </button>
+                <div>
+                    <h3 class="font-black text-lg flex items-center gap-2">Fechamento de Ponto</h3>
+                    <p id="ponto-modal-subtitle" class="text-[11px] font-medium opacity-80 mt-0.5">Carregando...</p>
+                </div>
             </div>
             <button onclick="document.getElementById('ponto-modal').classList.add('hidden')" class="text-white hover:bg-white/20 p-2 rounded-lg transition" title="Fechar">
                 <i data-lucide="x" class="w-5 h-5"></i>
@@ -540,44 +543,100 @@
         <div class="p-6 overflow-y-auto flex-1 custom-scrollbar">
             <input type="hidden" id="ponto-equipe-id">
             
-            <div class="mb-6">
-                <button type="button" onclick="puxarHorasDoPontoEletronico()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 px-4 rounded-xl shadow-md flex items-center justify-center gap-2 transition border border-blue-800">
-                    <i data-lucide="smartphone-nfc" class="w-5 h-5"></i>
-                    Puxar do Ponto Eletrônico (QR Code)
+            <div id="ponto-view-selecao" class="flex flex-col gap-4">
+                <h4 class="text-center font-bold text-slate-600 mb-2">Como deseja fechar o ponto deste mês?</h4>
+                
+                <button onclick="selecionarModoPonto('auto')" class="p-6 border-2 border-blue-200 hover:border-blue-500 rounded-2xl bg-blue-50 hover:bg-blue-100 flex flex-col items-center gap-3 transition text-center group">
+                    <div class="p-4 bg-blue-600 text-white rounded-full group-hover:scale-110 transition-transform">
+                        <i data-lucide="smartphone-nfc" class="w-8 h-8"></i>
+                    </div>
+                    <div>
+                        <h5 class="font-black text-lg text-blue-800">Ponto Eletrônico (QR Code)</h5>
+                        <p class="text-xs text-blue-600 mt-1 font-medium">Busca os registros automáticos do app, calcula as horas e gera a folha de ponto.</p>
+                    </div>
                 </button>
-                <p class="text-[10px] text-center text-slate-400 mt-2">Calcula automaticamente as diárias baseadas nas entradas e saídas.</p>
+
+                <button onclick="selecionarModoPonto('manual')" class="p-6 border-2 border-slate-200 hover:border-slate-400 rounded-2xl bg-slate-50 hover:bg-slate-100 flex flex-col items-center gap-3 transition text-center group">
+                    <div class="p-4 bg-slate-400 text-white rounded-full group-hover:scale-110 transition-transform">
+                        <i data-lucide="calendar-check-2" class="w-8 h-8"></i>
+                    </div>
+                    <div>
+                        <h5 class="font-black text-lg text-slate-700">Ponto Manual (Antigo)</h5>
+                        <p class="text-xs text-slate-500 mt-1 font-medium">Você marca os dias trabalhados clicando no calendário.</p>
+                    </div>
+                </button>
             </div>
 
-            <div class="flex items-center gap-4 mb-4">
-                <hr class="flex-1 border-slate-200">
-                <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Ou marque manualmente</span>
-                <hr class="flex-1 border-slate-200">
+            <div id="ponto-view-manual" class="hidden">
+                <div id="ponto-grid" class="grid grid-cols-7 gap-2 mb-6">
+                    </div>
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-inner mb-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-bold text-slate-500 uppercase">Total de Diárias:</span>
+                        <span id="ponto-total-dias" class="font-black text-indigo-700 text-xl">0</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold text-slate-500 uppercase">Valor a Pagar:</span>
+                        <span id="ponto-total-valor" class="font-black text-green-600 text-2xl">R$ 0,00</span>
+                    </div>
+                </div>
+                <button type="button" onclick="savePonto()" class="w-full py-3 text-sm font-black bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md flex items-center justify-center gap-2 transition">
+                    <i data-lucide="check-circle" class="w-5 h-5"></i> Salvar Fechamento Manual
+                </button>
             </div>
 
-            <div id="ponto-grid" class="grid grid-cols-7 gap-2 mb-6">
+            <div id="ponto-view-auto" class="hidden flex flex-col">
+                <div class="flex gap-2 mb-4">
+                    <div class="flex-1">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">De:</label>
+                        <input type="date" id="ponto-auto-data-ini" class="w-full p-2 border rounded-lg text-sm bg-slate-50 font-bold focus:border-blue-500 outline-none">
+                    </div>
+                    <div class="flex-1">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">Até:</label>
+                        <input type="date" id="ponto-auto-data-fim" class="w-full p-2 border rounded-lg text-sm bg-slate-50 font-bold focus:border-blue-500 outline-none">
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="buscarRegistrosEletronicos()" class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow font-bold text-sm h-[38px] px-4"><i data-lucide="search" class="w-4 h-4"></i></button>
+                    </div>
                 </div>
 
-            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-inner">
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-xs font-bold text-slate-500 uppercase">Total de Diárias:</span>
-                    <span id="ponto-total-dias" class="font-black text-indigo-700 text-xl">0</span>
+                <div class="border rounded-xl overflow-hidden border-slate-200 mb-4">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 border-b border-slate-200 text-slate-600">
+                                <th class="p-2 text-[10px] uppercase font-bold text-center">Data</th>
+                                <th class="p-2 text-[10px] uppercase font-bold text-center">Entrada</th>
+                                <th class="p-2 text-[10px] uppercase font-bold text-center">Saída</th>
+                                <th class="p-2 text-[10px] uppercase font-bold text-center">Diária (Fração)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ponto-auto-tbody">
+                            </tbody>
+                    </table>
                 </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-xs font-bold text-slate-500 uppercase">Valor a Pagar:</span>
-                    <span id="ponto-total-valor" class="font-black text-green-600 text-2xl">R$ 0,00</span>
+
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-200 shadow-inner mb-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-bold text-blue-800 uppercase">Total de Diárias Apuradas:</span>
+                        <span id="ponto-auto-total-dias" class="font-black text-blue-700 text-xl">0.00</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold text-blue-800 uppercase">Valor a Pagar:</span>
+                        <span id="ponto-auto-total-valor" class="font-black text-green-700 text-2xl">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="imprimirFolhaPontoEletronico()" class="py-3 text-xs font-black border-2 border-slate-300 text-slate-600 hover:bg-slate-100 rounded-xl flex items-center justify-center gap-2 transition">
+                        <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Folha
+                    </button>
+                    <button type="button" onclick="savePonto()" class="py-3 text-xs font-black bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md flex items-center justify-center gap-2 transition">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i> Salvar Fechamento
+                    </button>
                 </div>
             </div>
+
         </div>
-
-        <div class="p-4 bg-slate-100 border-t border-slate-200 flex justify-end gap-3 shrink-0">
-            <button type="button" onclick="document.getElementById('ponto-modal').classList.add('hidden')" class="px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition">
-                Cancelar
-            </button>
-            <button type="button" onclick="savePonto()" class="px-5 py-2.5 text-sm font-black bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md flex items-center gap-2 transition">
-                <i data-lucide="check-circle" class="w-4 h-4"></i> Salvar e Fechar
-            </button>
-        </div>
-        
     </div>
 </div>
 
@@ -1276,28 +1335,269 @@
 
         function getDiasNoMes(mes, ano) { return new Date(ano, mes, 0).getDate(); }
 
+        // ==========================================================
+        // CONTROLE DO MODAL DE PONTO (NOVO FLUXO)
+        // ==========================================================
+        
         function openPontoModal(equipe_id) {
             const e = STATE.equipe.find(x => x.id == equipe_id);
             if(!e) return;
-
+        
             const mes = document.getElementById('eqp-filter-mes').value;
             const ano = document.getElementById('eqp-filter-ano').value;
             currentPontoDiaria = parseFloat(e.valor_diaria || 0);
-
-            document.getElementById('ponto-modal-subtitle').innerText = `${e.nome} - Mês: ${mes}/${ano} - Diária: ${formatMoney(currentPontoDiaria)}`;
+        
+            document.getElementById('ponto-modal-subtitle').innerText = `${e.nome} - Mês: ${mes}/${ano} - Diária Base: ${formatMoney(currentPontoDiaria)}`;
             document.getElementById('ponto-equipe-id').value = e.id;
-
+        
+            // Reseta variável de qual modo está ativo
+            window.modoPontoAtivo = null;
+            window.diariasEletronicasAtivas = undefined; 
+        
+            // Configura datas padrão do automático (1º até o último dia do mês filtrado)
+            const primeiroDia = `${ano}-${mes.padStart(2, '0')}-01`;
+            const ultimoDia = new Date(ano, mes, 0).getDate();
+            const ultimoDiaStr = `${ano}-${mes.padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
+            document.getElementById('ponto-auto-data-ini').value = primeiroDia;
+            document.getElementById('ponto-auto-data-fim').value = ultimoDiaStr;
+        
+            // Prepara tela do modo manual (caso ele escolha)
             let pt = STATE.ponto.find(x => x.equipe_id == e.id && x.mes === mes && x.ano === ano);
             if(pt && pt.dias_marcados) {
                 currentPontoDias = Array.isArray(pt.dias_marcados) ? pt.dias_marcados : JSON.parse(pt.dias_marcados);
             } else {
                 currentPontoDias = [];
             }
-
-            renderPontoGrid(mes, ano);
+            renderPontoGrid(mes, ano); // Atualiza os quadradinhos e totais do manual
+        
+            // Volta o modal para a tela de SELEÇÃO
+            selecionarModoPonto('selecao');
+        
             document.getElementById('ponto-modal').classList.remove('hidden');
+            lucide.createIcons();
         }
 
+
+         function selecionarModoPonto(modo) {
+            document.getElementById('ponto-view-selecao').classList.add('hidden');
+            document.getElementById('ponto-view-manual').classList.add('hidden');
+            document.getElementById('ponto-view-auto').classList.add('hidden');
+            
+            const btnVoltar = document.getElementById('ponto-btn-voltar');
+        
+            if (modo === 'selecao') {
+                document.getElementById('ponto-view-selecao').classList.remove('hidden');
+                btnVoltar.classList.add('hidden');
+                window.modoPontoAtivo = null;
+            } else if (modo === 'manual') {
+                document.getElementById('ponto-view-manual').classList.remove('hidden');
+                btnVoltar.classList.remove('hidden');
+                window.modoPontoAtivo = 'manual';
+            } else if (modo === 'auto') {
+                document.getElementById('ponto-view-auto').classList.remove('hidden');
+                btnVoltar.classList.remove('hidden');
+                window.modoPontoAtivo = 'auto';
+                
+                // Limpa a tabela para não mostrar lixo de outro funcionário antes de clicar em buscar
+                document.getElementById('ponto-auto-tbody').innerHTML = '<tr><td colspan="4" class="text-center p-6 text-slate-400 font-bold text-xs">Clique em Buscar para carregar a folha.</td></tr>';
+                document.getElementById('ponto-auto-total-dias').innerText = '0.00';
+                document.getElementById('ponto-auto-total-valor').innerText = 'R$ 0,00';
+                window.diariasEletronicasAtivas = undefined; 
+            }
+        }
+
+// -------------------------------------------------------------------
+// LÓGICA DO PONTO ELETRÔNICO (BUSCA E CÁLCULO DIRETO NA TELA NOVA)
+// -------------------------------------------------------------------
+async function buscarRegistrosEletronicos() {
+    showLoading(true);
+    const funcId = document.getElementById('ponto-equipe-id').value;
+    const e = STATE.equipe.find(x => x.id == funcId);
+    
+    if (!e || !e.obra_atual_id) {
+        showLoading(false);
+        return showToast("Erro: O colaborador precisa estar vinculado a uma obra.", true);
+    }
+
+    const dataIni = document.getElementById('ponto-auto-data-ini').value;
+    const dataFim = document.getElementById('ponto-auto-data-fim').value;
+
+    if(!dataIni || !dataFim) {
+        showLoading(false);
+        return showToast("Preencha as datas de início e fim.", true);
+    }
+
+    try {
+        const { data, error } = await sb.from('jsp_ponto_diario')
+            .select('*')
+            .eq('funcionario_id', funcId)
+            .eq('obra_id', e.obra_atual_id)
+            .eq('status', 'VALIDADO')
+            .gte('hora_registro', dataIni + 'T00:00:00Z')
+            .lte('hora_registro', dataFim + 'T23:59:59Z')
+            .order('hora_registro', { ascending: true });
+
+        if (error) throw error;
+
+        let diasTrabalhados = {};
+        
+        // Agrupa os horários por Dia
+        (data || []).forEach(ponto => {
+            const dataDia = new Date(ponto.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+            if(!diasTrabalhados[dataDia]) diasTrabalhados[dataDia] = { entradas: [], saidas: [], rawDate: new Date(ponto.hora_registro) };
+            
+            if(ponto.tipo === 'ENTRADA') diasTrabalhados[dataDia].entradas.push(new Date(ponto.hora_registro));
+            if(ponto.tipo === 'SAIDA') diasTrabalhados[dataDia].saidas.push(new Date(ponto.hora_registro));
+        });
+
+        const diasArray = Object.values(diasTrabalhados).sort((a,b) => a.rawDate - b.rawDate);
+        let totalDiarias = 0;
+        const JORNADA_BASE_HORAS = 8;
+        let htmlTabela = '';
+        
+        // Guardar para impressão
+        window.dadosFolhaImpressao = []; 
+
+        if(diasArray.length === 0) {
+            document.getElementById('ponto-auto-tbody').innerHTML = '<tr><td colspan="4" class="text-center p-6 text-slate-400 font-bold text-xs">Nenhum registro validado neste período.</td></tr>';
+            document.getElementById('ponto-auto-total-dias').innerText = '0.00';
+            document.getElementById('ponto-auto-total-valor').innerText = 'R$ 0,00';
+            window.diariasEletronicasAtivas = 0;
+            showLoading(false);
+            return;
+        }
+
+        diasArray.forEach(registro => {
+            let horaEntradaStr = registro.entradas.length > 0 ? registro.entradas[0].toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit', timeZone: 'UTC'}) : '--:--';
+            let horaSaidaStr = registro.saidas.length > 0 ? registro.saidas[registro.saidas.length - 1].toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit', timeZone: 'UTC'}) : '--:--';
+            
+            let fracao = 0;
+            let totalHoras = 0;
+
+            if (registro.entradas.length > 0 && registro.saidas.length > 0) {
+                let diffMilisegundos = registro.saidas[registro.saidas.length - 1] - registro.entradas[0];
+                let horasBrutas = diffMilisegundos / (1000 * 60 * 60);
+
+                if (horasBrutas >= 6) horasBrutas -= 1; // Desconto de almoço
+
+                totalHoras = horasBrutas;
+                fracao = horasBrutas / JORNADA_BASE_HORAS;
+
+                if (fracao > 0.90) fracao = 1;
+                else if (fracao < 0) fracao = 0;
+                else fracao = parseFloat(fracao.toFixed(2));
+
+                totalDiarias += fracao;
+            }
+
+            const dataStr = registro.rawDate.toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+            
+            // Salva dados para enviar para o PDF/Impressão
+            window.dadosFolhaImpressao.push({ data: dataStr, entrada: horaEntradaStr, saida: horaSaidaStr, fracao: fracao });
+
+            htmlTabela += `
+            <tr class="border-b hover:bg-slate-50">
+                <td class="p-2 text-xs font-bold text-slate-700 text-center">${dataStr}</td>
+                <td class="p-2 text-xs text-center"><span class="bg-green-100 text-green-700 px-2 py-0.5 rounded font-bold">${horaEntradaStr}</span></td>
+                <td class="p-2 text-xs text-center"><span class="bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold">${horaSaidaStr}</span></td>
+                <td class="p-2 text-xs text-center font-black text-indigo-600">${fracao}</td>
+            </tr>`;
+        });
+
+        document.getElementById('ponto-auto-tbody').innerHTML = htmlTabela;
+        document.getElementById('ponto-auto-total-dias').innerText = totalDiarias.toFixed(2);
+        
+        let valorDiaria = parseFloat(e.valor_diaria || 0);
+        let valorTotalPagar = totalDiarias * valorDiaria;
+        document.getElementById('ponto-auto-total-valor').innerText = formatMoney(valorTotalPagar);
+
+        // Define a variável global para que a função 'savePonto()' saiba que deve salvar este valor!
+        window.diariasEletronicasAtivas = totalDiarias; 
+
+        showLoading(false);
+        showToast("Registros carregados!");
+
+    } catch (err) {
+        showLoading(false);
+        console.error(err);
+        showToast("Erro ao buscar registros.", true);
+    }
+}
+
+// -------------------------------------------------------------------
+// IMPRESSÃO DA FOLHA DE PONTO
+// -------------------------------------------------------------------
+function imprimirFolhaPontoEletronico() {
+    if (!window.dadosFolhaImpressao || window.dadosFolhaImpressao.length === 0) {
+        return showToast("Busque os registros primeiro antes de imprimir!", true);
+    }
+
+    const funcId = document.getElementById('ponto-equipe-id').value;
+    const e = STATE.equipe.find(x => x.id == funcId);
+    const dataIni = document.getElementById('ponto-auto-data-ini').value.split('-').reverse().join('/');
+    const dataFim = document.getElementById('ponto-auto-data-fim').value.split('-').reverse().join('/');
+    const totalDiarias = window.diariasEletronicasAtivas.toFixed(2);
+    
+    let htmlTabelaImp = window.dadosFolhaImpressao.map(i => `
+        <tr>
+            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${i.data}</td>
+            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${i.entrada}</td>
+            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${i.saida}</td>
+            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">--:--</td>
+            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center; font-weight: bold;">${i.fracao}</td>
+        </tr>
+    `).join('');
+
+    const htmlImpressao = `
+        <div style="font-family: Arial, sans-serif; color: #000; width: 100%;">
+            <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px;">
+                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px; margin-bottom: 10px;" />
+                <h2 style="margin: 0; font-size: 18pt; font-weight: bold;">FOLHA DE PONTO INDIVIDUAL</h2>
+                <p style="margin: 5px 0 0 0; font-size: 11pt;">Período Apurado: ${dataIni} a ${dataFim}</p>
+            </div>
+            
+            <div style="margin-bottom: 20px; font-size: 11pt;">
+                <strong>Colaborador:</strong> ${(e.nome).toUpperCase()}<br>
+                <strong>Função:</strong> ${(e.categoria || 'Geral').toUpperCase()}<br>
+                <strong>Obra:</strong> ${STATE.obras.find(o => o.id == e.obra_atual_id)?.nome || 'Não definida'}<br>
+                <strong>CPF:</strong> ${e.cpf || 'Não informado'}
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; font-size: 10pt; margin-bottom: 30px;">
+                <thead>
+                    <tr style="background-color: #f1f5f9;">
+                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Data</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Entrada</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Saída</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Assinatura</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Diárias Faturadas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${htmlTabelaImp}
+                </tbody>
+            </table>
+
+            <div style="text-align: right; font-size: 14pt; margin-bottom: 50px;">
+                <strong>TOTAL DE DIÁRIAS APURADAS: ${totalDiarias}</strong>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; margin-top: 60px; font-size: 10pt;">
+                <div style="text-align: center; width: 45%; border-top: 1px solid #000; padding-top: 10px;">
+                    <strong>Visto do Responsável (RV)</strong>
+                </div>
+                <div style="text-align: center; width: 45%; border-top: 1px solid #000; padding-top: 10px;">
+                    <strong>Assinatura do Colaborador</strong><br>
+                    Declaro corretas as anotações acima.
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('print-area').innerHTML = htmlImpressao;
+    setTimeout(() => window.print(), 300);
+}
+      
         function renderPontoGrid(mes, ano) {
             const numDias = getDiasNoMes(parseInt(mes), parseInt(ano));
             const grid = document.getElementById('ponto-grid');
@@ -1328,51 +1628,54 @@
             document.getElementById('ponto-total-valor').innerText = formatMoney(valor);
         }
 
-async function savePonto() {
-    showLoading(true);
-    const equipe_id = document.getElementById('ponto-equipe-id').value;
-    const e = STATE.equipe.find(x => x.id == equipe_id);
-    const mes = document.getElementById('eqp-filter-mes').value;
-    const ano = document.getElementById('eqp-filter-ano').value;
-    
-    // REGRA NOVA: Verifica se usamos o ponto eletrônico ou o manual
-    let totalDias = 0;
-    if (window.diariasEletronicasAtivas !== undefined) {
-        totalDias = window.diariasEletronicasAtivas; // Pega o valor quebrado (ex: 12.5)
-    } else {
-        totalDias = currentPontoDias.length; // Fallback para o modo manual antigo
-    }
+        async function savePonto() {
+              showLoading(true);
+              const equipe_id = document.getElementById('ponto-equipe-id').value;
+              const e = STATE.equipe.find(x => x.id == equipe_id);
+              const mes = document.getElementById('eqp-filter-mes').value;
+              const ano = document.getElementById('eqp-filter-ano').value;
+              
+              // REGRA DE OURO: Verifica se estamos no modo automático ou manual
+              let totalDias = 0;
+              
+              if (window.modoPontoAtivo === 'auto' && window.diariasEletronicasAtivas !== undefined) {
+                  // Se estamos na aba nova, pega o valor exato (com decimais) apurado pela busca
+                  totalDias = window.diariasEletronicasAtivas; 
+              } else {
+                  // Se estamos na aba antiga, conta os botõezinhos clicados
+                  totalDias = currentPontoDias.length; 
+              }
+          
+              const valorTotal = totalDias * currentPontoDiaria;
+          
+              let pt = STATE.ponto.find(x => x.equipe_id == equipe_id && x.mes === mes && x.ano === ano);
+              const isNew = !pt;
+          
+              const payload = {
+                  equipe_id: equipe_id,
+                  obra_id: e.obra_atual_id,
+                  mes: mes,
+                  ano: ano,
+                  // No modo auto, guardamos o Array vazio no BD, pois a prova do ponto está na tabela jsp_ponto_diario
+                  dias_marcados: (window.modoPontoAtivo === 'auto') ? [] : currentPontoDias, 
+                  total_dias: totalDias,
+                  valor_diaria: currentPontoDiaria,
+                  valor_total: valorTotal,
+                  status: pt ? pt.status : 'PENDENTE'
+              };
+          
+              if(!isNew) payload.id = pt.id;
+          
+              const { error } = await sb.from('jsp_ponto').upsert(payload);
+              
+              if(error) { showLoading(false); return showToast("Erro ao salvar ponto: " + error.message, true); }
+              
+              document.getElementById('ponto-modal').classList.add('hidden');
+              showToast("Fechamento de Ponto salvo com sucesso!"); 
+              loadData();
+          }
 
-    const valorTotal = totalDias * currentPontoDiaria;
-
-    let pt = STATE.ponto.find(x => x.equipe_id == equipe_id && x.mes === mes && x.ano === ano);
-    const isNew = !pt;
-
-    const payload = {
-        equipe_id: equipe_id,
-        obra_id: e.obra_atual_id,
-        mes: mes,
-        ano: ano,
-        dias_marcados: currentPontoDias, // Pode manter vazio ou com os cliques manuais
-        total_dias: totalDias, // Agora aceita decimais
-        valor_diaria: currentPontoDiaria,
-        valor_total: valorTotal,
-        status: pt ? pt.status : 'PENDENTE'
-    };
-
-    if(!isNew) payload.id = pt.id;
-
-    const { error } = await sb.from('jsp_ponto').upsert(payload);
-    
-    // Limpa a variável global após salvar para não interferir no próximo funcionário
-    window.diariasEletronicasAtivas = undefined; 
-
-    if(error) { showLoading(false); return showToast("Erro ao salvar ponto: " + error.message, true); }
-    
-    document.getElementById('ponto-modal').classList.add('hidden');
-    showToast("Ponto fechado com sucesso!"); 
-    loadData();
-}
+      
         async function pagarMesPonto(ponto_id, equipe_id) {
             if(!confirm("Deseja confirmar o pagamento deste mês? Isso criará uma Despesa automática na Obra atual do funcionário.")) return;
             showLoading(true);
