@@ -524,6 +524,13 @@
 
       <div id="ponto-modal" class="hidden fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden">
+          <div class="mb-4 bg-blue-50 p-4 rounded-lg border border-blue-200">
+    <p class="text-xs font-bold text-blue-800 uppercase mb-2">Ponto Eletrônico (QR Code)</p>
+    <button type="button" onclick="puxarHorasDoPontoEletronico()" class="w-full p-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 flex items-center justify-center gap-2 shadow-sm transition-all">
+        <i data-lucide="smartphone" class="w-5 h-5"></i>
+        Calcular Diárias Automaticamente
+    </button>
+</div>
             <div class="p-4 border-b flex justify-between items-center bg-slate-50">
                 <div>
                     <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2"><i data-lucide="calendar-clock" class="text-blue-600"></i> Folha de Ponto</h3>
@@ -3480,6 +3487,23 @@ async function preencherFechamentoAutomatico(funcionarioId, obraId, mes, ano) {
     }
     
     showToast(`Cálculo concluído: ${diariasCalculadas} diárias confirmadas!`);
+}
+
+      // Gatilho do botão que puxa os dados da tela e chama o motor
+async function puxarHorasDoPontoEletronico() {
+    // ATENÇÃO: Verifique se os IDs abaixo são os mesmos que você usa nos campos ocultos/selects do seu modal de pagamento atual!
+    const funcId = document.getElementById('recibo-funcionario-id').value; 
+    const obraId = document.getElementById('recibo-obra-id').value;
+    const mes = document.getElementById('filtro-mes-ponto').value; // Ou o mês do modal
+    const ano = document.getElementById('filtro-ano-ponto').value; // Ou o ano do modal
+
+    if (!funcId || !obraId || !mes || !ano) {
+        return showToast("Faltam dados (Obra, Funcionário ou Mês/Ano) para calcular.", true);
+    }
+
+    // Chama aquela função principal que te mandei antes
+    await preencherFechamentoAutomatico(funcId, obraId, mes, ano);
+    lucide.createIcons();
 }
 
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
