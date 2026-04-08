@@ -1491,59 +1491,63 @@
             e.preventDefault(); 
             showLoading(true);
 
-            // 1. Identifica se é novo ou edição
             const idCampo = document.getElementById('eqp-id');
             const isNew = !idCampo || !idCampo.value;
             
-            // 2. Função de segurança para ler o HTML sem dar erro de "null"
-            const getVal = (id) => {
+            // Função de segurança para ler os campos sem dar erro
+            const getV = (id) => {
                 const el = document.getElementById(id);
-                return el ? el.value : '';
+                return el ? el.value.trim() : '';
             };
 
-            // 3. Monta o objeto de dados (Payload)
             const payload = {
-                nome: getVal('eqp-name'),
-                categoria: getVal('eqp-cat'),
-                telefone: getVal('eqp-phone'),
-                cpf: getVal('eqp-cpf'),
-                rg: getVal('eqp-rg'),
-                endereco: getVal('eqp-endereco'),
-                obra_atual_id: getVal('eqp-obra') || null,
-                valor_diaria: parseFloat(getVal('eqp-diaria')) || 0
+                nome: getV('eqp-name'),
+                categoria: getV('eqp-cat'),
+                telefone: getV('eqp-phone'),
+                cpf: getV('eqp-cpf'),
+                rg: getV('eqp-rg'),
+                endereco: getV('eqp-endereco'),
+                obra_atual_id: getV('eqp-obra') || null,
+                valor_diaria: parseFloat(getV('eqp-diaria')) || 0
             };
+
+            // TRAVA DE SEGURANÇA: Não deixa salvar se o nome estiver em branco
+            if (!payload.nome) {
+                showLoading(false);
+                return showToast("Erro: O nome do colaborador é obrigatório!", true);
+            }
             
             if(isNew) {
-                // LOGICA DO SISTEMA PRINCIPAL
-                // Gera um UUID para o ID do banco
-                payload.id = crypto.randomUUID(); 
+                // 1. Gera ID (UUID) compatível com qualquer navegador
+                payload.id = (window.isSecureContext && crypto.randomUUID) 
+                    ? crypto.randomUUID() 
+                    : ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
                 
-                // Gera o número sequencial (Matrícula) usando sua função existente
-                payload.matricula = getNextIdNum(STATE.equipe); 
-                
+                // 2. Lógica da Matrícula: Procura o maior número na coluna MATRICULA (e não no ID)
+                let maxMat = 0;
+                STATE.equipe.forEach(item => {
+                    const m = parseInt(item.matricula);
+                    if(!isNaN(m) && m > maxMat) maxMat = m;
+                });
+                payload.matricula = maxMat + 1;
+
                 payload.ativo = true;
                 payload.contrato_assinado = false;
             } else {
-                // Se for edição, mantém o ID que já existe
                 payload.id = idCampo.value;
             }
 
-            // 4. Grava no Supabase
             const { error } = await sb.from('jsp_equipe').upsert(payload);
             
             if(error) { 
                 showLoading(false); 
-                return showToast("Erro: " + error.message, true); 
+                return showToast("Erro no banco: " + error.message, true); 
             }
             
-            // 5. Finaliza
-            const modal = document.getElementById('equipe-form-container');
-            if(modal) modal.classList.add('hidden');
-            
+            document.getElementById('equipe-form-container').classList.add('hidden');
             showToast("Colaborador salvo com sucesso!"); 
             loadData();
-        }
-        
+        }        
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
   </body>
