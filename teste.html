@@ -1356,16 +1356,16 @@
             // ATENÇÃO: Se as suas colunas de nome e função tiverem outro nome, mude o 'e.nome' e 'e.funcao' abaixo
             const fil = STATE.equipe.filter(e => 
                 (e.nome || '').toLowerCase().includes(term) || 
-                (e.funcao || '').toLowerCase().includes(term)
+                (e.categoria || '').toLowerCase().includes(term)
             );
             
             document.getElementById('equipe-list').innerHTML = fil.map(e => {
                 // Mude o 'e.obra_id' se a sua coluna de ID da obra for outra
-                const obra = STATE.obras.find(x => x.id == e.obra_id);
+                const obra = STATE.obras.find(x => x.id == e.matricula);
                 const nomeObra = obra ? obra.nome : 'Sem obra alocada';
                 
                 // Mude o 'e.status' se a sua coluna de status for outra
-                const isAtivo = e.status === 'Ativo' || e.status === true; 
+                const isAtivo = e.ativo === 'Ativo' || e.ativo === true; 
 
                 return `
                 <div class="bg-white p-3 rounded-xl border border-slate-200 flex justify-between items-center shadow-sm">
@@ -1390,13 +1390,13 @@
                 
                 // Mude os nomes (e.nome, e.funcao, etc) conforme as colunas do seu banco
                 document.getElementById('eqp-nome').value = e.nome || ''; 
-                document.getElementById('eqp-funcao').value = e.funcao || 'Servente';
-                document.getElementById('eqp-status').value = e.status || 'Ativo';
-                document.getElementById('eqp-obra').value = e.obra_id || '';
+                document.getElementById('eqp-funcao').value = e.categoria || 'Servente';
+                document.getElementById('eqp-status').value = e.ativo || 'Ativo';
+                document.getElementById('eqp-obra').value = e.obra_atual_id || '';
             } else { 
                 document.getElementById('equipe-form-container').querySelector('form').reset(); 
                 document.getElementById('eqp-id').value = ''; 
-                document.getElementById('eqp-funcao').value = 'Servente';
+                document.getElementById('eqp-categoria').value = 'Servente';
                 document.getElementById('eqp-status').value = 'Ativo';
             }
             openOverlayForm('equipe-form-container');
