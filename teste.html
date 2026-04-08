@@ -329,6 +329,33 @@
                 
                 <div class="flex gap-2">
                     <div class="w-1/2">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">CPF</label>
+                        <input type="text" id="eqp-cpf" placeholder="000.000.000-00" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm">
+                    </div>
+                    <div class="w-1/2">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">RG</label>
+                        <input type="text" id="eqp-rg" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm">
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <div class="w-1/2">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">Telefone</label>
+                        <input type="tel" id="eqp-telefone" placeholder="(00) 00000-0000" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm">
+                    </div>
+                    <div class="w-1/2">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">Matrícula</label>
+                        <input type="number" id="eqp-matricula" placeholder="Opcional" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">Endereço</label>
+                    <input type="text" id="eqp-endereco" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm">
+                </div>
+                
+                <div class="flex gap-2">
+                    <div class="w-1/2">
                         <label class="text-[10px] font-bold text-slate-500 uppercase">Categoria/Função</label>
                         <select id="eqp-categoria" required class="w-full p-2.5 bg-slate-50 border rounded-xl text-sm font-bold text-slate-700 outline-none">
                             <option value="Servente">Servente</option>
@@ -340,6 +367,20 @@
                         <select id="eqp-ativo" required class="w-full p-2.5 bg-slate-50 border rounded-xl text-sm font-bold text-slate-700 outline-none">
                             <option value="true">Ativo</option>
                             <option value="false">Inativo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <div class="w-1/2">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">Valor Diária (R$)</label>
+                        <input type="number" step="0.01" id="eqp-valor_diaria" placeholder="0.00" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm">
+                    </div>
+                    <div class="w-1/2">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">Contrato Assinado?</label>
+                        <select id="eqp-contrato_assinado" class="w-full p-2.5 bg-slate-50 border rounded-xl text-sm font-bold text-slate-700 outline-none">
+                            <option value="false">Não</option>
+                            <option value="true">Sim</option>
                         </select>
                     </div>
                 </div>
@@ -525,7 +566,7 @@
 
         async function loadData() {
             try {
-                const [resObras, resForn, resProd, resLog, resFases] = await Promise.all([
+                const [resObras, resForn, resProd, resLog, resFases, resEquipe] = await Promise.all([
                     fetchAllRecords('jsp_obras'), fetchAllRecords('jsp_fornecedores'),
                     fetchAllRecords('jsp_produtos'), fetchAllRecords('jsp_logs'), fetchAllRecords('jsp_fase'), fetchAllRecords('jsp_equipe')
                 ]);
@@ -535,6 +576,7 @@
                 STATE.logs = resLog.data || [];
                 STATE.fases = resFases.data || [];
                 STATE.fases.sort((a,b) => (parseInt(a.ordem)||0) - (parseInt(b.ordem)||0));
+                STATE.equipe = resEquipe.data || [];
 
                 updateSelects();
                 if(!document.querySelector('main > .active-section')) navigate('dash');
@@ -554,7 +596,8 @@
         function updateSelects() {
             const htmlObras = '<option value="">Todas Obras</option>' + STATE.obras.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
             const htmlObrasStrict = '<option value="">-- Selecione Obra --</option>' + STATE.obras.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
-          // Obras na Equipe
+            
+            // Obras na Equipe
             const eqpObra = document.getElementById('eqp-obra_atual_id'); 
             if(eqpObra && !eqpObra.value) eqpObra.innerHTML = htmlObrasStrict;
             
@@ -1349,7 +1392,7 @@
         }
 
 
-// ====== EQUIPE ======
+        // ====== EQUIPE ======
         function renderEquipe() {
             const term = document.getElementById('eqp-search').value.toLowerCase();
             
@@ -1370,7 +1413,7 @@
                             <h4 class="font-bold text-slate-800 text-xs">${e.nome || '-'}</h4>
                             <span class="${isAtivo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} text-[8px] font-bold px-1.5 py-0.5 rounded">${isAtivo ? 'ATIVO' : 'INATIVO'}</span>
                         </div>
-                        <p class="text-[10px] text-slate-500 font-bold uppercase">${e.categoria || '-'}</p>
+                        <p class="text-[10px] text-slate-500 font-bold uppercase">${e.categoria || '-'} ${e.telefone ? ` | ${e.telefone}` : ''}</p>
                         <p class="text-[9px] text-blue-600 mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${nomeObra}</p>
                     </div>
                     <button onclick="openEquipeForm('${e.id}')" class="p-1.5 bg-slate-100 text-blue-600 rounded-lg shrink-0"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
@@ -1383,15 +1426,23 @@
             if(id) {
                 const e = STATE.equipe.find(x => x.id == id); 
                 document.getElementById('eqp-id').value = e.id;
-                document.getElementById('eqp-nome').value = e.nome || ''; 
+                document.getElementById('eqp-nome').value = e.nome || '';
+                document.getElementById('eqp-cpf').value = e.cpf || '';
+                document.getElementById('eqp-rg').value = e.rg || '';
+                document.getElementById('eqp-telefone').value = e.telefone || '';
+                document.getElementById('eqp-endereco').value = e.endereco || '';
+                document.getElementById('eqp-matricula').value = e.matricula || '';
+                document.getElementById('eqp-valor_diaria').value = e.valor_diaria || '';
                 document.getElementById('eqp-categoria').value = e.categoria || 'Servente';
                 document.getElementById('eqp-ativo').value = (e.ativo === true || e.ativo === 'true') ? 'true' : 'false';
+                document.getElementById('eqp-contrato_assinado').value = (e.contrato_assinado === true || e.contrato_assinado === 'true') ? 'true' : 'false';
                 document.getElementById('eqp-obra_atual_id').value = e.obra_atual_id || '';
             } else { 
                 document.getElementById('equipe-form-container').querySelector('form').reset(); 
                 document.getElementById('eqp-id').value = ''; 
                 document.getElementById('eqp-categoria').value = 'Servente';
                 document.getElementById('eqp-ativo').value = 'true';
+                document.getElementById('eqp-contrato_assinado').value = 'false';
             }
             openOverlayForm('equipe-form-container');
         }
@@ -1401,14 +1452,18 @@
             showLoading(true);
             const isNew = !document.getElementById('eqp-id').value;
             
-            // O valor do Ativo vem como string 'true' ou 'false' do HTML. Convertendo para Booleano pro banco:
-            const statusBooleano = document.getElementById('eqp-ativo').value === 'true';
-            
             const payload = { 
-                nome: document.getElementById('eqp-nome').value, 
-                categoria: document.getElementById('eqp-categoria').value, 
-                ativo: statusBooleano, 
-                obra_atual_id: document.getElementById('eqp-obra_atual_id').value || null 
+                nome: document.getElementById('eqp-nome').value || null,
+                cpf: document.getElementById('eqp-cpf').value || null,
+                telefone: document.getElementById('eqp-telefone').value || null,
+                categoria: document.getElementById('eqp-categoria').value || null,
+                obra_atual_id: document.getElementById('eqp-obra_atual_id').value || null,
+                valor_diaria: document.getElementById('eqp-valor_diaria').value ? parseFloat(document.getElementById('eqp-valor_diaria').value) : null,
+                ativo: document.getElementById('eqp-ativo').value === 'true',
+                rg: document.getElementById('eqp-rg').value || null,
+                endereco: document.getElementById('eqp-endereco').value || null,
+                contrato_assinado: document.getElementById('eqp-contrato_assinado').value === 'true',
+                matricula: document.getElementById('eqp-matricula').value ? parseInt(document.getElementById('eqp-matricula').value) : null
             };
             
             if(!isNew) payload.id = document.getElementById('eqp-id').value;
@@ -1421,8 +1476,7 @@
             showToast("Funcionário Salvo!"); 
             await loadData();
         }
-      
-
+        
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
   </body>
