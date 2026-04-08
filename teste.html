@@ -231,7 +231,12 @@
             </button>
             <button onclick="navigate('prod')" class="bg-white p-4 rounded-xl shadow-sm border flex items-center gap-4 active:bg-slate-50">
                 <div class="bg-indigo-100 p-3 rounded-lg text-indigo-700"><i data-lucide="package"></i></div>
-                <div class="text-left font-bold text-slate-700 flex-1">Produtos/Insumos</div>
+                <div class="text-left font-bold text-slate-700 flex-1">Produtos</div>
+                <i data-lucide="chevron-right" class="text-slate-300"></i>
+            </button>
+          <button onclick="navigate('equipe')" class="bg-white p-4 rounded-xl shadow-sm border flex items-center gap-4 active:bg-slate-50">
+                <div class="bg-orange-100 p-3 rounded-lg text-orange-700"><i data-lucide="users"></i></div>
+                <div class="text-left font-bold text-slate-700 flex-1">Equipe</div>
                 <i data-lucide="chevron-right" class="text-slate-300"></i>
             </button>
         </div>
@@ -255,6 +260,16 @@
           </div>
           <input type="text" id="prod-search" placeholder="Buscar material..." class="w-full p-3 mb-4 bg-white border border-slate-200 rounded-xl text-sm outline-none shadow-sm" onkeyup="renderProducts()">
           <div id="prod-list" class="flex flex-col gap-2 pb-4"></div>
+      </div>
+
+      <div id="view-equipe" class="hidden-section no-print">
+          <div class="flex items-center gap-3 mb-4">
+              <button onclick="navigate('menu')" class="p-2 bg-slate-200 rounded-full text-slate-600"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+              <h2 class="text-xl font-bold flex-1">Equipe</h2>
+              <button onclick="openEquipeForm()" class="bg-blue-700 text-white px-3 py-2 rounded-xl text-sm font-bold shadow"><i data-lucide="user-plus" class="w-4 h-4"></i></button>
+          </div>
+          <input type="text" id="eqp-search" placeholder="Buscar funcionário..." class="w-full p-3 mb-4 bg-white border border-slate-200 rounded-xl text-sm outline-none shadow-sm" onkeyup="renderEquipe()">
+          <div id="equipe-list" class="flex flex-col gap-2 pb-4"></div>
       </div>
 
     </main>
@@ -301,6 +316,42 @@
     </div>
 
     <div id="overlay-forms" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end justify-center no-print">
+
+      <div id="equipe-form-container" class="hidden w-full bg-white rounded-t-3xl p-5 pb-10 shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar">
+            <h3 class="font-bold text-lg mb-4 flex justify-between">Funcionário <button type="button" onclick="closeOverlayForm('equipe-form-container')" class="text-slate-400"><i data-lucide="x"></i></button></h3>
+            <form onsubmit="saveEquipe(event)" class="space-y-3">
+                <input type="hidden" id="eqp-id">
+                
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">Nome do Funcionário</label>
+                    <input type="text" id="eqp-nome" required placeholder="Ex: João da Silva" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm">
+                </div>
+                
+                <div class="flex gap-2">
+                    <div class="w-1/2">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">Função</label>
+                        <select id="eqp-funcao" required class="w-full p-2.5 bg-slate-50 border rounded-xl text-sm font-bold text-slate-700 outline-none">
+                            <option value="Servente">Servente</option>
+                            <option value="Pedreiro">Pedreiro</option>
+                        </select>
+                    </div>
+                    <div class="w-1/2">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">Status</label>
+                        <select id="eqp-status" required class="w-full p-2.5 bg-slate-50 border rounded-xl text-sm font-bold text-slate-700 outline-none">
+                            <option value="Ativo">Ativo</option>
+                            <option value="Inativo">Inativo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">Obra Alocada</label>
+                    <select id="eqp-obra" class="w-full p-2.5 bg-slate-50 border rounded-xl text-sm font-bold text-slate-700 outline-none"></select>
+                </div>
+                
+                <button type="submit" class="w-full p-3 bg-blue-700 text-white rounded-xl font-bold mt-2 shadow-lg">Salvar Funcionário</button>
+            </form>
+        </div>
         
         <div id="obra-form-container" class="hidden w-full bg-white rounded-t-3xl p-5 pb-10 shadow-2xl transition-transform max-h-[90vh] overflow-y-auto no-scrollbar">
             <h3 class="font-bold text-lg mb-4 text-slate-800 flex justify-between items-center">Dados da Obra <button type="button" onclick="closeOverlayForm('obra-form-container')" class="text-slate-400"><i data-lucide="x"></i></button></h3>
@@ -368,7 +419,7 @@
         const supabaseKey = 'sb_publishable_B2a4vA22qf4XGcrxPDRAaw_13rW51uI';
         const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], fases: [] };
+        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], fases: [], equipe: [] };
         let CART = [];
         let CURRENT_OC_ID = null; 
 
@@ -421,6 +472,7 @@
             if(viewId === 'fin') { updateSelects(); renderFinance(); }
             if(viewId === 'fornecedores') renderFornecedores();
             if(viewId === 'prod') renderProducts();
+            if(viewId === 'equipe') renderEquipe();
             
             lucide.createIcons();
             window.scrollTo(0,0);
@@ -475,7 +527,7 @@
             try {
                 const [resObras, resForn, resProd, resLog, resFases] = await Promise.all([
                     fetchAllRecords('jsp_obras'), fetchAllRecords('jsp_fornecedores'),
-                    fetchAllRecords('jsp_produtos'), fetchAllRecords('jsp_logs'), fetchAllRecords('jsp_fase')
+                    fetchAllRecords('jsp_produtos'), fetchAllRecords('jsp_logs'), fetchAllRecords('jsp_fase'), fetchAllRecords('jsp_equipe')
                 ]);
                 STATE.obras = resObras.data || [];
                 STATE.fornecedores = resForn.data || [];
@@ -502,6 +554,9 @@
         function updateSelects() {
             const htmlObras = '<option value="">Todas Obras</option>' + STATE.obras.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
             const htmlObrasStrict = '<option value="">-- Selecione Obra --</option>' + STATE.obras.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
+          // Obras na Equipe
+            const eqpObra = document.getElementById('eqp-obra'); 
+            if(eqpObra && !eqpObra.value) eqpObra.innerHTML = htmlObrasStrict;
             
             // Fases
             const htmlFases = '<option value="">-- Fase (Geral) --</option>' + STATE.fases.map(f => `<option value="${f.nome}">${f.ordem} - ${f.nome}</option>`).join('');
@@ -1292,6 +1347,87 @@
             if(!isNew) payload.id = document.getElementById('prd-id').value;
             await sb.from('jsp_produtos').upsert(payload); closeOverlayForm('prod-form-container'); showToast("Salvo!"); loadData();
         }
+
+
+// ====== EQUIPE ======
+        function renderEquipe() {
+            const term = document.getElementById('eqp-search').value.toLowerCase();
+            
+            // ATENÇÃO: Se as suas colunas de nome e função tiverem outro nome, mude o 'e.nome' e 'e.funcao' abaixo
+            const fil = STATE.equipe.filter(e => 
+                (e.nome || '').toLowerCase().includes(term) || 
+                (e.funcao || '').toLowerCase().includes(term)
+            );
+            
+            document.getElementById('equipe-list').innerHTML = fil.map(e => {
+                // Mude o 'e.obra_id' se a sua coluna de ID da obra for outra
+                const obra = STATE.obras.find(x => x.id == e.obra_id);
+                const nomeObra = obra ? obra.nome : 'Sem obra alocada';
+                
+                // Mude o 'e.status' se a sua coluna de status for outra
+                const isAtivo = e.status === 'Ativo' || e.status === true; 
+
+                return `
+                <div class="bg-white p-3 rounded-xl border border-slate-200 flex justify-between items-center shadow-sm">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <h4 class="font-bold text-slate-800 text-xs">${e.nome || '-'}</h4>
+                            <span class="${isAtivo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} text-[8px] font-bold px-1.5 py-0.5 rounded">${isAtivo ? 'ATIVO' : 'INATIVO'}</span>
+                        </div>
+                        <p class="text-[10px] text-slate-500 font-bold uppercase">${e.funcao || '-'}</p>
+                        <p class="text-[9px] text-blue-600 mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${nomeObra}</p>
+                    </div>
+                    <button onclick="openEquipeForm('${e.id}')" class="p-1.5 bg-slate-100 text-blue-600 rounded-lg shrink-0"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                </div>`;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function openEquipeForm(id) {
+            if(id) {
+                const e = STATE.equipe.find(x => x.id == id); 
+                document.getElementById('eqp-id').value = e.id;
+                
+                // Mude os nomes (e.nome, e.funcao, etc) conforme as colunas do seu banco
+                document.getElementById('eqp-nome').value = e.nome || ''; 
+                document.getElementById('eqp-funcao').value = e.funcao || 'Servente';
+                document.getElementById('eqp-status').value = e.status || 'Ativo';
+                document.getElementById('eqp-obra').value = e.obra_id || '';
+            } else { 
+                document.getElementById('equipe-form-container').querySelector('form').reset(); 
+                document.getElementById('eqp-id').value = ''; 
+                document.getElementById('eqp-funcao').value = 'Servente';
+                document.getElementById('eqp-status').value = 'Ativo';
+            }
+            openOverlayForm('equipe-form-container');
+        }
+
+        async function saveEquipe(e) {
+            e.preventDefault(); 
+            showLoading(true);
+            const isNew = !document.getElementById('eqp-id').value;
+            
+            // ATENÇÃO RV: Aqui você mapeia exatamente como está no seu banco!
+            // Do lado esquerdo (nome, funcao, status, obra_id) são os nomes das colunas no Supabase.
+            const payload = { 
+                nome: document.getElementById('eqp-nome').value, 
+                funcao: document.getElementById('eqp-funcao').value, 
+                status: document.getElementById('eqp-status').value, 
+                obra_id: document.getElementById('eqp-obra').value ? parseInt(document.getElementById('eqp-obra').value) : null 
+            };
+            
+            if(!isNew) payload.id = document.getElementById('eqp-id').value;
+            
+            // ATENÇÃO: Troque pelo nome real da sua tabela
+            const { error } = await sb.from('jsp_equipe').upsert(payload);
+            
+            if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
+            
+            closeOverlayForm('equipe-form-container'); 
+            showToast("Funcionário Salvo!"); 
+            await loadData(); // Recarrega os dados para atualizar a lista
+        }
+      
 
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
