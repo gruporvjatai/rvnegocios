@@ -280,8 +280,8 @@
                   <option value="">Todas as Obras</option>
               </select>
               <select id="eqp-filter-status" onchange="renderEquipe()" class="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 shadow-sm">
+                  <option value="true" selected>Ativos</option>
                   <option value="">Todos os Status</option>
-                  <option value="true">Ativos</option>
                   <option value="false">Inativos</option>
               </select>
           </div>
@@ -1426,6 +1426,8 @@
                 const isAtivoStatus = filterStatus === 'true';
                 fil = fil.filter(e => (e.ativo === true || e.ativo === 'true') === isAtivoStatus);
             }
+
+            fil.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
             
             document.getElementById('equipe-list').innerHTML = fil.map(e => {
                 const obra = STATE.obras.find(x => x.id == e.obra_atual_id);
