@@ -1488,66 +1488,79 @@
         }
 
         async function saveEquipe(e) {
-            e.preventDefault(); 
-            showLoading(true);
+    if (e) e.preventDefault();
+    showLoading(true);
 
-            const idCampo = document.getElementById('eqp-id');
-            const isNew = !idCampo || !idCampo.value;
-            
-            // Função de segurança para ler os campos sem dar erro
-            const getV = (id) => {
-                const el = document.getElementById(id);
-                return el ? el.value.trim() : '';
-            };
+    // 1. Tenta achar os campos por vários nomes possíveis (IDs comuns em mobile)
+    const findEl = (ids) => {
+        for (let id of ids) {
+            let el = document.getElementById(id);
+            if (el) return el;
+        }
+        return null;
+    };
 
-            const payload = {
-                nome: getV('eqp-name'),
-                categoria: getV('eqp-cat'),
-                telefone: getV('eqp-phone'),
-                cpf: getV('eqp-cpf'),
-                rg: getV('eqp-rg'),
-                endereco: getV('eqp-endereco'),
-                obra_atual_id: getV('eqp-obra') || null,
-                valor_diaria: parseFloat(getV('eqp-diaria')) || 0
-            };
+    // Mapeamento automático: tenta o ID do sistema principal e variações comuns
+    const campoNome = findEl(['eqp-name', 'nome', 'funcionario-nome', 'input-nome']);
+    const campoId = findEl(['eqp-id', 'id-hidden', 'func-id']);
+    
+    // 2. Captura dos dados (Se não achar o campo, salva vazio em vez de travar)
+    const payload = {
+        nome: campoNome ? campoNome.value.trim() : '',
+        categoria: (document.getElementById('eqp-cat') || {value: ''}).value,
+        telefone: (document.getElementById('eqp-phone') || {value: ''}).value,
+        cpf: (document.getElementById('eqp-cpf') || {value: ''}).value,
+        rg: (document.getElementById('eqp-rg') || {value: ''}).value,
+        endereco: (document.getElementById('eqp-endereco') || {value: ''}).value,
+        obra_atual_id: (document.getElementById('eqp-obra') || {value: null}).value,
+        valor_diaria: parseFloat((document.getElementById('eqp-diaria') || {value: 0}).value) || 0
+    };
 
-            // TRAVA DE SEGURANÇA: Não deixa salvar se o nome estiver em branco
-            if (!payload.nome) {
-                showLoading(false);
-                return showToast("Erro: O nome do colaborador é obrigatório!", true);
-            }
-            
-            if(isNew) {
-                // 1. Gera ID (UUID) compatível com qualquer navegador
-                payload.id = (window.isSecureContext && crypto.randomUUID) 
-                    ? crypto.randomUUID() 
-                    : ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
-                
-                // 2. Lógica da Matrícula: Procura o maior número na coluna MATRICULA (e não no ID)
-                let maxMat = 0;
-                STATE.equipe.forEach(item => {
-                    const m = parseInt(item.matricula);
-                    if(!isNaN(m) && m > maxMat) maxMat = m;
-                });
-                payload.matricula = maxMat + 1;
+    // BLOQUEIO: Se mesmo assim não achou o nome, para aqui e avisa
+    if (!payload.nome) {
+        showLoading(false);
+        console.error("IDs não encontrados no HTML. Verifique o ID do campo Nome.");
+        return showToast("Erro: Sistema não localizou o campo de Nome no HTML!", true);
+    }
 
-                payload.ativo = true;
-                payload.contrato_assinado = false;
-            } else {
-                payload.id = idCampo.value;
-            }
+    const isNew = !campoId || !campoId.value;
 
-            const { error } = await sb.from('jsp_equipe').upsert(payload);
-            
-            if(error) { 
-                showLoading(false); 
-                return showToast("Erro no banco: " + error.message, true); 
-            }
-            
-            document.getElementById('equipe-form-container').classList.add('hidden');
-            showToast("Colaborador salvo com sucesso!"); 
-            loadData();
-        }        
+    if (isNew) {
+        // GERA UUID REAL (Para não dar erro de "null" no banco)
+        payload.id = crypto.randomUUID();
+        
+        // GERA MATRÍCULA SEQUENCIAL (Baseado na lista carregada)
+        let maxMat = 0;
+        if (STATE.equipe && STATE.equipe.length > 0) {
+            STATE.equipe.forEach(item => {
+                let m = parseInt(item.matricula);
+                if (!isNaN(m) && m > maxMat) maxMat = m;
+            });
+        }
+        payload.matricula = maxMat > 0 ? maxMat + 1 : 133; // Começa do 133 se falhar
+
+        payload.ativo = true;
+        payload.contrato_assinado = false;
+    } else {
+        payload.id = campoId.value;
+    }
+
+    // 3. Gravação no Supabase
+    const { error } = await sb.from('jsp_equipe').upsert(payload);
+
+    if (error) {
+        showLoading(false);
+        return showToast("Erro no Banco: " + error.message, true);
+    }
+
+    // 4. Sucesso
+    const modal = document.getElementById('equipe-form-container');
+    if (modal) modal.classList.add('hidden');
+    
+    showToast("Salvo com sucesso!");
+    loadData();
+}
+      
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
   </body>
