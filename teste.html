@@ -1491,14 +1491,17 @@
             e.preventDefault(); 
             showLoading(true);
 
-            const isNew = !document.getElementById('eqp-id').value;
+            // 1. Identifica se é novo ou edição
+            const idCampo = document.getElementById('eqp-id');
+            const isNew = !idCampo || !idCampo.value;
             
-            // Função auxiliar para ler o valor com segurança (se o campo não existir, retorna vazio)
+            // 2. Função de segurança para ler o HTML sem dar erro de "null"
             const getVal = (id) => {
                 const el = document.getElementById(id);
                 return el ? el.value : '';
             };
 
+            // 3. Monta o objeto de dados (Payload)
             const payload = {
                 nome: getVal('eqp-name'),
                 categoria: getVal('eqp-cat'),
@@ -1511,16 +1514,21 @@
             };
             
             if(isNew) {
-                // Usa a lógica do sistema principal para gerar o próximo ID
-                const novoId = getNextIdNum(STATE.equipe).toString();
-                payload.id = novoId;
-                payload.matricula = novoId; // Garante a matrícula igual ao ID
+                // LOGICA DO SISTEMA PRINCIPAL
+                // Gera um UUID para o ID do banco
+                payload.id = crypto.randomUUID(); 
+                
+                // Gera o número sequencial (Matrícula) usando sua função existente
+                payload.matricula = getNextIdNum(STATE.equipe); 
+                
                 payload.ativo = true;
                 payload.contrato_assinado = false;
             } else {
-                payload.id = document.getElementById('eqp-id').value;
+                // Se for edição, mantém o ID que já existe
+                payload.id = idCampo.value;
             }
 
+            // 4. Grava no Supabase
             const { error } = await sb.from('jsp_equipe').upsert(payload);
             
             if(error) { 
@@ -1528,8 +1536,11 @@
                 return showToast("Erro: " + error.message, true); 
             }
             
-            document.getElementById('equipe-form-container').classList.add('hidden');
-            showToast("Membro salvo com sucesso!"); 
+            // 5. Finaliza
+            const modal = document.getElementById('equipe-form-container');
+            if(modal) modal.classList.add('hidden');
+            
+            showToast("Colaborador salvo com sucesso!"); 
             loadData();
         }
         
