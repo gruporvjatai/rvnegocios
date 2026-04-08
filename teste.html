@@ -1488,25 +1488,33 @@
         }
 
         async function saveEquipe(e) {
-            e.preventDefault(); showLoading(true);
+            e.preventDefault(); 
+            showLoading(true);
+
             const isNew = !document.getElementById('eqp-id').value;
+            
+            // Função auxiliar para ler o valor com segurança (se o campo não existir, retorna vazio)
+            const getVal = (id) => {
+                const el = document.getElementById(id);
+                return el ? el.value : '';
+            };
+
             const payload = {
-                nome: document.getElementById('eqp-name').value,
-                categoria: document.getElementById('eqp-cat').value,
-                telefone: document.getElementById('eqp-phone').value,
-                cpf: document.getElementById('eqp-cpf').value,
-                rg: document.getElementById('eqp-rg').value,
-                endereco: document.getElementById('eqp-endereco').value,
-                obra_atual_id: document.getElementById('eqp-obra').value || null,
-                valor_diaria: parseFloat(document.getElementById('eqp-diaria').value) || 0
+                nome: getVal('eqp-name'),
+                categoria: getVal('eqp-cat'),
+                telefone: getVal('eqp-phone'),
+                cpf: getVal('eqp-cpf'),
+                rg: getVal('eqp-rg'),
+                endereco: getVal('eqp-endereco'),
+                obra_atual_id: getVal('eqp-obra') || null,
+                valor_diaria: parseFloat(getVal('eqp-diaria')) || 0
             };
             
             if(isNew) {
-                // GERADOR DE ID SEGURO: Pega o maior ID da equipe e soma + 1
+                // Usa a lógica do sistema principal para gerar o próximo ID
                 const novoId = getNextIdNum(STATE.equipe).toString();
-                
                 payload.id = novoId;
-                payload.matricula = novoId; // Já salva a matrícula com o mesmo número do ID!
+                payload.matricula = novoId; // Garante a matrícula igual ao ID
                 payload.ativo = true;
                 payload.contrato_assinado = false;
             } else {
@@ -1514,10 +1522,15 @@
             }
 
             const { error } = await sb.from('jsp_equipe').upsert(payload);
-            if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
+            
+            if(error) { 
+                showLoading(false); 
+                return showToast("Erro: " + error.message, true); 
+            }
             
             document.getElementById('equipe-form-container').classList.add('hidden');
-            showToast("Membro salvo na equipe!"); loadData();
+            showToast("Membro salvo com sucesso!"); 
+            loadData();
         }
         
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
