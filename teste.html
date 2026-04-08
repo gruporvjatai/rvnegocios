@@ -1488,79 +1488,33 @@
         }
 
         async function saveEquipe(e) {
-    if (e) e.preventDefault();
-    showLoading(true);
-
-    // 1. Tenta achar os campos por vários nomes possíveis (IDs comuns em mobile)
-    const findEl = (ids) => {
-        for (let id of ids) {
-            let el = document.getElementById(id);
-            if (el) return el;
+            e.preventDefault(); 
+            showLoading(true);
+            const isNew = !document.getElementById('eqp-id').value;
+            
+            const payload = { 
+                nome: document.getElementById('eqp-nome').value || null,
+                cpf: document.getElementById('eqp-cpf').value || null,
+                telefone: document.getElementById('eqp-telefone').value || null,
+                categoria: document.getElementById('eqp-categoria').value || null,
+                obra_atual_id: document.getElementById('eqp-obra_atual_id').value || null,
+                valor_diaria: document.getElementById('eqp-valor_diaria').value ? parseFloat(document.getElementById('eqp-valor_diaria').value) : null,
+                ativo: document.getElementById('eqp-ativo').value === 'true',
+                rg: document.getElementById('eqp-rg').value || null,
+                endereco: document.getElementById('eqp-endereco').value || null
+            };
+            
+            if(!isNew) payload.id = document.getElementById('eqp-id').value;
+            
+            const { error } = await sb.from('jsp_equipe').upsert(payload);
+            
+            if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
+            
+            closeOverlayForm('equipe-form-container'); 
+            showToast("Funcionário Salvo!"); 
+            await loadData();
         }
-        return null;
-    };
-
-    // Mapeamento automático: tenta o ID do sistema principal e variações comuns
-    const campoNome = findEl(['eqp-name', 'nome', 'funcionario-nome', 'input-nome']);
-    const campoId = findEl(['eqp-id', 'id-hidden', 'func-id']);
-    
-    // 2. Captura dos dados (Se não achar o campo, salva vazio em vez de travar)
-    const payload = {
-        nome: campoNome ? campoNome.value.trim() : '',
-        categoria: (document.getElementById('eqp-cat') || {value: ''}).value,
-        telefone: (document.getElementById('eqp-phone') || {value: ''}).value,
-        cpf: (document.getElementById('eqp-cpf') || {value: ''}).value,
-        rg: (document.getElementById('eqp-rg') || {value: ''}).value,
-        endereco: (document.getElementById('eqp-endereco') || {value: ''}).value,
-        obra_atual_id: (document.getElementById('eqp-obra') || {value: null}).value,
-        valor_diaria: parseFloat((document.getElementById('eqp-diaria') || {value: 0}).value) || 0
-    };
-
-    // BLOQUEIO: Se mesmo assim não achou o nome, para aqui e avisa
-    if (!payload.nome) {
-        showLoading(false);
-        console.error("IDs não encontrados no HTML. Verifique o ID do campo Nome.");
-        return showToast("Erro: Sistema não localizou o campo de Nome no HTML!", true);
-    }
-
-    const isNew = !campoId || !campoId.value;
-
-    if (isNew) {
-        // GERA UUID REAL (Para não dar erro de "null" no banco)
-        payload.id = crypto.randomUUID();
         
-        // GERA MATRÍCULA SEQUENCIAL (Baseado na lista carregada)
-        let maxMat = 0;
-        if (STATE.equipe && STATE.equipe.length > 0) {
-            STATE.equipe.forEach(item => {
-                let m = parseInt(item.matricula);
-                if (!isNaN(m) && m > maxMat) maxMat = m;
-            });
-        }
-        payload.matricula = maxMat > 0 ? maxMat + 1 : 133; // Começa do 133 se falhar
-
-        payload.ativo = true;
-        payload.contrato_assinado = false;
-    } else {
-        payload.id = campoId.value;
-    }
-
-    // 3. Gravação no Supabase
-    const { error } = await sb.from('jsp_equipe').upsert(payload);
-
-    if (error) {
-        showLoading(false);
-        return showToast("Erro no Banco: " + error.message, true);
-    }
-
-    // 4. Sucesso
-    const modal = document.getElementById('equipe-form-container');
-    if (modal) modal.classList.add('hidden');
-    
-    showToast("Salvo com sucesso!");
-    loadData();
-}
-      
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
   </body>
