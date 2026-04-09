@@ -449,6 +449,25 @@
         </div>
     </div>
 
+  <div id="modal-sucesso-matricula" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-3xl p-6 w-full max-w-xs text-center shadow-2xl">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="check-circle" class="w-8 h-8 text-green-600"></i>
+            </div>
+            <h3 class="text-xl font-black text-slate-800 mb-1">Cadastrado!</h3>
+            <p class="text-xs text-slate-500 mb-5 font-bold truncate" id="sucesso-nome">Nome do Funcionario</p>
+            
+            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6 shadow-inner">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Matrícula (Ponto)</p>
+                <p class="text-5xl font-black text-blue-700" id="sucesso-num-matricula">000</p>
+            </div>
+            
+            <button onclick="document.getElementById('modal-sucesso-matricula').classList.add('hidden')" class="w-full bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-transform">
+                OK, Anotado
+            </button>
+        </div>
+    </div>
+
     <div id="print-area" class="print-only"></div>
 
     <script>
@@ -1561,70 +1580,85 @@
         }
 
 // 2. Sua função original, apenas com proteção contra campos nulos
-async function saveEquipe(e) {
-            e.preventDefault(); 
-            showLoading(true);
-
-            // 1. Lendo os campos EXATAMENTE com os IDs do seu HTML Mobile
-            const nomeEl = document.getElementById('eqp-nome');
-            const catEl = document.getElementById('eqp-categoria');
-            const telEl = document.getElementById('eqp-telefone');
-            const cpfEl = document.getElementById('eqp-cpf');
-            const rgEl = document.getElementById('eqp-rg');
-            const endEl = document.getElementById('eqp-endereco');
-            const obraEl = document.getElementById('eqp-obra_atual_id');
-            const diariaEl = document.getElementById('eqp-valor_diaria');
-            const ativoEl = document.getElementById('eqp-ativo');
-            const idAtualEl = document.getElementById('eqp-id');
-
-            const idAtual = idAtualEl ? idAtualEl.value : '';
-            const isNew = !idAtual;
-
-            // 2. Montando o pacote baseado 100% nos tipos da sua tabela
-            const payload = {
-                nome: nomeEl ? nomeEl.value.trim() : '',
-                categoria: catEl ? catEl.value : '',
-                telefone: telEl ? telEl.value : '',
-                cpf: cpfEl ? cpfEl.value : '',
-                rg: rgEl ? rgEl.value : '',
-                endereco: endEl ? endEl.value : '',
-                obra_atual_id: (obraEl && obraEl.value) ? obraEl.value : null, 
-                valor_diaria: diariaEl ? (parseFloat(diariaEl.value) || 0) : 0, 
-                ativo: ativoEl ? (ativoEl.value === 'true') : true 
-            };
-
-            if(isNew) {
-                // Gerador de ID para a coluna 'id' (text)
-                payload.id = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); });
-                
-                // Cálculo para a coluna 'matricula' (integer)
-                let maxMat = 0;
-                if (STATE.equipe && STATE.equipe.length > 0) {
-                    STATE.equipe.forEach(item => {
-                        let m = parseInt(item.matricula);
-                        if (!isNaN(m) && m > maxMat) maxMat = m;
-                    });
-                }
-                payload.matricula = maxMat > 0 ? maxMat + 1 : 133;
-                payload.contrato_assinado = false;
-            } else {
-                payload.id = idAtual;
-            }
-
-            // 3. Envio para o Supabase
-            const { error } = await sb.from('jsp_equipe').upsert(payload);
-            
-            if(error) { 
-                showLoading(false); 
-                return showToast("Erro do Banco: " + error.message, true); 
-            }
-            
-            const modal = document.getElementById('equipe-form-container');
-            if(modal) modal.classList.add('hidden');
-            
-            showToast("Funcionário salvo com sucesso!"); 
-            loadData();
-        }  
+              async function saveEquipe(e) {
+                          e.preventDefault(); 
+                          showLoading(true);
+              
+                          // 1. Função auxiliar para ler os valores do HTML com segurança
+                          const getV = (id) => {
+                              const el = document.getElementById(id);
+                              return el ? el.value : '';
+                          };
+              
+                          const idAtual = getV('eqp-id');
+                          const isNew = !idAtual;
+              
+                          // 2. Montando o pacote de dados com os IDs exatos da tela
+                          const payload = {
+                              nome: getV('eqp-nome').trim(),
+                              categoria: getV('eqp-categoria'),
+                              telefone: getV('eqp-telefone'),
+                              cpf: getV('eqp-cpf'),
+                              rg: getV('eqp-rg'),
+                              endereco: getV('eqp-endereco'),
+                              obra_atual_id: getV('eqp-obra_atual_id') || null,
+                              valor_diaria: parseFloat(getV('eqp-valor_diaria')) || 0,
+                              ativo: getV('eqp-ativo') === 'true'
+                          };
+              
+                          if(isNew) {
+                              // Gerador de ID (UUID)
+                              payload.id = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); });
+                              
+                              // Calcula a Matrícula Sequencial automaticamente
+                              let maxMat = 0;
+                              if (STATE.equipe && STATE.equipe.length > 0) {
+                                  STATE.equipe.forEach(item => {
+                                      let m = parseInt(item.matricula);
+                                      if (!isNaN(m) && m > maxMat) maxMat = m;
+                                  });
+                              }
+                              payload.matricula = maxMat > 0 ? maxMat + 1 : 133;
+                              payload.contrato_assinado = false;
+                          } else {
+                              payload.id = idAtual;
+                          }
+              
+                          // 3. Envio para o banco de dados (Supabase)
+                          const { error } = await sb.from('jsp_equipe').upsert(payload);
+                          
+                          if(error) { 
+                              showLoading(false); 
+                              return showToast("Erro do Banco: " + error.message, true); 
+                          }
+                          
+                          // 4. Fechando o formulário e matando o fundo escuro na marra
+                          const modalForm = document.getElementById('equipe-form-container');
+                          const fundoEscuro = document.getElementById('overlay-forms');
+                          if(modalForm) modalForm.classList.add('hidden');
+                          if(fundoEscuro) fundoEscuro.classList.add('hidden');
+                          
+                          // 5. Exibindo as notificações de sucesso
+                          if(isNew) {
+                              // Mostra o Cartão Bonitão com a Matrícula
+                              const nomeEl = document.getElementById('sucesso-nome');
+                              const matEl = document.getElementById('sucesso-num-matricula');
+                              const modalSucesso = document.getElementById('modal-sucesso-matricula');
+                              
+                              if(nomeEl) nomeEl.innerText = payload.nome;
+                              if(matEl) matEl.innerText = payload.matricula;
+                              if(modalSucesso) modalSucesso.classList.remove('hidden');
+                              
+                              lucide.createIcons();
+                          } else {
+                              // Se for só uma edição, mostra o aviso rápido
+                              showToast("Funcionário atualizado com sucesso!"); 
+                          }
+                          
+                          // 6. Atualiza a lista e volta pra aba da equipe
+                          await loadData();
+                          navigate('equipe');
+                      }
         
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
