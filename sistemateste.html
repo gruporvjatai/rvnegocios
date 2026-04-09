@@ -1504,7 +1504,7 @@ async function buscarRegistrosEletronicos() {
 
                 fracao = totalHoras / JORNADA_BASE_HORAS;
 
-                if (fracao > 0.90) fracao = 1;
+                if (fracao > 1) fracao = 1;
                 else if (fracao < 0) fracao = 0;
                 else fracao = parseFloat(fracao.toFixed(2));
 
@@ -3846,7 +3846,7 @@ async function calcularDiariasPorHora(funcionarioId, obraId, dataInicioIso, data
 
                 let fracao = totalHoras / JORNADA_BASE_HORAS;
 
-                if (fracao > 0.90) fracao = 1;
+                if (fracao > 1) fracao = 1;
                 else if (fracao < 0) fracao = 0;
                 else fracao = parseFloat(fracao.toFixed(2));
 
