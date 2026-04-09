@@ -1936,7 +1936,7 @@ function imprimirFolhaPontoEletronico() {
         </div>
         `;
     } else if (tipo === 'contrato1') {
-        titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS PARA FORNECIMENTO DE MÃO DE OBRA QUALIFICADA PARA SERVIÇOS DE CONSTRUÇÃO CIVIL<br><br>SEM VÍNCULO EMPREGATÍCIO Nº ____ /2026 <br> JATAÍ – GOIÁS`;
+        titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS PARA FORNECIMENTO DE MÃO DE OBRA QUALIFICADA PARA SERVIÇOS DE CONSTRUÇÃO CIVIL<br><br>SEM VÍNCULO EMPREGATÍCIO Nº ${(e.matricula || '____ /2026').toUpperCase()} <br> JATAÍ – GOIÁS`;
         
         corpoTexto = `
         <div style="text-align: justify; font-size: 11pt; line-height: 1.6;">
@@ -1996,7 +1996,7 @@ function imprimirFolhaPontoEletronico() {
             </div>
 
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA QUINTA – DO PRAZO</strong></p>
-            <p style="text-indent: 40px; margin-bottom: 30px;">O contrato terá início em <strong>${hojeCurto}</strong> e término em <strong>31/05/2026</strong>, podendo ser prorrogado até o limite de 24 (vinte e quatro) meses.</p>
+            <p style="text-indent: 40px; margin-bottom: 30px;">O contrato terá início em <strong> ____/____/_______</strong> e término em <strong>31/05/2026</strong>, podendo ser prorrogado até o limite de 24 (vinte e quatro) meses.</p>
 
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA SEXTA – DA RESCISÃO</strong></p>
             <p style="margin-bottom: 30px;">O contrato poderá ser rescindido por qualquer das partes mediante aviso prévio de 5 (cinco) dias, ou de forma imediata nos casos previstos neste instrumento.</p>
@@ -2079,7 +2079,7 @@ function imprimirFolhaPontoEletronico() {
             </div>
 
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA QUINTA – DO PRAZO</strong></p>
-            <p style="text-indent: 40px; margin-bottom: 30px;">O contrato terá início em <strong>${hojeCurto}</strong> e término em <strong> 31/05/2026 </strong>, podendo ser prorrogado até o limite de 24 (vinte e quatro) meses.</p>
+            <p style="text-indent: 40px; margin-bottom: 30px;">O contrato terá início em <strong>____/____/_______</strong> e término em <strong> 31/05/2026 </strong>, podendo ser prorrogado até o limite de 24 (vinte e quatro) meses.</p>
 
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA SEXTA – DA RESCISÃO</strong></p>
             <p style="text-indent: 40px; margin-bottom: 30px;">O contrato poderá ser rescindido por qualquer das partes mediante aviso prévio de 5 (cinco) dias, ou de forma imediata nos casos previstos neste instrumento.</p>
@@ -2119,7 +2119,7 @@ function imprimirFolhaPontoEletronico() {
             </div>
             
             <div style="text-align: right; margin-bottom: 60px; font-size: 11pt;">
-                Jataí – GO, ${dataExtenso}.
+                Jataí – GO, ____/____/_______.
             </div>
             
             <div style="margin-top: 50px; display: flex; justify-content: space-between; font-size: 11pt;">
