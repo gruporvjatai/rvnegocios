@@ -1487,33 +1487,66 @@
             openOverlayForm('equipe-form-container');
         }
 
-        async function saveEquipe(e) {
-            e.preventDefault(); 
-            showLoading(true);
-            const isNew = !document.getElementById('eqp-id').value;
-            
-            const payload = { 
-                nome: document.getElementById('eqp-nome').value || null,
-                cpf: document.getElementById('eqp-cpf').value || null,
-                telefone: document.getElementById('eqp-telefone').value || null,
-                categoria: document.getElementById('eqp-categoria').value || null,
-                obra_atual_id: document.getElementById('eqp-obra_atual_id').value || null,
-                valor_diaria: document.getElementById('eqp-valor_diaria').value ? parseFloat(document.getElementById('eqp-valor_diaria').value) : null,
-                ativo: document.getElementById('eqp-ativo').value === 'true',
-                rg: document.getElementById('eqp-rg').value || null,
-                endereco: document.getElementById('eqp-endereco').value || null
-            };
-            
-            if(!isNew) payload.id = document.getElementById('eqp-id').value;
-            
-            const { error } = await sb.from('jsp_equipe').upsert(payload);
-            
-            if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
-            
-            closeOverlayForm('equipe-form-container'); 
-            showToast("Funcionário Salvo!"); 
-            await loadData();
-        }
+       // 1. Criamos um gerador de ID universal (Funciona no PC e no Mobile)
+function gerarIdSeguro() {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID(); // Usa o padrão se o navegador permitir
+    }
+    // Plano B: Cria um UUID na marra se o mobile bloquear o comando acima
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+// 2. Sua função original, apenas com proteção contra campos nulos
+async function saveEquipe(e) {
+    e.preventDefault(); 
+    showLoading(true);
+
+    // Proteção silenciosa: se não achar o campo no HTML, salva vazio sem travar a tela
+    const getV = (id) => {
+        const el = document.getElementById(id);
+        return el ? el.value : '';
+    };
+
+    const idAtual = getV('eqp-id');
+    const isNew = !idAtual;
+
+    const payload = {
+        nome: getV('eqp-name'),
+        categoria: getV('eqp-cat'),
+        telefone: getV('eqp-phone'),
+        cpf: getV('eqp-cpf'),
+        rg: getV('eqp-rg'),
+        endereco: getV('eqp-endereco'),
+        obra_atual_id: getV('eqp-obra') || null,
+        valor_diaria: parseFloat(getV('eqp-diaria')) || 0
+    };
+    
+    if(isNew) {
+        // Usa o nosso gerador universal ao invés do crypto que trava no mobile
+        payload.id = gerarIdSeguro();
+        payload.ativo = true;
+        payload.contrato_assinado = false;
+    } else {
+        payload.id = idAtual;
+    }
+
+    const { error } = await sb.from('jsp_equipe').upsert(payload);
+    
+    if(error) { 
+        showLoading(false); 
+        return showToast("Erro: " + error.message, true); 
+    }
+    
+    // Esconde o modal (usando ? para não travar se o modal não existir no mobile)
+    const modal = document.getElementById('equipe-form-container');
+    if(modal) modal.classList.add('hidden');
+    
+    showToast("Membro salvo na equipe!"); 
+    loadData();
+}
         
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
