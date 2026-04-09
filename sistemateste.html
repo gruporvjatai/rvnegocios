@@ -605,8 +605,8 @@
                         <thead>
                             <tr class="bg-slate-100 border-b border-slate-200 text-slate-600">
                                 <th class="p-2 text-[10px] uppercase font-bold text-center">Data</th>
-                                <th class="p-2 text-[10px] uppercase font-bold text-center">Entrada</th>
-                                <th class="p-2 text-[10px] uppercase font-bold text-center">Saída</th>
+                                <th class="p-2 text-[10px] uppercase font-bold text-center">Manhã</th>
+                                <th class="p-2 text-[10px] uppercase font-bold text-center">Tarde</th>
                                 <th class="p-2 text-[10px] uppercase font-bold text-center">Diária (Fração)</th>
                             </tr>
                         </thead>
@@ -1473,11 +1473,13 @@ async function buscarRegistrosEletronicos() {
         diasArray.forEach(registro => {
             // Ordena cronologicamente os pontos do dia
             let pt = registro.pontos.sort((a, b) => a.hora - b.hora);
-            let entradas = pt.filter(p => p.tipo === 'ENTRADA');
-            let saidas = pt.filter(p => p.tipo === 'SAIDA');
             
             let fracao = 0;
             let totalHoras = 0;
+
+            // Pega as entradas e saídas separadas para o fallback caso falte batida
+            let entradas = pt.filter(p => p.tipo === 'ENTRADA');
+            let saidas = pt.filter(p => p.tipo === 'SAIDA');
 
             if (entradas.length > 0 && saidas.length > 0) {
                 if (pt.length >= 4) {
@@ -1488,7 +1490,7 @@ async function buscarRegistrosEletronicos() {
                     if (msManha > 0) totalHoras += msManha / (1000 * 60 * 60);
                     if (msTarde > 0) totalHoras += msTarde / (1000 * 60 * 60);
                 } else {
-                    // Fallback: Se bateu menos de 4x, usa primeira entrada e última saída descontando almoço (se > 6h)
+                    // Fallback: Se bateu menos de 4x, usa primeira entrada e última saída descontando almoço
                     let diffMilisegundos = saidas[saidas.length - 1].hora - entradas[0].hora;
                     let horasBrutas = diffMilisegundos / (1000 * 60 * 60);
                     if (horasBrutas >= 6) horasBrutas -= 1; // Desconto de almoço
@@ -1511,11 +1513,20 @@ async function buscarRegistrosEletronicos() {
 
             const dataStr = registro.rawDate.toLocaleDateString('pt-BR', {timeZone: 'UTC'});
             
-            // Textos formatados para as colunas da interface web (mostra todos na mesma célula pra não quebrar a table)
-            let entradasHtml = entradas.map(e => `<span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold inline-block mx-0.5">${e.hora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit', timeZone: 'UTC'})}</span>`).join('') || '--:--';
-            let saidasHtml = saidas.map(s => `<span class="bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold inline-block mx-0.5">${s.hora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit', timeZone: 'UTC'})}</span>`).join('') || '--:--';
+            // Função auxiliar para criar as tags de hora com a cor correta
+            const formatHoraHtml = (dateObj, isEntrada) => {
+                if (!dateObj) return '<span class="text-slate-300 mx-0.5">--:--</span>';
+                const horaStr = dateObj.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit', timeZone: 'UTC'});
+                return isEntrada 
+                    ? `<span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold inline-block mx-0.5">${horaStr}</span>`
+                    : `<span class="bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold inline-block mx-0.5">${horaStr}</span>`;
+            };
 
-            // Dados limpos pros 4 slots de impressão
+            // Blocos formatados para exibição no HTML
+            let manhaHtml = `${formatHoraHtml(pt[0]?.hora, true)} <span class="text-slate-300 text-[10px] mx-1">➜</span> ${formatHoraHtml(pt[1]?.hora, false)}`;
+            let tardeHtml = `${formatHoraHtml(pt[2]?.hora, true)} <span class="text-slate-300 text-[10px] mx-1">➜</span> ${formatHoraHtml(pt[3]?.hora, false)}`;
+
+            // Dados limpos pros 4 slots da impressão
             let e1 = pt.length > 0 ? pt[0].hora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit', timeZone: 'UTC'}) : '--:--';
             let s1 = pt.length > 1 ? pt[1].hora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit', timeZone: 'UTC'}) : '--:--';
             let e2 = pt.length > 2 ? pt[2].hora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit', timeZone: 'UTC'}) : '--:--';
@@ -1526,8 +1537,8 @@ async function buscarRegistrosEletronicos() {
             htmlTabela += `
             <tr class="border-b hover:bg-slate-50">
                 <td class="p-2 text-xs font-bold text-slate-700 text-center">${dataStr}</td>
-                <td class="p-2 text-xs text-center leading-loose">${entradasHtml}</td>
-                <td class="p-2 text-xs text-center leading-loose">${saidasHtml}</td>
+                <td class="p-2 text-xs text-center whitespace-nowrap">${manhaHtml}</td>
+                <td class="p-2 text-xs text-center whitespace-nowrap">${tardeHtml}</td>
                 <td class="p-2 text-xs text-center font-black text-indigo-600">${fracao}</td>
             </tr>`;
         });
