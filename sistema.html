@@ -522,7 +522,7 @@
       </div>
       
 
-      <div id="ponto-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div id="ponto-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[95vh]">
         
         <div class="bg-indigo-600 p-4 text-white flex justify-between items-center shrink-0">
@@ -568,8 +568,19 @@
             </div>
 
             <div id="ponto-view-manual" class="hidden">
+                <div class="grid grid-cols-7 gap-1 mb-2">
+                    <div class="text-center text-[10px] font-black text-red-500 uppercase">Dom</div>
+                    <div class="text-center text-[10px] font-black text-slate-400 uppercase">Seg</div>
+                    <div class="text-center text-[10px] font-black text-slate-400 uppercase">Ter</div>
+                    <div class="text-center text-[10px] font-black text-slate-400 uppercase">Qua</div>
+                    <div class="text-center text-[10px] font-black text-slate-400 uppercase">Qui</div>
+                    <div class="text-center text-[10px] font-black text-slate-400 uppercase">Sex</div>
+                    <div class="text-center text-[10px] font-black text-slate-400 uppercase">Sáb</div>
+                </div>
+            
                 <div id="ponto-grid" class="grid grid-cols-7 gap-2 mb-6">
                     </div>
+            
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-inner mb-4">
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-xs font-bold text-slate-500 uppercase">Total de Diárias:</span>
@@ -580,6 +591,7 @@
                         <span id="ponto-total-valor" class="font-black text-green-600 text-2xl">R$ 0,00</span>
                     </div>
                 </div>
+            
                 <button type="button" onclick="savePonto()" class="w-full py-3 text-sm font-black bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md flex items-center justify-center gap-2 transition">
                     <i data-lucide="check-circle" class="w-5 h-5"></i> Salvar Fechamento Manual
                 </button>
@@ -1642,28 +1654,53 @@ function imprimirFolhaPontoEletronico() {
 }
       
         function renderPontoGrid(mes, ano) {
-            const numDias = getDiasNoMes(parseInt(mes), parseInt(ano));
-            const grid = document.getElementById('ponto-grid');
-            let html = '';
-            for(let i = 1; i <= numDias; i++) {
-                const ativo = currentPontoDias.includes(i);
-                html += `<div onclick="toggleDiaPonto(${i})" class="day-btn border rounded-lg text-center p-2 font-bold text-sm ${ativo ? 'active' : 'bg-white text-slate-600 hover:bg-slate-100'}">${i}</div>`;
-            }
-            grid.innerHTML = html;
-            updatePontoTotais();
-        }
+    const grid = document.getElementById('ponto-grid');
+    grid.innerHTML = ''; // Limpa o grid
 
+    // Obtém o dia da semana em que o mês começa (0-Dom, 1-Seg, etc)
+    const primeiroDiaSemana = new Date(ano, mes - 1, 1).getDay();
+    // Obtém o total de dias no mês
+    const totalDiasMes = new Date(ano, mes, 0).getDate();
+
+    let html = '';
+
+    // 1. Cria espaços vazios para alinhar o primeiro dia do mês
+    for (let x = 0; x < primeiroDiaSemana; x++) {
+        html += `<div class="h-10"></div>`;
+    }
+
+    // 2. Cria os botões dos dias
+    for (let i = 1; i <= totalDiasMes; i++) {
+        const ativo = currentPontoDias.includes(i);
+        
+        // Estilo dinâmico: azul se marcado, branco se desmarcado
+        const classeStatus = ativo 
+            ? 'bg-blue-600 text-white border-blue-600 shadow-md' 
+            : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400 hover:bg-blue-50';
+
+        html += `
+            <div onclick="toggleDiaPonto(${i})" 
+                 class="h-10 flex items-center justify-center border rounded-lg font-bold text-sm cursor-pointer transition-all ${classeStatus}">
+                ${i}
+            </div>`;
+    }
+
+    grid.innerHTML = html;
+    updatePontoTotais();
+}
         function toggleDiaPonto(dia) {
-            if(currentPontoDias.includes(dia)) {
-                currentPontoDias = currentPontoDias.filter(d => d !== dia);
-            } else {
-                currentPontoDias.push(dia);
-            }
-            const mes = document.getElementById('eqp-filter-mes').value;
-            const ano = document.getElementById('eqp-filter-ano').value;
-            renderPontoGrid(mes, ano);
-        }
-
+    // Adiciona ou remove o dia do array de seleção
+    if(currentPontoDias.includes(dia)) {
+        currentPontoDias = currentPontoDias.filter(d => d !== dia);
+    } else {
+        currentPontoDias.push(dia);
+    }
+    
+    // Pega o mês/ano atuais para re-renderizar o grid com as cores novas
+    const mes = document.getElementById('eqp-filter-mes').value;
+    const ano = document.getElementById('eqp-filter-ano').value;
+    renderPontoGrid(mes, ano);
+}
         function updatePontoTotais() {
             const totalDias = currentPontoDias.length;
             const valor = totalDias * currentPontoDiaria;
