@@ -591,6 +591,12 @@
                         <span id="ponto-total-valor" class="font-black text-green-600 text-2xl">R$ 0,00</span>
                     </div>
                 </div>
+
+              <div class="flex gap-2 mb-4">
+                  <button type="button" onclick="imprimirFolhaPontoManual()" class="flex-1 bg-slate-100 text-slate-600 p-3 rounded-xl font-bold text-xs hover:bg-slate-200 transition flex items-center justify-center gap-2">
+                      <i data-lucide="printer" class="w-4 h-4"></i> IMPRIMIR FOLHA MANUAL
+                  </button>
+              </div>
             
                 <button type="button" onclick="savePonto()" class="w-full py-3 text-sm font-black bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md flex items-center justify-center gap-2 transition">
                     <i data-lucide="check-circle" class="w-5 h-5"></i> Salvar Fechamento Manual
@@ -1651,6 +1657,110 @@ function imprimirFolhaPontoEletronico() {
 
     document.getElementById('print-area').innerHTML = htmlImpressao;
     setTimeout(() => window.print(), 300);
+}
+
+
+      function imprimirFolhaPontoManual() {
+    const funcId = document.getElementById('ponto-equipe-id').value;
+    const e = STATE.equipe.find(x => x.id == funcId);
+    
+    // Pega o mês e ano selecionados nos filtros da tela de equipe
+    const mes = document.getElementById('eqp-filter-mes').value;
+    const ano = document.getElementById('eqp-filter-ano').value;
+    
+    if (!currentPontoDias || currentPontoDias.length === 0) {
+        return showToast("Marque ao menos um dia no calendário antes de imprimir!", true);
+    }
+
+    const totalDiasMes = new Date(ano, mes, 0).getDate();
+    const dataIni = `01/${mes}/${ano}`;
+    const dataFim = `${totalDiasMes}/${mes}/${ano}`;
+    const totalDiarias = currentPontoDias.length.toFixed(2);
+    
+    // Gerar as linhas da tabela baseada nos dias do mês
+    let htmlTabelaImp = "";
+    
+    // Ordenamos os dias clicados para a folha sair na ordem certa
+    const diasOrdenados = [...currentPontoDias].sort((a, b) => a - b);
+
+    // Loop por todos os dias do mês para gerar a folha completa
+    for (let i = 1; i <= totalDiasMes; i++) {
+        const diaFormatado = String(i).padStart(2, '0') + '/' + String(mes).padStart(2, '0') + '/' + ano;
+        const isPresente = currentPontoDias.includes(i);
+        
+        // Se o dia foi marcado, colocamos horários padrão, se não, deixamos vazio
+        const e1 = isPresente ? "07:30" : "--:--";
+        const s1 = isPresente ? "12:00" : "--:--";
+        const e2 = isPresente ? "13:00" : "--:--";
+        const s2 = isPresente ? "17:30" : "--:--";
+        const fracao = isPresente ? "1.00" : "0.00";
+
+        htmlTabelaImp += `
+            <tr>
+                <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${diaFormatado}</td>
+                <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${e1}</td>
+                <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${s1}</td>
+                <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${e2}</td>
+                <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${s2}</td>
+                <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;"></td>
+                <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center; font-weight: bold;">${fracao}</td>
+            </tr>
+        `;
+    }
+
+    const htmlImpressao = `
+        <div style="font-family: Arial, sans-serif; color: #000; width: 100%;">
+            <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px;">
+                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px; margin-bottom: 10px;" />
+                <h2 style="margin: 0; font-size: 18pt; font-weight: bold;">FOLHA DE PONTO INDIVIDUAL (MANUAL)</h2>
+                <p style="margin: 5px 0 0 0; font-size: 11pt;">Período Apurado: ${dataIni} a ${dataFim}</p>
+            </div>
+            
+            <div style="margin-bottom: 20px; font-size: 11pt;">
+                <strong>Colaborador:</strong> ${(e.nome).toUpperCase()}<br>
+                <strong>Função:</strong> ${(e.categoria || 'Geral').toUpperCase()}<br>
+                <strong>Obra:</strong> ${STATE.obras.find(o => o.id == e.obra_atual_id)?.nome || 'Não definida'}<br>
+                <strong>CPF:</strong> ${e.cpf || 'Não informado'}
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; font-size: 9pt; margin-bottom: 30px;">
+                <thead>
+                    <tr style="background-color: #f1f5f9;">
+                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Data</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Entrada 1</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Saída 1</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Entrada 2</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Saída 2</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Assinatura</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Diária</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${htmlTabelaImp}
+                </tbody>
+            </table>
+
+            <div style="text-align: right; font-size: 14pt; margin-bottom: 50px;">
+                <strong>TOTAL DE DIÁRIAS APURADAS: ${totalDiarias}</strong>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; margin-top: 60px; font-size: 10pt;">
+                <div style="text-align: center; width: 45%; border-top: 1px solid #000; padding-top: 10px;">
+                    <strong>Visto do Responsável (RV)</strong>
+                </div>
+                <div style="text-align: center; width: 45%; border-top: 1px solid #000; padding-top: 10px;">
+                    <strong>Assinatura do Colaborador</strong><br>
+                    <span style="font-size: 8pt;">Declaro corretas as anotações acima.</span>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('print-area').innerHTML = htmlImpressao;
+    setTimeout(() => {
+        window.print();
+        lucide.createIcons(); // Garante que os ícones do sistema não sumam após o print
+    }, 300);
 }
       
         function renderPontoGrid(mes, ano) {
