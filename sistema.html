@@ -1889,6 +1889,7 @@ function imprimirFolhaPontoEletronico() {
     const obraVinculada = STATE.obras.find(o => o.id == e.obra_atual_id);
     const enderecoObra = obraVinculada ? (obraVinculada.endereco || obraVinculada.nome) : 'Endereço não informado / Obra não definida';
     const diariaTexto = formatMoney(e.valor_diaria || 0);
+    const matricula = parseFloat(e.matricula || 0);/////////////
     
     let titulo = "";
     let corpoTexto = "";
@@ -1936,7 +1937,7 @@ function imprimirFolhaPontoEletronico() {
         </div>
         `;
     } else if (tipo === 'contrato1') {
-        titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS PARA FORNECIMENTO DE MÃO DE OBRA QUALIFICADA PARA SERVIÇOS DE CONSTRUÇÃO CIVIL<br><br>SEM VÍNCULO EMPREGATÍCIO Nº ${(e.matricula || '____ /2026').toUpperCase()} <br> JATAÍ – GOIÁS`;
+        titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS PARA FORNECIMENTO DE MÃO DE OBRA QUALIFICADA PARA SERVIÇOS DE CONSTRUÇÃO CIVIL<br><br>SEM VÍNCULO EMPREGATÍCIO Nº ${matricula} <br> JATAÍ – GOIÁS`;
         
         corpoTexto = `
         <div style="text-align: justify; font-size: 11pt; line-height: 1.6;">
