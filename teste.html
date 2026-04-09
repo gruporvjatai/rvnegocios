@@ -1588,14 +1588,10 @@ async function saveEquipe(e) {
                 cpf: cpfEl ? cpfEl.value : '',
                 rg: rgEl ? rgEl.value : '',
                 endereco: endEl ? endEl.value : '',
-                obra_atual_id: (obraEl && obraEl.value) ? obraEl.value : null, // texto ou nulo
-                valor_diaria: diariaEl ? (parseFloat(diariaEl.value) || 0) : 0, // numeric
-                ativo: ativoEl ? (ativoEl.value === 'true') : true // boolean real
+                obra_atual_id: (obraEl && obraEl.value) ? obraEl.value : null, 
+                valor_diaria: diariaEl ? (parseFloat(diariaEl.value) || 0) : 0, 
+                ativo: ativoEl ? (ativoEl.value === 'true') : true 
             };
-
-            // === ALARME DE TESTE (Tire essa linha depois que der certo) ===
-            alert("Sistema leu: Nome = " + payload.nome + " | Categoria = " + payload.categoria + " | Diária = " + payload.valor_diaria);
-            // ===============================================================
 
             if(isNew) {
                 // Gerador de ID para a coluna 'id' (text)
@@ -1628,7 +1624,7 @@ async function saveEquipe(e) {
             
             showToast("Funcionário salvo com sucesso!"); 
             loadData();
-        }
+        }  
         
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
