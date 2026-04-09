@@ -522,143 +522,145 @@
       </div>
       
 
-      <div id="ponto-modal" class="hidden fixed inset-0 bg-slate-900/80 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[95vh]">
-        
-        <div class="bg-indigo-600 p-4 text-white flex justify-between items-center shrink-0">
-            <div class="flex items-center gap-3">
-                <button id="ponto-btn-voltar" onclick="selecionarModoPonto('selecao')" class="hidden bg-indigo-700 hover:bg-indigo-800 p-1.5 rounded-lg transition" title="Voltar">
-                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
-                </button>
-                <div>
-                    <h3 class="font-black text-lg flex items-center gap-2">Fechamento de Ponto</h3>
-                    <p id="ponto-modal-subtitle" class="text-[11px] font-medium opacity-80 mt-0.5 text-indigo-100">Selecione o modo de lançamento</p>
-                </div>
-            </div>
-            <button onclick="document.getElementById('ponto-modal').classList.add('hidden')" class="text-white hover:bg-white/20 p-2 rounded-lg transition">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
-        </div>
-
-        <div class="p-6 overflow-y-auto flex-1 bg-white">
-            <input type="hidden" id="ponto-equipe-id">
-            
-            <div id="ponto-view-selecao" class="flex flex-col gap-4">
-                <h4 class="text-center font-bold text-slate-600 mb-2">Como deseja realizar o fechamento?</h4>
-                
-                <button onclick="selecionarModoPonto('auto')" class="p-6 border-2 border-blue-200 hover:border-blue-500 rounded-2xl bg-blue-50 hover:bg-blue-100 flex flex-col items-center gap-3 transition text-center group">
-                    <div class="p-4 bg-blue-600 text-white rounded-full group-hover:scale-110 transition-transform shadow-lg">
-                        <i data-lucide="smartphone-nfc" class="w-8 h-8"></i>
-                    </div>
-                    <div>
-                        <h5 class="font-black text-lg text-blue-800">Ponto Eletrônico (QR Code)</h5>
-                        <p class="text-xs text-blue-600 mt-1 font-medium leading-relaxed px-4">Busca os registros automáticos e calcula as frações de diária.</p>
-                    </div>
-                </button>
-
-                <button onclick="abrirModalManual()" class="p-6 border-2 border-slate-200 hover:border-slate-400 rounded-2xl bg-slate-50 hover:bg-slate-100 flex flex-col items-center gap-3 transition text-center group">
-                    <div class="p-4 bg-slate-400 text-white rounded-full group-hover:scale-110 transition-transform shadow-lg">
-                        <i data-lucide="calendar-check-2" class="w-8 h-8"></i>
-                    </div>
-                    <div>
-                        <h5 class="font-black text-lg text-slate-700">Lançamento Manual</h5>
-                        <p class="text-xs text-slate-500 mt-1 font-medium leading-relaxed px-4">Marque os dias trabalhados diretamente no calendário.</p>
-                    </div>
-                </button>
-            </div>
-
-            <div id="ponto-view-manual" class="hidden flex flex-col">
-                <div class="flex gap-2 mb-4">
-                    <select id="ponto-manual-mes" onchange="atualizarCalendarioAutomatico()" class="flex-1 p-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 bg-slate-50 outline-none focus:border-indigo-500">
-                        <option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option>
-                        <option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option>
-                        <option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option>
-                        <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
-                    </select>
-                    <select id="ponto-manual-ano" onchange="atualizarCalendarioAutomatico()" class="w-32 p-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 bg-slate-50 outline-none focus:border-indigo-500">
-                    </select>
-                </div>
-
-                <div class="grid grid-cols-7 gap-2 text-center font-bold text-slate-400 text-[10px] uppercase mb-2">
-                    <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sab</div>
-                </div>
-                
-                <div id="ponto-grid" class="grid grid-cols-7 gap-2 mb-6"></div>
-                
-                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-inner mb-6">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-[10px] font-black text-slate-500 uppercase">Total de Diárias:</span>
-                        <span id="ponto-total-dias" class="font-black text-indigo-700 text-xl">0</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-[10px] font-black text-slate-500 uppercase">Valor a Pagar:</span>
-                        <span id="ponto-total-valor" class="font-black text-green-600 text-2xl">R$ 0,00</span>
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-3">
-                    <button type="button" onclick="imprimirPontoManual()" class="py-3 text-xs font-black text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl flex items-center justify-center gap-2 transition">
-                        <i data-lucide="printer" class="w-4 h-4"></i> Imprimir
-                    </button>
-                    <button type="button" onclick="savePonto()" class="py-3 text-xs font-black bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md flex items-center justify-center gap-2 transition">
-                        <i data-lucide="check-circle" class="w-4 h-4"></i> Salvar Fechamento
-                    </button>
-                </div>
-            </div>
-
-            <div id="ponto-view-auto" class="hidden flex flex-col">
-                <div class="flex gap-2 mb-4">
-                    <div class="flex-1">
-                        <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Início:</label>
-                        <input type="date" id="ponto-auto-data-ini" class="w-full p-2 border rounded-xl text-sm bg-slate-50 font-bold focus:border-blue-500 outline-none">
-                    </div>
-                    <div class="flex-1">
-                        <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Fim:</label>
-                        <input type="date" id="ponto-auto-data-fim" class="w-full p-2 border rounded-xl text-sm bg-slate-50 font-bold focus:border-blue-500 outline-none">
-                    </div>
-                    <div class="flex items-end">
-                        <button onclick="buscarRegistrosEletronicos()" class="p-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md font-bold transition">
-                            <i data-lucide="search" class="w-5 h-5"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="border rounded-xl overflow-hidden border-slate-200 mb-4">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-100 border-b border-slate-200 text-slate-500">
-                                <th class="p-2 text-[10px] uppercase font-black text-center">Data</th>
-                                <th class="p-2 text-[10px] uppercase font-black text-center">Manhã</th>
-                                <th class="p-2 text-[10px] uppercase font-black text-center">Tarde</th>
-                                <th class="p-2 text-[10px] uppercase font-black text-center">Diária</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ponto-auto-tbody" class="divide-y divide-slate-100"></tbody>
-                    </table>
-                </div>
-
-                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 shadow-inner mb-6">
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="text-[10px] font-black text-blue-800 uppercase">Diárias Apuradas:</span>
-                        <span id="ponto-auto-total-dias" class="font-black text-blue-700 text-xl">0.00</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-[10px] font-black text-blue-800 uppercase text-xs">Total Financeiro:</span>
-                        <span id="ponto-auto-total-valor" class="font-black text-green-700 text-2xl">R$ 0,00</span>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <button type="button" onclick="imprimirFolhaPontoEletronico()" class="py-3 text-xs font-black text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl flex items-center justify-center gap-2 transition">
-                        <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Folha
-                    </button>
-                    <button type="button" onclick="savePonto()" class="py-3 text-xs font-black bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md flex items-center justify-center gap-2 transition">
-                        <i data-lucide="check-circle" class="w-4 h-4"></i> Salvar Registro
-                    </button>
-                </div>
-            </div>
-
-        </div> </div> </div>
+          <div id="ponto-modal" class="hidden fixed inset-0 bg-slate-900/80 flex items-center justify-center z-50 p-4">
+              <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[95vh]">
+                  
+                  <div class="bg-indigo-600 p-4 text-white flex justify-between items-center shrink-0">
+                      <div class="flex items-center gap-3">
+                          <button id="ponto-btn-voltar" onclick="selecionarModoPonto('selecao')" class="hidden bg-indigo-700 hover:bg-indigo-800 p-1.5 rounded-lg transition" title="Voltar">
+                              <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                          </button>
+                          <div>
+                              <h3 class="font-black text-lg flex items-center gap-2">Fechamento de Ponto</h3>
+                              <p id="ponto-modal-subtitle" class="text-[11px] font-medium opacity-80 mt-0.5 text-indigo-100">Selecione o modo de lançamento</p>
+                          </div>
+                      </div>
+                      <button onclick="document.getElementById('ponto-modal').classList.add('hidden')" class="text-white hover:bg-white/20 p-2 rounded-lg transition">
+                          <i data-lucide="x" class="w-5 h-5"></i>
+                      </button>
+                  </div>
+          
+                  <div class="p-6 overflow-y-auto flex-1 bg-white">
+                      <input type="hidden" id="ponto-equipe-id">
+                      
+                      <div id="ponto-view-selecao" class="flex flex-col gap-4">
+                          <h4 class="text-center font-bold text-slate-600 mb-2">Como deseja realizar o fechamento?</h4>
+                          
+                          <button onclick="selecionarModoPonto('auto')" class="p-6 border-2 border-blue-200 hover:border-blue-500 rounded-2xl bg-blue-50 hover:bg-blue-100 flex flex-col items-center gap-3 transition text-center group">
+                              <div class="p-4 bg-blue-600 text-white rounded-full group-hover:scale-110 transition-transform shadow-lg">
+                                  <i data-lucide="smartphone-nfc" class="w-8 h-8"></i>
+                              </div>
+                              <div>
+                                  <h5 class="font-black text-lg text-blue-800">Ponto Eletrônico (QR Code)</h5>
+                                  <p class="text-xs text-blue-600 mt-1 font-medium leading-relaxed px-4">Busca os registros automáticos e calcula as frações de diária.</p>
+                              </div>
+                          </button>
+          
+                          <button onclick="abrirModalManual()" class="p-6 border-2 border-slate-200 hover:border-slate-400 rounded-2xl bg-slate-50 hover:bg-slate-100 flex flex-col items-center gap-3 transition text-center group">
+                              <div class="p-4 bg-slate-400 text-white rounded-full group-hover:scale-110 transition-transform shadow-lg">
+                                  <i data-lucide="calendar-check-2" class="w-8 h-8"></i>
+                              </div>
+                              <div>
+                                  <h5 class="font-black text-lg text-slate-700">Lançamento Manual</h5>
+                                  <p class="text-xs text-slate-500 mt-1 font-medium leading-relaxed px-4">Marque os dias trabalhados diretamente no calendário.</p>
+                              </div>
+                          </button>
+                      </div>
+          
+                      <div id="ponto-view-manual" class="hidden flex flex-col">
+                          <div class="flex gap-2 mb-4">
+                              <select id="ponto-manual-mes" onchange="atualizarCalendarioAutomatico()" class="flex-1 p-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 bg-slate-50 outline-none focus:border-indigo-500">
+                                  <option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option>
+                                  <option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option>
+                                  <option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option>
+                                  <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+                              </select>
+                              <select id="ponto-manual-ano" onchange="atualizarCalendarioAutomatico()" class="w-32 p-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 bg-slate-50 outline-none focus:border-indigo-500">
+                              </select>
+                          </div>
+          
+                          <div class="grid grid-cols-7 gap-2 text-center font-bold text-slate-400 text-[10px] uppercase mb-2">
+                              <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sab</div>
+                          </div>
+                          
+                          <div id="ponto-grid" class="grid grid-cols-7 gap-2 mb-6"></div>
+                          
+                          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-inner mb-6">
+                              <div class="flex justify-between items-center mb-2">
+                                  <span class="text-[10px] font-black text-slate-500 uppercase">Total de Diárias:</span>
+                                  <span id="ponto-total-dias" class="font-black text-indigo-700 text-xl">0</span>
+                              </div>
+                              <div class="flex justify-between items-center">
+                                  <span class="text-[10px] font-black text-slate-500 uppercase">Valor a Pagar:</span>
+                                  <span id="ponto-total-valor" class="font-black text-green-600 text-2xl">R$ 0,00</span>
+                              </div>
+                          </div>
+                          
+                          <div class="grid grid-cols-2 gap-3">
+                              <button type="button" onclick="imprimirPontoManual()" class="py-3 text-xs font-black text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl flex items-center justify-center gap-2 transition">
+                                  <i data-lucide="printer" class="w-4 h-4"></i> Imprimir
+                              </button>
+                              <button type="button" onclick="savePonto()" class="py-3 text-xs font-black bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md flex items-center justify-center gap-2 transition">
+                                  <i data-lucide="check-circle" class="w-4 h-4"></i> Salvar Fechamento
+                              </button>
+                          </div>
+                      </div>
+          
+                      <div id="ponto-view-auto" class="hidden flex flex-col">
+                          <div class="flex gap-2 mb-4">
+                              <div class="flex-1">
+                                  <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Início:</label>
+                                  <input type="date" id="ponto-auto-data-ini" class="w-full p-2 border rounded-xl text-sm bg-slate-50 font-bold focus:border-blue-500 outline-none">
+                              </div>
+                              <div class="flex-1">
+                                  <label class="text-[10px] font-black text-slate-400 uppercase ml-1">Fim:</label>
+                                  <input type="date" id="ponto-auto-data-fim" class="w-full p-2 border rounded-xl text-sm bg-slate-50 font-bold focus:border-blue-500 outline-none">
+                              </div>
+                              <div class="flex items-end">
+                                  <button onclick="buscarRegistrosEletronicos()" class="p-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md font-bold transition">
+                                      <i data-lucide="search" class="w-5 h-5"></i>
+                                  </button>
+                              </div>
+                          </div>
+          
+                          <div class="border rounded-xl overflow-hidden border-slate-200 mb-4">
+                              <table class="w-full text-left border-collapse">
+                                  <thead>
+                                      <tr class="bg-slate-100 border-b border-slate-200 text-slate-500">
+                                          <th class="p-2 text-[10px] uppercase font-black text-center">Data</th>
+                                          <th class="p-2 text-[10px] uppercase font-black text-center">Manhã</th>
+                                          <th class="p-2 text-[10px] uppercase font-black text-center">Tarde</th>
+                                          <th class="p-2 text-[10px] uppercase font-black text-center">Diária</th>
+                                      </tr>
+                                  </thead>
+                                  <tbody id="ponto-auto-tbody" class="divide-y divide-slate-100"></tbody>
+                              </table>
+                          </div>
+          
+                          <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 shadow-inner mb-6">
+                              <div class="flex justify-between items-center mb-1">
+                                  <span class="text-[10px] font-black text-blue-800 uppercase">Diárias Apuradas:</span>
+                                  <span id="ponto-auto-total-dias" class="font-black text-blue-700 text-xl">0.00</span>
+                              </div>
+                              <div class="flex justify-between items-center">
+                                  <span class="text-[10px] font-black text-blue-800 uppercase text-xs">Total Financeiro:</span>
+                                  <span id="ponto-auto-total-valor" class="font-black text-green-700 text-2xl">R$ 0,00</span>
+                              </div>
+                          </div>
+          
+                          <div class="grid grid-cols-2 gap-3">
+                              <button type="button" onclick="imprimirFolhaPontoEletronico()" class="py-3 text-xs font-black text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl flex items-center justify-center gap-2 transition">
+                                  <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Folha
+                              </button>
+                              <button type="button" onclick="savePonto()" class="py-3 text-xs font-black bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md flex items-center justify-center gap-2 transition">
+                                  <i data-lucide="check-circle" class="w-4 h-4"></i> Salvar Registro
+                              </button>
+                          </div>
+                      </div>
+          
+                  </div> 
+              </div> 
+          </div>
 
       <div id="fornecedor-form-container" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
         <form onsubmit="saveFornecedor(event)" class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
@@ -1399,33 +1401,24 @@
 
 
          function selecionarModoPonto(modo) {
-            document.getElementById('ponto-view-selecao').classList.add('hidden');
-            document.getElementById('ponto-view-manual').classList.add('hidden');
-            document.getElementById('ponto-view-auto').classList.add('hidden');
-            
-            const btnVoltar = document.getElementById('ponto-btn-voltar');
-        
-            if (modo === 'selecao') {
-                document.getElementById('ponto-view-selecao').classList.remove('hidden');
-                btnVoltar.classList.add('hidden');
-                window.modoPontoAtivo = null;
-            } else if (modo === 'manual') {
-                document.getElementById('ponto-view-manual').classList.remove('hidden');
-                btnVoltar.classList.remove('hidden');
-                window.modoPontoAtivo = 'manual';
-            } else if (modo === 'auto') {
-                document.getElementById('ponto-view-auto').classList.remove('hidden');
-                btnVoltar.classList.remove('hidden');
-                window.modoPontoAtivo = 'auto';
-                
-                // Limpa a tabela para não mostrar lixo de outro funcionário antes de clicar em buscar
-                document.getElementById('ponto-auto-tbody').innerHTML = '<tr><td colspan="4" class="text-center p-6 text-slate-400 font-bold text-xs">Clique em Buscar para carregar a folha.</td></tr>';
-                document.getElementById('ponto-auto-total-dias').innerText = '0.00';
-                document.getElementById('ponto-auto-total-valor').innerText = 'R$ 0,00';
-                window.diariasEletronicasAtivas = undefined; 
-            }
-        }
+    // 1. Esconde as 3 telas primeiro
+    document.getElementById('ponto-view-selecao').classList.add('hidden');
+    document.getElementById('ponto-view-manual').classList.add('hidden');
+    document.getElementById('ponto-view-auto').classList.add('hidden');
+    document.getElementById('ponto-btn-voltar').classList.add('hidden');
 
+    // 2. Mostra apenas a que você quer
+    if (modo === 'selecao') {
+        document.getElementById('ponto-view-selecao').classList.remove('hidden');
+        document.getElementById('ponto-modal-subtitle').innerText = "Selecione o modo de lançamento";
+    } else if (modo === 'auto') {
+        document.getElementById('ponto-view-auto').classList.remove('hidden');
+        document.getElementById('ponto-btn-voltar').classList.remove('hidden');
+        document.getElementById('ponto-modal-subtitle').innerText = "Ponto Eletrônico";
+    }
+    
+    if(window.lucide) lucide.createIcons();
+}
 // -------------------------------------------------------------------
 // LÓGICA DO PONTO ELETRÔNICO (BUSCA E CÁLCULO DIRETO NA TELA NOVA)
 // -------------------------------------------------------------------
@@ -3978,35 +3971,26 @@ function imprimirPontoManual() {
 
       // Função principal para inicializar o modal manual
 function abrirModalManual() {
-    const agora = new Date();
-    const anoAtual = agora.getFullYear();
-    const mesAtual = agora.getMonth() + 1;
+    // Esconde a seleção e mostra o manual
+    selecionarModoPonto('manual'); 
+    document.getElementById('ponto-view-manual').classList.remove('hidden');
+    document.getElementById('ponto-btn-voltar').classList.remove('hidden');
+    document.getElementById('ponto-modal-subtitle').innerText = "Lançamento Manual";
 
+    // Preenche o ano caso esteja vazio
     const selectAno = document.getElementById('ponto-manual-ano');
-    const selectMes = document.getElementById('ponto-manual-mes');
-
-    if (selectAno) {
-        selectAno.innerHTML = ''; // Limpa o que tiver lá
-        
-        // Cria opções de anos: ex: 2025, 2026, 2027
+    if (selectAno.options.length === 0) {
+        const anoAtual = new Date().getFullYear();
         for (let i = anoAtual - 1; i <= anoAtual + 1; i++) {
             const opt = document.createElement('option');
             opt.value = i;
             opt.innerText = i;
-            if (i === anoAtual) opt.selected = true; // Seleciona o ano atual por padrão
+            if (i === anoAtual) opt.selected = true;
             selectAno.appendChild(opt);
         }
     }
 
-    if (selectMes) {
-        selectMes.value = mesAtual; // Seta o mês atual
-    }
-
-    // Chama a função que desenha os quadradinhos do calendário
     atualizarCalendarioAutomatico();
-    
-    // Mostra a div do manual
-    document.getElementById('ponto-view-manual').classList.remove('hidden');
 }
 
 // Função que lê os selects e desenha o grid
