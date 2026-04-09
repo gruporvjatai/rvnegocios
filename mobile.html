@@ -149,11 +149,16 @@
             <div>
                 <label class="text-[9px] font-bold text-slate-500 uppercase mb-1 block">Condição de Pagamento</label>
                 <select id="pos-cond-pagamento" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none mb-2 font-bold text-slate-700">
-                    <option value="PIX">PIX</option>
-                        <option value="Cartão de Crédito">Cartão de Crédito</option>
-                        <option value="Cartão de Débito">Cartão de Débito</option>
-                        <option value="Boleto">Boleto</option>
-                        <option value="Medição">Medição </option>
+                    <option value="">A Definir / Padrão</option>
+                    <option value="A Vista (PIX)">A Vista (PIX)</option>
+                    <option value="A Vista (Boleto)">A Vista (Boleto)</option>
+                    <option value="Boleto 15 Dias">Boleto 15 Dias</option>
+                    <option value="Boleto 30 Dias">Boleto 30 Dias</option>
+                    <option value="Boleto 30/60 Dias">Boleto 30/60 Dias</option>
+                    <option value="Boleto 30/60/90 Dias">Boleto 30/60/90 Dias</option>
+                    <option value="Cartão de Crédito">Cartão de Crédito</option>
+                    <option value="Cartão de Débito">Cartão de Débito</option>
+                    <option value="Transferência">Transferência</option>
                 </select>
                 
                 <label class="text-[9px] font-bold text-slate-500 uppercase mb-1 block">Observações Gerais</label>
@@ -226,7 +231,12 @@
             </button>
             <button onclick="navigate('prod')" class="bg-white p-4 rounded-xl shadow-sm border flex items-center gap-4 active:bg-slate-50">
                 <div class="bg-indigo-100 p-3 rounded-lg text-indigo-700"><i data-lucide="package"></i></div>
-                <div class="text-left font-bold text-slate-700 flex-1">Produtos/Insumos</div>
+                <div class="text-left font-bold text-slate-700 flex-1">Produtos</div>
+                <i data-lucide="chevron-right" class="text-slate-300"></i>
+            </button>
+          <button onclick="navigate('equipe')" class="bg-white p-4 rounded-xl shadow-sm border flex items-center gap-4 active:bg-slate-50">
+                <div class="bg-orange-100 p-3 rounded-lg text-orange-700"><i data-lucide="users"></i></div>
+                <div class="text-left font-bold text-slate-700 flex-1">Equipe</div>
                 <i data-lucide="chevron-right" class="text-slate-300"></i>
             </button>
         </div>
@@ -250,6 +260,33 @@
           </div>
           <input type="text" id="prod-search" placeholder="Buscar material..." class="w-full p-3 mb-4 bg-white border border-slate-200 rounded-xl text-sm outline-none shadow-sm" onkeyup="renderProducts()">
           <div id="prod-list" class="flex flex-col gap-2 pb-4"></div>
+      </div>
+
+      <div id="view-equipe" class="hidden-section no-print relative min-h-[80vh]">
+          <div class="flex items-center gap-3 mb-4">
+              <button onclick="navigate('menu')" class="p-2 bg-slate-200 rounded-full text-slate-600"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+              <h2 class="text-xl font-bold flex-1">Equipe</h2>
+              <button onclick="openEquipeForm()" class="bg-blue-700 text-white px-3 py-2 rounded-xl text-sm font-bold shadow"><i data-lucide="user-plus" class="w-4 h-4"></i></button>
+          </div>
+          
+          <div class="flex gap-2 mb-3">
+              <div class="relative flex-1">
+                  <i data-lucide="search" class="absolute left-3 top-3 text-slate-400 w-4 h-4"></i>
+                  <input type="text" id="eqp-search" placeholder="Buscar nome..." class="w-full pl-9 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 shadow-sm" onkeyup="renderEquipe()">
+              </div>
+          </div>
+          <div class="flex gap-2 mb-4">
+              <select id="eqp-filter-obra" onchange="renderEquipe()" class="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 shadow-sm">
+                  <option value="">Todas as Obras</option>
+              </select>
+              <select id="eqp-filter-status" onchange="renderEquipe()" class="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 shadow-sm">
+                  <option value="true" selected>Ativos</option>
+                  <option value="">Todos os Status</option>
+                  <option value="false">Inativos</option>
+              </select>
+          </div>
+
+          <div id="equipe-list" class="flex flex-col gap-2 pb-16"></div>
       </div>
 
     </main>
@@ -296,6 +333,68 @@
     </div>
 
     <div id="overlay-forms" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end justify-center no-print">
+
+      <div id="equipe-form-container" class="hidden w-full bg-white rounded-t-3xl p-5 pb-10 shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar">
+            <h3 class="font-bold text-lg mb-4 flex justify-between">Funcionário <button type="button" onclick="closeOverlayForm('equipe-form-container')" class="text-slate-400"><i data-lucide="x"></i></button></h3>
+            <form onsubmit="saveEquipe(event)" class="space-y-3">
+                <input type="hidden" id="eqp-id">
+                
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">Nome do Funcionário</label>
+                    <input type="text" id="eqp-nome" required placeholder="Ex: João da Silva" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm">
+                </div>
+                
+                <div class="flex gap-2">
+                    <div class="w-1/2">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">CPF</label>
+                        <input type="text" id="eqp-cpf" placeholder="000.000.000-00" oninput="maskCPF(this)" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm">
+                    </div>
+                    <div class="w-1/2">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">RG</label>
+                        <input type="text" id="eqp-rg" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">Telefone</label>
+                    <input type="tel" id="eqp-telefone" placeholder="(00) 00000-0000" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm">
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">Endereço</label>
+                    <input type="text" id="eqp-endereco" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm">
+                </div>
+                
+                <div class="flex gap-2">
+                    <div class="w-1/2">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">Categoria/Função</label>
+                        <select id="eqp-categoria" required class="w-full p-2.5 bg-slate-50 border rounded-xl text-sm font-bold text-slate-700 outline-none">
+                            <option value="Servente">Servente</option>
+                            <option value="Pedreiro">Pedreiro</option>
+                        </select>
+                    </div>
+                    <div class="w-1/2">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">Status</label>
+                        <select id="eqp-ativo" required class="w-full p-2.5 bg-slate-50 border rounded-xl text-sm font-bold text-slate-700 outline-none">
+                            <option value="true">Ativo</option>
+                            <option value="false">Inativo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">Valor Diária (R$)</label>
+                    <input type="number" step="0.01" id="eqp-valor_diaria" placeholder="0.00" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm">
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">Obra Alocada (Opcional)</label>
+                    <select id="eqp-obra_atual_id" class="w-full p-2.5 bg-slate-50 border rounded-xl text-sm font-bold text-slate-700 outline-none"></select>
+                </div>
+                
+                <button type="submit" class="w-full p-3 bg-blue-700 text-white rounded-xl font-bold mt-2 shadow-lg">Salvar Funcionário</button>
+            </form>
+        </div>
         
         <div id="obra-form-container" class="hidden w-full bg-white rounded-t-3xl p-5 pb-10 shadow-2xl transition-transform max-h-[90vh] overflow-y-auto no-scrollbar">
             <h3 class="font-bold text-lg mb-4 text-slate-800 flex justify-between items-center">Dados da Obra <button type="button" onclick="closeOverlayForm('obra-form-container')" class="text-slate-400"><i data-lucide="x"></i></button></h3>
@@ -337,16 +436,35 @@
             <p class="text-xs text-slate-500 mb-4">Escolha o pagamento. PIX já entra como pago.</p>
             <input type="hidden" id="confirm-oc-id">
             <select id="confirm-oc-payment" class="w-full p-3 border rounded-xl font-bold text-slate-700 bg-slate-50 mb-4 text-sm">
-                        <option value="PIX">PIX</option>
-                        <option value="Cartão de Crédito">Cartão de Crédito</option>
-                        <option value="Cartão de Débito">Cartão de Débito</option>
-                        <option value="Boleto">Boleto</option>
-                        <option value="Medição">Medição </option>
+                <option value="PIX">PIX</option>
+                <option value="Boleto">Boleto</option>
+                <option value="Cartão de Crédito">Cartão de Crédito</option>
+                <option value="Cartão de Débito">Cartão de Débito</option>
+                <option value="Transferência">Transferência</option>
             </select>
             <div class="flex gap-2">
                 <button type="button" onclick="closeOverlayForm('modal-confirm-oc')" class="w-1/3 p-3 bg-slate-200 rounded-xl font-bold text-sm">Voltar</button>
                 <button onclick="executeConfirmOC()" class="w-2/3 p-3 bg-green-600 text-white rounded-xl font-bold shadow text-sm">Efetivar</button>
             </div>
+        </div>
+    </div>
+
+  <div id="modal-sucesso-matricula" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-3xl p-6 w-full max-w-xs text-center shadow-2xl">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="check-circle" class="w-8 h-8 text-green-600"></i>
+            </div>
+            <h3 class="text-xl font-black text-slate-800 mb-1">Cadastrado!</h3>
+            <p class="text-xs text-slate-500 mb-5 font-bold truncate" id="sucesso-nome">Nome do Funcionario</p>
+            
+            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6 shadow-inner">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Matrícula (Ponto)</p>
+                <p class="text-5xl font-black text-blue-700" id="sucesso-num-matricula">000</p>
+            </div>
+            
+            <button onclick="document.getElementById('modal-sucesso-matricula').classList.add('hidden')" class="w-full bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-transform">
+                OK, Anotado
+            </button>
         </div>
     </div>
 
@@ -363,7 +481,7 @@
         const supabaseKey = 'sb_publishable_B2a4vA22qf4XGcrxPDRAaw_13rW51uI';
         const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], fases: [] };
+        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], fases: [], equipe: [] };
         let CART = [];
         let CURRENT_OC_ID = null; 
 
@@ -380,6 +498,16 @@
             const t=document.getElementById('toast'); 
             t.textContent=msg; t.className=`fixed top-10 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl text-white font-bold text-sm z-[100] transition-all text-center w-[90%] max-w-sm ${isError?'bg-red-600':'bg-slate-800'}`; 
             t.style.display='block'; setTimeout(()=>t.style.display='none',3000); 
+        }
+
+        // Função de Máscara de CPF
+        function maskCPF(input) {
+            let v = input.value.replace(/\D/g, "");
+            if (v.length > 11) v = v.slice(0, 11);
+            v = v.replace(/(\d{3})(\d)/, "$1.$2");
+            v = v.replace(/(\d{3})(\d)/, "$1.$2");
+            v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+            input.value = v;
         }
 
         function openModal(id) {
@@ -416,6 +544,7 @@
             if(viewId === 'fin') { updateSelects(); renderFinance(); }
             if(viewId === 'fornecedores') renderFornecedores();
             if(viewId === 'prod') renderProducts();
+            if(viewId === 'equipe') { updateSelects(); renderEquipe(); }
             
             lucide.createIcons();
             window.scrollTo(0,0);
@@ -468,9 +597,9 @@
 
         async function loadData() {
             try {
-                const [resObras, resForn, resProd, resLog, resFases] = await Promise.all([
+                const [resObras, resForn, resProd, resLog, resFases, resEquipe] = await Promise.all([
                     fetchAllRecords('jsp_obras'), fetchAllRecords('jsp_fornecedores'),
-                    fetchAllRecords('jsp_produtos'), fetchAllRecords('jsp_logs'), fetchAllRecords('jsp_fase')
+                    fetchAllRecords('jsp_produtos'), fetchAllRecords('jsp_logs'), fetchAllRecords('jsp_fase'), fetchAllRecords('jsp_equipe')
                 ]);
                 STATE.obras = resObras.data || [];
                 STATE.fornecedores = resForn.data || [];
@@ -478,6 +607,7 @@
                 STATE.logs = resLog.data || [];
                 STATE.fases = resFases.data || [];
                 STATE.fases.sort((a,b) => (parseInt(a.ordem)||0) - (parseInt(b.ordem)||0));
+                STATE.equipe = resEquipe.data || [];
 
                 updateSelects();
                 if(!document.querySelector('main > .active-section')) navigate('dash');
@@ -497,6 +627,14 @@
         function updateSelects() {
             const htmlObras = '<option value="">Todas Obras</option>' + STATE.obras.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
             const htmlObrasStrict = '<option value="">-- Selecione Obra --</option>' + STATE.obras.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
+            
+            // Obras na Equipe (Form)
+            const eqpObra = document.getElementById('eqp-obra_atual_id'); 
+            if(eqpObra && !eqpObra.value) eqpObra.innerHTML = htmlObrasStrict;
+
+            // Obras na Equipe (Filtro)
+            const eqpFilterObra = document.getElementById('eqp-filter-obra');
+            if(eqpFilterObra) { const cVal = eqpFilterObra.value; eqpFilterObra.innerHTML = htmlObras; if(cVal) eqpFilterObra.value = cVal; }
             
             // Fases
             const htmlFases = '<option value="">-- Fase (Geral) --</option>' + STATE.fases.map(f => `<option value="${f.nome}">${f.ordem} - ${f.nome}</option>`).join('');
@@ -1288,6 +1426,240 @@
             await sb.from('jsp_produtos').upsert(payload); closeOverlayForm('prod-form-container'); showToast("Salvo!"); loadData();
         }
 
+
+        // ====== EQUIPE ======
+        function renderEquipe() {
+            const term = document.getElementById('eqp-search').value.toLowerCase();
+            const filterObra = document.getElementById('eqp-filter-obra').value;
+            const filterStatus = document.getElementById('eqp-filter-status').value;
+            
+            let fil = STATE.equipe.filter(e => 
+                (e.nome || '').toLowerCase().includes(term) || 
+                (e.categoria || '').toLowerCase().includes(term)
+            );
+
+            if(filterObra) {
+                fil = fil.filter(e => String(e.obra_atual_id) === String(filterObra));
+            }
+            if(filterStatus) {
+                const isAtivoStatus = filterStatus === 'true';
+                fil = fil.filter(e => (e.ativo === true || e.ativo === 'true') === isAtivoStatus);
+            }
+
+            fil.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+            
+            document.getElementById('equipe-list').innerHTML = fil.map(e => {
+                const obra = STATE.obras.find(x => x.id == e.obra_atual_id);
+                const nomeObra = obra ? obra.nome : 'Sem obra alocada';
+                const isAtivo = e.ativo === true || e.ativo === 'true'; 
+
+                // Lógica pro botão do WhatsApp
+                let zapBtn = '';
+                if(e.telefone) {
+                    const numZap = e.telefone.replace(/\D/g, ''); // Limpa caracteres não numéricos
+                    if(numZap.length >= 10) { // Garante que tem pelo menos DDD + Número
+                        zapBtn = `<a href="https://wa.me/55${numZap}" target="_blank" class="p-1.5 bg-green-100 text-green-600 rounded-lg shrink-0 flex items-center justify-center"><i data-lucide="message-circle" class="w-4 h-4"></i></a>`;
+                    }
+                }
+
+                return `
+                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm relative">
+                    <div class="absolute top-2 right-2 flex gap-1 items-center">
+                        <span class="bg-slate-100 text-slate-500 border border-slate-200 text-[8px] font-bold px-1.5 py-0.5 rounded">Mat: ${e.matricula || '-'}</span>
+                        <span class="${isAtivo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} text-[8px] font-bold px-1.5 py-0.5 rounded">${isAtivo ? 'ATIVO' : 'INATIVO'}</span>
+                    </div>
+                    <div class="flex justify-between items-start mb-1 pr-24">
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-xs">${e.nome || '-'}</h4>
+                            <p class="text-[10px] text-slate-500 font-bold uppercase mt-1">${e.categoria || '-'} ${e.telefone ? ` | ${e.telefone}` : ''}</p>
+                            <p class="text-[9px] text-blue-600 mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${nomeObra}</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-2 mt-2 pt-2 border-t border-slate-50">
+                        ${zapBtn}
+                        <button onclick="openEquipeForm('${e.id}')" class="p-1.5 bg-slate-100 text-blue-600 rounded-lg shrink-0 flex items-center justify-center"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                    </div>
+                </div>`;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        function openEquipeForm(id) {
+            if(id) {
+                const e = STATE.equipe.find(x => x.id == id); 
+                document.getElementById('eqp-id').value = e.id;
+                document.getElementById('eqp-nome').value = e.nome || '';
+                document.getElementById('eqp-cpf').value = e.cpf || '';
+                document.getElementById('eqp-rg').value = e.rg || '';
+                document.getElementById('eqp-telefone').value = e.telefone || '';
+                document.getElementById('eqp-endereco').value = e.endereco || '';
+                document.getElementById('eqp-valor_diaria').value = e.valor_diaria || '';
+                document.getElementById('eqp-categoria').value = e.categoria || 'Servente';
+                document.getElementById('eqp-ativo').value = (e.ativo === true || e.ativo === 'true') ? 'true' : 'false';
+                document.getElementById('eqp-obra_atual_id').value = e.obra_atual_id || '';
+            } else { 
+                document.getElementById('equipe-form-container').querySelector('form').reset(); 
+                document.getElementById('eqp-id').value = ''; 
+                document.getElementById('eqp-categoria').value = 'Servente';
+                document.getElementById('eqp-ativo').value = 'true';
+            }
+            openOverlayForm('equipe-form-container');
+        }
+
+       // 1. Criamos um gerador de ID universal (Funciona no PC e no Mobile)
+// 1. Gerador de ID universal (Funciona no PC e no Mobile)
+        function gerarIdSeguro() {
+            if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+                return crypto.randomUUID();
+            }
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        // 2. Função com os IDs EXATOS do seu HTML mobile
+        async function saveEquipe(e) {
+            e.preventDefault(); 
+            showLoading(true);
+
+            // Lê o HTML com segurança
+            const getV = (id) => {
+                const el = document.getElementById(id);
+                return el ? el.value : '';
+            };
+
+            const idAtual = getV('eqp-id');
+            const isNew = !idAtual;
+
+            // AQUI ESTÁ A CORREÇÃO: IDs idênticos aos do seu HTML!
+            const payload = {
+                nome: getV('eqp-nome'),
+                categoria: getV('eqp-categoria'),
+                telefone: getV('eqp-telefone'),
+                cpf: getV('eqp-cpf'),
+                rg: getV('eqp-rg'),
+                endereco: getV('eqp-endereco'),
+                obra_atual_id: getV('eqp-obra_atual_id') || null,
+                valor_diaria: parseFloat(getV('eqp-valor_diaria')) || 0,
+                ativo: getV('eqp-ativo') === 'true' // Pega se está Ativo ou Inativo no HTML
+            };
+            
+            if(isNew) {
+                // Gera o UUID para o banco não dar erro
+                payload.id = gerarIdSeguro();
+                
+                // Calcula a Matrícula Sequencial automaticamente
+                let maxMat = 0;
+                if (STATE.equipe && STATE.equipe.length > 0) {
+                    STATE.equipe.forEach(item => {
+                        let m = parseInt(item.matricula);
+                        if (!isNaN(m) && m > maxMat) maxMat = m;
+                    });
+                }
+                payload.matricula = maxMat > 0 ? maxMat + 1 : 133;
+                
+                payload.contrato_assinado = false;
+            } else {
+                payload.id = idAtual;
+            }
+
+            const { error } = await sb.from('jsp_equipe').upsert(payload);
+            
+            if(error) { 
+                showLoading(false); 
+                return showToast("Erro: " + error.message, true); 
+            }
+            
+            // Esconde o formulário
+            // ISSO AQUI ESTÁ CORRETO (Usa sua função nativa que limpa tudo)
+            closeOverlayForm('equipe-form-container');
+            
+            showToast("Funcionário salvo com sucesso!"); 
+            loadData();
+        }
+
+// 2. Sua função original, apenas com proteção contra campos nulos
+              async function saveEquipe(e) {
+                          e.preventDefault(); 
+                          showLoading(true);
+              
+                          // 1. Função auxiliar para ler os valores do HTML com segurança
+                          const getV = (id) => {
+                              const el = document.getElementById(id);
+                              return el ? el.value : '';
+                          };
+              
+                          const idAtual = getV('eqp-id');
+                          const isNew = !idAtual;
+              
+                          // 2. Montando o pacote de dados com os IDs exatos da tela
+                          const payload = {
+                              nome: getV('eqp-nome').trim(),
+                              categoria: getV('eqp-categoria'),
+                              telefone: getV('eqp-telefone'),
+                              cpf: getV('eqp-cpf'),
+                              rg: getV('eqp-rg'),
+                              endereco: getV('eqp-endereco'),
+                              obra_atual_id: getV('eqp-obra_atual_id') || null,
+                              valor_diaria: parseFloat(getV('eqp-valor_diaria')) || 0,
+                              ativo: getV('eqp-ativo') === 'true'
+                          };
+              
+                          if(isNew) {
+                              // Gerador de ID (UUID)
+                              payload.id = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); });
+                              
+                              // Calcula a Matrícula Sequencial automaticamente
+                              let maxMat = 0;
+                              if (STATE.equipe && STATE.equipe.length > 0) {
+                                  STATE.equipe.forEach(item => {
+                                      let m = parseInt(item.matricula);
+                                      if (!isNaN(m) && m > maxMat) maxMat = m;
+                                  });
+                              }
+                              payload.matricula = maxMat > 0 ? maxMat + 1 : 133;
+                              payload.contrato_assinado = false;
+                          } else {
+                              payload.id = idAtual;
+                          }
+              
+                          // 3. Envio para o banco de dados (Supabase)
+                          const { error } = await sb.from('jsp_equipe').upsert(payload);
+                          
+                          if(error) { 
+                              showLoading(false); 
+                              return showToast("Erro do Banco: " + error.message, true); 
+                          }
+                          
+                          // 4. Fechando o formulário e matando o fundo escuro na marra
+                          const modalForm = document.getElementById('equipe-form-container');
+                          const fundoEscuro = document.getElementById('overlay-forms');
+                          if(modalForm) modalForm.classList.add('hidden');
+                          if(fundoEscuro) fundoEscuro.classList.add('hidden');
+                          
+                          // 5. Exibindo as notificações de sucesso
+                          if(isNew) {
+                              // Mostra o Cartão Bonitão com a Matrícula
+                              const nomeEl = document.getElementById('sucesso-nome');
+                              const matEl = document.getElementById('sucesso-num-matricula');
+                              const modalSucesso = document.getElementById('modal-sucesso-matricula');
+                              
+                              if(nomeEl) nomeEl.innerText = payload.nome;
+                              if(matEl) matEl.innerText = payload.matricula;
+                              if(modalSucesso) modalSucesso.classList.remove('hidden');
+                              
+                              lucide.createIcons();
+                          } else {
+                              // Se for só uma edição, mostra o aviso rápido
+                              showToast("Funcionário atualizado com sucesso!"); 
+                          }
+                          
+                          // 6. Atualiza a lista e volta pra aba da equipe
+                          await loadData();
+                          navigate('equipe');
+                      }
+        
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
   </body>
