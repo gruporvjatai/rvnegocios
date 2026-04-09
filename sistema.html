@@ -1980,7 +1980,7 @@ function imprimirFolhaPontoEletronico() {
         nomeContratanteAssinatura = "RV NEGÓCIOS E COMPANHIA LTDA";
         
         corpoTexto = `
-        <div style="font-size: 14pt; line-height: 1.6; text-align: justify;">
+        <div style="font-size: 12pt; line-height: 1.6; text-align: justify;">
             <p style="margin-bottom: 5px;"><strong>Nome do Prestador de Serviços:</strong> ${(e.nome || '').toUpperCase()}</p>
             <p style="margin-bottom: 15px;"><strong>Atividade a ser desenvolvida:</strong> ${(e.categoria || 'Geral').toUpperCase()}</p>
             
@@ -2017,7 +2017,7 @@ function imprimirFolhaPontoEletronico() {
         </div>
         `;
     } else if (tipo === 'contrato1') {
-        titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE FORNECIMENTO DE MÃO DE OBRA QUALIFICADA <br> PARA SERVIÇOS DE CONSTRUÇÃO CIVIL SEM VÍNCULO EMPREGATÍCIO <br> Nº ${matricula}/2026 | JATAÍ – GOIÁS`;
+        titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE FORNECIMENTO DE MÃO DE OBRA QUALIFICADA PARA SERVIÇOS DE CONSTRUÇÃO CIVIL SEM VÍNCULO EMPREGATÍCIO <br> Nº ${matricula}/2026 | JATAÍ – GOIÁS`;
         
         corpoTexto = `
         <div style="text-align: justify; font-size: 12pt; line-height: 1.6;">
@@ -2109,7 +2109,7 @@ function imprimirFolhaPontoEletronico() {
             <p style="text-indent: 40px; margin-bottom: 30px;">Fica eleito o foro da comarca de Jataí-GO, para dirimir quaisquer controvérsias.</p>
         </div>`;
     } else if (tipo === 'contrato2') {
-        titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE FORNECIMENTO DE MÃO DE OBRA QUALIFICADA <br> PARA SERVIÇOS DE CONSTRUÇÃO CIVIL SEM VÍNCULO EMPREGATÍCIO <br> Nº ${matricula}/2026 | JATAÍ – GOIÁS`;
+        titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE FORNECIMENTO DE MÃO DE OBRA QUALIFICADA PARA SERVIÇOS DE CONSTRUÇÃO CIVIL SEM VÍNCULO EMPREGATÍCIO <br> Nº ${matricula}/2026 | JATAÍ – GOIÁS`;
         nomeContratanteAssinatura = "RV NEGOCIOS E COMPANHIA LTDA";
         
         corpoTexto = `
@@ -2211,11 +2211,11 @@ function imprimirFolhaPontoEletronico() {
         <div style="font-family: 'Times New Roman', Times, serif; width: 100%; padding: 20px 40px; box-sizing: border-box; color: #000;">
             <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 30px;">                
                 <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="display: block; margin: 0 auto; height: 90px;"><br><br>
-                <h2 style="margin: 0; font-size: 14pt; font-weight: bold; line-height: 1.3;">${titulo}</h2>
+                <h2 style="margin: 0; font-size: 13pt; font-weight: bold; line-height: 1.3;">${titulo}</h2>
             </div>
             
             <div style="margin-bottom: 40px;">
-                ${corpoTexto}<br><br>
+                ${corpoTexto}<br>
             </div>
             
             <div style="text-align: right; margin-bottom: 80px; font-size: 13pt;">
