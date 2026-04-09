@@ -236,7 +236,7 @@
             </button>
           <button onclick="navigate('equipe')" class="bg-white p-4 rounded-xl shadow-sm border flex items-center gap-4 active:bg-slate-50">
                 <div class="bg-orange-100 p-3 rounded-lg text-orange-700"><i data-lucide="users"></i></div>
-                <div class="text-left font-bold text-slate-700 flex-1">Equipe / Funcionários</div>
+                <div class="text-left font-bold text-slate-700 flex-1">Equipe</div>
                 <i data-lucide="chevron-right" class="text-slate-300"></i>
             </button>
         </div>
@@ -1553,8 +1553,8 @@
             }
             
             // Esconde o formulário
-            const modal = document.getElementById('equipe-form-container');
-            if(modal) modal.classList.add('hidden');
+            // ISSO AQUI ESTÁ CORRETO (Usa sua função nativa que limpa tudo)
+            closeOverlayForm('equipe-form-container');
             
             showToast("Funcionário salvo com sucesso!"); 
             loadData();
