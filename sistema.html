@@ -605,8 +605,8 @@
                         <thead>
                             <tr class="bg-slate-100 border-b border-slate-200 text-slate-600">
                                 <th class="p-2 text-[10px] uppercase font-bold text-center">Data</th>
-                                <th class="p-2 text-[10px] uppercase font-bold text-center">Entrada</th>
-                                <th class="p-2 text-[10px] uppercase font-bold text-center">Saída</th>
+                                <th class="p-2 text-[10px] uppercase font-bold text-center">Manhã</th>
+                                <th class="p-2 text-[10px] uppercase font-bold text-center">Tarde</th>
                                 <th class="p-2 text-[10px] uppercase font-bold text-center">Diária (Fração)</th>
                             </tr>
                         </thead>
@@ -1441,18 +1441,21 @@ async function buscarRegistrosEletronicos() {
 
         let diasTrabalhados = {};
         
-        // Agrupa os horários por Dia
+        // Agrupa os horários por Dia registrando o tipo e a hora exata
         (data || []).forEach(ponto => {
             const dataDia = new Date(ponto.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
-            if(!diasTrabalhados[dataDia]) diasTrabalhados[dataDia] = { entradas: [], saidas: [], rawDate: new Date(ponto.hora_registro) };
+            if(!diasTrabalhados[dataDia]) diasTrabalhados[dataDia] = { pontos: [], rawDate: new Date(ponto.hora_registro) };
             
-            if(ponto.tipo === 'ENTRADA') diasTrabalhados[dataDia].entradas.push(new Date(ponto.hora_registro));
-            if(ponto.tipo === 'SAIDA') diasTrabalhados[dataDia].saidas.push(new Date(ponto.hora_registro));
+            diasTrabalhados[dataDia].pontos.push({
+                tipo: ponto.tipo,
+                hora: new Date(ponto.hora_registro)
+            });
         });
 
         const diasArray = Object.values(diasTrabalhados).sort((a,b) => a.rawDate - b.rawDate);
         let totalDiarias = 0;
         const JORNADA_BASE_HORAS = 8;
+        const TOLERANCIA_HORAS = 20 / 60; // Tolerância
         let htmlTabela = '';
         
         // Guardar para impressão
@@ -1468,22 +1471,40 @@ async function buscarRegistrosEletronicos() {
         }
 
         diasArray.forEach(registro => {
-            let horaEntradaStr = registro.entradas.length > 0 ? registro.entradas[0].toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit', timeZone: 'UTC'}) : '--:--';
-            let horaSaidaStr = registro.saidas.length > 0 ? registro.saidas[registro.saidas.length - 1].toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit', timeZone: 'UTC'}) : '--:--';
+            // Ordena cronologicamente os pontos do dia
+            let pt = registro.pontos.sort((a, b) => a.hora - b.hora);
             
             let fracao = 0;
             let totalHoras = 0;
 
-            if (registro.entradas.length > 0 && registro.saidas.length > 0) {
-                let diffMilisegundos = registro.saidas[registro.saidas.length - 1] - registro.entradas[0];
-                let horasBrutas = diffMilisegundos / (1000 * 60 * 60);
+            // Pega as entradas e saídas separadas para o fallback caso falte batida
+            let entradas = pt.filter(p => p.tipo === 'ENTRADA');
+            let saidas = pt.filter(p => p.tipo === 'SAIDA');
 
-                if (horasBrutas >= 6) horasBrutas -= 1; // Desconto de almoço
+            if (entradas.length > 0 && saidas.length > 0) {
+                if (pt.length >= 4) {
+                    // Cálculo com os 4 pontos (E1, S1, E2, S2)
+                    let msManha = pt[1].hora - pt[0].hora;
+                    let msTarde = pt[3].hora - pt[2].hora;
 
-                totalHoras = horasBrutas;
-                fracao = horasBrutas / JORNADA_BASE_HORAS;
+                    if (msManha > 0) totalHoras += msManha / (1000 * 60 * 60);
+                    if (msTarde > 0) totalHoras += msTarde / (1000 * 60 * 60);
+                } else {
+                    // Fallback: Se bateu menos de 4x, usa primeira entrada e última saída descontando almoço
+                    let diffMilisegundos = saidas[saidas.length - 1].hora - entradas[0].hora;
+                    let horasBrutas = diffMilisegundos / (1000 * 60 * 60);
+                    if (horasBrutas >= 6) horasBrutas -= 1; // Desconto de almoço
+                    totalHoras = horasBrutas;
+                }
 
-                if (fracao > 0.90) fracao = 1;
+                // Aplica Tolerância de 10 minutos
+                if (totalHoras >= (JORNADA_BASE_HORAS - TOLERANCIA_HORAS) && totalHoras < JORNADA_BASE_HORAS) {
+                    totalHoras = JORNADA_BASE_HORAS;
+                }
+
+                fracao = totalHoras / JORNADA_BASE_HORAS;
+
+                if (fracao > 1) fracao = 1;
                 else if (fracao < 0) fracao = 0;
                 else fracao = parseFloat(fracao.toFixed(2));
 
@@ -1492,14 +1513,32 @@ async function buscarRegistrosEletronicos() {
 
             const dataStr = registro.rawDate.toLocaleDateString('pt-BR', {timeZone: 'UTC'});
             
-            // Salva dados para enviar para o PDF/Impressão
-            window.dadosFolhaImpressao.push({ data: dataStr, entrada: horaEntradaStr, saida: horaSaidaStr, fracao: fracao });
+            // Função auxiliar para criar as tags de hora com a cor correta
+            const formatHoraHtml = (dateObj, isEntrada) => {
+                if (!dateObj) return '<span class="text-slate-300 mx-0.5">--:--</span>';
+                const horaStr = dateObj.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit', timeZone: 'UTC'});
+                return isEntrada 
+                    ? `<span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold inline-block mx-0.5">${horaStr}</span>`
+                    : `<span class="bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold inline-block mx-0.5">${horaStr}</span>`;
+            };
+
+            // Blocos formatados para exibição no HTML
+            let manhaHtml = `${formatHoraHtml(pt[0]?.hora, true)} <span class="text-slate-300 text-[10px] mx-1">➜</span> ${formatHoraHtml(pt[1]?.hora, false)}`;
+            let tardeHtml = `${formatHoraHtml(pt[2]?.hora, true)} <span class="text-slate-300 text-[10px] mx-1">➜</span> ${formatHoraHtml(pt[3]?.hora, false)}`;
+
+            // Dados limpos pros 4 slots da impressão
+            let e1 = pt.length > 0 ? pt[0].hora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit', timeZone: 'UTC'}) : '--:--';
+            let s1 = pt.length > 1 ? pt[1].hora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit', timeZone: 'UTC'}) : '--:--';
+            let e2 = pt.length > 2 ? pt[2].hora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit', timeZone: 'UTC'}) : '--:--';
+            let s2 = pt.length > 3 ? pt[3].hora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit', timeZone: 'UTC'}) : '--:--';
+
+            window.dadosFolhaImpressao.push({ data: dataStr, e1: e1, s1: s1, e2: e2, s2: s2, fracao: fracao });
 
             htmlTabela += `
             <tr class="border-b hover:bg-slate-50">
                 <td class="p-2 text-xs font-bold text-slate-700 text-center">${dataStr}</td>
-                <td class="p-2 text-xs text-center"><span class="bg-green-100 text-green-700 px-2 py-0.5 rounded font-bold">${horaEntradaStr}</span></td>
-                <td class="p-2 text-xs text-center"><span class="bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold">${horaSaidaStr}</span></td>
+                <td class="p-2 text-xs text-center whitespace-nowrap">${manhaHtml}</td>
+                <td class="p-2 text-xs text-center whitespace-nowrap">${tardeHtml}</td>
                 <td class="p-2 text-xs text-center font-black text-indigo-600">${fracao}</td>
             </tr>`;
         });
@@ -1511,7 +1550,6 @@ async function buscarRegistrosEletronicos() {
         let valorTotalPagar = totalDiarias * valorDiaria;
         document.getElementById('ponto-auto-total-valor').innerText = formatMoney(valorTotalPagar);
 
-        // Define a variável global para que a função 'savePonto()' saiba que deve salvar este valor!
         window.diariasEletronicasAtivas = totalDiarias; 
 
         showLoading(false);
@@ -1538,12 +1576,15 @@ function imprimirFolhaPontoEletronico() {
     const dataFim = document.getElementById('ponto-auto-data-fim').value.split('-').reverse().join('/');
     const totalDiarias = window.diariasEletronicasAtivas.toFixed(2);
     
+    // Nova estrutura com 4 pontos
     let htmlTabelaImp = window.dadosFolhaImpressao.map(i => `
         <tr>
             <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${i.data}</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${i.entrada}</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${i.saida}</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">--:--</td>
+            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${i.e1}</td>
+            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${i.s1}</td>
+            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${i.e2}</td>
+            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${i.s2}</td>
+            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;"></td>
             <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center; font-weight: bold;">${i.fracao}</td>
         </tr>
     `).join('');
@@ -1563,14 +1604,16 @@ function imprimirFolhaPontoEletronico() {
                 <strong>CPF:</strong> ${e.cpf || 'Não informado'}
             </div>
 
-            <table style="width: 100%; border-collapse: collapse; font-size: 10pt; margin-bottom: 30px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 9pt; margin-bottom: 30px;">
                 <thead>
                     <tr style="background-color: #f1f5f9;">
                         <th style="border: 1px solid #cbd5e1; padding: 8px;">Data</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Entrada</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Saída</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Entrada 1</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Saída 1</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Entrada 2</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Saída 2</th>
                         <th style="border: 1px solid #cbd5e1; padding: 8px;">Assinatura</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Diárias Faturadas</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Diária</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -3763,31 +3806,47 @@ async function calcularDiariasPorHora(funcionarioId, obraId, dataInicioIso, data
         
         data.forEach(ponto => {
             const dataDia = new Date(ponto.hora_registro).toLocaleDateString('pt-BR');
-            if(!diasTrabalhados[dataDia]) diasTrabalhados[dataDia] = { entradas: [], saidas: [] };
+            if(!diasTrabalhados[dataDia]) diasTrabalhados[dataDia] = { pontos: [] };
             
-            if(ponto.tipo === 'ENTRADA') diasTrabalhados[dataDia].entradas.push(new Date(ponto.hora_registro));
-            if(ponto.tipo === 'SAIDA') diasTrabalhados[dataDia].saidas.push(new Date(ponto.hora_registro));
+            diasTrabalhados[dataDia].pontos.push({
+                tipo: ponto.tipo,
+                hora: new Date(ponto.hora_registro)
+            });
         });
 
         let totalDiarias = 0;
-        const JORNADA_BASE_HORAS = 8; // Mude para 9 se for o caso da sua obra
+        const JORNADA_BASE_HORAS = 8; 
+        const TOLERANCIA_HORAS = 20 / 60; // tolerância
 
         for (let dia in diasTrabalhados) {
-            let registro = diasTrabalhados[dia];
+            let pt = diasTrabalhados[dia].pontos.sort((a, b) => a.hora - b.hora);
+            let entradas = pt.filter(p => p.tipo === 'ENTRADA');
+            let saidas = pt.filter(p => p.tipo === 'SAIDA');
             
-            if (registro.entradas.length > 0 && registro.saidas.length > 0) {
-                let primeiraEntrada = registro.entradas[0]; 
-                let ultimaSaida = registro.saidas[registro.saidas.length - 1]; 
-                
-                let diffMilisegundos = ultimaSaida - primeiraEntrada;
-                let horasBrutas = diffMilisegundos / (1000 * 60 * 60);
+            let totalHoras = 0;
 
-                // Desconta 1h de almoço se trabalhou mais de 6h
-                if (horasBrutas >= 6) horasBrutas -= 1;
+            if (entradas.length > 0 && saidas.length > 0) {
+                if (pt.length >= 4) {
+                    let msManha = pt[1].hora - pt[0].hora;
+                    let msTarde = pt[3].hora - pt[2].hora;
 
-                let fracao = horasBrutas / JORNADA_BASE_HORAS;
+                    if (msManha > 0) totalHoras += msManha / (1000 * 60 * 60);
+                    if (msTarde > 0) totalHoras += msTarde / (1000 * 60 * 60);
+                } else {
+                    let diffMilisegundos = saidas[saidas.length - 1].hora - entradas[0].hora;
+                    let horasBrutas = diffMilisegundos / (1000 * 60 * 60);
+                    if (horasBrutas >= 6) horasBrutas -= 1; 
+                    totalHoras = horasBrutas;
+                }
 
-                if (fracao > 0.90) fracao = 1;
+                // Applica a tolerância para bater no cálculo da diária cheia
+                if (totalHoras >= (JORNADA_BASE_HORAS - TOLERANCIA_HORAS) && totalHoras < JORNADA_BASE_HORAS) {
+                    totalHoras = JORNADA_BASE_HORAS;
+                }
+
+                let fracao = totalHoras / JORNADA_BASE_HORAS;
+
+                if (fracao > 1) fracao = 1;
                 else if (fracao < 0) fracao = 0;
                 else fracao = parseFloat(fracao.toFixed(2));
 
@@ -3801,6 +3860,7 @@ async function calcularDiariasPorHora(funcionarioId, obraId, dataInicioIso, data
     }
 }
 
+      
       // =====================================================================
 // INTEGRAÇÃO COM O FINANCEIRO (FECHAMENTO DA QUINZENA/MÊS)
 // =====================================================================
