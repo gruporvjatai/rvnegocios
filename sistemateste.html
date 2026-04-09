@@ -3996,27 +3996,33 @@ function imprimirPontoManual() {
       // Função principal para inicializar o modal manual
 function abrirModalManual() {
     const agora = new Date();
-    const mesAtual = agora.getMonth() + 1; // JS meses são 0-11
     const anoAtual = agora.getFullYear();
+    const mesAtual = agora.getMonth() + 1;
 
-    // 1. Preenche o seletor de anos (ex: 2024 a 2027)
     const selectAno = document.getElementById('ponto-manual-ano');
-    selectAno.innerHTML = '';
-    for (let i = anoAtual - 1; i <= anoAtual + 1; i++) {
-        const opt = document.createElement('option');
-        opt.value = i;
-        opt.innerText = i;
-        if (i === anoAtual) opt.selected = true;
-        selectAno.appendChild(opt);
+    const selectMes = document.getElementById('ponto-manual-mes');
+
+    if (selectAno) {
+        selectAno.innerHTML = ''; // Limpa o que tiver lá
+        
+        // Cria opções de anos: ex: 2025, 2026, 2027
+        for (let i = anoAtual - 1; i <= anoAtual + 1; i++) {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.innerText = i;
+            if (i === anoAtual) opt.selected = true; // Seleciona o ano atual por padrão
+            selectAno.appendChild(opt);
+        }
     }
 
-    // 2. Define o mês atual no seletor
-    document.getElementById('ponto-manual-mes').value = mesAtual;
+    if (selectMes) {
+        selectMes.value = mesAtual; // Seta o mês atual
+    }
 
-    // 3. Renderiza o calendário
+    // Chama a função que desenha os quadradinhos do calendário
     atualizarCalendarioAutomatico();
     
-    // Mostra o modal (ajuste para sua função de abrir modal)
+    // Mostra a div do manual
     document.getElementById('ponto-view-manual').classList.remove('hidden');
 }
 
