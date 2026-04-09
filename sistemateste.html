@@ -522,90 +522,49 @@
       </div>
       
 
-      <div id="ponto-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 overflow-y-auto p-4">
-    <div class="bg-white rounded-3xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[95vh]">
+      <div id="ponto-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[95vh]">
         
-        <div class="p-6 border-b flex justify-between items-center bg-slate-50 rounded-t-3xl">
-            <div>
-                <h3 class="text-xl font-black text-slate-800" id="ponto-titulo-principal">Fechamento de Ponto</h3>
-                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider" id="ponto-nome-func">--</p>
-            </div>
-            <div class="flex items-center gap-2">
-                <button id="btn-voltar-ponto" onclick="selectPontoModo(null)" class="hidden p-2 hover:bg-slate-200 rounded-full text-slate-600 transition" title="Voltar">
+        <div class="bg-indigo-600 p-4 text-white flex justify-between items-center shrink-0">
+            <div class="flex items-center gap-3">
+                <button id="ponto-btn-voltar" onclick="selecionarModoPonto('selecao')" class="hidden bg-indigo-700 hover:bg-indigo-800 p-1.5 rounded-lg transition" title="Voltar">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i>
                 </button>
-                <button onclick="document.getElementById('ponto-modal').classList.add('hidden')" class="p-2 hover:bg-white rounded-full transition text-slate-400 hover:text-red-500">
-                    <i data-lucide="x" class="w-6 h-6"></i>
-                </button>
+                <div>
+                    <h3 class="font-black text-lg flex items-center gap-2">Fechamento de Ponto</h3>
+                    <p id="ponto-modal-subtitle" class="text-[11px] font-medium opacity-80 mt-0.5">Carregando...</p>
+                </div>
             </div>
+            <button onclick="document.getElementById('ponto-modal').classList.add('hidden')" class="text-white hover:bg-white/20 p-2 rounded-lg transition" title="Fechar">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
         </div>
 
-        <div class="p-6 overflow-y-auto">
+        <div class="p-6 overflow-y-auto flex-1 custom-scrollbar">
+            <input type="hidden" id="ponto-equipe-id">
             
-            <div id="ponto-view-selecao" class="grid grid-cols-1 md:grid-cols-2 gap-4 py-10">
-                <button onclick="selectPontoModo('auto')" class="flex flex-col items-center justify-center p-8 border-2 border-slate-100 rounded-3xl hover:border-blue-500 hover:bg-blue-50 transition group">
-                    <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition">
-                        <i data-lucide="qr-code" class="w-8 h-8"></i>
+            <div id="ponto-view-selecao" class="flex flex-col gap-4">
+                <h4 class="text-center font-bold text-slate-600 mb-2">Como deseja fechar o ponto deste mês?</h4>
+                
+                <button onclick="selecionarModoPonto('auto')" class="p-6 border-2 border-blue-200 hover:border-blue-500 rounded-2xl bg-blue-50 hover:bg-blue-100 flex flex-col items-center gap-3 transition text-center group">
+                    <div class="p-4 bg-blue-600 text-white rounded-full group-hover:scale-110 transition-transform">
+                        <i data-lucide="smartphone-nfc" class="w-8 h-8"></i>
                     </div>
-                    <span class="font-black text-slate-700">Ponto Eletrônico</span>
-                    <span class="text-[10px] text-slate-400 uppercase font-bold mt-1">Busca via QR Code</span>
+                    <div>
+                        <h5 class="font-black text-lg text-blue-800">Ponto Eletrônico (QR Code)</h5>
+                        <p class="text-xs text-blue-600 mt-1 font-medium">Busca os registros automáticos do app, calcula as horas e gera a folha de ponto.</p>
+                    </div>
                 </button>
 
-                <button onclick="selectPontoModo('manual')" class="flex flex-col items-center justify-center p-8 border-2 border-slate-100 rounded-3xl hover:border-indigo-500 hover:bg-indigo-50 transition group">
-                    <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition">
-                        <i data-lucide="calendar" class="w-8 h-8"></i>
+                <button onclick="selecionarModoPonto('manual')" class="p-6 border-2 border-slate-200 hover:border-slate-400 rounded-2xl bg-slate-50 hover:bg-slate-100 flex flex-col items-center gap-3 transition text-center group">
+                    <div class="p-4 bg-slate-400 text-white rounded-full group-hover:scale-110 transition-transform">
+                        <i data-lucide="calendar-check-2" class="w-8 h-8"></i>
                     </div>
-                    <span class="font-black text-slate-700">Ponto Manual</span>
-                    <span class="text-[10px] text-slate-400 uppercase font-bold mt-1">Marcação por dias</span>
+                    <div>
+                        <h5 class="font-black text-lg text-slate-700">Ponto Manual (Antigo)</h5>
+                        <p class="text-xs text-slate-500 mt-1 font-medium">Você marca os dias trabalhados clicando no calendário.</p>
+                    </div>
                 </button>
-            </div>
-
-            <div id="ponto-view-auto" class="hidden">
-                <div class="grid grid-cols-2 gap-3 mb-4">
-                    <div>
-                        <label class="text-[10px] font-black text-slate-400 uppercase">Início</label>
-                        <input type="date" id="ponto-auto-data-ini" class="w-full p-2 border rounded-xl text-sm font-bold">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-black text-slate-400 uppercase">Fim</label>
-                        <input type="date" id="ponto-auto-data-fim" class="w-full p-2 border rounded-xl text-sm font-bold">
-                    </div>
-                </div>
-
-                <div class="flex gap-2 mb-4">
-                    <button onclick="buscarRegistrosEletronicos()" class="flex-1 bg-blue-600 text-white p-3 rounded-xl font-bold text-xs hover:bg-blue-700 transition">
-                        BUSCAR REGISTROS
-                    </button>
-                    <button onclick="imprimirFolhaPontoEletronico()" class="bg-slate-100 text-slate-600 p-3 rounded-xl hover:bg-slate-200 transition" title="Imprimir Folha Individual">
-                        <i data-lucide="printer" class="w-5 h-5"></i>
-                    </button>
-                </div>
-
-                <div class="border rounded-2xl overflow-hidden mb-4">
-                    <table class="w-full text-left">
-                        <thead class="bg-slate-50 border-b">
-                            <tr>
-                                <th class="p-2 text-[10px] font-black text-slate-400 text-center uppercase">Data</th>
-                                <th class="p-2 text-[10px] font-black text-slate-400 text-center uppercase">Manhã</th>
-                                <th class="p-2 text-[10px] font-black text-slate-400 text-center uppercase">Tarde</th>
-                                <th class="p-2 text-[10px] font-black text-slate-400 text-center uppercase">Frac.</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ponto-auto-tbody">
-                            </tbody>
-                    </table>
-                </div>
-
-                <div class="p-4 bg-blue-50 rounded-2xl border border-blue-100 flex justify-between items-center">
-                    <div>
-                        <p class="text-[10px] font-black text-blue-400 uppercase">Diárias Apuradas</p>
-                        <p class="text-xl font-black text-blue-700" id="ponto-auto-total-dias">0.00</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-[10px] font-black text-blue-400 uppercase">Subtotal</p>
-                        <p class="text-xl font-black text-blue-700" id="ponto-auto-total-valor">R$ 0,00</p>
-                    </div>
-                </div>
             </div>
 
             <div id="ponto-view-manual" class="hidden">
@@ -618,25 +577,77 @@
                     <div class="text-center text-[10px] font-black text-slate-400 uppercase">Sex</div>
                     <div class="text-center text-[10px] font-black text-slate-400 uppercase">Sáb</div>
                 </div>
-                <div id="ponto-grid" class="grid grid-cols-7 gap-2"></div>
-
-                <div class="mt-6 p-4 bg-indigo-50 rounded-2xl border border-indigo-100 flex justify-between items-center">
-                    <div>
-                        <p class="text-[10px] font-black text-indigo-400 uppercase">Dias Marcados</p>
-                        <p class="text-xl font-black text-indigo-700" id="ponto-total-dias">0</p>
+            
+                <div id="ponto-grid" class="grid grid-cols-7 gap-2 mb-6">
                     </div>
-                    <div class="text-right">
-                        <p class="text-[10px] font-black text-indigo-400 uppercase">Subtotal</p>
-                        <p class="text-xl font-black text-indigo-700" id="ponto-total-valor">R$ 0,00</p>
+            
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-inner mb-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-bold text-slate-500 uppercase">Total de Diárias:</span>
+                        <span id="ponto-total-dias" class="font-black text-indigo-700 text-xl">0</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold text-slate-500 uppercase">Valor a Pagar:</span>
+                        <span id="ponto-total-valor" class="font-black text-green-600 text-2xl">R$ 0,00</span>
                     </div>
                 </div>
+            
+                <button type="button" onclick="savePonto()" class="w-full py-3 text-sm font-black bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md flex items-center justify-center gap-2 transition">
+                    <i data-lucide="check-circle" class="w-5 h-5"></i> Salvar Fechamento Manual
+                </button>
             </div>
-        </div>
 
-        <div id="ponto-footer" class="hidden p-6 border-t bg-slate-50 rounded-b-3xl">
-            <button onclick="savePonto()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-black hover:bg-blue-700 shadow-xl shadow-blue-200 transition">
-                SALVAR FECHAMENTO
-            </button>
+            <div id="ponto-view-auto" class="hidden flex flex-col">
+                <div class="flex gap-2 mb-4">
+                    <div class="flex-1">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">De:</label>
+                        <input type="date" id="ponto-auto-data-ini" class="w-full p-2 border rounded-lg text-sm bg-slate-50 font-bold focus:border-blue-500 outline-none">
+                    </div>
+                    <div class="flex-1">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">Até:</label>
+                        <input type="date" id="ponto-auto-data-fim" class="w-full p-2 border rounded-lg text-sm bg-slate-50 font-bold focus:border-blue-500 outline-none">
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="buscarRegistrosEletronicos()" class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow font-bold text-sm h-[38px] px-4"><i data-lucide="search" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+
+                <div class="border rounded-xl overflow-hidden border-slate-200 mb-4">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 border-b border-slate-200 text-slate-600">
+                                <th class="p-2 text-[10px] uppercase font-bold text-center">Data</th>
+                                <th class="p-2 text-[10px] uppercase font-bold text-center">Manhã</th>
+                                <th class="p-2 text-[10px] uppercase font-bold text-center">Tarde</th>
+                                <th class="p-2 text-[10px] uppercase font-bold text-center">Diária (Fração)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ponto-auto-tbody">
+                            </tbody>
+                    </table>
+                </div>
+
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-200 shadow-inner mb-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-bold text-blue-800 uppercase">Total de Diárias Apuradas:</span>
+                        <span id="ponto-auto-total-dias" class="font-black text-blue-700 text-xl">0.00</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold text-blue-800 uppercase">Valor a Pagar:</span>
+                        <span id="ponto-auto-total-valor" class="font-black text-green-700 text-2xl">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="imprimirFolhaPontoEletronico()" class="py-3 text-xs font-black border-2 border-slate-300 text-slate-600 hover:bg-slate-100 rounded-xl flex items-center justify-center gap-2 transition">
+                        <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Folha
+                    </button>
+                    <button type="button" onclick="savePonto()" class="py-3 text-xs font-black bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md flex items-center justify-center gap-2 transition">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i> Salvar Fechamento
+                    </button>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
@@ -1340,65 +1351,72 @@
         // CONTROLE DO MODAL DE PONTO (NOVO FLUXO)
         // ==========================================================
         
-        function openPontoModal(id) {
-    const e = STATE.equipe.find(x => x.id == id);
-    if(!e) return;
-
-    document.getElementById('ponto-equipe-id').value = id;
-    document.getElementById('ponto-nome-func').innerText = e.nome;
-    
-    // Pega mês/ano dos filtros da tela principal
-    const mes = document.getElementById('eqp-filter-mes').value;
-    const ano = document.getElementById('eqp-filter-ano').value;
-    
-    // Busca se já existe ponto salvo
-    let pt = STATE.ponto.find(x => x.equipe_id == id && x.mes === mes && x.ano === ano);
-    
-    currentPontoDias = pt ? (pt.dias_marcados || []) : [];
-    currentPontoDiaria = parseFloat(e.valor_diaria || 0);
-    
-    // Reseta views
-    selectPontoModo(null); 
-    document.getElementById('ponto-modal').classList.remove('hidden');
-    lucide.createIcons();
-}
-
-function selectPontoModo(modo) {
-    window.modoPontoAtivo = modo;
-    const vSelecao = document.getElementById('ponto-view-selecao');
-    const vAuto = document.getElementById('ponto-view-auto');
-    const vManual = document.getElementById('ponto-view-manual');
-    const btnVoltar = document.getElementById('btn-voltar-ponto');
-    const footer = document.getElementById('ponto-footer');
-    const titulo = document.getElementById('ponto-titulo-principal');
-
-    // Esconde tudo
-    vSelecao.classList.add('hidden');
-    vAuto.classList.add('hidden');
-    vManual.classList.add('hidden');
-    btnVoltar.classList.add('hidden');
-    footer.classList.add('hidden');
-
-    if (!modo) {
-        vSelecao.classList.remove('hidden');
-        titulo.innerText = "Fechamento de Ponto";
-    } else if (modo === 'auto') {
-        vAuto.classList.remove('hidden');
-        btnVoltar.classList.remove('hidden');
-        footer.classList.remove('hidden');
-        titulo.innerText = "Ponto Eletrônico (QR)";
-    } else if (modo === 'manual') {
-        vManual.classList.remove('hidden');
-        btnVoltar.classList.remove('hidden');
-        footer.classList.remove('hidden');
-        titulo.innerText = "Ponto Manual";
+        function openPontoModal(equipe_id) {
+            const e = STATE.equipe.find(x => x.id == equipe_id);
+            if(!e) return;
         
-        const mes = document.getElementById('eqp-filter-mes').value;
-        const ano = document.getElementById('eqp-filter-ano').value;
-        renderPontoGrid(mes, ano);
-    }
-    lucide.createIcons();
-}
+            const mes = document.getElementById('eqp-filter-mes').value;
+            const ano = document.getElementById('eqp-filter-ano').value;
+            currentPontoDiaria = parseFloat(e.valor_diaria || 0);
+        
+            document.getElementById('ponto-modal-subtitle').innerText = `${e.nome} - Mês: ${mes}/${ano} - Diária Base: ${formatMoney(currentPontoDiaria)}`;
+            document.getElementById('ponto-equipe-id').value = e.id;
+        
+            // Reseta variável de qual modo está ativo
+            window.modoPontoAtivo = null;
+            window.diariasEletronicasAtivas = undefined; 
+        
+            // Configura datas padrão do automático (1º até o último dia do mês filtrado)
+            const primeiroDia = `${ano}-${mes.padStart(2, '0')}-01`;
+            const ultimoDia = new Date(ano, mes, 0).getDate();
+            const ultimoDiaStr = `${ano}-${mes.padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
+            document.getElementById('ponto-auto-data-ini').value = primeiroDia;
+            document.getElementById('ponto-auto-data-fim').value = ultimoDiaStr;
+        
+            // Prepara tela do modo manual (caso ele escolha)
+            let pt = STATE.ponto.find(x => x.equipe_id == e.id && x.mes === mes && x.ano === ano);
+            if(pt && pt.dias_marcados) {
+                currentPontoDias = Array.isArray(pt.dias_marcados) ? pt.dias_marcados : JSON.parse(pt.dias_marcados);
+            } else {
+                currentPontoDias = [];
+            }
+            renderPontoGrid(mes, ano); // Atualiza os quadradinhos e totais do manual
+        
+            // Volta o modal para a tela de SELEÇÃO
+            selecionarModoPonto('selecao');
+        
+            document.getElementById('ponto-modal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+
+         function selecionarModoPonto(modo) {
+            document.getElementById('ponto-view-selecao').classList.add('hidden');
+            document.getElementById('ponto-view-manual').classList.add('hidden');
+            document.getElementById('ponto-view-auto').classList.add('hidden');
+            
+            const btnVoltar = document.getElementById('ponto-btn-voltar');
+        
+            if (modo === 'selecao') {
+                document.getElementById('ponto-view-selecao').classList.remove('hidden');
+                btnVoltar.classList.add('hidden');
+                window.modoPontoAtivo = null;
+            } else if (modo === 'manual') {
+                document.getElementById('ponto-view-manual').classList.remove('hidden');
+                btnVoltar.classList.remove('hidden');
+                window.modoPontoAtivo = 'manual';
+            } else if (modo === 'auto') {
+                document.getElementById('ponto-view-auto').classList.remove('hidden');
+                btnVoltar.classList.remove('hidden');
+                window.modoPontoAtivo = 'auto';
+                
+                // Limpa a tabela para não mostrar lixo de outro funcionário antes de clicar em buscar
+                document.getElementById('ponto-auto-tbody').innerHTML = '<tr><td colspan="4" class="text-center p-6 text-slate-400 font-bold text-xs">Clique em Buscar para carregar a folha.</td></tr>';
+                document.getElementById('ponto-auto-total-dias').innerText = '0.00';
+                document.getElementById('ponto-auto-total-valor').innerText = 'R$ 0,00';
+                window.diariasEletronicasAtivas = undefined; 
+            }
+        }
 
 // -------------------------------------------------------------------
 // LÓGICA DO PONTO ELETRÔNICO (BUSCA E CÁLCULO DIRETO NA TELA NOVA)
@@ -1636,28 +1654,53 @@ function imprimirFolhaPontoEletronico() {
 }
       
         function renderPontoGrid(mes, ano) {
-            const numDias = getDiasNoMes(parseInt(mes), parseInt(ano));
-            const grid = document.getElementById('ponto-grid');
-            let html = '';
-            for(let i = 1; i <= numDias; i++) {
-                const ativo = currentPontoDias.includes(i);
-                html += `<div onclick="toggleDiaPonto(${i})" class="day-btn border rounded-lg text-center p-2 font-bold text-sm ${ativo ? 'active' : 'bg-white text-slate-600 hover:bg-slate-100'}">${i}</div>`;
-            }
-            grid.innerHTML = html;
-            updatePontoTotais();
-        }
+    const grid = document.getElementById('ponto-grid');
+    grid.innerHTML = ''; // Limpa o grid
 
+    // Obtém o dia da semana em que o mês começa (0-Dom, 1-Seg, etc)
+    const primeiroDiaSemana = new Date(ano, mes - 1, 1).getDay();
+    // Obtém o total de dias no mês
+    const totalDiasMes = new Date(ano, mes, 0).getDate();
+
+    let html = '';
+
+    // 1. Cria espaços vazios para alinhar o primeiro dia do mês
+    for (let x = 0; x < primeiroDiaSemana; x++) {
+        html += `<div class="h-10"></div>`;
+    }
+
+    // 2. Cria os botões dos dias
+    for (let i = 1; i <= totalDiasMes; i++) {
+        const ativo = currentPontoDias.includes(i);
+        
+        // Estilo dinâmico: azul se marcado, branco se desmarcado
+        const classeStatus = ativo 
+            ? 'bg-blue-600 text-white border-blue-600 shadow-md' 
+            : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400 hover:bg-blue-50';
+
+        html += `
+            <div onclick="toggleDiaPonto(${i})" 
+                 class="h-10 flex items-center justify-center border rounded-lg font-bold text-sm cursor-pointer transition-all ${classeStatus}">
+                ${i}
+            </div>`;
+    }
+
+    grid.innerHTML = html;
+    updatePontoTotais();
+}
         function toggleDiaPonto(dia) {
-            if(currentPontoDias.includes(dia)) {
-                currentPontoDias = currentPontoDias.filter(d => d !== dia);
-            } else {
-                currentPontoDias.push(dia);
-            }
-            const mes = document.getElementById('eqp-filter-mes').value;
-            const ano = document.getElementById('eqp-filter-ano').value;
-            renderPontoGrid(mes, ano);
-        }
-
+    // Adiciona ou remove o dia do array de seleção
+    if(currentPontoDias.includes(dia)) {
+        currentPontoDias = currentPontoDias.filter(d => d !== dia);
+    } else {
+        currentPontoDias.push(dia);
+    }
+    
+    // Pega o mês/ano atuais para re-renderizar o grid com as cores novas
+    const mes = document.getElementById('eqp-filter-mes').value;
+    const ano = document.getElementById('eqp-filter-ano').value;
+    renderPontoGrid(mes, ano);
+}
         function updatePontoTotais() {
             const totalDias = currentPontoDias.length;
             const valor = totalDias * currentPontoDiaria;
