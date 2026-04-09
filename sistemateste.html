@@ -567,7 +567,26 @@
                 </button>
             </div>
 
-            <div id="ponto-view-manual" class="hidden">
+            <div id="ponto-view-manual" class="hidden">    
+                <div class="flex gap-2 mb-4">
+                    <select id="ponto-manual-mes" onchange="atualizarCalendarioAutomatico()" class="flex-1 p-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 bg-slate-50 focus:outline-none focus:border-indigo-500">
+                        <option value="1">Janeiro</option>
+                        <option value="2">Fevereiro</option>
+                        <option value="3">Março</option>
+                        <option value="4">Abril</option>
+                        <option value="5">Maio</option>
+                        <option value="6">Junho</option>
+                        <option value="7">Julho</option>
+                        <option value="8">Agosto</option>
+                        <option value="9">Setembro</option>
+                        <option value="10">Outubro</option>
+                        <option value="11">Novembro</option>
+                        <option value="12">Dezembro</option>
+                    </select>
+                    <select id="ponto-manual-ano" onchange="atualizarCalendarioAutomatico()" class="w-32 p-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 bg-slate-50 focus:outline-none focus:border-indigo-500">
+                        </select>
+                </div>
+            
                 <div class="grid grid-cols-7 gap-2 text-center font-bold text-slate-500 text-xs mb-2">
                     <div>D</div>
                     <div>S</div>
@@ -577,10 +596,10 @@
                     <div>S</div>
                     <div>S</div>
                 </div>
-            
+                
                 <div id="ponto-grid" class="grid grid-cols-7 gap-2 mb-6">
                     </div>
-            
+                
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-inner mb-4">
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-xs font-bold text-slate-500 uppercase">Total de Diárias:</span>
@@ -591,7 +610,7 @@
                         <span id="ponto-total-valor" class="font-black text-green-600 text-2xl">R$ 0,00</span>
                     </div>
                 </div>
-            
+                
                 <div class="grid grid-cols-2 gap-3">
                     <button type="button" onclick="imprimirPontoManual()" class="w-full py-3 text-sm font-black text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl shadow-sm flex items-center justify-center gap-2 transition">
                         <i data-lucide="printer" class="w-5 h-5"></i> Imprimir Folha
@@ -3972,6 +3991,68 @@ function imprimirPontoManual() {
     // para gerar o PDF ou abrir a tela de impressão do manual.
     console.log("Preparando impressão do ponto manual...");
     showToast("Gerando impressão...", false);
+}
+
+      // Função principal para inicializar o modal manual
+function abrirModalManual() {
+    const agora = new Date();
+    const mesAtual = agora.getMonth() + 1; // JS meses são 0-11
+    const anoAtual = agora.getFullYear();
+
+    // 1. Preenche o seletor de anos (ex: 2024 a 2027)
+    const selectAno = document.getElementById('ponto-manual-ano');
+    selectAno.innerHTML = '';
+    for (let i = anoAtual - 1; i <= anoAtual + 1; i++) {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.innerText = i;
+        if (i === anoAtual) opt.selected = true;
+        selectAno.appendChild(opt);
+    }
+
+    // 2. Define o mês atual no seletor
+    document.getElementById('ponto-manual-mes').value = mesAtual;
+
+    // 3. Renderiza o calendário
+    atualizarCalendarioAutomatico();
+    
+    // Mostra o modal (ajuste para sua função de abrir modal)
+    document.getElementById('ponto-view-manual').classList.remove('hidden');
+}
+
+// Função que lê os selects e desenha o grid
+function atualizarCalendarioAutomatico() {
+    const mes = parseInt(document.getElementById('ponto-manual-mes').value);
+    const ano = parseInt(document.getElementById('ponto-manual-ano').value);
+    
+    const grid = document.getElementById('ponto-grid');
+    grid.innerHTML = ''; 
+
+    // Descobre o primeiro dia (0=Dom, 1=Seg...) e total de dias
+    const primeiroDiaDaSemana = new Date(ano, mes - 1, 1).getDay(); 
+    const totalDiasNoMes = new Date(ano, mes, 0).getDate();
+
+    // Cria os espaços vazios do início do mês
+    for (let i = 0; i < primeiroDiaDaSemana; i++) {
+        grid.innerHTML += `<div class="h-10"></div>`;
+    }
+
+    // Cria os botões dos dias
+    for (let dia = 1; dia <= totalDiasNoMes; dia++) {
+        grid.innerHTML += `
+            <button id="btn-dia-${dia}" type="button" onclick="toggleDiaManual(${dia})" 
+                class="w-full h-10 flex items-center justify-center rounded-lg border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:border-indigo-300 transition-all text-sm font-bold">
+                ${dia}
+            </button>
+        `;
+    }
+    
+    // Zera os totais ao mudar de mês para evitar erro de cálculo de meses diferentes
+    document.getElementById('ponto-total-dias').innerText = '0';
+    document.getElementById('ponto-total-valor').innerText = 'R$ 0,00';
+    
+    // Se você usa Lucide, reinicializa os ícones aqui
+    if(window.lucide) lucide.createIcons();
 }
 
       
