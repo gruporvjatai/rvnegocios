@@ -1455,7 +1455,7 @@ async function buscarRegistrosEletronicos() {
         const diasArray = Object.values(diasTrabalhados).sort((a,b) => a.rawDate - b.rawDate);
         let totalDiarias = 0;
         const JORNADA_BASE_HORAS = 8;
-        const TOLERANCIA_HORAS = 15 / 60; // Tolerância de 10 minutos
+        const TOLERANCIA_HORAS = 20 / 60; // Tolerância
         let htmlTabela = '';
         
         // Guardar para impressão
@@ -3816,7 +3816,7 @@ async function calcularDiariasPorHora(funcionarioId, obraId, dataInicioIso, data
 
         let totalDiarias = 0;
         const JORNADA_BASE_HORAS = 8; 
-        const TOLERANCIA_HORAS = 15 / 60; // 10 minutos de tolerância
+        const TOLERANCIA_HORAS = 20 / 60; // tolerância
 
         for (let dia in diasTrabalhados) {
             let pt = diasTrabalhados[dia].pontos.sort((a, b) => a.hora - b.hora);
