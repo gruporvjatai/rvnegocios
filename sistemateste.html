@@ -552,7 +552,7 @@
                     </div>
                     <div>
                         <h5 class="font-black text-lg text-blue-800">Ponto Eletrônico (QR Code)</h5>
-                        <p class="text-xs text-blue-600 mt-1 font-medium">Busca os registros automáticos do app, calcula as horas e gera a folha de ponto.</p>
+                        <p class="text-xs text-blue-600 mt-1 font-medium">Busca os registros automáticos do app e calcula as horas.</p>
                     </div>
                 </button>
 
@@ -562,43 +562,28 @@
                     </div>
                     <div>
                         <h5 class="font-black text-lg text-slate-700">Ponto Manual (Antigo)</h5>
-                        <p class="text-xs text-slate-500 mt-1 font-medium">Você marca os dias trabalhados clicando no calendário.</p>
+                        <p class="text-xs text-slate-500 mt-1 font-medium">Marque os dias trabalhados clicando no calendário.</p>
                     </div>
                 </button>
             </div>
 
-            <div id="ponto-view-manual" class="hidden">    
+            <div id="ponto-view-manual" class="hidden flex flex-col">
                 <div class="flex gap-2 mb-4">
-                    <select id="ponto-manual-mes" onchange="atualizarCalendarioAutomatico()" class="flex-1 p-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 bg-slate-50 focus:outline-none focus:border-indigo-500">
-                        <option value="1">Janeiro</option>
-                        <option value="2">Fevereiro</option>
-                        <option value="3">Março</option>
-                        <option value="4">Abril</option>
-                        <option value="5">Maio</option>
-                        <option value="6">Junho</option>
-                        <option value="7">Julho</option>
-                        <option value="8">Agosto</option>
-                        <option value="9">Setembro</option>
-                        <option value="10">Outubro</option>
-                        <option value="11">Novembro</option>
-                        <option value="12">Dezembro</option>
+                    <select id="ponto-manual-mes" onchange="atualizarCalendarioAutomatico()" class="flex-1 p-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 bg-slate-50 outline-none">
+                        <option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option>
+                        <option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option>
+                        <option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option>
+                        <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
                     </select>
-                    <select id="ponto-manual-ano" onchange="atualizarCalendarioAutomatico()" class="w-32 p-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 bg-slate-50 focus:outline-none focus:border-indigo-500">
-                        </select>
+                    <select id="ponto-manual-ano" onchange="atualizarCalendarioAutomatico()" class="w-32 p-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 bg-slate-50 outline-none">
+                    </select>
                 </div>
-            
-                <div class="grid grid-cols-7 gap-2 text-center font-bold text-slate-500 text-xs mb-2">
-                    <div>D</div>
-                    <div>S</div>
-                    <div>T</div>
-                    <div>Q</div>
-                    <div>Q</div>
-                    <div>S</div>
-                    <div>S</div>
+
+                <div class="grid grid-cols-7 gap-2 text-center font-bold text-slate-500 text-[10px] uppercase mb-2">
+                    <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sab</div>
                 </div>
                 
-                <div id="ponto-grid" class="grid grid-cols-7 gap-2 mb-6">
-                    </div>
+                <div id="ponto-grid" class="grid grid-cols-7 gap-2 mb-6"></div>
                 
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-inner mb-4">
                     <div class="flex justify-between items-center mb-2">
@@ -613,11 +598,10 @@
                 
                 <div class="grid grid-cols-2 gap-3">
                     <button type="button" onclick="imprimirPontoManual()" class="w-full py-3 text-sm font-black text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl shadow-sm flex items-center justify-center gap-2 transition">
-                        <i data-lucide="printer" class="w-5 h-5"></i> Imprimir Folha
+                        <i data-lucide="printer" class="w-5 h-5"></i> Imprimir
                     </button>
-                    
                     <button type="button" onclick="savePonto()" class="w-full py-3 text-sm font-black bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md flex items-center justify-center gap-2 transition">
-                        <i data-lucide="check-circle" class="w-5 h-5"></i> Salvar Fechamento
+                        <i data-lucide="check-circle" class="w-5 h-5"></i> Salvar
                     </button>
                 </div>
             </div>
@@ -633,7 +617,9 @@
                         <input type="date" id="ponto-auto-data-fim" class="w-full p-2 border rounded-lg text-sm bg-slate-50 font-bold focus:border-blue-500 outline-none">
                     </div>
                     <div class="flex items-end">
-                        <button onclick="buscarRegistrosEletronicos()" class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow font-bold text-sm h-[38px] px-4"><i data-lucide="search" class="w-4 h-4"></i></button>
+                        <button onclick="buscarRegistrosEletronicos()" class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow font-bold text-sm h-[38px] px-4">
+                            <i data-lucide="search" class="w-4 h-4"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -644,21 +630,20 @@
                                 <th class="p-2 text-[10px] uppercase font-bold text-center">Data</th>
                                 <th class="p-2 text-[10px] uppercase font-bold text-center">Manhã</th>
                                 <th class="p-2 text-[10px] uppercase font-bold text-center">Tarde</th>
-                                <th class="p-2 text-[10px] uppercase font-bold text-center">Diária (Fração)</th>
+                                <th class="p-2 text-[10px] uppercase font-bold text-center">Diária</th>
                             </tr>
                         </thead>
-                        <tbody id="ponto-auto-tbody">
-                            </tbody>
+                        <tbody id="ponto-auto-tbody"></tbody>
                     </table>
                 </div>
 
                 <div class="bg-blue-50 p-4 rounded-xl border border-blue-200 shadow-inner mb-4">
                     <div class="flex justify-between items-center mb-2">
-                        <span class="text-xs font-bold text-blue-800 uppercase">Total de Diárias Apuradas:</span>
+                        <span class="text-xs font-bold text-blue-800 uppercase">Diárias Apuradas:</span>
                         <span id="ponto-auto-total-dias" class="font-black text-blue-700 text-xl">0.00</span>
                     </div>
                     <div class="flex justify-between items-center">
-                        <span class="text-xs font-bold text-blue-800 uppercase">Valor a Pagar:</span>
+                        <span class="text-xs font-bold text-blue-800 uppercase">Valor Total:</span>
                         <span id="ponto-auto-total-valor" class="font-black text-green-700 text-2xl">R$ 0,00</span>
                     </div>
                 </div>
@@ -671,8 +656,7 @@
                         <i data-lucide="check-circle" class="w-4 h-4"></i> Salvar Fechamento
                     </button>
                 </div>
-            </div>
-
+            </div>     
         </div>
     </div>
 </div>
