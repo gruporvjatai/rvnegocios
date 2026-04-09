@@ -1488,16 +1488,77 @@
         }
 
        // 1. Criamos um gerador de ID universal (Funciona no PC e no Mobile)
-function gerarIdSeguro() {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-        return crypto.randomUUID(); // Usa o padrão se o navegador permitir
-    }
-    // Plano B: Cria um UUID na marra se o mobile bloquear o comando acima
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
-}
+// 1. Gerador de ID universal (Funciona no PC e no Mobile)
+        function gerarIdSeguro() {
+            if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+                return crypto.randomUUID();
+            }
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        // 2. Função com os IDs EXATOS do seu HTML mobile
+        async function saveEquipe(e) {
+            e.preventDefault(); 
+            showLoading(true);
+
+            // Lê o HTML com segurança
+            const getV = (id) => {
+                const el = document.getElementById(id);
+                return el ? el.value : '';
+            };
+
+            const idAtual = getV('eqp-id');
+            const isNew = !idAtual;
+
+            // AQUI ESTÁ A CORREÇÃO: IDs idênticos aos do seu HTML!
+            const payload = {
+                nome: getV('eqp-nome'),
+                categoria: getV('eqp-categoria'),
+                telefone: getV('eqp-telefone'),
+                cpf: getV('eqp-cpf'),
+                rg: getV('eqp-rg'),
+                endereco: getV('eqp-endereco'),
+                obra_atual_id: getV('eqp-obra_atual_id') || null,
+                valor_diaria: parseFloat(getV('eqp-valor_diaria')) || 0,
+                ativo: getV('eqp-ativo') === 'true' // Pega se está Ativo ou Inativo no HTML
+            };
+            
+            if(isNew) {
+                // Gera o UUID para o banco não dar erro
+                payload.id = gerarIdSeguro();
+                
+                // Calcula a Matrícula Sequencial automaticamente
+                let maxMat = 0;
+                if (STATE.equipe && STATE.equipe.length > 0) {
+                    STATE.equipe.forEach(item => {
+                        let m = parseInt(item.matricula);
+                        if (!isNaN(m) && m > maxMat) maxMat = m;
+                    });
+                }
+                payload.matricula = maxMat > 0 ? maxMat + 1 : 133;
+                
+                payload.contrato_assinado = false;
+            } else {
+                payload.id = idAtual;
+            }
+
+            const { error } = await sb.from('jsp_equipe').upsert(payload);
+            
+            if(error) { 
+                showLoading(false); 
+                return showToast("Erro: " + error.message, true); 
+            }
+            
+            // Esconde o formulário
+            const modal = document.getElementById('equipe-form-container');
+            if(modal) modal.classList.add('hidden');
+            
+            showToast("Funcionário salvo com sucesso!"); 
+            loadData();
+        }
 
 // 2. Sua função original, apenas com proteção contra campos nulos
 async function saveEquipe(e) {
