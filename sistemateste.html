@@ -1023,59 +1023,48 @@
     </div>
 
     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-wrap gap-4 items-end">
-    <div class="w-full md:w-auto flex-1 min-w-[200px]">
-        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Buscar Nome</label>
-        <input type="text" id="terc-search" onkeyup="renderTerceirizados()" placeholder="Nome ou Documento..." class="w-full p-2.5 border border-slate-300 rounded-lg focus:border-blue-500 outline-none text-sm font-medium">
-    </div>
-    
-    <div class="w-full md:w-32">
-        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
-        <select id="terc-filter-status" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none">
-            <option value="true" selected>Ativados</option>
-            <option value="false">Desativados</option>
-            <option value="todos">Todos</option>
-        </select>
-    </div>
-
-    <div class="w-full md:w-32">
-        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mês Ref.</label>
-        <select id="terc-filter-mes" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none">
-            <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option><option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option><option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
-        </select>
-    </div>
-
-    <div class="w-full md:w-44">
-        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Pagamento</label>
-        <select id="terc-filter-pagamento" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none">
-            <option value="pendente" selected>Apenas Pendentes</option>
-            <option value="pago">Apenas Pagos</option>
-            <option value="todos">Todos (Mês)</option>
-        </select>
-    </div>
-
-    <div class="w-full md:w-24">
-        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Ano</label>
-        <input type="number" id="terc-filter-ano" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none text-center">
-    </div>
-
-    <div class="w-full md:w-auto">
-        <button onclick="imprimirRelatorioTerc()" class="w-full md:w-auto p-2.5 border border-slate-300 text-slate-700 hover:bg-slate-100 rounded-lg font-bold flex items-center justify-center gap-2 text-sm shadow-sm">
-            <i data-lucide="printer" width="16"></i> Folha
-        </button>
-    </div>
+      <div class="w-full md:w-auto flex-1 min-w-[200px]">
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Buscar Nome</label>
+          <input type="text" id="terc-search" onkeyup="renderTerceirizados()" placeholder="Nome ou Documento..." class="w-full p-2.5 border border-slate-300 rounded-lg focus:border-blue-500 outline-none text-sm font-medium">
+      </div>
+      
+      <div class="w-full md:w-32">
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
+          <select id="terc-filter-status" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none">
+              <option value="true" selected>Ativados</option>
+              <option value="false">Desativados</option>
+              <option value="todos">Todos</option>
+          </select>
+      </div>
+  
+      <div class="w-full md:w-32">
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mês Ref.</label>
+          <select id="terc-filter-mes" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none">
+              <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option><option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option><option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+          </select>
+      </div>
+  
+      <div class="w-full md:w-44">
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Pagamento</label>
+          <select id="terc-filter-pagamento" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none">
+              <option value="pendente" selected>Apenas Pendentes</option>
+              <option value="pago">Apenas Pagos</option>
+              <option value="todos">Todos (Mês)</option>
+          </select>
+      </div>
+  
+      <div class="w-full md:w-24">
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Ano</label>
+          <input type="number" id="terc-filter-ano" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none text-center">
+      </div>
+  
+      <div class="w-full md:w-auto">
+          <button onclick="imprimirRelatorioTerc()" class="w-full md:w-auto p-2.5 border border-slate-300 text-slate-700 hover:bg-slate-100 rounded-lg font-bold flex items-center justify-center gap-2 text-sm shadow-sm">
+              <i data-lucide="printer" width="16"></i> Folha
+          </button>
+      </div>
 </div>
 
-    <div class="w-full md:w-24">
-        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Ano</label>
-        <input type="number" id="terc-filter-ano" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none text-center">
-    </div>
-
-    <div class="w-full md:w-auto">
-        <button onclick="imprimirRelatorioTerc()" class="w-full md:w-auto p-2.5 border border-slate-300 text-slate-700 hover:bg-slate-100 rounded-lg font-bold flex items-center justify-center gap-2 text-sm shadow-sm">
-            <i data-lucide="printer" width="16"></i> Folha
-        </button>
-    </div>
-</div>
 
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
         <table class="w-full text-left border-collapse min-w-[800px]">
