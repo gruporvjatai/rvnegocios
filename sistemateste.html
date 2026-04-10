@@ -2058,70 +2058,74 @@ async function buscarRegistrosEletronicos() {
         }
 
         function imprimirFolha() {
-            const mes = document.getElementById('eqp-filter-mes').value;
-            const ano = document.getElementById('eqp-filter-ano').value;
-            const term = document.getElementById('eqp-search').value.toLowerCase();
-            const obraFiltro = document.getElementById('eqp-obra-filter').value;
-            const statusFiltro = document.getElementById('eqp-filter-status').value;
-            
-            let fil = STATE.equipe.filter(e => e.nome.toLowerCase().includes(term) || (e.categoria||'').toLowerCase().includes(term));
-            if(obraFiltro) fil = fil.filter(e => e.obra_atual_id == obraFiltro);
-            if (statusFiltro !== "todos") {
-                const isAtivo = statusFiltro === "true";
-                fil = fil.filter(e => e.ativo === isAtivo || (isAtivo && e.ativo === undefined));
-            }
+    const mes = document.getElementById('eqp-filter-mes').value;
+    const ano = document.getElementById('eqp-filter-ano').value;
+    const term = document.getElementById('eqp-search').value.toLowerCase();
+    const obraFiltro = document.getElementById('eqp-obra-filter').value;
+    const statusFiltro = document.getElementById('eqp-filter-status').value;
+    
+    let fil = STATE.equipe.filter(e => e.nome.toLowerCase().includes(term) || (e.categoria||'').toLowerCase().includes(term));
+    if(obraFiltro) fil = fil.filter(e => e.obra_atual_id == obraFiltro);
+    if (statusFiltro !== "todos") {
+        const isAtivo = statusFiltro === "true";
+        fil = fil.filter(e => e.ativo === isAtivo || (isAtivo && e.ativo === undefined));
+    }
 
-            let htmlReport = `
-                <div style="font-family: Arial, sans-serif; color: #333; width: 100%;">
-                    <div style="text-align: center; border-bottom: 2px solid #1d4ed8; padding-bottom: 10px; margin-bottom: 20px;">
-                        <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px; margin-bottom: 10px;" />
-                        <h2 style="margin: 0; color: #1e293b; font-size: 20px; font-weight: 900;">RELATÓRIO DE FREQUÊNCIA E PAGAMENTO</h2>
-                        <h3 style="margin: 5px 0 0 0; color: #1d4ed8;">Competência: ${mes}/${ano}</h3>
-                        ${obraFiltro ? `<p style="margin: 5px 0 0 0; font-size: 14px; color: #64748b;">Obra: ${STATE.obras.find(o=>o.id==obraFiltro)?.nome}</p>` : ''}
-                    </div>
-                    <table width="100%" style="border-collapse: collapse; text-align: left; font-size: 11px;">
-                        <thead>
-                            <tr style="background-color: #f1f5f9; color: #1e293b;">
-                                <th style="padding: 8px; border: 1px solid #cbd5e1;">Funcionário / Função</th>
-                                <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">Diária</th>
-                                <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">Dias Trabalhados</th>
-                                <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: right;">Total R$ (Subtotal)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
-
-            let somaTotal = 0;
-            fil.forEach(e => {
-                let pt = STATE.ponto.find(x => x.equipe_id == e.id && x.mes === mes && x.ano === ano);
-                let dias = pt ? parseFloat(pt.total_dias || 0) : 0;
-                let diaria = parseFloat(e.valor_diaria || 0);
-                let total = pt ? parseFloat(pt.valor_total || 0) : (dias * diaria);
-                somaTotal += total;
-
-                // Mudança 4: Tirado o campo assinatura e diminuído os paddings (linhas menores)
-                htmlReport += `
-                    <tr>
-                        <td style="padding: 8px; border: 1px solid #cbd5e1;"><strong>${e.nome}</strong><br><span style="font-size: 9px; color:#64748b; text-transform: uppercase;">${e.categoria||'Geral'}</span></td>
-                        <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${formatMoney(diaria)}</td>
-                        <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #1d4ed8;">${dias}</td>
-                        <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: right; font-weight: bold; font-size: 12px;">${formatMoney(total)}</td>
+    let htmlReport = `
+        <div style="font-family: Arial, sans-serif; color: #333; width: 100%;">
+            <div style="text-align: center; border-bottom: 2px solid #1d4ed8; padding-bottom: 10px; margin-bottom: 20px;">
+                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px; margin-bottom: 10px;" />
+                <h2 style="margin: 0; color: #1e293b; font-size: 20px; font-weight: 900;">RELATÓRIO DE FREQUÊNCIA E PAGAMENTO</h2>
+                <h3 style="margin: 5px 0 0 0; color: #1d4ed8;">Competência: ${mes}/${ano}</h3>
+                ${obraFiltro ? `<p style="margin: 5px 0 0 0; font-size: 14px; color: #64748b;">Obra: ${STATE.obras.find(o=>o.id==obraFiltro)?.nome}</p>` : ''}
+            </div>
+            <table width="100%" style="border-collapse: collapse; text-align: left; font-size: 11px;">
+                <thead>
+                    <tr style="background-color: #f1f5f9; color: #1e293b;">
+                        <th style="padding: 8px; border: 1px solid #cbd5e1;">Funcionário / PIX</th>
+                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">Diária</th>
+                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">Dias Trabalhados</th>
+                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: right;">Total R$ (Subtotal)</th>
                     </tr>
-                `;
-            });
+                </thead>
+                <tbody>
+    `;
 
-            htmlReport += `
-                        </tbody>
-                    </table>
-                    <div style="margin-top: 20px; text-align: right; font-size: 16px;">
-                        <strong>TOTAL GERAL PAGO: <span style="color: #b91c1c;">${formatMoney(somaTotal)}</span></strong>
-                    </div>
-                </div>
-            `;
+    let somaTotal = 0;
+    fil.forEach(e => {
+        let pt = STATE.ponto.find(x => x.equipe_id == e.id && x.mes === mes && x.ano === ano);
+        let dias = pt ? parseFloat(pt.total_dias || 0) : 0;
+        let diaria = parseFloat(e.valor_diaria || 0);
+        let total = pt ? parseFloat(pt.valor_total || 0) : (dias * diaria);
+        somaTotal += total;
 
-            document.getElementById('print-area').innerHTML = htmlReport;
-            setTimeout(() => window.print(), 300);
-        }
+        // Adicionada a Chave PIX abaixo do Nome, com destaque.
+        htmlReport += `
+            <tr>
+                <td style="padding: 8px; border: 1px solid #cbd5e1;">
+                    <div style="font-weight: 900; font-size: 12px;">${e.nome.toUpperCase()}</div>
+                    <div style="font-size: 10px; color: #1d4ed8; font-weight: bold; margin-top: 2px;">PIX: ${e.chave_pix || '<span style="color:#ef4444">NÃO INFORMADO</span>'}</div>
+                    <div style="font-size: 9px; color:#64748b; text-transform: uppercase; margin-top: 2px;">FUNÇÃO: ${e.categoria||'Geral'}</div>
+                </td>
+                <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${formatMoney(diaria)}</td>
+                <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #1d4ed8;">${dias}</td>
+                <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: right; font-weight: bold; font-size: 12px;">${formatMoney(total)}</td>
+            </tr>
+        `;
+    });
+
+    htmlReport += `
+                </tbody>
+            </table>
+            <div style="margin-top: 20px; text-align: right; font-size: 16px;">
+                <strong>TOTAL GERAL PAGO: <span style="color: #b91c1c;">${formatMoney(somaTotal)}</span></strong>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('print-area').innerHTML = htmlReport;
+    setTimeout(() => window.print(), 300);
+}
 
         function imprimirRecibo(equipe_id, ponto_id) {
             const mes = document.getElementById('eqp-filter-mes').value;
