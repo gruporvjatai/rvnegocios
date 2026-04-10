@@ -1046,10 +1046,10 @@
   
       <div class="w-full md:w-44">
           <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Pagamento</label>
-          <select id="terc-filter-pagamento" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none">
-              <option value="pendente" selected>Apenas Pendentes</option>
-              <option value="pago">Apenas Pagos</option>
-              <option value="todos">Todos (Mês)</option>
+            <select id="terc-filter-pagamento" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none">
+            <option value="pendente">Apenas Pendentes</option>
+            <option value="pago">Apenas Pagos</option>
+            <option value="todos" selected>Todos (Mês)</option>
           </select>
       </div>
   
@@ -4280,7 +4280,7 @@ function renderTerceirizados() {
         // Aplica o filtro visual da tela
         if (pagFiltro === 'pendente' && metrosPendentes === 0) return ''; // Esconde se não tem nada pendente
         if (pagFiltro === 'pago' && metrosPagos === 0) return ''; // Esconde se não tem nada pago
-        if (pagFiltro === 'todos' && (metrosPendentes === 0 && metrosPagos === 0)) return ''; // Esconde se não tem produção no mês
+      
         
         const valorPendente = metrosPendentes * valorMetro;
         const valorPago = metrosPagos * valorMetro;
