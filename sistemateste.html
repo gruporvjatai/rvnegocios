@@ -2525,24 +2525,36 @@ async function buscarRegistrosEletronicos() {
         }
 
         async function saveObra(e) {
-            e.preventDefault(); showLoading(true);
+            e.preventDefault(); 
+            if (typeof showLoading === 'function') showLoading(true);
+        
             const isNew = !document.getElementById('obra-id').value;
             
+            // Pegamos o elemento da data com cuidado para não quebrar o código
+            const inputData = document.getElementById('obra-termino');
+            const valorData = inputData ? inputData.value : null;
+        
             const payload = {
                 nome: document.getElementById('obra-name').value,
                 endereco: document.getElementById('obra-addr').value,
                 solicitante: document.getElementById('obra-solic').value,
                 valor_contrato: parseFloat(document.getElementById('obra-contrato').value) || 0,
-                // NOVA LINHA: Captura a data de término do formulário
-                data_termino: document.getElementById('obra-termino').value 
+                data_termino: valorData // Só envia se o campo existir
             };
+        
             if(!isNew) payload.id = document.getElementById('obra-id').value;
         
+            // Usei "sb" porque foi o que veio no seu exemplo, confirme se é esse mesmo o nome da sua variável do Supabase
             const { error } = await sb.from('jsp_obras').upsert(payload);
-            if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
+        
+            if(error) { 
+                if (typeof showLoading === 'function') showLoading(false); 
+                return showToast("Erro: " + error.message, true); 
+            }
             
             document.getElementById('obra-form-container').classList.add('hidden');
-            showToast("Obra Salva!"); loadData();
+            showToast("Obra Salva!"); 
+            if (typeof loadData === 'function') loadData();
         }
 
         function openObraForm(id) {
