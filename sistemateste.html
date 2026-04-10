@@ -464,6 +464,10 @@
                 <div><label class="block text-xs font-bold text-slate-500 uppercase">Endereço / Localização</label><input type="text" id="obra-addr" class="w-full p-2 border rounded outline-none focus:border-blue-600"></div>
                 <div><label class="block text-xs font-bold text-slate-500 uppercase">Órgão / Solicitante / Prefeitura</label><input type="text" id="obra-solic" class="w-full p-2 border rounded outline-none focus:border-blue-600"></div>
             </div>
+          <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase">Previsão de Término (Contrato)</label>
+              <input type="date" id="obra-termino" required class="w-full p-2 border rounded outline-none focus:border-blue-600 font-bold text-slate-700">
+          </div>
             <div class="flex gap-2 mt-6">
                 <button type="button" onclick="document.getElementById('obra-form-container').classList.add('hidden')" class="flex-1 p-3 bg-slate-200 text-slate-700 rounded-lg font-bold hover:bg-slate-300">Cancelar</button>
                 <button type="submit" class="flex-1 p-3 bg-blue-700 text-white rounded-lg font-bold hover:bg-blue-800 shadow-md">Salvar</button>
@@ -2211,12 +2215,14 @@ async function buscarRegistrosEletronicos() {
     const dataExtenso = `${dia} de ${mes} de ${ano}`;
     const hojeCurto = dataAtual.toLocaleDateString('pt-BR');
 
-    // --- LÓGICA DE DATA DE TÉRMINO ---
+    // --- LÓGICA DE DATA DE TÉRMINO (AGORA 100% DINÂMICA) ---
+    const obraVinculada = STATE.obras.find(o => o.id == e.obra_atual_id);
     let dataTerminoContrato = "____/____/______";
-    if (e.obra_atual_id == 1) {
-        dataTerminoContrato = "31/05/2026";
-    } else if (e.obra_atual_id == 2) {
-        dataTerminoContrato = "31/12/2026";
+
+    if (obraVinculada && obraVinculada.data_termino) {
+        // Converte a data do banco (AAAA-MM-DD) para o padrão BR (DD/MM/AAAA)
+        const partes = obraVinculada.data_termino.split('-');
+        dataTerminoContrato = `${partes[2]}/${partes[1]}/${partes[0]}`;
     }
     // ---------------------------------
 
@@ -2526,10 +2532,12 @@ async function buscarRegistrosEletronicos() {
                 nome: document.getElementById('obra-name').value,
                 endereco: document.getElementById('obra-addr').value,
                 solicitante: document.getElementById('obra-solic').value,
-                valor_contrato: parseFloat(document.getElementById('obra-contrato').value) || 0
+                valor_contrato: parseFloat(document.getElementById('obra-contrato').value) || 0,
+                // NOVA LINHA: Captura a data de término do formulário
+                data_termino: document.getElementById('obra-termino').value 
             };
             if(!isNew) payload.id = document.getElementById('obra-id').value;
-
+        
             const { error } = await sb.from('jsp_obras').upsert(payload);
             if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
             
@@ -2538,19 +2546,23 @@ async function buscarRegistrosEletronicos() {
         }
 
         function openObraForm(id) {
-            document.getElementById('obra-form-container').classList.remove('hidden');
-            if(id) {
-                const o = STATE.obras.find(x => x.id == id);
-                document.getElementById('obra-id').value = o.id;
-                document.getElementById('obra-name').value = o.nome;
-                document.getElementById('obra-addr').value = o.endereco;
-                document.getElementById('obra-solic').value = o.solicitante;
-                document.getElementById('obra-contrato').value = o.valor_contrato || 0;
-            } else {
-                document.getElementById('obra-form-container').querySelector('form').reset();
-                document.getElementById('obra-id').value = '';
-            }
-        }
+    document.getElementById('obra-form-container').classList.remove('hidden');
+    if(id) {
+        const o = STATE.obras.find(x => x.id == id);
+        document.getElementById('obra-id').value = o.id;
+        document.getElementById('obra-name').value = o.nome;
+        document.getElementById('obra-addr').value = o.endereco;
+        document.getElementById('obra-solic').value = o.solicitante;
+        document.getElementById('obra-contrato').value = o.valor_contrato || 0;
+        // NOVA LINHA: Carrega a data que vem do banco
+        document.getElementById('obra-termino').value = o.data_termino || '';
+    } else {
+        document.getElementById('obra-form-container').querySelector('form').reset();
+        document.getElementById('obra-id').value = '';
+        // Garante que o campo de data comece vazio no novo cadastro
+        document.getElementById('obra-termino').value = '';
+    }
+}
 
         async function saveFornecedor(e) {
             e.preventDefault(); showLoading(true);
