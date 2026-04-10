@@ -2188,11 +2188,10 @@ async function buscarRegistrosEletronicos() {
             loadData();
         }
 
-      function imprimirDocumento() {
+     function imprimirDocumento() {
     const id = document.getElementById('doc-equipe-id').value;
     const tipo = document.getElementById('doc-tipo-select').value;
     
-    // TRAVA: Se clicar em imprimir sem escolher nada na lista, avisa e para.
     if (!tipo) {
         alert("Por favor, selecione um documento na lista antes de imprimir.");
         return;
@@ -2200,13 +2199,11 @@ async function buscarRegistrosEletronicos() {
 
     const e = STATE.equipe.find(x => x.id == id);
     
-    // TRAVA: Segurança extra caso não ache o colaborador
     if (!e) {
         alert("Erro ao encontrar os dados do colaborador.");
         return;
     }
     
-    // Gerar data por extenso para o fechamento do contrato
     const dataAtual = new Date();
     const dia = dataAtual.getDate();
     const meses = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
@@ -2214,30 +2211,25 @@ async function buscarRegistrosEletronicos() {
     const ano = dataAtual.getFullYear();
     const dataExtenso = `${dia} de ${mes} de ${ano}`;
     const hojeCurto = dataAtual.toLocaleDateString('pt-BR');
-
-    // --- LÓGICA DE DATA DE TÉRMINO (AGORA 100% DINÂMICA) ---
+    
+    // 1. Busca a obra (AQUI ELA É DECLARADA PELA PRIMEIRA VEZ)
     const obraVinculada = STATE.obras.find(o => o.id == e.obra_atual_id);
-    let dataTerminoContrato = "____/____/______";
+    const enderecoObra = obraVinculada ? (obraVinculada.endereco || obraVinculada.nome) : 'Endereço não informado / Obra não definida';
+    const diariaTexto = formatMoney(e.valor_diaria || 0);
+    const matricula = parseFloat(e.matricula || 0);
 
+    // 2. LÓGICA DE DATA DE TÉRMINO (USANDO A VARIÁVEL QUE JÁ EXISTE ACIMA)
+    let dataTerminoContrato = "____/____/______";
     if (obraVinculada && obraVinculada.data_termino) {
-        // Converte a data do banco (AAAA-MM-DD) para o padrão BR (DD/MM/AAAA)
         const partes = obraVinculada.data_termino.split('-');
         dataTerminoContrato = `${partes[2]}/${partes[1]}/${partes[0]}`;
     }
-    // ---------------------------------
 
-    // --- LÓGICA DE DATA DE INÍCIO (Cadastro) ---
+    // 3. LÓGICA DE DATA DE INÍCIO
     let dataInicioContrato = "____/____/______";
     if (e.created_at) {
         dataInicioContrato = new Date(e.created_at).toLocaleDateString('pt-BR');
     }
-    // -------------------------------------------
-    
-    // Busca a obra para preencher o local de prestação de serviços
-    const obraVinculada = STATE.obras.find(o => o.id == e.obra_atual_id);
-    const enderecoObra = obraVinculada ? (obraVinculada.endereco || obraVinculada.nome) : 'Endereço não informado / Obra não definida';
-    const diariaTexto = formatMoney(e.valor_diaria || 0);
-    const matricula = parseFloat(e.matricula || 0);/////////////
     
     let titulo = "";
     let corpoTexto = "";
