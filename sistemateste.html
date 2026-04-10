@@ -1013,42 +1013,47 @@
     </div>
 
     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-wrap gap-4 items-end">
-      <div class="w-full md:w-auto flex-1">
-          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Buscar Nome</label>
-          <input type="text" id="terc-search" onkeyup="renderTerceirizados()" placeholder="Nome ou Documento..." class="w-full p-2.5 border border-slate-300 rounded-lg focus:border-blue-500 outline-none text-sm font-medium">
-      </div>
-      <div class="w-full md:w-40">
-          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
-          <select id="terc-filter-status" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none">
-              <option value="true" selected>Ativados</option>
-              <option value="false">Desativados</option>
-              <option value="todos">Todos</option>
-          </select>
-      </div>
-      <div class="w-full md:w-40">
-          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mês Ref.</label>
-          <select id="terc-filter-mes" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none">
-              <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option><option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option><option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
-          </select>
-        <div class="w-full md:w-40">
-            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Período</label>
-            <select id="terc-filter-periodo" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none">
-                <option value="mes">Mês Inteiro</option>
-                <option value="q1">1ª Quinzena (01-15)</option>
-                <option value="q2">2ª Quinzena (16-31)</option>
-            </select>
-        </div>
-      </div>
-      <div class="w-full md:w-28">
-          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Ano</label>
-          <input type="number" id="terc-filter-ano" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none text-center">
-      </div>
-      <div class="w-full md:w-auto">
-          <button onclick="imprimirRelatorioTerc()" class="w-full md:w-auto p-2.5 border border-slate-300 text-slate-700 hover:bg-slate-100 rounded-lg font-bold flex items-center justify-center gap-2 text-sm shadow-sm">
-              <i data-lucide="printer" width="16"></i> Imprimir Folha
-          </button>
-      </div>
-  </div>
+    <div class="w-full md:w-auto flex-1 min-w-[200px]">
+        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Buscar Nome</label>
+        <input type="text" id="terc-search" onkeyup="renderTerceirizados()" placeholder="Nome ou Documento..." class="w-full p-2.5 border border-slate-300 rounded-lg focus:border-blue-500 outline-none text-sm font-medium">
+    </div>
+    
+    <div class="w-full md:w-32">
+        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
+        <select id="terc-filter-status" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none">
+            <option value="true" selected>Ativados</option>
+            <option value="false">Desativados</option>
+            <option value="todos">Todos</option>
+        </select>
+    </div>
+
+    <div class="w-full md:w-32">
+        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mês Ref.</label>
+        <select id="terc-filter-mes" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none">
+            <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option><option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option><option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+        </select>
+    </div>
+
+    <div class="w-full md:w-44">
+        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Período</label>
+        <select id="terc-filter-periodo" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none">
+            <option value="mes">Mês Inteiro</option>
+            <option value="q1">1ª Quinzena (01-15)</option>
+            <option value="q2">2ª Quinzena (16-31)</option>
+        </select>
+    </div>
+
+    <div class="w-full md:w-24">
+        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Ano</label>
+        <input type="number" id="terc-filter-ano" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none text-center">
+    </div>
+
+    <div class="w-full md:w-auto">
+        <button onclick="imprimirRelatorioTerc()" class="w-full md:w-auto p-2.5 border border-slate-300 text-slate-700 hover:bg-slate-100 rounded-lg font-bold flex items-center justify-center gap-2 text-sm shadow-sm">
+            <i data-lucide="printer" width="16"></i> Folha
+        </button>
+    </div>
+</div>
 
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
         <table class="w-full text-left border-collapse min-w-[800px]">
@@ -4245,34 +4250,42 @@ function renderTerceirizados() {
         const valorPago = metrosPagos * valorMetro;
 
         return `<tr class="border-b hover:bg-slate-50 transition ${t.ativo === false ? 'opacity-60 bg-red-50' : ''}">
-            <td class="p-3">
-                <div class="font-black text-slate-800 text-sm uppercase">${t.nome}</div>
-                <div class="text-[10px] text-blue-700 font-bold"><i data-lucide="building" class="w-3 h-3 inline"></i> ${nomeObra}</div>
-                <div class="text-[10px] text-slate-400 font-bold mt-1">PIX: ${t.chave_pix || '-'}</div>
-            </td>
-            <td class="p-3 text-center">
-                <div class="font-bold text-slate-600 text-xs">${formatMoney(valorMetro)}</div>
-                <div class="text-[9px] text-slate-400 font-bold uppercase">Valor/m</div>
-            </td>
-            <td class="p-3 text-center">
-                <div class="text-xs font-black text-orange-600">${metrosPendentes.toFixed(2)} m <span class="text-[9px] block text-slate-400 font-bold">A PAGAR</span></div>
-                <div class="text-xs font-black text-green-600 mt-1">${metrosPagos.toFixed(2)} m <span class="text-[9px] block text-slate-400 font-bold">JÁ PAGO</span></div>
-            </td>
-            <td class="p-3 text-right">
-                <div class="font-black text-sm text-red-600">${formatMoney(valorPendente)}</div>
-                <div class="font-bold text-[10px] text-green-700 mt-1">Pago: ${formatMoney(valorPago)}</div>
-            </td>
-            <td class="p-3 text-center">
-                <div class="flex items-center justify-center gap-1 flex-wrap">
-                    <button onclick="openTercProdModal('${t.id}')" class="p-1.5 bg-slate-800 text-white hover:bg-black rounded shadow font-bold text-[10px] flex items-center gap-1" title="Lançar Metragem Diária"><i data-lucide="ruler" width="12"></i> MEDIÇÃO</button>
-                    ${valorPendente > 0 ? `<button onclick="baixarPagamentoTerc('${t.id}')" class="p-1.5 bg-green-600 text-white hover:bg-green-700 rounded shadow font-bold text-[10px] flex items-center gap-1" title="Dar baixa no valor pendente"><i data-lucide="check-circle" width="12"></i> BAIXAR</button>` : ''}
-                    <button onclick="openTercForm('${t.id}')" class="p-1.5 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Editar"><i data-lucide="edit-3" width="14"></i></button>
-                </div>
-            </td>
-        </tr>`;
+    <td class="p-3">
+        <div class="font-black text-slate-800 text-sm uppercase truncate max-w-[200px]">${t.nome}</div>
+        <div class="text-[10px] text-blue-700 font-bold"><i data-lucide="building" class="w-3 h-3 inline"></i> ${nomeObra}</div>
+        <div class="text-[9px] text-slate-400 font-bold mt-1">PIX: ${t.chave_pix || '-'}</div>
+    </td>
+    <td class="p-3 text-center">
+        <div class="font-bold text-slate-600 text-xs">${formatMoney(valorMetro)}</div>
+        <div class="text-[9px] text-slate-400 font-bold uppercase">Valor/m</div>
+    </td>
+    <td class="p-3">
+        <div class="flex flex-col items-center justify-center">
+            <div class="text-[11px] font-black text-orange-600 whitespace-nowrap">${metrosPendentes.toFixed(2)} m <span class="text-[8px] text-slate-400 font-bold">PEND.</span></div>
+            <div class="text-[11px] font-black text-green-600 whitespace-nowrap border-t border-slate-100 mt-1 pt-1">${metrosPagos.toFixed(2)} m <span class="text-[8px] text-slate-400 font-bold">PAGO</span></div>
+        </div>
+    </td>
+    <td class="p-3 text-right">
+        <div class="flex flex-col items-end justify-center">
+            <div class="font-black text-sm text-red-600 whitespace-nowrap">${formatMoney(valorPendente)}</div>
+            <div class="text-[10px] font-bold text-green-700 whitespace-nowrap mt-1">Pago: ${formatMoney(valorPago)}</div>
+        </div>
+    </td>
+    <td class="p-3">
+        <div class="flex flex-col gap-1 items-center justify-center">
+            <div class="flex gap-1">
+                <button onclick="openTercProdModal('${t.id}')" class="p-1.5 bg-slate-800 text-white hover:bg-black rounded shadow font-bold text-[10px] flex items-center gap-1" title="Lançar Metragem"><i data-lucide="ruler" width="12"></i> MEDIÇÃO</button>
+                ${valorPendente > 0 ? `<button onclick="baixarPagamentoTerc('${t.id}')" class="p-1.5 bg-green-600 text-white hover:bg-green-700 rounded shadow font-bold text-[10px] flex items-center gap-1"><i data-lucide="check-circle" width="12"></i> BAIXAR</button>` : ''}
+            </div>
+            <button onclick="openTercForm('${t.id}')" class="w-full p-1.5 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded flex items-center justify-center" title="Editar"><i data-lucide="edit-3" width="14"></i></button>
+        </div>
+    </td>
+</tr>`;
+      
     }).join('');
     lucide.createIcons();
 }
+      
 
 function openTercForm(id) {
     updateSelectTercObra();
