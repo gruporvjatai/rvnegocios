@@ -1601,7 +1601,14 @@ function imprimirFolhaPontoEletronico() {
     const e = STATE.equipe.find(x => x.id == funcId);
     const dataIni = document.getElementById('ponto-auto-data-ini').value.split('-').reverse().join('/');
     const dataFim = document.getElementById('ponto-auto-data-fim').value.split('-').reverse().join('/');
-    const totalDiarias = window.diariasEletronicasAtivas.toFixed(2);
+    
+    // Separação para cálculo e exibição
+    const totalDiariasFloat = window.diariasEletronicasAtivas;
+    const totalDiariasFormatado = totalDiariasFloat.toFixed(2);
+    
+    // NOVO: Cálculo do valor total em R$
+    const valorDiaria = parseFloat(e.valor_diaria || 0);
+    const valorTotalPagar = totalDiariasFloat * valorDiaria;
     
     // Nova estrutura com 4 pontos
     let htmlTabelaImp = window.dadosFolhaImpressao.map(i => `
@@ -1649,7 +1656,8 @@ function imprimirFolhaPontoEletronico() {
             </table>
 
             <div style="text-align: right; font-size: 13pt; margin-bottom: 50px;">
-                <strong>TOTAL DE DIÁRIAS APURADAS: ${totalDiarias}</strong>
+                <strong>TOTAL DE DIÁRIAS APURADAS: ${totalDiariasFormatado}</strong><br>
+                <strong style="color: #1d4ed8; font-size: 16pt; display: block; margin-top: 8px;">VALOR A PAGAR: ${formatMoney(valorTotalPagar)}</strong>
             </div>
 
             <div style="display: flex; justify-content: space-between; margin-top: 60px; font-size: 10pt;">
