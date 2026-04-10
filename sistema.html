@@ -1589,93 +1589,6 @@ async function buscarRegistrosEletronicos() {
     }
 }
 
-// -------------------------------------------------------------------
-// IMPRESSÃO DA FOLHA DE PONTO
-// -------------------------------------------------------------------
-/*function imprimirFolhaPontoEletronico() {
-    if (!window.dadosFolhaImpressao || window.dadosFolhaImpressao.length === 0) {
-        return showToast("Busque os registros primeiro antes de imprimir!", true);
-    }
-
-    const funcId = document.getElementById('ponto-equipe-id').value;
-    const e = STATE.equipe.find(x => x.id == funcId);
-    const dataIni = document.getElementById('ponto-auto-data-ini').value.split('-').reverse().join('/');
-    const dataFim = document.getElementById('ponto-auto-data-fim').value.split('-').reverse().join('/');
-    
-    // Separação para cálculo e exibição
-    const totalDiariasFloat = window.diariasEletronicasAtivas;
-    const totalDiariasFormatado = totalDiariasFloat.toFixed(2);
-    
-    // NOVO: Cálculo do valor total em R$
-    const valorDiaria = parseFloat(e.valor_diaria || 0);
-    const valorTotalPagar = totalDiariasFloat * valorDiaria;
-    
-    // Nova estrutura com 4 pontos
-    let htmlTabelaImp = window.dadosFolhaImpressao.map(i => `
-        <tr>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${i.data}</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${i.e1}</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${i.s1}</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${i.e2}</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${i.s2}</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;"></td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center; font-weight: bold;">${i.fracao}</td>
-        </tr>
-    `).join('');
-
-    const htmlImpressao = `
-        <div style="font-family: Arial, sans-serif; color: #000; width: 100%;">
-            <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px;">
-                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px; margin-bottom: 10px;" />
-                <h2 style="margin: 0; font-size: 18pt; font-weight: bold;">FOLHA DE PONTO INDIVIDUAL</h2>
-                <p style="margin: 5px 0 0 0; font-size: 11pt;">Período Apurado: ${dataIni} a ${dataFim}</p>
-            </div>
-            
-            <div style="margin-bottom: 20px; font-size: 11pt;">
-                <strong>Colaborador:</strong> ${(e.nome).toUpperCase()}<br>
-                <strong>Função:</strong> ${(e.categoria || 'Geral').toUpperCase()}<br>
-                <strong>Obra:</strong> ${STATE.obras.find(o => o.id == e.obra_atual_id)?.nome || 'Não definida'}<br>
-                <strong>CPF:</strong> ${e.cpf || 'Não informado'}
-            </div>
-
-            <table style="width: 100%; border-collapse: collapse; font-size: 9pt; margin-bottom: 30px;">
-                <thead>
-                    <tr style="background-color: #f1f5f9;">
-                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Data</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Entrada 1</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Saída 1</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Entrada 2</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Saída 2</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Assinatura</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Diária</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${htmlTabelaImp}
-                </tbody>
-            </table>
-
-            <div style="text-align: right; font-size: 13pt; margin-bottom: 50px;">
-                <strong>TOTAL DE DIÁRIAS APURADAS: ${totalDiariasFormatado}</strong><br>
-                <strong style="color: #1d4ed8; font-size: 16pt; display: block; margin-top: 8px;">VALOR A PAGAR: ${formatMoney(valorTotalPagar)}</strong>
-            </div>
-
-            <div style="display: flex; justify-content: space-between; margin-top: 60px; font-size: 10pt;">
-                <div style="text-align: center; width: 45%; border-top: 1px solid #000; padding-top: 10px;">
-                    <strong>RV NEGOCIOS E COMPANHIA</strong>
-                </div>
-                <div style="text-align: center; width: 45%; border-top: 1px solid #000; padding-top: 10px;">
-                    <strong>${(e.nome).toUpperCase()}</strong><br>
-                    Declaro corretas as anotações acima.
-                </div>
-            </div>
-        </div>
-    `;
-
-    document.getElementById('print-area').innerHTML = htmlImpressao;
-    setTimeout(() => window.print(), 300);
-}*/
-
       function imprimirFolhaPontoEletronico() {
     if (!window.dadosFolhaImpressao || window.dadosFolhaImpressao.length === 0) {
         return showToast("Busque os registros primeiro antes de imprimir!", true);
@@ -2126,6 +2039,13 @@ async function buscarRegistrosEletronicos() {
         dataTerminoContrato = "31/12/2026";
     }
     // ---------------------------------
+
+    // --- LÓGICA DE DATA DE INÍCIO (Cadastro) ---
+    let dataInicioContrato = "____/____/______";
+    if (e.created_at) {
+        dataInicioContrato = new Date(e.created_at).toLocaleDateString('pt-BR');
+    }
+    // -------------------------------------------
     
     // Busca a obra para preencher o local de prestação de serviços
     const obraVinculada = STATE.obras.find(o => o.id == e.obra_atual_id);
@@ -2237,7 +2157,7 @@ async function buscarRegistrosEletronicos() {
             </div>
 
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA QUINTA – DO PRAZO</strong></p>
-            <p style="text-indent: 40px; margin-bottom: 30px;">O contrato terá início em <strong> ____/____/______</strong> e término em <strong>${dataTerminoContrato}</strong>, podendo ser prorrogado até o limite de 24 (vinte e quatro) meses.</p>
+            <p style="text-indent: 40px; margin-bottom: 30px;">O contrato terá início em <strong> ${dataInicioContrato}</strong> e término em <strong>${dataTerminoContrato}</strong>, podendo ser prorrogado até o limite de 24 (vinte e quatro) meses.</p>
 
 
             <br>
@@ -2330,7 +2250,7 @@ async function buscarRegistrosEletronicos() {
             </div>
 
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA QUINTA – DO PRAZO</strong></p>
-            <p style="text-indent: 40px; margin-bottom: 30px;">O contrato terá início em <strong>____/____/______</strong> e término em <strong> ${dataTerminoContrato} </strong>, podendo ser prorrogado até o limite de 24 (vinte e quatro) meses.</p>
+            <p style="text-indent: 40px; margin-bottom: 30px;">O contrato terá início em <strong>${dataInicioContrato}</strong> e término em <strong> ${dataTerminoContrato} </strong>, podendo ser prorrogado até o limite de 24 (vinte e quatro) meses.</p>
 
             <br>
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA SEXTA – DA RESCISÃO</strong></p>
