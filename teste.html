@@ -387,9 +387,15 @@
                     </div>
                 </div>
 
-                <div>
-                    <label class="text-[10px] font-bold text-slate-500 uppercase">Valor Diária (R$)</label>
-                    <input type="number" step="0.01" id="eqp-valor_diaria" placeholder="0.00" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm">
+                <div class="flex gap-2">
+                    <div class="w-1/2">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">Data de Contrato</label>
+                        <input type="date" id="eqp-data_contrato" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm">
+                    </div>
+                    <div class="w-1/2">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase">Valor Diária (R$)</label>
+                        <input type="number" step="0.01" id="eqp-valor_diaria" placeholder="0.00" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm">
+                    </div>
                 </div>
 
                 <div>
@@ -400,6 +406,7 @@
                 <button type="submit" class="w-full p-3 bg-blue-700 text-white rounded-xl font-bold mt-2 shadow-lg">Salvar Funcionário</button>
             </form>
         </div>
+      
         
         <div id="obra-form-container" class="hidden w-full bg-white rounded-t-3xl p-5 pb-10 shadow-2xl transition-transform max-h-[90vh] overflow-y-auto no-scrollbar">
             <h3 class="font-bold text-lg mb-4 text-slate-800 flex justify-between items-center">Dados da Obra <button type="button" onclick="closeOverlayForm('obra-form-container')" class="text-slate-400"><i data-lucide="x"></i></button></h3>
@@ -1489,7 +1496,7 @@
             lucide.createIcons();
         }
 
-        function openEquipeForm(id) {
+      function openEquipeForm(id) {
            if(id) {
                 const e = STATE.equipe.find(x => x.id == id); 
                 document.getElementById('eqp-id').value = e.id;
@@ -1498,7 +1505,8 @@
                 document.getElementById('eqp-rg').value = e.rg || '';
                 document.getElementById('eqp-telefone').value = e.telefone || '';
                 document.getElementById('eqp-endereco').value = e.endereco || '';
-                document.getElementById('eqp-chave_pix').value = e.chave_pix || ''; // <--- CARREGA A CHAVE PIX AQUI
+                document.getElementById('eqp-chave_pix').value = e.chave_pix || '';
+                document.getElementById('eqp-data_contrato').value = e.data_contrato || '';
                 document.getElementById('eqp-valor_diaria').value = e.valor_diaria || '';
                 document.getElementById('eqp-categoria').value = e.categoria || 'Servente';
                 document.getElementById('eqp-ativo').value = (e.ativo === true || e.ativo === 'true') ? 'true' : 'false';
@@ -1506,13 +1514,13 @@
             } else { 
                 document.getElementById('equipe-form-container').querySelector('form').reset(); 
                 document.getElementById('eqp-id').value = ''; 
-                document.getElementById('eqp-chave_pix').value = ''; // <--- LIMPA A CHAVE PIX AQUI
+                document.getElementById('eqp-chave_pix').value = '';
+                document.getElementById('eqp-data_contrato').value = '';
                 document.getElementById('eqp-categoria').value = 'Servente';
                 document.getElementById('eqp-ativo').value = 'true';
             }
             openOverlayForm('equipe-form-container');
         }
-
        // 1. Criamos um gerador de ID universal (Funciona no PC e no Mobile)
 // 1. Gerador de ID universal (Funciona no PC e no Mobile)
         function gerarIdSeguro() {
@@ -1541,7 +1549,7 @@ async function saveEquipe(e) {
             const idAtual = getV('eqp-id');
             const isNew = !idAtual;
 
-            // PACOTE DE DADOS (Agora com a Chave PIX garantida)
+            // PACOTE DE DADOS
             const payload = {
                 nome: getV('eqp-nome').trim(),
                 categoria: getV('eqp-categoria'),
@@ -1549,7 +1557,8 @@ async function saveEquipe(e) {
                 cpf: getV('eqp-cpf'),
                 rg: getV('eqp-rg'),
                 endereco: getV('eqp-endereco'),
-                chave_pix: getV('eqp-chave_pix'), // <--- CHAVE PIX LIDA AQUI
+                chave_pix: getV('eqp-chave_pix'),
+                data_contrato: getV('eqp-data_contrato') || null,
                 obra_atual_id: getV('eqp-obra_atual_id') || null,
                 valor_diaria: parseFloat(getV('eqp-valor_diaria')) || 0,
                 ativo: getV('eqp-ativo') === 'true'
