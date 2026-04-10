@@ -1294,42 +1294,48 @@
         document.getElementById('eqp-id').value = e.id;
         document.getElementById('eqp-name').value = e.nome;
         document.getElementById('eqp-cat').value = e.categoria || '';
-        document.getElementById('eqp-diaria').value = e.valor_diaria || 0;
-        document.getElementById('eqp-pix').value = e.chave_pix || ''; // <-- NOVO CAMPO PIX
+        document.getElementById('eqp-phone').value = e.telefone || '';
+        document.getElementById('eqp-cpf').value = e.cpf || '';
+        document.getElementById('eqp-rg').value = e.rg || '';
+        document.getElementById('eqp-endereco').value = e.endereco || '';
+        document.getElementById('eqp-obra').value = e.obra_atual_id || '';
+        document.getElementById('eqp-diaria').value = e.valor_diaria || '';
+        document.getElementById('eqp-pix').value = e.chave_pix || ''; // <-- CAMPO PIX INCLUÍDO AQUI
     } else {
         document.getElementById('equipe-form-container').querySelector('form').reset();
         document.getElementById('eqp-id').value = '';
-        document.getElementById('eqp-pix').value = ''; // <-- NOVO CAMPO PIX
     }
 }
 
-        async function saveEquipe(e) {
-    e.preventDefault(); 
-    showLoading(true);
-    
+async function saveEquipe(e) {
+    e.preventDefault(); showLoading(true);
     const isNew = !document.getElementById('eqp-id').value;
-    
     const payload = {
         nome: document.getElementById('eqp-name').value,
         categoria: document.getElementById('eqp-cat').value,
+        telefone: document.getElementById('eqp-phone').value,
+        cpf: document.getElementById('eqp-cpf').value,
+        rg: document.getElementById('eqp-rg').value,
+        endereco: document.getElementById('eqp-endereco').value,
+        obra_atual_id: document.getElementById('eqp-obra').value || null,
         valor_diaria: parseFloat(document.getElementById('eqp-diaria').value) || 0,
-        chave_pix: document.getElementById('eqp-pix').value // <-- NOVO CAMPO PIX NO PAYLOAD
+        chave_pix: document.getElementById('eqp-pix').value // <-- CAMPO PIX INCLUÍDO AQUI
     };
     
-    if(!isNew) payload.id = document.getElementById('eqp-id').value;
+    if(isNew) {
+        payload.id = crypto.randomUUID();
+        payload.ativo = true;
+        payload.contrato_assinado = false;
+    } else {
+        payload.id = document.getElementById('eqp-id').value;
+    }
 
     const { error } = await sb.from('jsp_equipe').upsert(payload);
-    
-    if(error) { 
-        showLoading(false); 
-        return showToast("Erro: " + error.message, true); 
-    }
+    if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
     
     document.getElementById('equipe-form-container').classList.add('hidden');
-    showToast("Membro da equipe salvo!"); 
-    loadData();
+    showToast("Membro salvo na equipe!"); loadData();
 }
-
         async function toggleStatusEquipe(id, isAtivo) {
             const acao = isAtivo ? "DESATIVAR (Demitir)" : "REATIVAR";
             if(!confirm(`Tem certeza que deseja ${acao} este colaborador? Ele ${isAtivo ? 'não aparecerá' : 'voltará a aparecer'} na lista padrão.`)) return;
