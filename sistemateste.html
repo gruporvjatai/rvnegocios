@@ -511,7 +511,7 @@
                           <select id="eqp-cat" class="w-full p-2 border rounded focus:border-blue-600 outline-none bg-slate-50">
                               <option value="" disabled selected>-- Selecione --</option>
                               <option value="Pedreiro">Pedreiro</option>
-                              <option value="Servente">Servente</option>                              
+                              <option value="Servente">Servente</option>                             
                           </select>
                       </div>
                       <div>
@@ -530,7 +530,13 @@
                 </div>
                 <div class="grid grid-cols-2 gap-3 pt-2 border-t mt-2">
                     <div class="col-span-2"><label class="block text-[10px] font-bold text-slate-500 uppercase">Obra Vinculada (Atual)</label><select id="eqp-obra" class="w-full p-2 border rounded focus:border-blue-600 outline-none font-bold text-blue-700 bg-blue-50"></select></div>
-                    <div class="col-span-2"><label class="block text-[10px] font-bold text-slate-500 uppercase">Valor da Diária Combinada (R$)</label><input type="number" step="0.01" id="eqp-diaria" class="w-full p-2 border rounded focus:border-blue-600 outline-none font-black text-green-700 bg-green-50"></div>
+                    
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase">Data de Início (Contrato)</label>
+                        <input type="date" id="eqp-contrato" class="w-full p-2 border rounded focus:border-blue-600 outline-none bg-white font-bold text-slate-700">
+                    </div>
+
+                    <div><label class="block text-[10px] font-bold text-slate-500 uppercase">Valor da Diária (R$)</label><input type="number" step="0.01" id="eqp-diaria" class="w-full p-2 border rounded focus:border-blue-600 outline-none font-black text-green-700 bg-green-50"></div>
                 </div>
             </div>
             <div class="flex gap-2 mt-6">
@@ -1493,13 +1499,14 @@
         document.getElementById('eqp-endereco').value = e.endereco || '';
         document.getElementById('eqp-obra').value = e.obra_atual_id || '';
         document.getElementById('eqp-diaria').value = e.valor_diaria || '';
-        document.getElementById('eqp-pix').value = e.chave_pix || ''; // <-- CAMPO PIX INCLUÍDO AQUI
+        document.getElementById('eqp-pix').value = e.chave_pix || '';
+        // NOVA LINHA: Carrega a data de contrato
+        document.getElementById('eqp-contrato').value = e.data_contrato || '';
     } else {
         document.getElementById('equipe-form-container').querySelector('form').reset();
         document.getElementById('eqp-id').value = '';
     }
 }
-
 async function saveEquipe(e) {
     e.preventDefault(); showLoading(true);
     const isNew = !document.getElementById('eqp-id').value;
@@ -1512,7 +1519,8 @@ async function saveEquipe(e) {
         endereco: document.getElementById('eqp-endereco').value,
         obra_atual_id: document.getElementById('eqp-obra').value || null,
         valor_diaria: parseFloat(document.getElementById('eqp-diaria').value) || 0,
-        chave_pix: document.getElementById('eqp-pix').value // <-- CAMPO PIX INCLUÍDO AQUI
+        chave_pix: document.getElementById('eqp-pix').value,        
+        data_contrato: document.getElementById('eqp-contrato').value || null 
     };
     
     if(isNew) {
@@ -2225,11 +2233,14 @@ async function buscarRegistrosEletronicos() {
         dataTerminoContrato = `${partes[2]}/${partes[1]}/${partes[0]}`;
     }
 
-    // 3. LÓGICA DE DATA DE INÍCIO
+    // --- LÓGICA DE DATA DE INÍCIO (AGORA VIA CAMPO MANUAL) ---
     let dataInicioContrato = "____/____/______";
-    if (e.created_at) {
-        dataInicioContrato = new Date(e.created_at).toLocaleDateString('pt-BR');
+    if (e.data_contrato) {
+        // Converte AAAA-MM-DD para DD/MM/AAAA
+        const p = e.data_contrato.split('-');
+        dataInicioContrato = `${p[2]}/${p[1]}/${p[0]}`;
     }
+    // ---------------------------------------------------------
     
     let titulo = "";
     let corpoTexto = "";
