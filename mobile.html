@@ -364,6 +364,11 @@
                     <label class="text-[10px] font-bold text-slate-500 uppercase">Endereço</label>
                     <input type="text" id="eqp-endereco" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm">
                 </div>
+
+              <div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase">Chave PIX</label>
+                    <input type="text" id="eqp-chave_pix" placeholder="Celular, CPF, E-mail ou Aleatória" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm font-bold text-slate-700">
+                </div>
                 
                 <div class="flex gap-2">
                     <div class="w-1/2">
@@ -1485,7 +1490,7 @@
         }
 
         function openEquipeForm(id) {
-            if(id) {
+           if(id) {
                 const e = STATE.equipe.find(x => x.id == id); 
                 document.getElementById('eqp-id').value = e.id;
                 document.getElementById('eqp-nome').value = e.nome || '';
@@ -1493,6 +1498,7 @@
                 document.getElementById('eqp-rg').value = e.rg || '';
                 document.getElementById('eqp-telefone').value = e.telefone || '';
                 document.getElementById('eqp-endereco').value = e.endereco || '';
+                document.getElementById('eqp-chave_pix').value = e.chave_pix || ''; // <--- CARREGA A CHAVE PIX AQUI
                 document.getElementById('eqp-valor_diaria').value = e.valor_diaria || '';
                 document.getElementById('eqp-categoria').value = e.categoria || 'Servente';
                 document.getElementById('eqp-ativo').value = (e.ativo === true || e.ativo === 'true') ? 'true' : 'false';
@@ -1500,6 +1506,7 @@
             } else { 
                 document.getElementById('equipe-form-container').querySelector('form').reset(); 
                 document.getElementById('eqp-id').value = ''; 
+                document.getElementById('eqp-chave_pix').value = ''; // <--- LIMPA A CHAVE PIX AQUI
                 document.getElementById('eqp-categoria').value = 'Servente';
                 document.getElementById('eqp-ativo').value = 'true';
             }
@@ -1519,7 +1526,9 @@
         }
 
         // 2. Função com os IDs EXATOS do seu HTML mobile
-        async function saveEquipe(e) {
+       
+
+async function saveEquipe(e) {
             e.preventDefault(); 
             showLoading(true);
 
@@ -1532,22 +1541,23 @@
             const idAtual = getV('eqp-id');
             const isNew = !idAtual;
 
-            // AQUI ESTÁ A CORREÇÃO: IDs idênticos aos do seu HTML!
+            // PACOTE DE DADOS (Agora com a Chave PIX garantida)
             const payload = {
-                nome: getV('eqp-nome'),
+                nome: getV('eqp-nome').trim(),
                 categoria: getV('eqp-categoria'),
                 telefone: getV('eqp-telefone'),
                 cpf: getV('eqp-cpf'),
                 rg: getV('eqp-rg'),
                 endereco: getV('eqp-endereco'),
+                chave_pix: getV('eqp-chave_pix'), // <--- CHAVE PIX LIDA AQUI
                 obra_atual_id: getV('eqp-obra_atual_id') || null,
                 valor_diaria: parseFloat(getV('eqp-valor_diaria')) || 0,
-                ativo: getV('eqp-ativo') === 'true' // Pega se está Ativo ou Inativo no HTML
+                ativo: getV('eqp-ativo') === 'true'
             };
             
             if(isNew) {
-                // Gera o UUID para o banco não dar erro
-                payload.id = gerarIdSeguro();
+                // Gerador de ID (UUID)
+                payload.id = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); });
                 
                 // Calcula a Matrícula Sequencial automaticamente
                 let maxMat = 0;
@@ -1558,107 +1568,44 @@
                     });
                 }
                 payload.matricula = maxMat > 0 ? maxMat + 1 : 133;
-                
                 payload.contrato_assinado = false;
             } else {
                 payload.id = idAtual;
             }
 
+            // Envio para o banco de dados (Supabase)
             const { error } = await sb.from('jsp_equipe').upsert(payload);
             
             if(error) { 
                 showLoading(false); 
-                return showToast("Erro: " + error.message, true); 
+                return showToast("Erro do Banco: " + error.message, true); 
             }
             
-            // Esconde o formulário
-            // ISSO AQUI ESTÁ CORRETO (Usa sua função nativa que limpa tudo)
-            closeOverlayForm('equipe-form-container');
+            // Fechando o formulário e matando o fundo escuro
+            const modalForm = document.getElementById('equipe-form-container');
+            const fundoEscuro = document.getElementById('overlay-forms');
+            if(modalForm) modalForm.classList.add('hidden');
+            if(fundoEscuro) fundoEscuro.classList.add('hidden');
             
-            showToast("Funcionário salvo com sucesso!"); 
-            loadData();
+            // Exibindo as notificações de sucesso
+            if(isNew) {
+                const nomeEl = document.getElementById('sucesso-nome');
+                const matEl = document.getElementById('sucesso-num-matricula');
+                const modalSucesso = document.getElementById('modal-sucesso-matricula');
+                
+                if(nomeEl) nomeEl.innerText = payload.nome;
+                if(matEl) matEl.innerText = payload.matricula;
+                if(modalSucesso) modalSucesso.classList.remove('hidden');
+                
+                lucide.createIcons();
+            } else {
+                showToast("Funcionário atualizado com sucesso!"); 
+            }
+            
+            // Atualiza a lista e volta pra aba da equipe
+            await loadData();
+            navigate('equipe');
         }
-
-// 2. Sua função original, apenas com proteção contra campos nulos
-              async function saveEquipe(e) {
-                          e.preventDefault(); 
-                          showLoading(true);
-              
-                          // 1. Função auxiliar para ler os valores do HTML com segurança
-                          const getV = (id) => {
-                              const el = document.getElementById(id);
-                              return el ? el.value : '';
-                          };
-              
-                          const idAtual = getV('eqp-id');
-                          const isNew = !idAtual;
-              
-                          // 2. Montando o pacote de dados com os IDs exatos da tela
-                          const payload = {
-                              nome: getV('eqp-nome').trim(),
-                              categoria: getV('eqp-categoria'),
-                              telefone: getV('eqp-telefone'),
-                              cpf: getV('eqp-cpf'),
-                              rg: getV('eqp-rg'),
-                              endereco: getV('eqp-endereco'),
-                              obra_atual_id: getV('eqp-obra_atual_id') || null,
-                              valor_diaria: parseFloat(getV('eqp-valor_diaria')) || 0,
-                              ativo: getV('eqp-ativo') === 'true'
-                          };
-              
-                          if(isNew) {
-                              // Gerador de ID (UUID)
-                              payload.id = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); });
-                              
-                              // Calcula a Matrícula Sequencial automaticamente
-                              let maxMat = 0;
-                              if (STATE.equipe && STATE.equipe.length > 0) {
-                                  STATE.equipe.forEach(item => {
-                                      let m = parseInt(item.matricula);
-                                      if (!isNaN(m) && m > maxMat) maxMat = m;
-                                  });
-                              }
-                              payload.matricula = maxMat > 0 ? maxMat + 1 : 133;
-                              payload.contrato_assinado = false;
-                          } else {
-                              payload.id = idAtual;
-                          }
-              
-                          // 3. Envio para o banco de dados (Supabase)
-                          const { error } = await sb.from('jsp_equipe').upsert(payload);
-                          
-                          if(error) { 
-                              showLoading(false); 
-                              return showToast("Erro do Banco: " + error.message, true); 
-                          }
-                          
-                          // 4. Fechando o formulário e matando o fundo escuro na marra
-                          const modalForm = document.getElementById('equipe-form-container');
-                          const fundoEscuro = document.getElementById('overlay-forms');
-                          if(modalForm) modalForm.classList.add('hidden');
-                          if(fundoEscuro) fundoEscuro.classList.add('hidden');
-                          
-                          // 5. Exibindo as notificações de sucesso
-                          if(isNew) {
-                              // Mostra o Cartão Bonitão com a Matrícula
-                              const nomeEl = document.getElementById('sucesso-nome');
-                              const matEl = document.getElementById('sucesso-num-matricula');
-                              const modalSucesso = document.getElementById('modal-sucesso-matricula');
-                              
-                              if(nomeEl) nomeEl.innerText = payload.nome;
-                              if(matEl) matEl.innerText = payload.matricula;
-                              if(modalSucesso) modalSucesso.classList.remove('hidden');
-                              
-                              lucide.createIcons();
-                          } else {
-                              // Se for só uma edição, mostra o aviso rápido
-                              showToast("Funcionário atualizado com sucesso!"); 
-                          }
-                          
-                          // 6. Atualiza a lista e volta pra aba da equipe
-                          await loadData();
-                          navigate('equipe');
-                      }
         
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
