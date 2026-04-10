@@ -4470,24 +4470,85 @@ function imprimirRelatorioTerc() {
     const mes = document.getElementById('terc-filter-mes').value;
     const ano = document.getElementById('terc-filter-ano').value;
     const term = document.getElementById('terc-search').value.toLowerCase();
+    const statusFiltro = document.getElementById('terc-filter-status').value;
     
     let fil = STATE.terceirizados.filter(t => t.nome.toLowerCase().includes(term) || (t.cpf_cnpj||'').includes(term));
     
-    if(totalMetros > 0) {
-    htmlReport += `
-        <tr>
-            <td style="padding: 8px; border: 1px solid #cbd5e1;">
-                <div style="font-weight: bold; font-size: 12px; color: #1e293b;">${t.nome.toUpperCase()}</div>
-                <div style="font-size: 10px; color: #1d4ed8; font-weight: bold; margin-top: 2px;">
-                    PIX: ${t.chave_pix || '<span style="color:#ef4444">NÃO INFORMADO</span>'}
-                </div>
-                <div style="font-size: 9px; color: #64748b; margin-top: 2px;">DOC: ${t.cpf_cnpj || '-'}</div>
-            </td>
-            <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${formatMoney(valorMetro)}</td>
-            <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #1d4ed8;">${totalMetros.toFixed(2)}</td>
-            <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: right; font-weight: bold; font-size: 12px;">${formatMoney(totalPagar)}</td>
-        </tr>
+    // Aplica o filtro de status também na impressão
+    if (statusFiltro !== "todos") {
+        const isAtivo = statusFiltro === "true";
+        fil = fil.filter(t => t.ativo === isAtivo || (isAtivo && t.ativo === undefined));
+    }
+    
+    let htmlReport = `
+        <div style="font-family: Arial, sans-serif; color: #333; width: 100%;">
+            <div style="text-align: center; border-bottom: 2px solid #1d4ed8; padding-bottom: 10px; margin-bottom: 20px;">
+                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px; margin-bottom: 10px;" />
+                <h2 style="margin: 0; color: #1e293b; font-size: 20px; font-weight: 900;">RELATÓRIO DE PRODUÇÃO (TERCEIRIZADOS)</h2>
+                <h3 style="margin: 5px 0 0 0; color: #1d4ed8;">Competência: ${mes}/${ano}</h3>
+            </div>
+            <table width="100%" style="border-collapse: collapse; text-align: left; font-size: 11px;">
+                <thead>
+                    <tr style="background-color: #f1f5f9; color: #1e293b;">
+                        <th style="padding: 8px; border: 1px solid #cbd5e1;">Empreiteiro / Pagamento</th>
+                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">Valor M.</th>
+                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">Total (Metros)</th>
+                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: right;">Subtotal R$</th>
+                    </tr>
+                </thead>
+                <tbody>
     `;
+
+    let somaTotal = 0;
+
+    fil.forEach(t => {
+        // --- AQUI ESTAVA O PROBLEMA: O CÁLCULO PRECISA ESTAR DENTRO DO LOOP ---
+        const producaoMes = STATE.producao_terc.filter(p => {
+            if (p.terceirizado_id !== t.id) return false;
+            const dt = new Date(p.data_registro);
+            const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
+            const a = dt.getUTCFullYear();
+            return m === mes && String(a) === ano;
+        });
+
+        const totalMetros = producaoMes.reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
+        const valorMetro = parseFloat(t.valor_metro || 0);
+        const totalPagar = totalMetros * valorMetro;
+        
+        if(totalMetros > 0) {
+            somaTotal += totalPagar;
+            htmlReport += `
+                <tr>
+                    <td style="padding: 8px; border: 1px solid #cbd5e1;">
+                        <div style="font-weight: bold; font-size: 12px; color: #1e293b;">${t.nome.toUpperCase()}</div>
+                        <div style="font-size: 10px; color: #1d4ed8; font-weight: bold; margin-top: 2px;">
+                            PIX: ${t.chave_pix || '<span style="color:#ef4444">NÃO INFORMADO</span>'}
+                        </div>
+                        <div style="font-size: 9px; color: #64748b; margin-top: 2px;">DOC: ${t.cpf_cnpj || '-'}</div>
+                    </td>
+                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${formatMoney(valorMetro)}</td>
+                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #1d4ed8;">${totalMetros.toFixed(2)}</td>
+                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: right; font-weight: bold; font-size: 12px;">${formatMoney(totalPagar)}</td>
+                </tr>
+            `;
+        }
+    });
+
+    if (somaTotal === 0) {
+        htmlReport += `<tr><td colspan="4" style="padding: 20px; text-align: center; color: #64748b;">Nenhuma produção registrada para os filtros selecionados.</td></tr>`;
+    }
+
+    htmlReport += `
+                </tbody>
+            </table>
+            <div style="margin-top: 20px; text-align: right; font-size: 16px;">
+                <strong>TOTAL GERAL APURADO: <span style="color: #b91c1c;">${formatMoney(somaTotal)}</span></strong>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('print-area').innerHTML = htmlReport;
+    setTimeout(() => window.print(), 300);
 }
 
     let somaTotal = 0;
