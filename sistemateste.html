@@ -1872,6 +1872,7 @@ async function buscarRegistrosEletronicos() {
             
             <div style="margin-bottom: 20px; font-size: 11pt;">
                 <strong>Colaborador:</strong> ${(e.nome).toUpperCase()}<br>
+                <strong style="color: #1d4ed8;">Chave PIX:</strong> <span style="color: #1d4ed8; font-weight: bold;">${e.chave_pix || 'Não informada'}</span><br>
                 <strong>Função:</strong> ${(e.categoria || 'Geral').toUpperCase()}<br>
                 <strong>Obra:</strong> ${STATE.obras.find(o => o.id == e.obra_atual_id)?.nome || 'Não definida'}<br>
                 <strong>CPF:</strong> ${e.cpf || 'Não informado'}
@@ -1901,7 +1902,7 @@ async function buscarRegistrosEletronicos() {
 
             <div style="display: flex; justify-content: space-between; margin-top: 60px; font-size: 10pt;">
                 <div style="text-align: center; width: 45%; border-top: 1px solid #000; padding-top: 10px;">
-                    <strong>RV NEGOCIOS E COMPANHIA</strong>
+                    <strong>RV NEGÓCIOS E COMPANHIA</strong>
                 </div>
                 <div style="text-align: center; width: 45%; border-top: 1px solid #000; padding-top: 10px;">
                     <strong>${(e.nome).toUpperCase()}</strong><br>
@@ -1914,6 +1915,7 @@ async function buscarRegistrosEletronicos() {
     document.getElementById('print-area').innerHTML = htmlImpressao;
     setTimeout(() => window.print(), 300);
 }
+      
       
         function renderPontoGrid(mes, ano) {
     const grid = document.getElementById('ponto-grid');
