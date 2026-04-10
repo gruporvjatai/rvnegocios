@@ -2184,7 +2184,7 @@ async function buscarRegistrosEletronicos() {
             loadData();
         }
 
-       function imprimirDocumento() {
+      function imprimirDocumento() {
     const id = document.getElementById('doc-equipe-id').value;
     const tipo = document.getElementById('doc-tipo-select').value;
     
@@ -2219,6 +2219,13 @@ async function buscarRegistrosEletronicos() {
         dataTerminoContrato = "31/12/2026";
     }
     // ---------------------------------
+
+    // --- LÓGICA DE DATA DE INÍCIO (Cadastro) ---
+    let dataInicioContrato = "____/____/______";
+    if (e.created_at) {
+        dataInicioContrato = new Date(e.created_at).toLocaleDateString('pt-BR');
+    }
+    // -------------------------------------------
     
     // Busca a obra para preencher o local de prestação de serviços
     const obraVinculada = STATE.obras.find(o => o.id == e.obra_atual_id);
@@ -2330,7 +2337,7 @@ async function buscarRegistrosEletronicos() {
             </div>
 
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA QUINTA – DO PRAZO</strong></p>
-            <p style="text-indent: 40px; margin-bottom: 30px;">O contrato terá início em <strong> ____/____/______</strong> e término em <strong>${dataTerminoContrato}</strong>, podendo ser prorrogado até o limite de 24 (vinte e quatro) meses.</p>
+            <p style="text-indent: 40px; margin-bottom: 30px;">O contrato terá início em <strong> ${dataInicioContrato}</strong> e término em <strong>${dataTerminoContrato}</strong>, podendo ser prorrogado até o limite de 24 (vinte e quatro) meses.</p>
 
 
             <br>
@@ -2423,7 +2430,7 @@ async function buscarRegistrosEletronicos() {
             </div>
 
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA QUINTA – DO PRAZO</strong></p>
-            <p style="text-indent: 40px; margin-bottom: 30px;">O contrato terá início em <strong>____/____/______</strong> e término em <strong> ${dataTerminoContrato} </strong>, podendo ser prorrogado até o limite de 24 (vinte e quatro) meses.</p>
+            <p style="text-indent: 40px; margin-bottom: 30px;">O contrato terá início em <strong>${dataInicioContrato}</strong> e término em <strong> ${dataTerminoContrato} </strong>, podendo ser prorrogado até o limite de 24 (vinte e quatro) meses.</p>
 
             <br>
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA SEXTA – DA RESCISÃO</strong></p>
