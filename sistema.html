@@ -1592,7 +1592,7 @@ async function buscarRegistrosEletronicos() {
 // -------------------------------------------------------------------
 // IMPRESSÃO DA FOLHA DE PONTO
 // -------------------------------------------------------------------
-function imprimirFolhaPontoEletronico() {
+/*function imprimirFolhaPontoEletronico() {
     if (!window.dadosFolhaImpressao || window.dadosFolhaImpressao.length === 0) {
         return showToast("Busque os registros primeiro antes de imprimir!", true);
     }
@@ -1601,7 +1601,14 @@ function imprimirFolhaPontoEletronico() {
     const e = STATE.equipe.find(x => x.id == funcId);
     const dataIni = document.getElementById('ponto-auto-data-ini').value.split('-').reverse().join('/');
     const dataFim = document.getElementById('ponto-auto-data-fim').value.split('-').reverse().join('/');
-    const totalDiarias = window.diariasEletronicasAtivas.toFixed(2);
+    
+    // Separação para cálculo e exibição
+    const totalDiariasFloat = window.diariasEletronicasAtivas;
+    const totalDiariasFormatado = totalDiariasFloat.toFixed(2);
+    
+    // NOVO: Cálculo do valor total em R$
+    const valorDiaria = parseFloat(e.valor_diaria || 0);
+    const valorTotalPagar = totalDiariasFloat * valorDiaria;
     
     // Nova estrutura com 4 pontos
     let htmlTabelaImp = window.dadosFolhaImpressao.map(i => `
@@ -1649,7 +1656,138 @@ function imprimirFolhaPontoEletronico() {
             </table>
 
             <div style="text-align: right; font-size: 13pt; margin-bottom: 50px;">
-                <strong>TOTAL DE DIÁRIAS APURADAS: ${totalDiarias}</strong>
+                <strong>TOTAL DE DIÁRIAS APURADAS: ${totalDiariasFormatado}</strong><br>
+                <strong style="color: #1d4ed8; font-size: 16pt; display: block; margin-top: 8px;">VALOR A PAGAR: ${formatMoney(valorTotalPagar)}</strong>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; margin-top: 60px; font-size: 10pt;">
+                <div style="text-align: center; width: 45%; border-top: 1px solid #000; padding-top: 10px;">
+                    <strong>RV NEGOCIOS E COMPANHIA</strong>
+                </div>
+                <div style="text-align: center; width: 45%; border-top: 1px solid #000; padding-top: 10px;">
+                    <strong>${(e.nome).toUpperCase()}</strong><br>
+                    Declaro corretas as anotações acima.
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('print-area').innerHTML = htmlImpressao;
+    setTimeout(() => window.print(), 300);
+}*/
+
+      function imprimirFolhaPontoEletronico() {
+    if (!window.dadosFolhaImpressao || window.dadosFolhaImpressao.length === 0) {
+        return showToast("Busque os registros primeiro antes de imprimir!", true);
+    }
+
+    const funcId = document.getElementById('ponto-equipe-id').value;
+    const e = STATE.equipe.find(x => x.id == funcId);
+    const dataIni = document.getElementById('ponto-auto-data-ini').value.split('-').reverse().join('/');
+    const dataFim = document.getElementById('ponto-auto-data-fim').value.split('-').reverse().join('/');
+    
+    // Separação para cálculo e exibição
+    const totalDiariasFloat = window.diariasEletronicasAtivas;
+    const totalDiariasFormatado = totalDiariasFloat.toFixed(2);
+    
+    // Cálculo do valor total em R$
+    const valorDiaria = parseFloat(e.valor_diaria || 0);
+    const valorTotalPagar = totalDiariasFloat * valorDiaria;
+    
+    // Função auxiliar para calcular minutos direto na impressão
+    function timeToMinutes(timeStr) {
+        if (!timeStr || timeStr === '--:--') return 0;
+        const parts = timeStr.split(':');
+        return (parseInt(parts[0]) * 60) + parseInt(parts[1]);
+    }
+
+    // Mapeando a tabela com a lógica de Atraso/Extra
+    let htmlTabelaImp = window.dadosFolhaImpressao.map(i => {
+        let diffText = "--";
+        let bgColor = "transparent";
+        let diffColor = "#333";
+        let workedMinutes = 0;
+
+        if (i.e1 !== '--:--') {
+            if (i.e2 !== '--:--' && i.s2 !== '--:--') {
+                // Cálculo de quem bateu os 4 pontos (E1, S1, E2, S2)
+                workedMinutes = (timeToMinutes(i.s1) - timeToMinutes(i.e1)) + (timeToMinutes(i.s2) - timeToMinutes(i.e2));
+            } else if (i.s1 !== '--:--') {
+                // Fallback de quem esqueceu ponto e só tem entrada e saída final
+                workedMinutes = timeToMinutes(i.s1) - timeToMinutes(i.e1);
+                if (workedMinutes >= 360) workedMinutes -= 60; // Desconta 1h de almoço automático
+            }
+            
+            const JORNADA_MINUTOS = 480; // 8 horas por dia
+            const diff = workedMinutes - JORNADA_MINUTOS;
+
+            // Tolerância de 20 min igual ao motor
+            if (diff < -20) { 
+                const absDiff = Math.abs(diff);
+                const h = Math.floor(absDiff / 60).toString().padStart(2, '0');
+                const m = (absDiff % 60).toString().padStart(2, '0');
+                diffText = `-${h}h ${m}m`;
+                bgColor = "#fef2f2"; // Fundo Vermelho bem clarinho 
+                diffColor = "#b91c1c"; // Texto vermelho escuro
+            } else if (diff > 20) {
+                const h = Math.floor(diff / 60).toString().padStart(2, '0');
+                const m = (diff % 60).toString().padStart(2, '0');
+                diffText = `+${h}h ${m}m`;
+                diffColor = "#15803d"; // Verde escuro
+            } else {
+                diffText = "Exato";
+                diffColor = "#475569"; // Cinza
+            }
+        }
+
+        return `
+        <tr style="background-color: ${bgColor};">
+            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${i.data}</td>
+            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${i.e1}</td>
+            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${i.s1}</td>
+            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${i.e2}</td>
+            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${i.s2}</td>
+            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center; font-weight: bold; color: ${diffColor};">${diffText}</td>
+            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center; font-weight: bold;">${i.fracao}</td>
+        </tr>
+        `;
+    }).join('');
+
+    const htmlImpressao = `
+        <div style="font-family: Arial, sans-serif; color: #000; width: 100%;">
+            <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px;">
+                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px; margin-bottom: 10px;" />
+                <h2 style="margin: 0; font-size: 18pt; font-weight: bold;">FOLHA DE PONTO INDIVIDUAL</h2>
+                <p style="margin: 5px 0 0 0; font-size: 11pt;">Período Apurado: ${dataIni} a ${dataFim}</p>
+            </div>
+            
+            <div style="margin-bottom: 20px; font-size: 11pt;">
+                <strong>Colaborador:</strong> ${(e.nome).toUpperCase()}<br>
+                <strong>Função:</strong> ${(e.categoria || 'Geral').toUpperCase()}<br>
+                <strong>Obra:</strong> ${STATE.obras.find(o => o.id == e.obra_atual_id)?.nome || 'Não definida'}<br>
+                <strong>CPF:</strong> ${e.cpf || 'Não informado'}
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; font-size: 9pt; margin-bottom: 30px;">
+                <thead>
+                    <tr style="background-color: #f1f5f9;">
+                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Data</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Entrada 1</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Saída 1</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Entrada 2</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Saída 2</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Saldo (Horas)</th>
+                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Diária</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${htmlTabelaImp}
+                </tbody>
+            </table>
+
+            <div style="text-align: right; font-size: 13pt; margin-bottom: 50px;">
+                <strong>TOTAL DE DIÁRIAS APURADAS: ${totalDiariasFormatado}</strong><br>
+                <strong style="color: #1d4ed8; font-size: 16pt; display: block; margin-top: 8px;">VALOR A PAGAR: ${formatMoney(valorTotalPagar)}</strong>
             </div>
 
             <div style="display: flex; justify-content: space-between; margin-top: 60px; font-size: 10pt;">
