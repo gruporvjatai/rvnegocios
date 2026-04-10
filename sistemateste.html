@@ -1030,6 +1030,14 @@
           <select id="terc-filter-mes" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none">
               <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option><option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option><option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
           </select>
+        <div class="w-full md:w-40">
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Período</label>
+            <select id="terc-filter-periodo" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none">
+                <option value="mes">Mês Inteiro</option>
+                <option value="q1">1ª Quinzena (01-15)</option>
+                <option value="q2">2ª Quinzena (16-31)</option>
+            </select>
+        </div>
       </div>
       <div class="w-full md:w-28">
           <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Ano</label>
@@ -4185,71 +4193,80 @@ function updateSelectTercObra() {
 }
 
 function renderTerceirizados() {
-    updateSelectTercObra(); // Garante select povoado
+    updateSelectTercObra();
     
-    // Na inicialização da página, caso esses campos não estejam preenchidos, preenche com mês/ano atual
-    if(!document.getElementById('terc-filter-mes').value) {
-        const h = new Date();
-        document.getElementById('terc-filter-mes').value = String(h.getMonth() + 1).padStart(2, '0');
-        document.getElementById('terc-filter-ano').value = h.getFullYear();
-    }
-
+    // Captura filtros
     const term = document.getElementById('terc-search').value.toLowerCase();
     const mes = document.getElementById('terc-filter-mes').value;
     const ano = document.getElementById('terc-filter-ano').value;
     const statusFiltro = document.getElementById('terc-filter-status').value;
+    const periodo = document.getElementById('terc-filter-periodo').value; // Novo filtro de quinzena
     const list = document.getElementById('terc-list');
     
-    let fil = STATE.terceirizados.filter(t => t.nome.toLowerCase().includes(term) || (t.cpf_cnpj||'').includes(term));
-      if (statusFiltro !== "todos") {
-          const isAtivo = statusFiltro === "true";
-          fil = fil.filter(t => t.ativo === isAtivo || (isAtivo && t.ativo === undefined));
-      }
+    // Filtro inicial de busca e status ativo/inativo
+    let fil = STATE.terceirizados.filter(t => {
+        const bateNome = t.nome.toLowerCase().includes(term) || (t.cpf_cnpj||'').includes(term);
+        let bateStatus = true;
+        if (statusFiltro !== "todos") {
+            const isAtivo = statusFiltro === "true";
+            bateStatus = (t.ativo === isAtivo || (isAtivo && t.ativo === undefined));
+        }
+        return bateNome && bateStatus;
+    });
+
     fil.sort((a, b) => a.nome.localeCompare(b.nome));
     
     list.innerHTML = fil.map(t => {
         const obraAtual = STATE.obras.find(o => o.id == t.obra_atual_id);
-        const nomeObra = obraAtual ? obraAtual.nome : '<span class="text-slate-400 italic">Geral / Não definida</span>';
+        const nomeObra = obraAtual ? obraAtual.nome : '<span class="text-slate-400 italic font-normal">Geral</span>';
         const valorMetro = parseFloat(t.valor_metro || 0);
         
-        // Filtra a produção do mês atual para este terceirizado
-        const producaoMes = STATE.producao_terc.filter(p => {
+        // --- LÓGICA DE FILTRO POR QUINZENA E CÁLCULO FINANCEIRO ---
+        const producaoFiltrada = STATE.producao_terc.filter(p => {
             if (p.terceirizado_id !== t.id) return false;
-            const dt = new Date(p.data_registro); // Assumindo YYYY-MM-DD
-            // Precisamos lidar com timezone seguro (UTC) se a data vier do banco como YYYY-MM-DD
+            
+            const dt = new Date(p.data_registro);
+            const dia = dt.getUTCDate();
             const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
-            const a = dt.getUTCFullYear();
-            return m === mes && String(a) === ano;
+            const a = String(dt.getUTCFullYear());
+
+            if (m !== mes || a !== ano) return false;
+
+            if (periodo === 'q1') return dia <= 15;
+            if (periodo === 'q2') return dia >= 16;
+            return true; // Mês inteiro
         });
 
-        const totalMetros = producaoMes.reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
-        const totalPagar = totalMetros * valorMetro;
+        // Separa metros pendentes de pagos
+        const metrosPendentes = producaoFiltrada.filter(p => p.status !== 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
+        const metrosPagos = producaoFiltrada.filter(p => p.status === 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
         
-        // Verifica se há algo pendente no mês
-        const temPendente = producaoMes.some(p => p.status !== 'PAGO');
+        const valorPendente = metrosPendentes * valorMetro;
+        const valorPago = metrosPagos * valorMetro;
 
         return `<tr class="border-b hover:bg-slate-50 transition ${t.ativo === false ? 'opacity-60 bg-red-50' : ''}">
             <td class="p-3">
-                <div class="font-bold text-slate-800 text-sm">${t.nome} ${t.ativo === false ? '<span class="text-[9px] text-red-500 font-bold">(DESATIVADO)</span>' : ''}</div>
-                <div class="text-[10px] text-slate-500 font-bold uppercase mt-0.5">CPF/CNPJ: ${t.cpf_cnpj || '-'}</div>
-                <div class="text-xs font-bold text-blue-700 mt-1"><i data-lucide="building" class="w-3 h-3 inline"></i> ${nomeObra}</div>
+                <div class="font-black text-slate-800 text-sm uppercase">${t.nome}</div>
+                <div class="text-[10px] text-blue-700 font-bold"><i data-lucide="building" class="w-3 h-3 inline"></i> ${nomeObra}</div>
+                <div class="text-[10px] text-slate-400 font-bold mt-1">PIX: ${t.chave_pix || '-'}</div>
             </td>
             <td class="p-3 text-center">
-                <div class="font-black text-indigo-700 text-sm">${formatMoney(valorMetro)}</div>
-                <div class="text-[9px] text-slate-400 font-bold uppercase">Por Metro</div>
+                <div class="font-bold text-slate-600 text-xs">${formatMoney(valorMetro)}</div>
+                <div class="text-[9px] text-slate-400 font-bold uppercase">Valor/m</div>
             </td>
             <td class="p-3 text-center">
-                <div class="text-sm font-black ${totalMetros > 0 ? 'text-blue-600' : 'text-slate-400'}">${totalMetros.toFixed(2)} m</div>
+                <div class="text-xs font-black text-orange-600">${metrosPendentes.toFixed(2)} m <span class="text-[9px] block text-slate-400 font-bold">A PAGAR</span></div>
+                <div class="text-xs font-black text-green-600 mt-1">${metrosPagos.toFixed(2)} m <span class="text-[9px] block text-slate-400 font-bold">JÁ PAGO</span></div>
             </td>
             <td class="p-3 text-right">
-                <div class="font-black text-sm ${!temPendente && totalPagar > 0 ? 'text-green-700' : 'text-slate-800'}">${formatMoney(totalPagar)}</div>
+                <div class="font-black text-sm text-red-600">${formatMoney(valorPendente)}</div>
+                <div class="font-bold text-[10px] text-green-700 mt-1">Pago: ${formatMoney(valorPago)}</div>
             </td>
             <td class="p-3 text-center">
-                <div class="flex items-center justify-center gap-1">
-                    <button onclick="openTercProdModal('${t.id}')" class="p-1.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded shadow font-bold text-[10px] flex items-center gap-1"><i data-lucide="ruler" width="12"></i> MEDIÇÃO</button>
-                    <button onclick="imprimirReciboTerc('${t.id}')" class="p-1.5 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Gerar Recibo do Mês"><i data-lucide="receipt" width="14"></i></button>
-                    <button onclick="openTercForm('${t.id}')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar"><i data-lucide="edit-3" width="14"></i></button>
-                    <button onclick="toggleStatusTerc('${t.id}', ${t.ativo !== false})" class="p-1.5 border ${t.ativo !== false ? 'border-red-200 text-red-500 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'} rounded" title="${t.ativo !== false ? 'Desativar' : 'Reativar'}"><i data-lucide="power" width="14"></i></button>
+                <div class="flex items-center justify-center gap-1 flex-wrap">
+                    <button onclick="openTercProdModal('${t.id}')" class="p-1.5 bg-slate-800 text-white hover:bg-black rounded shadow font-bold text-[10px] flex items-center gap-1" title="Lançar Metragem Diária"><i data-lucide="ruler" width="12"></i> MEDIÇÃO</button>
+                    ${valorPendente > 0 ? `<button onclick="baixarPagamentoTerc('${t.id}')" class="p-1.5 bg-green-600 text-white hover:bg-green-700 rounded shadow font-bold text-[10px] flex items-center gap-1" title="Dar baixa no valor pendente"><i data-lucide="check-circle" width="12"></i> BAIXAR</button>` : ''}
+                    <button onclick="openTercForm('${t.id}')" class="p-1.5 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Editar"><i data-lucide="edit-3" width="14"></i></button>
                 </div>
             </td>
         </tr>`;
@@ -4468,127 +4485,151 @@ async function imprimirReciboTerc(tercId) {
 
       
 function imprimirRelatorioTerc() {
-    // 1. Captura os filtros da tela
-    const mesFiltro = document.getElementById('terc-filter-mes').value;
-    const anoFiltro = document.getElementById('terc-filter-ano').value;
+    const mes = document.getElementById('terc-filter-mes').value;
+    const ano = document.getElementById('terc-filter-ano').value;
+    const periodo = document.getElementById('terc-filter-periodo').value;
     const buscaNome = document.getElementById('terc-search').value.toLowerCase();
     const statusFiltro = document.getElementById('terc-filter-status').value;
+
+    const textoPeriodo = periodo === 'q1' ? "1ª Quinzena (Dia 01 ao 15)" : (periodo === 'q2' ? "2ª Quinzena (Dia 16 ao Fim)" : "Mês Completo");
     
-    // 2. Filtra a lista de terceirizados conforme a busca e o status
-    let terceirizadosFiltrados = STATE.terceirizados.filter(t => {
+    let fil = STATE.terceirizados.filter(t => {
         const bateNome = t.nome.toLowerCase().includes(buscaNome) || (t.cpf_cnpj||'').includes(buscaNome);
         let bateStatus = true;
-        
         if (statusFiltro !== "todos") {
-            const ativoBool = statusFiltro === "true";
-            bateStatus = (t.ativo === ativoBool || (ativoBool && t.ativo === undefined));
+            const isAtivo = statusFiltro === "true";
+            bateStatus = (t.ativo === isAtivo || (isAtivo && t.ativo === undefined));
         }
         return bateNome && bateStatus;
     });
 
-    // 3. Início do HTML do Relatório
-    let htmlRelatorio = `
-        <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; padding: 10px;">
+    let htmlReport = `
+        <div style="font-family: Arial, sans-serif; color: #1e293b; padding: 10px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 15px; margin-bottom: 25px;">
-                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 55px;" />
+                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
                 <div style="text-align: right;">
-                    <h2 style="margin: 0; font-size: 18px; font-weight: 900; color: #0f172a; text-transform: uppercase;">Folha de Produção - Terceirizados</h2>
-                    <p style="margin: 3px 0 0 0; font-size: 13px; color: #1d4ed8; font-weight: bold;">Competência: ${mesFiltro}/${anoFiltro}</p>
+                    <h2 style="margin: 0; font-size: 18px; font-weight: 900; color: #0f172a;">FECHAMENTO DE PRODUÇÃO</h2>
+                    <p style="margin: 3px 0 0 0; font-size: 13px; color: #1d4ed8; font-weight: bold;">${textoPeriodo} - ${mes}/${ano}</p>
                 </div>
             </div>
 
             <table width="100%" style="border-collapse: collapse; margin-bottom: 20px;">
                 <thead>
-                    <tr style="background-color: #f8fafc; text-align: left; font-size: 11px; text-transform: uppercase; color: #64748b;">
-                        <th style="padding: 10px; border: 1px solid #e2e8f0;">Profissional / Dados para PIX</th>
-                        <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: center;">Vlr. Metro</th>
-                        <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: center;">Metragem</th>
-                        <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: right;">Subtotal</th>
+                    <tr style="background-color: #f1f5f9; text-align: left; font-size: 11px; color: #475569;">
+                        <th style="padding: 10px; border: 1px solid #cbd5e1;">PROFISSIONAL / CHAVE PIX</th>
+                        <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: center;">METRAGEM</th>
+                        <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: center;">VLR. METRO</th>
+                        <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: right;">TOTAL A PAGAR</th>
                     </tr>
                 </thead>
                 <tbody>
     `;
 
-    let valorGeralPeriodo = 0;
-    let encontrouProducao = false;
+    let totalGeral = 0;
+    let temDados = false;
 
-    // 4. Loop para calcular a produção de cada um
-    terceirizadosFiltrados.forEach(terc => {
-        // Filtra os registros de produção deste terceirizado no mês/ano selecionado
-        const producaoDoMes = STATE.producao_terc.filter(p => {
-            if (p.terceirizado_id !== terc.id) return false;
-            
-            const dataReg = new Date(p.data_registro);
-            const m = String(dataReg.getUTCMonth() + 1).padStart(2, '0');
-            const a = String(dataReg.getUTCFullYear());
-            
-            return m === mesFiltro && a === anoFiltro;
+    fil.forEach(t => {
+        const producao = STATE.producao_terc.filter(p => {
+            if (p.terceirizado_id !== t.id || p.status === 'PAGO') return false; // Mostra só o que falta pagar no relatório
+            const dt = new Date(p.data_registro);
+            const dia = dt.getUTCDate();
+            const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
+            const a = String(dt.getUTCFullYear());
+            if (m !== mes || a !== ano) return false;
+            if (periodo === 'q1' && dia > 15) return false;
+            if (periodo === 'q2' && dia < 16) return false;
+            return true;
         });
 
-        // Soma os metros e calcula o valor
-        const somaMetros = producaoDoMes.reduce((acc, curr) => acc + parseFloat(curr.metros || 0), 0);
-        const valorDoMetro = parseFloat(terc.valor_metro || 0);
-        const subtotalPagar = somaMetros * valorDoMetro;
+        const metros = producao.reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
+        const vlrMetro = parseFloat(t.valor_metro || 0);
+        const subtotal = metros * vlrMetro;
 
-        // Só exibe na folha se houver produção registrada
-        if (somaMetros > 0) {
-            encontrouProducao = true;
-            valorGeralPeriodo += subtotalPagar;
-
-            htmlRelatorio += `
+        if (metros > 0) {
+            temDados = true;
+            totalGeral += subtotal;
+            htmlReport += `
                 <tr style="font-size: 12px; border-bottom: 1px solid #e2e8f0;">
-                    <td style="padding: 12px 10px;">
-                        <div style="font-weight: 800; color: #0f172a; font-size: 13px;">${terc.nome.toUpperCase()}</div>
-                        <div style="margin-top: 4px; color: #1d4ed8; font-weight: bold; font-size: 11px;">
-                            <span style="color: #64748b; font-weight: normal;">CHAVE PIX:</span> ${terc.chave_pix || 'NÃO CADASTRADA'}
-                        </div>
-                        <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">DOC: ${terc.cpf_cnpj || '-'}</div>
+                    <td style="padding: 10px;">
+                        <div style="font-weight: 900; color: #0f172a; font-size: 13px;">${t.nome.toUpperCase()}</div>
+                        <div style="margin-top: 3px; font-weight: bold; color: #1d4ed8;">PIX: ${t.chave_pix || 'NÃO INFORMADO'}</div>
                     </td>
-                    <td style="padding: 10px; text-align: center; color: #475569;">${formatMoney(valorDoMetro)}</td>
-                    <td style="padding: 10px; text-align: center; font-weight: 800; color: #0f172a;">${somaMetros.toFixed(2)} m</td>
-                    <td style="padding: 10px; text-align: right; font-weight: 900; color: #1e293b; font-size: 13px;">${formatMoney(subtotalPagar)}</td>
+                    <td style="padding: 10px; text-align: center; font-weight: bold;">${metros.toFixed(2)} m</td>
+                    <td style="padding: 10px; text-align: center;">${formatMoney(vlrMetro)}</td>
+                    <td style="padding: 10px; text-align: right; font-weight: 900; font-size: 14px; color: #b91c1c;">${formatMoney(subtotal)}</td>
                 </tr>
             `;
         }
     });
 
-    // Caso a lista esteja vazia
-    if (!encontrouProducao) {
-        htmlRelatorio += `
-            <tr>
-                <td colspan="4" style="padding: 40px; text-align: center; color: #94a3b8; font-style: italic;">
-                    Nenhuma medição de produção encontrada para este período.
-                </td>
-            </tr>
-        `;
+    if (!temDados) {
+        htmlReport += `<tr><td colspan="4" style="padding: 30px; text-align: center; color: #64748b; font-style: italic;">Nenhuma produção pendente de pagamento para este período.</td></tr>`;
     }
 
-    // 5. Rodapé com Total Geral
-    htmlRelatorio += `
+    htmlReport += `
                 </tbody>
             </table>
 
-            <div style="display: flex; justify-content: flex-end; margin-top: 20px; padding: 15px; background-color: #f1f5f9; border-radius: 8px;">
-                <div style="text-align: right;">
-                    <span style="font-size: 12px; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">Total Geral a Pagar</span>
-                    <div style="font-size: 24px; font-weight: 900; color: #b91c1c; margin-top: 5px;">${formatMoney(valorGeralPeriodo)}</div>
-                </div>
+            <div style="text-align: right; margin-top: 20px; padding: 15px; background-color: #f8fafc; border: 1px solid #cbd5e1;">
+                <span style="font-size: 12px; font-weight: bold; color: #64748b; text-transform: uppercase;">Total do Lote de Pagamento</span>
+                <div style="font-size: 24px; font-weight: 900; color: #b91c1c; margin-top: 5px;">${formatMoney(totalGeral)}</div>
             </div>
 
-            <div style="margin-top: 50px; font-size: 10px; color: #94a3b8; text-align: center; border-top: 1px dashed #e2e8f0; padding-top: 20px;">
-                Relatório gerado em ${new Date().toLocaleString('pt-BR')} - Sistema RV Negócios
+            <div style="margin-top: 60px; text-align: center;">
+                <div style="display: inline-block; width: 250px; border-top: 1px solid #000; padding-top: 5px; font-size: 10px; font-weight: bold;">
+                    ASSINATURA RESPONSÁVEL (RV NEGÓCIOS)
+                </div>
             </div>
         </div>
     `;
 
-    // 6. Executa a impressão
-    document.getElementById('print-area').innerHTML = htmlRelatorio;
-    setTimeout(() => {
-        window.print();
-    }, 400);
+    document.getElementById('print-area').innerHTML = htmlReport;
+    setTimeout(() => window.print(), 300);
 }
       
-
+        async function baixarPagamentoTerc(tercId) {
+          const periodo = document.getElementById('terc-filter-periodo').value;
+          const mes = document.getElementById('terc-filter-mes').value;
+          const ano = document.getElementById('terc-filter-ano').value;
+          const t = STATE.terceirizados.find(x => x.id == tercId);
+      
+          const txtPeriodo = periodo === 'q1' ? "1ª Quinzena" : (periodo === 'q2' ? "2ª Quinzena" : "Mês Completo");
+      
+          if(!confirm(`Deseja marcar TODA a produção de ${txtPeriodo} como PAGA para ${t.nome}?`)) return;
+      
+          showLoading(true);
+      
+          // Buscamos os IDs dos registros que batem com o filtro e estão PENDENTES
+          const idsParaPagar = STATE.producao_terc.filter(p => {
+              if (p.terceirizado_id !== tercId || p.status === 'PAGO') return false;
+              const dt = new Date(p.data_registro);
+              const dia = dt.getUTCDate();
+              const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
+              const a = String(dt.getUTCFullYear());
+      
+              if (m !== mes || a !== ano) return false;
+              if (periodo === 'q1' && dia > 15) return false;
+              if (periodo === 'q2' && dia < 16) return false;
+              return true;
+          }).map(p => p.id);
+      
+          if (idsParaPagar.length === 0) {
+              showLoading(false);
+              return showToast("Nada pendente para pagar neste período.", true);
+          }
+      
+          const { error } = await sb.from('jsp_producao_terc')
+              .update({ status: 'PAGO' })
+              .in('id', idsParaPagar);
+      
+          if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
+      
+          showToast(`Pagamento de ${t.nome} baixado!`);
+          await loadData();
+          renderTerceirizados();
+      }
+      
+      
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
   </body>
