@@ -4174,7 +4174,7 @@ async function puxarHorasDoPontoEletronico() {
     await preencherFechamentoAutomatico(funcId, e.obra_atual_id, mes, ano);
 }
 
-      // ==========================================================
+// ==========================================================
 // MÓDULO TERCEIRIZADOS (EMPREITEIROS POR METRAGEM)
 // ==========================================================
 
@@ -4466,130 +4466,128 @@ async function imprimirReciboTerc(tercId) {
     setTimeout(() => window.print(), 300);
 }
 
+      
 function imprimirRelatorioTerc() {
-    const mes = document.getElementById('terc-filter-mes').value;
-    const ano = document.getElementById('terc-filter-ano').value;
-    const term = document.getElementById('terc-search').value.toLowerCase();
+    // 1. Captura os filtros da tela
+    const mesFiltro = document.getElementById('terc-filter-mes').value;
+    const anoFiltro = document.getElementById('terc-filter-ano').value;
+    const buscaNome = document.getElementById('terc-search').value.toLowerCase();
     const statusFiltro = document.getElementById('terc-filter-status').value;
     
-    let fil = STATE.terceirizados.filter(t => t.nome.toLowerCase().includes(term) || (t.cpf_cnpj||'').includes(term));
-    
-    // Aplica o filtro de status também na impressão
-    if (statusFiltro !== "todos") {
-        const isAtivo = statusFiltro === "true";
-        fil = fil.filter(t => t.ativo === isAtivo || (isAtivo && t.ativo === undefined));
-    }
-    
-    let htmlReport = `
-        <div style="font-family: Arial, sans-serif; color: #333; width: 100%;">
-            <div style="text-align: center; border-bottom: 2px solid #1d4ed8; padding-bottom: 10px; margin-bottom: 20px;">
-                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px; margin-bottom: 10px;" />
-                <h2 style="margin: 0; color: #1e293b; font-size: 20px; font-weight: 900;">RELATÓRIO DE PRODUÇÃO (TERCEIRIZADOS)</h2>
-                <h3 style="margin: 5px 0 0 0; color: #1d4ed8;">Competência: ${mes}/${ano}</h3>
+    // 2. Filtra a lista de terceirizados conforme a busca e o status
+    let terceirizadosFiltrados = STATE.terceirizados.filter(t => {
+        const bateNome = t.nome.toLowerCase().includes(buscaNome) || (t.cpf_cnpj||'').includes(buscaNome);
+        let bateStatus = true;
+        
+        if (statusFiltro !== "todos") {
+            const ativoBool = statusFiltro === "true";
+            bateStatus = (t.ativo === ativoBool || (ativoBool && t.ativo === undefined));
+        }
+        return bateNome && bateStatus;
+    });
+
+    // 3. Início do HTML do Relatório
+    let htmlRelatorio = `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; padding: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 15px; margin-bottom: 25px;">
+                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 55px;" />
+                <div style="text-align: right;">
+                    <h2 style="margin: 0; font-size: 18px; font-weight: 900; color: #0f172a; text-transform: uppercase;">Folha de Produção - Terceirizados</h2>
+                    <p style="margin: 3px 0 0 0; font-size: 13px; color: #1d4ed8; font-weight: bold;">Competência: ${mesFiltro}/${anoFiltro}</p>
+                </div>
             </div>
-            <table width="100%" style="border-collapse: collapse; text-align: left; font-size: 11px;">
+
+            <table width="100%" style="border-collapse: collapse; margin-bottom: 20px;">
                 <thead>
-                    <tr style="background-color: #f1f5f9; color: #1e293b;">
-                        <th style="padding: 8px; border: 1px solid #cbd5e1;">Empreiteiro / Pagamento</th>
-                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">Valor M.</th>
-                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">Total (Metros)</th>
-                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: right;">Subtotal R$</th>
+                    <tr style="background-color: #f8fafc; text-align: left; font-size: 11px; text-transform: uppercase; color: #64748b;">
+                        <th style="padding: 10px; border: 1px solid #e2e8f0;">Profissional / Dados para PIX</th>
+                        <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: center;">Vlr. Metro</th>
+                        <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: center;">Metragem</th>
+                        <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: right;">Subtotal</th>
                     </tr>
                 </thead>
                 <tbody>
     `;
 
-    let somaTotal = 0;
+    let valorGeralPeriodo = 0;
+    let encontrouProducao = false;
 
-    fil.forEach(t => {
-        // --- AQUI ESTAVA O PROBLEMA: O CÁLCULO PRECISA ESTAR DENTRO DO LOOP ---
-        const producaoMes = STATE.producao_terc.filter(p => {
-            if (p.terceirizado_id !== t.id) return false;
-            const dt = new Date(p.data_registro);
-            const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
-            const a = dt.getUTCFullYear();
-            return m === mes && String(a) === ano;
+    // 4. Loop para calcular a produção de cada um
+    terceirizadosFiltrados.forEach(terc => {
+        // Filtra os registros de produção deste terceirizado no mês/ano selecionado
+        const producaoDoMes = STATE.producao_terc.filter(p => {
+            if (p.terceirizado_id !== terc.id) return false;
+            
+            const dataReg = new Date(p.data_registro);
+            const m = String(dataReg.getUTCMonth() + 1).padStart(2, '0');
+            const a = String(dataReg.getUTCFullYear());
+            
+            return m === mesFiltro && a === anoFiltro;
         });
 
-        const totalMetros = producaoMes.reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
-        const valorMetro = parseFloat(t.valor_metro || 0);
-        const totalPagar = totalMetros * valorMetro;
-        
-        if(totalMetros > 0) {
-            somaTotal += totalPagar;
-            htmlReport += `
-                <tr>
-                    <td style="padding: 8px; border: 1px solid #cbd5e1;">
-                        <div style="font-weight: bold; font-size: 12px; color: #1e293b;">${t.nome.toUpperCase()}</div>
-                        <div style="font-size: 10px; color: #1d4ed8; font-weight: bold; margin-top: 2px;">
-                            PIX: ${t.chave_pix || '<span style="color:#ef4444">NÃO INFORMADO</span>'}
+        // Soma os metros e calcula o valor
+        const somaMetros = producaoDoMes.reduce((acc, curr) => acc + parseFloat(curr.metros || 0), 0);
+        const valorDoMetro = parseFloat(terc.valor_metro || 0);
+        const subtotalPagar = somaMetros * valorDoMetro;
+
+        // Só exibe na folha se houver produção registrada
+        if (somaMetros > 0) {
+            encontrouProducao = true;
+            valorGeralPeriodo += subtotalPagar;
+
+            htmlRelatorio += `
+                <tr style="font-size: 12px; border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px 10px;">
+                        <div style="font-weight: 800; color: #0f172a; font-size: 13px;">${terc.nome.toUpperCase()}</div>
+                        <div style="margin-top: 4px; color: #1d4ed8; font-weight: bold; font-size: 11px;">
+                            <span style="color: #64748b; font-weight: normal;">CHAVE PIX:</span> ${terc.chave_pix || 'NÃO CADASTRADA'}
                         </div>
-                        <div style="font-size: 9px; color: #64748b; margin-top: 2px;">DOC: ${t.cpf_cnpj || '-'}</div>
+                        <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">DOC: ${terc.cpf_cnpj || '-'}</div>
                     </td>
-                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${formatMoney(valorMetro)}</td>
-                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #1d4ed8;">${totalMetros.toFixed(2)}</td>
-                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: right; font-weight: bold; font-size: 12px;">${formatMoney(totalPagar)}</td>
+                    <td style="padding: 10px; text-align: center; color: #475569;">${formatMoney(valorDoMetro)}</td>
+                    <td style="padding: 10px; text-align: center; font-weight: 800; color: #0f172a;">${somaMetros.toFixed(2)} m</td>
+                    <td style="padding: 10px; text-align: right; font-weight: 900; color: #1e293b; font-size: 13px;">${formatMoney(subtotalPagar)}</td>
                 </tr>
             `;
         }
     });
 
-    if (somaTotal === 0) {
-        htmlReport += `<tr><td colspan="4" style="padding: 20px; text-align: center; color: #64748b;">Nenhuma produção registrada para os filtros selecionados.</td></tr>`;
+    // Caso a lista esteja vazia
+    if (!encontrouProducao) {
+        htmlRelatorio += `
+            <tr>
+                <td colspan="4" style="padding: 40px; text-align: center; color: #94a3b8; font-style: italic;">
+                    Nenhuma medição de produção encontrada para este período.
+                </td>
+            </tr>
+        `;
     }
 
-    htmlReport += `
+    // 5. Rodapé com Total Geral
+    htmlRelatorio += `
                 </tbody>
             </table>
-            <div style="margin-top: 20px; text-align: right; font-size: 16px;">
-                <strong>TOTAL GERAL APURADO: <span style="color: #b91c1c;">${formatMoney(somaTotal)}</span></strong>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 20px; padding: 15px; background-color: #f1f5f9; border-radius: 8px;">
+                <div style="text-align: right;">
+                    <span style="font-size: 12px; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">Total Geral a Pagar</span>
+                    <div style="font-size: 24px; font-weight: 900; color: #b91c1c; margin-top: 5px;">${formatMoney(valorGeralPeriodo)}</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 50px; font-size: 10px; color: #94a3b8; text-align: center; border-top: 1px dashed #e2e8f0; padding-top: 20px;">
+                Relatório gerado em ${new Date().toLocaleString('pt-BR')} - Sistema RV Negócios
             </div>
         </div>
     `;
 
-    document.getElementById('print-area').innerHTML = htmlReport;
-    setTimeout(() => window.print(), 300);
+    // 6. Executa a impressão
+    document.getElementById('print-area').innerHTML = htmlRelatorio;
+    setTimeout(() => {
+        window.print();
+    }, 400);
 }
-
-    let somaTotal = 0;
-    fil.forEach(t => {
-        const producaoMes = STATE.producao_terc.filter(p => {
-            if (p.terceirizado_id !== t.id) return false;
-            const dt = new Date(p.data_registro);
-            const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
-            const a = dt.getUTCFullYear();
-            return m === mes && String(a) === ano;
-        });
-
-        const totalMetros = producaoMes.reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
-        const valorMetro = parseFloat(t.valor_metro || 0);
-        const totalPagar = totalMetros * valorMetro;
-        somaTotal += totalPagar;
-
-        if(totalMetros > 0) {
-            htmlReport += `
-                <tr>
-                    <td style="padding: 8px; border: 1px solid #cbd5e1;"><strong>${t.nome}</strong><br><span style="font-size: 9px; color:#64748b;">${t.cpf_cnpj||'-'}</span></td>
-                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${formatMoney(valorMetro)}</td>
-                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #1d4ed8;">${totalMetros.toFixed(2)}</td>
-                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: right; font-weight: bold; font-size: 12px;">${formatMoney(totalPagar)}</td>
-                </tr>
-            `;
-        }
-    });
-
-    htmlReport += `
-                </tbody>
-            </table>
-            <div style="margin-top: 20px; text-align: right; font-size: 16px;">
-                <strong>TOTAL GERAL APURADO: <span style="color: #b91c1c;">${formatMoney(somaTotal)}</span></strong>
-            </div>
-        </div>
-    `;
-
-    document.getElementById('print-area').innerHTML = htmlReport;
-    setTimeout(() => window.print(), 300);
-}
+      
 
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
