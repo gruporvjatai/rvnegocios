@@ -71,6 +71,7 @@
         <button onclick="navigate('fin')" id="nav-fin" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="bar-chart-3"></i> <span class="font-medium text-sm">Financeiro Obras</span></button>
         <div class="border-t border-slate-800 my-2 pt-2"></div>
         <button onclick="navigate('equipe')" id="nav-equipe" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="users"></i> <span class="font-medium text-sm">Equipe</span></button>
+        <button id="nav-terc" onclick="navigate('terc')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition font-medium"><i data-lucide="hard-hat" width="20"></i> Terceirizados </button>
         <button onclick="navigate('fornecedores')" id="nav-fornecedores" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="truck"></i> <span class="font-medium text-sm">Fornecedores</span></button>
         <button onclick="navigate('prod')" id="nav-prod" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="package"></i> <span class="font-medium text-sm">Produtos</span></button>
         <button onclick="navigate('fases')" id="nav-fases" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="layers"></i> <span class="font-medium text-sm">Fases de Obra</span></button>
@@ -999,6 +1000,145 @@
         </div>
       </div>
 
+
+      <div id="view-terc" class="hidden-section max-w-7xl mx-auto">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+            <h2 class="text-3xl font-black text-slate-800 tracking-tight">Terceirizados / Empreiteiros</h2>
+            <p class="text-slate-500 font-medium mt-1">Gestão de produção por metragem</p>
+        </div>
+        <button onclick="openTercForm()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-200 transition flex items-center gap-2">
+            <i data-lucide="plus-circle" width="20"></i> Novo Terceirizado
+        </button>
+    </div>
+
+    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-wrap gap-4 items-end">
+        <div class="w-full md:w-auto flex-1">
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Buscar Nome</label>
+            <input type="text" id="terc-search" onkeyup="renderTerceirizados()" placeholder="Nome ou Documento..." class="w-full p-2.5 border border-slate-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm font-medium">
+        </div>
+        <div class="w-full md:w-48">
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mês Ref.</label>
+            <select id="terc-filter-mes" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none">
+                <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option><option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option><option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+            </select>
+        </div>
+        <div class="w-full md:w-32">
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Ano</label>
+            <input type="number" id="terc-filter-ano" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none text-center">
+        </div>
+        <div class="w-full md:w-auto">
+            <button onclick="imprimirRelatorioTerc()" class="w-full md:w-auto p-2.5 border border-slate-300 text-slate-700 hover:bg-slate-100 rounded-lg font-bold flex items-center justify-center gap-2 text-sm shadow-sm">
+                <i data-lucide="printer" width="16"></i> Imprimir Folha
+            </button>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
+        <table class="w-full text-left border-collapse min-w-[800px]">
+            <thead>
+                <tr class="bg-slate-800 text-white text-xs uppercase">
+                    <th class="p-4 font-bold">Terceirizado</th>
+                    <th class="p-4 font-bold text-center">Valor do Metro</th>
+                    <th class="p-4 font-bold text-center">Produção no Mês</th>
+                    <th class="p-4 font-bold text-right">Total (Mês)</th>
+                    <th class="p-4 font-bold text-center w-48">Ações</th>
+                </tr>
+            </thead>
+            <tbody id="terc-list"></tbody>
+        </table>
+    </div>
+</div>
+
+      <div id="terc-form-container" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+            <h3 class="text-xl font-black text-slate-800">Dados do Terceirizado</h3>
+            <button onclick="document.getElementById('terc-form-container').classList.add('hidden')" class="text-slate-400 hover:text-red-500 transition"><i data-lucide="x-circle"></i></button>
+        </div>
+        <div class="p-6 overflow-y-auto">
+            <form onsubmit="saveTerc(event)" class="space-y-4">
+                <input type="hidden" id="terc-id">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nome Completo / Razão Social</label>
+                        <input type="text" id="terc-name" required class="w-full p-3 border rounded-lg focus:border-blue-500 outline-none font-medium">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">CPF ou CNPJ</label>
+                        <input type="text" id="terc-cpf" class="w-full p-3 border rounded-lg focus:border-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">RG / I.E.</label>
+                        <input type="text" id="terc-rg" class="w-full p-3 border rounded-lg focus:border-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Telefone / WhatsApp</label>
+                        <input type="text" id="terc-phone" class="w-full p-3 border rounded-lg focus:border-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Chave PIX</label>
+                        <input type="text" id="terc-pix" class="w-full p-3 border rounded-lg focus:border-blue-500 outline-none">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Endereço</label>
+                        <input type="text" id="terc-endereco" class="w-full p-3 border rounded-lg focus:border-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Obra de Atuação</label>
+                        <select id="terc-obra" class="w-full p-3 border rounded-lg focus:border-blue-500 outline-none bg-slate-50 font-medium"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Valor do Metro (R$)</label>
+                        <input type="number" step="0.01" id="terc-val-metro" required class="w-full p-3 border rounded-lg focus:border-blue-500 outline-none font-black text-indigo-700 bg-indigo-50">
+                    </div>
+                </div>
+                <div class="pt-4 flex justify-end gap-3 border-t mt-4">
+                    <button type="button" onclick="document.getElementById('terc-form-container').classList.add('hidden')" class="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-lg transition">Cancelar</button>
+                    <button type="submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow transition">Salvar Cadastro</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="modal-producao-terc" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-indigo-600 text-white">
+            <div>
+                <h3 class="text-lg font-black tracking-tight">Apuração de Produção</h3>
+                <p id="prod-terc-subtitle" class="text-xs font-medium text-indigo-200 mt-0.5">Nome do Empreiteiro</p>
+            </div>
+            <button onclick="document.getElementById('modal-producao-terc').classList.add('hidden')" class="text-indigo-200 hover:text-white transition"><i data-lucide="x-circle"></i></button>
+        </div>
+        <div class="p-4 bg-slate-50 border-b border-slate-200">
+            <div class="flex gap-2">
+                <input type="hidden" id="prod-terc-id">
+                <input type="date" id="prod-terc-data" class="flex-1 p-2 border border-slate-300 rounded focus:border-indigo-500 outline-none text-sm font-bold">
+                <input type="number" step="0.01" id="prod-terc-metros" placeholder="Metros (m² / m linear)" class="flex-1 p-2 border border-slate-300 rounded focus:border-indigo-500 outline-none text-sm font-bold">
+                <button onclick="lancarProducaoTerc()" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 font-bold text-sm shadow">Lançar</button>
+            </div>
+        </div>
+        <div class="p-0 overflow-y-auto flex-1 bg-white">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-slate-100 sticky top-0">
+                    <tr class="text-xs text-slate-500 uppercase font-bold">
+                        <th class="p-3 border-b">Data</th>
+                        <th class="p-3 border-b text-center">Metragem</th>
+                        <th class="p-3 border-b text-center">Status</th>
+                        <th class="p-3 border-b w-10"></th>
+                    </tr>
+                </thead>
+                <tbody id="prod-terc-list-body"></tbody>
+            </table>
+        </div>
+        <div class="p-4 bg-slate-100 border-t border-slate-200 flex justify-between items-center">
+            <div class="text-xs font-bold text-slate-500 uppercase">Total Metros:<br><span id="prod-terc-total-metros" class="text-lg font-black text-slate-800">0.00</span></div>
+            <div class="text-xs font-bold text-slate-500 uppercase text-right">Valor A Pagar:<br><span id="prod-terc-total-valor" class="text-lg font-black text-indigo-700">R$ 0,00</span></div>
+        </div>
+    </div>
+</div>
+
       
     </main>
 
@@ -1016,7 +1156,7 @@
         const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
 
         // ====== VARIÁVEIS DE ESTADO ======
-        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], users: [], equipe: [], fases: [], ponto: [] };
+        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], users: [], equipe: [], fases: [], ponto: [], terceirizados: [], producao_terc: [] };
         let CART = [];
         let CURRENT_OC_ID = null; 
 
@@ -1045,7 +1185,8 @@
             if(viewId === 'prod') renderProducts();
             if(viewId === 'fases') renderFases();
             if(viewId === 'reports') { updateSelects(); }
-            if(viewId === 'users') renderUsers(); 
+            if(viewId === 'users') renderUsers();
+            if(viewId === 'terc') { updateSelects(); renderTerceirizados(); }
             lucide.createIcons();
         }
 
@@ -1082,15 +1223,17 @@
 
         async function loadData() {
             try {
-                const [resObras, resForn, resProd, resLog, resEqp, resFases, resPonto] = await Promise.all([
-                    fetchAllRecords('jsp_obras'),
-                    fetchAllRecords('jsp_fornecedores'),
-                    fetchAllRecords('jsp_produtos'),
-                    fetchAllRecords('jsp_logs'),
-                    fetchAllRecords('jsp_equipe').catch(() => ({ data: [] })),
-                    fetchAllRecords('jsp_fase').catch(() => ({ data: [] })),
-                    fetchAllRecords('jsp_ponto').catch(() => ({ data: [] }))
-                ]);
+                const [resObras, resForn, resProd, resLog, resEqp, resFases, resPonto, resTerc, resProdTerc] = await Promise.all([
+                      fetchAllRecords('jsp_obras'),
+                      fetchAllRecords('jsp_fornecedores'),
+                      fetchAllRecords('jsp_produtos'),
+                      fetchAllRecords('jsp_logs'),
+                      fetchAllRecords('jsp_equipe').catch(() => ({ data: [] })),
+                      fetchAllRecords('jsp_fase').catch(() => ({ data: [] })),
+                      fetchAllRecords('jsp_ponto').catch(() => ({ data: [] })),
+                      fetchAllRecords('jsp_terceirizados').catch(() => ({ data: [] })),
+                      fetchAllRecords('jsp_producao_terc').catch(() => ({ data: [] }))
+                  ]);
 
                 STATE.obras = resObras.data || [];
                 STATE.fornecedores = resForn.data || [];
@@ -1099,6 +1242,9 @@
                 STATE.equipe = resEqp.data || [];
                 STATE.fases = (resFases.data || []).sort((a,b) => a.ordem - b.ordem);
                 STATE.ponto = resPonto.data || [];
+                STATE.terceirizados = resTerc.data || [];
+                STATE.producao_terc = resProdTerc.data || [];
+              
 
                 if (dadosUsuario.nivel === 'admin') {
                     const navUsersBtn = document.getElementById('nav-users');
@@ -1589,92 +1735,6 @@ async function buscarRegistrosEletronicos() {
     }
 }
 
-// -------------------------------------------------------------------
-// IMPRESSÃO DA FOLHA DE PONTO
-// -------------------------------------------------------------------
-/*function imprimirFolhaPontoEletronico() {
-    if (!window.dadosFolhaImpressao || window.dadosFolhaImpressao.length === 0) {
-        return showToast("Busque os registros primeiro antes de imprimir!", true);
-    }
-
-    const funcId = document.getElementById('ponto-equipe-id').value;
-    const e = STATE.equipe.find(x => x.id == funcId);
-    const dataIni = document.getElementById('ponto-auto-data-ini').value.split('-').reverse().join('/');
-    const dataFim = document.getElementById('ponto-auto-data-fim').value.split('-').reverse().join('/');
-    
-    // Separação para cálculo e exibição
-    const totalDiariasFloat = window.diariasEletronicasAtivas;
-    const totalDiariasFormatado = totalDiariasFloat.toFixed(2);
-    
-    // NOVO: Cálculo do valor total em R$
-    const valorDiaria = parseFloat(e.valor_diaria || 0);
-    const valorTotalPagar = totalDiariasFloat * valorDiaria;
-    
-    // Nova estrutura com 4 pontos
-    let htmlTabelaImp = window.dadosFolhaImpressao.map(i => `
-        <tr>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${i.data}</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${i.e1}</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${i.s1}</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${i.e2}</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${i.s2}</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;"></td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center; font-weight: bold;">${i.fracao}</td>
-        </tr>
-    `).join('');
-
-    const htmlImpressao = `
-        <div style="font-family: Arial, sans-serif; color: #000; width: 100%;">
-            <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px;">
-                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px; margin-bottom: 10px;" />
-                <h2 style="margin: 0; font-size: 18pt; font-weight: bold;">FOLHA DE PONTO INDIVIDUAL</h2>
-                <p style="margin: 5px 0 0 0; font-size: 11pt;">Período Apurado: ${dataIni} a ${dataFim}</p>
-            </div>
-            
-            <div style="margin-bottom: 20px; font-size: 11pt;">
-                <strong>Colaborador:</strong> ${(e.nome).toUpperCase()}<br>
-                <strong>Função:</strong> ${(e.categoria || 'Geral').toUpperCase()}<br>
-                <strong>Obra:</strong> ${STATE.obras.find(o => o.id == e.obra_atual_id)?.nome || 'Não definida'}<br>
-                <strong>CPF:</strong> ${e.cpf || 'Não informado'}
-            </div>
-
-            <table style="width: 100%; border-collapse: collapse; font-size: 9pt; margin-bottom: 30px;">
-                <thead>
-                    <tr style="background-color: #f1f5f9;">
-                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Data</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Entrada 1</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Saída 1</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Entrada 2</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Saída 2</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Assinatura</th>
-                        <th style="border: 1px solid #cbd5e1; padding: 8px;">Diária</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${htmlTabelaImp}
-                </tbody>
-            </table>
-
-            <div style="text-align: right; font-size: 13pt; margin-bottom: 50px;">
-                <strong>TOTAL DE DIÁRIAS APURADAS: ${totalDiariasFormatado}</strong><br>
-                <strong style="color: #1d4ed8; font-size: 16pt; display: block; margin-top: 8px;">VALOR A PAGAR: ${formatMoney(valorTotalPagar)}</strong>
-            </div>
-
-            <div style="display: flex; justify-content: space-between; margin-top: 60px; font-size: 10pt;">
-                <div style="text-align: center; width: 45%; border-top: 1px solid #000; padding-top: 10px;">
-                    <strong>RV NEGOCIOS E COMPANHIA</strong>
-                </div>
-                <div style="text-align: center; width: 45%; border-top: 1px solid #000; padding-top: 10px;">
-                    <strong>${(e.nome).toUpperCase()}</strong><br>
-                    Declaro corretas as anotações acima.
-                </div>
-            </div>
-        </div>
-    `;
-
-    document.getElementById('print-area').innerHTML = htmlImpressao;
-    setTimeout(() => window.print(), 300);
-}*/
 
       function imprimirFolhaPontoEletronico() {
     if (!window.dadosFolhaImpressao || window.dadosFolhaImpressao.length === 0) {
@@ -4092,6 +4152,359 @@ async function puxarHorasDoPontoEletronico() {
     }
 
     await preencherFechamentoAutomatico(funcId, e.obra_atual_id, mes, ano);
+}
+
+      // ==========================================================
+// MÓDULO TERCEIRIZADOS (EMPREITEIROS POR METRAGEM)
+// ==========================================================
+
+function updateSelectTercObra() {
+    // Garante que o select de obra no modal de terceirizados está atualizado
+    const el = document.getElementById('terc-obra');
+    if(el) el.innerHTML = '<option value="">-- Sem obra fixa --</option>' + STATE.obras.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
+}
+
+function renderTerceirizados() {
+    updateSelectTercObra(); // Garante select povoado
+    
+    // Na inicialização da página, caso esses campos não estejam preenchidos, preenche com mês/ano atual
+    if(!document.getElementById('terc-filter-mes').value) {
+        const h = new Date();
+        document.getElementById('terc-filter-mes').value = String(h.getMonth() + 1).padStart(2, '0');
+        document.getElementById('terc-filter-ano').value = h.getFullYear();
+    }
+
+    const term = document.getElementById('terc-search').value.toLowerCase();
+    const mes = document.getElementById('terc-filter-mes').value;
+    const ano = document.getElementById('terc-filter-ano').value;
+    const list = document.getElementById('terc-list');
+    
+    let fil = STATE.terceirizados.filter(t => t.nome.toLowerCase().includes(term) || (t.cpf_cnpj||'').includes(term));
+    fil.sort((a, b) => a.nome.localeCompare(b.nome));
+    
+    list.innerHTML = fil.map(t => {
+        const obraAtual = STATE.obras.find(o => o.id == t.obra_atual_id);
+        const nomeObra = obraAtual ? obraAtual.nome : '<span class="text-slate-400 italic">Geral / Não definida</span>';
+        const valorMetro = parseFloat(t.valor_metro || 0);
+        
+        // Filtra a produção do mês atual para este terceirizado
+        const producaoMes = STATE.producao_terc.filter(p => {
+            if (p.terceirizado_id !== t.id) return false;
+            const dt = new Date(p.data_registro); // Assumindo YYYY-MM-DD
+            // Precisamos lidar com timezone seguro (UTC) se a data vier do banco como YYYY-MM-DD
+            const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
+            const a = dt.getUTCFullYear();
+            return m === mes && String(a) === ano;
+        });
+
+        const totalMetros = producaoMes.reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
+        const totalPagar = totalMetros * valorMetro;
+        
+        // Verifica se há algo pendente no mês
+        const temPendente = producaoMes.some(p => p.status !== 'PAGO');
+
+        return `<tr class="border-b hover:bg-slate-50 transition ${t.ativo === false ? 'opacity-60 bg-red-50' : ''}">
+            <td class="p-3">
+                <div class="font-bold text-slate-800 text-sm">${t.nome} ${t.ativo === false ? '<span class="text-[9px] text-red-500 font-bold">(DESATIVADO)</span>' : ''}</div>
+                <div class="text-[10px] text-slate-500 font-bold uppercase mt-0.5">CPF/CNPJ: ${t.cpf_cnpj || '-'}</div>
+                <div class="text-xs font-bold text-blue-700 mt-1"><i data-lucide="building" class="w-3 h-3 inline"></i> ${nomeObra}</div>
+            </td>
+            <td class="p-3 text-center">
+                <div class="font-black text-indigo-700 text-sm">${formatMoney(valorMetro)}</div>
+                <div class="text-[9px] text-slate-400 font-bold uppercase">Por Metro</div>
+            </td>
+            <td class="p-3 text-center">
+                <div class="text-sm font-black ${totalMetros > 0 ? 'text-blue-600' : 'text-slate-400'}">${totalMetros.toFixed(2)} m</div>
+            </td>
+            <td class="p-3 text-right">
+                <div class="font-black text-sm ${!temPendente && totalPagar > 0 ? 'text-green-700' : 'text-slate-800'}">${formatMoney(totalPagar)}</div>
+            </td>
+            <td class="p-3 text-center">
+                <div class="flex items-center justify-center gap-1">
+                    <button onclick="openTercProdModal('${t.id}')" class="p-1.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded shadow font-bold text-[10px] flex items-center gap-1"><i data-lucide="ruler" width="12"></i> MEDIÇÃO</button>
+                    <button onclick="imprimirReciboTerc('${t.id}')" class="p-1.5 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Gerar Recibo do Mês"><i data-lucide="receipt" width="14"></i></button>
+                    <button onclick="openTercForm('${t.id}')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar"><i data-lucide="edit-3" width="14"></i></button>
+                    <button onclick="toggleStatusTerc('${t.id}', ${t.ativo !== false})" class="p-1.5 border ${t.ativo !== false ? 'border-red-200 text-red-500 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'} rounded" title="${t.ativo !== false ? 'Desativar' : 'Reativar'}"><i data-lucide="power" width="14"></i></button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+    lucide.createIcons();
+}
+
+function openTercForm(id) {
+    updateSelectTercObra();
+    document.getElementById('terc-form-container').classList.remove('hidden');
+    if(id) {
+        const t = STATE.terceirizados.find(x => x.id == id);
+        document.getElementById('terc-id').value = t.id;
+        document.getElementById('terc-name').value = t.nome;
+        document.getElementById('terc-cpf').value = t.cpf_cnpj || '';
+        document.getElementById('terc-rg').value = t.rg || '';
+        document.getElementById('terc-phone').value = t.telefone || '';
+        document.getElementById('terc-pix').value = t.chave_pix || '';
+        document.getElementById('terc-endereco').value = t.endereco || '';
+        document.getElementById('terc-obra').value = t.obra_atual_id || '';
+        document.getElementById('terc-val-metro').value = t.valor_metro || '';
+    } else {
+        document.getElementById('terc-form-container').querySelector('form').reset();
+        document.getElementById('terc-id').value = '';
+    }
+}
+
+async function saveTerc(e) {
+    e.preventDefault(); showLoading(true);
+    const isNew = !document.getElementById('terc-id').value;
+    const payload = {
+        nome: document.getElementById('terc-name').value,
+        cpf_cnpj: document.getElementById('terc-cpf').value,
+        rg: document.getElementById('terc-rg').value,
+        telefone: document.getElementById('terc-phone').value,
+        chave_pix: document.getElementById('terc-pix').value,
+        endereco: document.getElementById('terc-endereco').value,
+        obra_atual_id: document.getElementById('terc-obra').value || null,
+        valor_metro: parseFloat(document.getElementById('terc-val-metro').value) || 0
+    };
+    
+    if(isNew) {
+        payload.id = crypto.randomUUID();
+        payload.ativo = true;
+    } else {
+        payload.id = document.getElementById('terc-id').value;
+    }
+
+    const { error } = await sb.from('jsp_terceirizados').upsert(payload);
+    if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
+    
+    document.getElementById('terc-form-container').classList.add('hidden');
+    showToast("Terceirizado salvo com sucesso!"); loadData();
+}
+
+async function toggleStatusTerc(id, isAtivo) {
+    if(!confirm(`Tem certeza que deseja ${isAtivo ? 'DESATIVAR' : 'REATIVAR'} este terceirizado?`)) return;
+    showLoading(true);
+    const { error } = await sb.from('jsp_terceirizados').update({ ativo: !isAtivo }).eq('id', id);
+    if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
+    showToast("Status atualizado!"); loadData();
+}
+
+// --- Produção Terceirizados ---
+
+function openTercProdModal(id) {
+    const t = STATE.terceirizados.find(x => x.id == id);
+    if(!t) return;
+    
+    document.getElementById('prod-terc-id').value = t.id;
+    document.getElementById('prod-terc-subtitle').innerText = `${t.nome} - Valor/Metro: ${formatMoney(t.valor_metro)}`;
+    document.getElementById('prod-terc-data').value = getTodayDate();
+    document.getElementById('prod-terc-metros').value = '';
+    
+    renderTercProdList(t.id);
+    document.getElementById('modal-producao-terc').classList.remove('hidden');
+}
+
+function renderTercProdList(id) {
+    const mes = document.getElementById('terc-filter-mes').value;
+    const ano = document.getElementById('terc-filter-ano').value;
+    const t = STATE.terceirizados.find(x => x.id == id);
+    
+    // Filtra produção do mês
+    let prod = STATE.producao_terc.filter(p => {
+        if(p.terceirizado_id !== id) return false;
+        const dt = new Date(p.data_registro);
+        const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
+        const a = dt.getUTCFullYear();
+        return m === mes && String(a) === ano;
+    });
+
+    prod.sort((a,b) => new Date(b.data_registro) - new Date(a.data_registro));
+
+    let totalMetros = 0;
+    
+    document.getElementById('prod-terc-list-body').innerHTML = prod.map(p => {
+        totalMetros += parseFloat(p.metros);
+        const isPago = p.status === 'PAGO';
+        const dateStr = new Date(p.data_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+        
+        return `<tr class="border-b hover:bg-slate-50 transition">
+            <td class="p-3 text-xs font-bold text-slate-700">${dateStr}</td>
+            <td class="p-3 text-center text-sm font-black text-indigo-700">${p.metros} m</td>
+            <td class="p-3 text-center">
+                <span class="px-2 py-1 rounded text-[9px] font-bold ${isPago ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">${isPago ? 'PAGO' : 'PENDENTE'}</span>
+            </td>
+            <td class="p-3 text-center">
+                ${!isPago ? `<button onclick="deleteProducaoTerc('${p.id}', '${id}')" class="text-red-400 hover:text-red-600"><i data-lucide="trash-2" width="14"></i></button>` : ''}
+            </td>
+        </tr>`;
+    }).join('');
+
+    if(prod.length === 0) {
+        document.getElementById('prod-terc-list-body').innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-400 font-medium text-xs">Nenhuma medição neste mês.</td></tr>`;
+    }
+
+    document.getElementById('prod-terc-total-metros').innerText = totalMetros.toFixed(2);
+    document.getElementById('prod-terc-total-valor').innerText = formatMoney(totalMetros * parseFloat(t.valor_metro || 0));
+    lucide.createIcons();
+}
+
+async function lancarProducaoTerc() {
+    const tId = document.getElementById('prod-terc-id').value;
+    const t = STATE.terceirizados.find(x => x.id == tId);
+    const dataReg = document.getElementById('prod-terc-data').value;
+    const metros = parseFloat(document.getElementById('prod-terc-metros').value);
+
+    if(!dataReg || isNaN(metros) || metros <= 0) return showToast("Preencha data e metragem válida", true);
+    if(!t.obra_atual_id) return showToast("Este terceirizado precisa estar vinculado a uma obra para lançar produção.", true);
+
+    showLoading(true);
+    const payload = {
+        id: crypto.randomUUID(),
+        terceirizado_id: tId,
+        obra_id: t.obra_atual_id,
+        data_registro: dataReg,
+        metros: metros,
+        status: 'PENDENTE'
+    };
+
+    const { error } = await sb.from('jsp_producao_terc').insert([payload]);
+    if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
+
+    document.getElementById('prod-terc-metros').value = '';
+    showToast("Medição lançada com sucesso!");
+    await loadData();
+    renderTercProdList(tId); // Re-renderiza o grid interno
+}
+
+async function deleteProducaoTerc(prodId, tercId) {
+    if(!confirm("Remover esta medição?")) return;
+    showLoading(true);
+    const { error } = await sb.from('jsp_producao_terc').delete().eq('id', prodId);
+    if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
+    
+    showToast("Medição removida!");
+    await loadData();
+    renderTercProdList(tercId);
+}
+
+// Opcional: Se quiser marcar tudo como pago e jogar no financeiro
+async function imprimirReciboTerc(tercId) {
+    const t = STATE.terceirizados.find(x => x.id == tercId);
+    const mes = document.getElementById('terc-filter-mes').value;
+    const ano = document.getElementById('terc-filter-ano').value;
+    
+    const prod = STATE.producao_terc.filter(p => {
+        if(p.terceirizado_id !== tercId) return false;
+        const dt = new Date(p.data_registro);
+        return String(dt.getUTCMonth() + 1).padStart(2, '0') === mes && String(dt.getUTCFullYear()) === ano;
+    });
+
+    const totalMetros = prod.reduce((acc, p) => acc + parseFloat(p.metros), 0);
+    const valorMetro = parseFloat(t.valor_metro || 0);
+    const totalPagar = totalMetros * valorMetro;
+
+    const hoje = new Date().toLocaleDateString('pt-BR');
+
+    const htmlRecibo = `
+        <div style="font-family: Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
+                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
+                <div style="text-align: right;">
+                    <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO DE PRODUÇÃO</h1>
+                    <p style="margin: 5px 0 0 0; font-size: 18px; color: #1d4ed8; font-weight: bold;">VALOR: ${formatMoney(totalPagar)}</p>
+                </div>
+            </div>
+            
+            <div style="font-size: 14px; line-height: 1.8; text-align: justify; margin-bottom: 40px;">
+                Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA</strong> (CNPJ: 61.893.912/0001-24), a importância supra de <strong>${formatMoney(totalPagar)}</strong>, 
+                referente ao pagamento de prestação de serviços por empreitada/produção, contabilizando <strong>${totalMetros.toFixed(2)} metros trabalhados</strong> 
+                com o valor fixado em <strong>${formatMoney(valorMetro)} por metro</strong>, durante a competência de <strong>${mes}/${ano}</strong>.
+            </div>
+            
+            <div style="font-size: 14px; margin-bottom: 40px;">
+                Para maior clareza, firmo(amos) o presente recibo para que produza os seus efeitos legais.
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 30px; font-size: 14px;">
+                Jataí - GO, ${hoje}.
+            </div>
+            
+            <div style="margin-top: 60px; display: flex; justify-content: center;">
+                <div style="text-align: center; width: 60%; border-top: 1px solid #000; padding-top: 10px;">
+                    <strong>${t.nome}</strong><br>
+                    <span style="font-size: 12px; color: #64748b;">CPF/CNPJ: ${t.cpf_cnpj || '_______________________'} | RG/IE: ${t.rg || '_______________________'}</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('print-area').innerHTML = htmlRecibo;
+    setTimeout(() => window.print(), 300);
+}
+
+function imprimirRelatorioTerc() {
+    const mes = document.getElementById('terc-filter-mes').value;
+    const ano = document.getElementById('terc-filter-ano').value;
+    const term = document.getElementById('terc-search').value.toLowerCase();
+    
+    let fil = STATE.terceirizados.filter(t => t.nome.toLowerCase().includes(term) || (t.cpf_cnpj||'').includes(term));
+    
+    let htmlReport = `
+        <div style="font-family: Arial, sans-serif; color: #333; width: 100%;">
+            <div style="text-align: center; border-bottom: 2px solid #1d4ed8; padding-bottom: 10px; margin-bottom: 20px;">
+                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px; margin-bottom: 10px;" />
+                <h2 style="margin: 0; color: #1e293b; font-size: 20px; font-weight: 900;">RELATÓRIO DE PRODUÇÃO (TERCEIRIZADOS)</h2>
+                <h3 style="margin: 5px 0 0 0; color: #1d4ed8;">Competência: ${mes}/${ano}</h3>
+            </div>
+            <table width="100%" style="border-collapse: collapse; text-align: left; font-size: 11px;">
+                <thead>
+                    <tr style="background-color: #f1f5f9; color: #1e293b;">
+                        <th style="padding: 8px; border: 1px solid #cbd5e1;">Empreiteiro / Documento</th>
+                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">Valor M.</th>
+                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">Total (Metros)</th>
+                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: right;">Subtotal R$</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    let somaTotal = 0;
+    fil.forEach(t => {
+        const producaoMes = STATE.producao_terc.filter(p => {
+            if (p.terceirizado_id !== t.id) return false;
+            const dt = new Date(p.data_registro);
+            const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
+            const a = dt.getUTCFullYear();
+            return m === mes && String(a) === ano;
+        });
+
+        const totalMetros = producaoMes.reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
+        const valorMetro = parseFloat(t.valor_metro || 0);
+        const totalPagar = totalMetros * valorMetro;
+        somaTotal += totalPagar;
+
+        if(totalMetros > 0) {
+            htmlReport += `
+                <tr>
+                    <td style="padding: 8px; border: 1px solid #cbd5e1;"><strong>${t.nome}</strong><br><span style="font-size: 9px; color:#64748b;">${t.cpf_cnpj||'-'}</span></td>
+                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${formatMoney(valorMetro)}</td>
+                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #1d4ed8;">${totalMetros.toFixed(2)}</td>
+                    <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: right; font-weight: bold; font-size: 12px;">${formatMoney(totalPagar)}</td>
+                </tr>
+            `;
+        }
+    });
+
+    htmlReport += `
+                </tbody>
+            </table>
+            <div style="margin-top: 20px; text-align: right; font-size: 16px;">
+                <strong>TOTAL GERAL APURADO: <span style="color: #b91c1c;">${formatMoney(somaTotal)}</span></strong>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('print-area').innerHTML = htmlReport;
+    setTimeout(() => window.print(), 300);
 }
 
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
