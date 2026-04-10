@@ -1013,26 +1013,34 @@
     </div>
 
     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-wrap gap-4 items-end">
-        <div class="w-full md:w-auto flex-1">
-            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Buscar Nome</label>
-            <input type="text" id="terc-search" onkeyup="renderTerceirizados()" placeholder="Nome ou Documento..." class="w-full p-2.5 border border-slate-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm font-medium">
-        </div>
-        <div class="w-full md:w-48">
-            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mês Ref.</label>
-            <select id="terc-filter-mes" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none">
-                <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option><option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option><option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
-            </select>
-        </div>
-        <div class="w-full md:w-32">
-            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Ano</label>
-            <input type="number" id="terc-filter-ano" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none text-center">
-        </div>
-        <div class="w-full md:w-auto">
-            <button onclick="imprimirRelatorioTerc()" class="w-full md:w-auto p-2.5 border border-slate-300 text-slate-700 hover:bg-slate-100 rounded-lg font-bold flex items-center justify-center gap-2 text-sm shadow-sm">
-                <i data-lucide="printer" width="16"></i> Imprimir Folha
-            </button>
-        </div>
-    </div>
+      <div class="w-full md:w-auto flex-1">
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Buscar Nome</label>
+          <input type="text" id="terc-search" onkeyup="renderTerceirizados()" placeholder="Nome ou Documento..." class="w-full p-2.5 border border-slate-300 rounded-lg focus:border-blue-500 outline-none text-sm font-medium">
+      </div>
+      <div class="w-full md:w-40">
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
+          <select id="terc-filter-status" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none">
+              <option value="true" selected>Ativados</option>
+              <option value="false">Desativados</option>
+              <option value="todos">Todos</option>
+          </select>
+      </div>
+      <div class="w-full md:w-40">
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mês Ref.</label>
+          <select id="terc-filter-mes" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none">
+              <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option><option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option><option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+          </select>
+      </div>
+      <div class="w-full md:w-28">
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Ano</label>
+          <input type="number" id="terc-filter-ano" onchange="renderTerceirizados()" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm font-bold bg-slate-50 outline-none text-center">
+      </div>
+      <div class="w-full md:w-auto">
+          <button onclick="imprimirRelatorioTerc()" class="w-full md:w-auto p-2.5 border border-slate-300 text-slate-700 hover:bg-slate-100 rounded-lg font-bold flex items-center justify-center gap-2 text-sm shadow-sm">
+              <i data-lucide="printer" width="16"></i> Imprimir Folha
+          </button>
+      </div>
+  </div>
 
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
         <table class="w-full text-left border-collapse min-w-[800px]">
@@ -1163,11 +1171,23 @@
         // ====== INICIALIZAÇÃO ======
         window.onload = function() { 
             const hoje = new Date();
-            document.getElementById('eqp-filter-mes').value = String(hoje.getMonth() + 1).padStart(2, '0');
-            document.getElementById('eqp-filter-ano').value = hoje.getFullYear();
+            const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
+            const anoAtual = hoje.getFullYear();
+        
+            // Seta defaults da Equipe
+            document.getElementById('eqp-filter-mes').value = mesAtual;
+            document.getElementById('eqp-filter-ano').value = anoAtual;
+        
+            // Seta defaults dos Terceirizados (Ajuste 1 e 2)
+            const fMesTerc = document.getElementById('terc-filter-mes');
+            const fAnoTerc = document.getElementById('terc-filter-ano');
+            if(fMesTerc) fMesTerc.value = mesAtual;
+            if(fAnoTerc) fAnoTerc.value = anoAtual;
+        
             if (dadosUsuario) { showLoading(true); loadData(); }
         };
 
+      
         function navigate(viewId) {
             document.querySelectorAll('div[id^="view-"]').forEach(el => { el.classList.add('hidden-section'); el.classList.remove('active-section'); });
             const target = document.getElementById('view-' + viewId);
@@ -4177,9 +4197,14 @@ function renderTerceirizados() {
     const term = document.getElementById('terc-search').value.toLowerCase();
     const mes = document.getElementById('terc-filter-mes').value;
     const ano = document.getElementById('terc-filter-ano').value;
+    const statusFiltro = document.getElementById('terc-filter-status').value;
     const list = document.getElementById('terc-list');
     
     let fil = STATE.terceirizados.filter(t => t.nome.toLowerCase().includes(term) || (t.cpf_cnpj||'').includes(term));
+      if (statusFiltro !== "todos") {
+          const isAtivo = statusFiltro === "true";
+          fil = fil.filter(t => t.ativo === isAtivo || (isAtivo && t.ativo === undefined));
+      }
     fil.sort((a, b) => a.nome.localeCompare(b.nome));
     
     list.innerHTML = fil.map(t => {
