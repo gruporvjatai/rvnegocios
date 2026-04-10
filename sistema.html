@@ -2117,6 +2117,15 @@ async function buscarRegistrosEletronicos() {
     const ano = dataAtual.getFullYear();
     const dataExtenso = `${dia} de ${mes} de ${ano}`;
     const hojeCurto = dataAtual.toLocaleDateString('pt-BR');
+
+    // --- LÓGICA DE DATA DE TÉRMINO ---
+    let dataTerminoContrato = "____/____/______";
+    if (e.obra_atual_id == 1) {
+        dataTerminoContrato = "31/05/2026";
+    } else if (e.obra_atual_id == 2) {
+        dataTerminoContrato = "31/12/2026";
+    }
+    // ---------------------------------
     
     // Busca a obra para preencher o local de prestação de serviços
     const obraVinculada = STATE.obras.find(o => o.id == e.obra_atual_id);
@@ -2158,9 +2167,6 @@ async function buscarRegistrosEletronicos() {
                     <tr><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;">Óculos</td><td style="border: 1px solid #000; padding: 6px;">07732</td><td style="border: 1px solid #000; padding: 6px;">1</td><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;"></td></tr>
                     <tr><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;">Protetor Auricular</td><td style="border: 1px solid #000; padding: 6px;">07790</td><td style="border: 1px solid #000; padding: 6px;">1</td><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;"></td></tr>
                     <tr><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;">Luva</td><td style="border: 1px solid #000; padding: 6px;">00501</td><td style="border: 1px solid #000; padding: 6px;">1</td><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;"></td></tr>
-                <!--<tr><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td></tr>
-                    <tr><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td></tr>
-                    <tr><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td><td style="border: 1px solid #000; padding: 12px;"></td></tr>-->
                 </tbody>
             </table>
 
@@ -2213,7 +2219,7 @@ async function buscarRegistrosEletronicos() {
             </div>
 
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA TERCEIRA – DAS OBRIGAÇÕES DO CONTRATANTE</strong></p>
-            <p style="text-indent: 40px; margin-bottom: 10px;">O CONTRATANTE se obriga a:</p>
+            <p style="text-indent: 40px; margin-bottom: 10px;">O CONTRANTE se obriga a:</p>
             <div style="margin-left: 40px; margin-bottom: 30px;">
                 <div style="margin-bottom: 5px;"><strong>3.1.</strong> Fornecer informações e materiais necessários à execução dos serviços.</div>
                 <div style="margin-bottom: 5px;"><strong>3.2.</strong> Fiscalizar a execução dos serviços.</div>
@@ -2231,7 +2237,7 @@ async function buscarRegistrosEletronicos() {
             </div>
 
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA QUINTA – DO PRAZO</strong></p>
-            <p style="text-indent: 40px; margin-bottom: 30px;">O contrato terá início em <strong> ____/____/______</strong> e término em <strong>31/05/2026</strong>, podendo ser prorrogado até o limite de 24 (vinte e quatro) meses.</p>
+            <p style="text-indent: 40px; margin-bottom: 30px;">O contrato terá início em <strong> ____/____/______</strong> e término em <strong>${dataTerminoContrato}</strong>, podendo ser prorrogado até o limite de 24 (vinte e quatro) meses.</p>
 
 
             <br>
@@ -2306,7 +2312,7 @@ async function buscarRegistrosEletronicos() {
             </div>
 
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA TERCEIRA – DAS OBRIGAÇÕES DO CONTRATANTE</strong></p>
-            <p style="text-indent: 40px; margin-bottom: 10px;">O CONTRATANTE se obriga a:</p>
+            <p style="text-indent: 40px; margin-bottom: 10px;">O CONTRANTE se obriga a:</p>
             <div style="margin-left: 40px; margin-bottom: 30px;">
                 <div style="margin-bottom: 5px;"><strong>3.1.</strong> Fornecer informações e materiais necessários à execução dos serviços.</div>
                 <div style="margin-bottom: 5px;"><strong>3.2.</strong> Fiscalizar a execução dos serviços.</div>
@@ -2324,7 +2330,7 @@ async function buscarRegistrosEletronicos() {
             </div>
 
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA QUINTA – DO PRAZO</strong></p>
-            <p style="text-indent: 40px; margin-bottom: 30px;">O contrato terá início em <strong>____/____/______</strong> e término em <strong> 31/05/2026 </strong>, podendo ser prorrogado até o limite de 24 (vinte e quatro) meses.</p>
+            <p style="text-indent: 40px; margin-bottom: 30px;">O contrato terá início em <strong>____/____/______</strong> e término em <strong> ${dataTerminoContrato} </strong>, podendo ser prorrogado até o limite de 24 (vinte e quatro) meses.</p>
 
             <br>
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA SEXTA – DA RESCISÃO</strong></p>
