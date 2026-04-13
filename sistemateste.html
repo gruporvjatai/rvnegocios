@@ -567,10 +567,8 @@
 
         <div class="p-6 overflow-y-auto flex-1 custom-scrollbar">
             <input type="hidden" id="ponto-equipe-id">
-            
-            <div id="ponto-view-selecao" class="flex flex-col gap-4">
+            <input type="hidden" id="ponto-id"> <div id="ponto-view-selecao" class="flex flex-col gap-4">
                 <h4 class="text-center font-bold text-slate-600 mb-2">Como deseja fechar o ponto deste mês?</h4>
-                
                 <button onclick="selecionarModoPonto('auto')" class="p-6 border-2 border-blue-200 hover:border-blue-500 rounded-2xl bg-blue-50 hover:bg-blue-100 flex flex-col items-center gap-3 transition text-center group">
                     <div class="p-4 bg-blue-600 text-white rounded-full group-hover:scale-110 transition-transform">
                         <i data-lucide="smartphone-nfc" class="w-8 h-8"></i>
@@ -580,7 +578,6 @@
                         <p class="text-xs text-blue-600 mt-1 font-medium">Busca os registros automáticos do app, calcula as horas e gera a folha de ponto.</p>
                     </div>
                 </button>
-
                 <button onclick="selecionarModoPonto('manual')" class="p-6 border-2 border-slate-200 hover:border-slate-400 rounded-2xl bg-slate-50 hover:bg-slate-100 flex flex-col items-center gap-3 transition text-center group">
                     <div class="p-4 bg-slate-400 text-white rounded-full group-hover:scale-110 transition-transform">
                         <i data-lucide="calendar-check-2" class="w-8 h-8"></i>
@@ -602,23 +599,19 @@
                     <div class="text-center text-[10px] font-black text-slate-400 uppercase">Sex</div>
                     <div class="text-center text-[10px] font-black text-slate-400 uppercase">Sáb</div>
                 </div>
-            
-                <div id="ponto-grid" class="grid grid-cols-7 gap-2 mb-6">
-                    </div>
-            
+                <div id="ponto-grid" class="grid grid-cols-7 gap-2 mb-6"></div>
                 <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-inner mb-4">
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-xs font-bold text-slate-500 uppercase">Total de Diárias:</span>
                         <span id="ponto-total-dias" class="font-black text-indigo-700 text-xl">0</span>
                     </div>
                     <div class="flex justify-between items-center">
-                        <span class="text-xs font-bold text-slate-500 uppercase">Valor a Pagar:</span>
-                        <span id="ponto-total-valor" class="font-black text-green-600 text-2xl">R$ 0,00</span>
+                        <span class="text-xs font-bold text-slate-500 uppercase">Valor Apurado:</span>
+                        <span id="ponto-total-valor" class="font-black text-indigo-700 text-2xl">R$ 0,00</span>
                     </div>
                 </div>
-            
-                <button type="button" onclick="savePonto()" class="w-full py-3 text-sm font-black bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md flex items-center justify-center gap-2 transition">
-                    <i data-lucide="check-circle" class="w-5 h-5"></i> Salvar Fechamento Manual
+                <button type="button" onclick="savePonto()" class="w-full py-3 text-sm font-black bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md flex items-center justify-center gap-2 transition mb-6">
+                    <i data-lucide="save" class="w-5 h-5"></i> Atualizar Apuração Manual
                 </button>
             </div>
 
@@ -633,43 +626,57 @@
                         <input type="date" id="ponto-auto-data-fim" class="w-full p-2 border rounded-lg text-sm bg-slate-50 font-bold focus:border-blue-500 outline-none">
                     </div>
                     <div class="flex items-end">
-                        <button onclick="buscarRegistrosEletronicos()" class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow font-bold text-sm h-[38px] px-4"><i data-lucide="search" class="w-4 h-4"></i></button>
+                        <button onclick="puxarHorasDoPontoEletronico()" class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow font-bold text-sm h-[38px] px-4"><i data-lucide="search" class="w-4 h-4"></i></button>
                     </div>
                 </div>
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-200 shadow-inner mb-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-bold text-blue-800 uppercase">Diárias Apuradas (Auto):</span>
+                        <span id="ponto-auto-total-dias" class="font-black text-blue-700 text-xl">0.00</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-bold text-blue-800 uppercase">Valor Apurado:</span>
+                        <span id="ponto-auto-total-valor" class="font-black text-blue-700 text-2xl">R$ 0,00</span>
+                    </div>
+                </div>
+                <button type="button" onclick="savePonto()" class="w-full py-3 text-sm font-black bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md flex items-center justify-center gap-2 transition mb-6">
+                    <i data-lucide="save" class="w-5 h-5"></i> Atualizar Apuração Eletrônica
+                </button>
+            </div>
 
-                <div class="border rounded-xl overflow-hidden border-slate-200 mb-4">
-                    <table class="w-full text-left border-collapse">
+            <div id="ponto-financeiro-section" class="hidden border-t-2 border-dashed border-slate-200 pt-6">
+                <div class="flex justify-between items-end mb-4">
+                    <div>
+                        <h4 class="font-black text-slate-800 text-sm uppercase">Saldo Restante</h4>
+                        <p class="text-[10px] text-slate-500 uppercase">Apurado - Pagamentos realizados</p>
+                    </div>
+                    <div id="ponto-saldo-restante" class="text-3xl font-black text-orange-600">R$ 0,00</div>
+                </div>
+
+                <div class="bg-slate-100 rounded-xl overflow-hidden mb-4 border border-slate-200">
+                    <table class="w-full text-left text-[11px]">
                         <thead>
-                            <tr class="bg-slate-100 border-b border-slate-200 text-slate-600">
-                                <th class="p-2 text-[10px] uppercase font-bold text-center">Data</th>
-                                <th class="p-2 text-[10px] uppercase font-bold text-center">Manhã</th>
-                                <th class="p-2 text-[10px] uppercase font-bold text-center">Tarde</th>
-                                <th class="p-2 text-[10px] uppercase font-bold text-center">Diária (Fração)</th>
+                            <tr class="bg-slate-200 text-slate-600 uppercase font-bold">
+                                <th class="p-2">Data</th>
+                                <th class="p-2 text-right">Valor Pago</th>
+                                <th class="p-2 text-center">Recibo</th>
                             </tr>
                         </thead>
-                        <tbody id="ponto-auto-tbody">
+                        <tbody id="ponto-pagamentos-list">
                             </tbody>
                     </table>
                 </div>
 
-                <div class="bg-blue-50 p-4 rounded-xl border border-blue-200 shadow-inner mb-4">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-xs font-bold text-blue-800 uppercase">Total de Diárias Apuradas:</span>
-                        <span id="ponto-auto-total-dias" class="font-black text-blue-700 text-xl">0.00</span>
+                <div class="flex gap-2 p-3 bg-green-50 rounded-xl border border-green-200">
+                    <div class="flex-1">
+                        <label class="block text-[9px] font-bold text-green-700 uppercase mb-1">Novo Pagamento / Vale (R$)</label>
+                        <input type="number" id="novo-pagamento-valor" step="0.01" class="w-full p-2 border border-green-300 rounded-lg text-sm font-black text-green-800 outline-none focus:border-green-500">
                     </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs font-bold text-blue-800 uppercase">Valor a Pagar:</span>
-                        <span id="ponto-auto-total-valor" class="font-black text-green-700 text-2xl">R$ 0,00</span>
+                    <div class="flex items-end">
+                        <button onclick="lancarPagamentoParcial()" class="h-[38px] px-4 bg-green-600 hover:bg-green-700 text-white rounded-lg font-black text-xs transition flex items-center gap-2 shadow-sm">
+                            <i data-lucide="check" class="w-4 h-4"></i> BAIXAR
+                        </button>
                     </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-2">
-                    <button type="button" onclick="imprimirFolhaPontoEletronico()" class="py-3 text-xs font-black border-2 border-slate-300 text-slate-600 hover:bg-slate-100 rounded-xl flex items-center justify-center gap-2 transition">
-                        <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Folha
-                    </button>
-                    <button type="button" onclick="savePonto()" class="py-3 text-xs font-black bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md flex items-center justify-center gap-2 transition">
-                        <i data-lucide="check-circle" class="w-4 h-4"></i> Salvar Fechamento
-                    </button>
                 </div>
             </div>
 
@@ -1417,79 +1424,112 @@
 
         // ====== CRUD EQUIPE E PONTO ======
        function renderEquipe() {
-            const term = document.getElementById('eqp-search').value.toLowerCase();
-            const obraFiltro = document.getElementById('eqp-obra-filter').value;
-            const mes = document.getElementById('eqp-filter-mes').value;
-            const ano = document.getElementById('eqp-filter-ano').value;
-            const statusFiltro = document.getElementById('eqp-filter-status').value;
-            
-            const list = document.getElementById('equipe-list');
-            
-            // Filtros
-            let fil = STATE.equipe.filter(e => e.nome.toLowerCase().includes(term) || (e.categoria||'').toLowerCase().includes(term));
-            if(obraFiltro) fil = fil.filter(e => e.obra_atual_id == obraFiltro);
-            
-            // Filtro de Ativo/Inativo
-            if (statusFiltro !== "todos") {
-                const isAtivo = statusFiltro === "true";
-                fil = fil.filter(e => e.ativo === isAtivo || (isAtivo && e.ativo === undefined)); // undefined trata os antigos como ativos
-            }
+    const term = document.getElementById('eqp-search').value.toLowerCase();
+    const obraFiltro = document.getElementById('eqp-obra-filter').value;
+    const mes = document.getElementById('eqp-filter-mes').value;
+    const ano = document.getElementById('eqp-filter-ano').value;
+    const statusFiltro = document.getElementById('eqp-filter-status').value;
+    
+    const list = document.getElementById('equipe-list');
+    
+    let fil = STATE.equipe.filter(e => e.nome.toLowerCase().includes(term) || (e.categoria||'').toLowerCase().includes(term));
+    if(obraFiltro) fil = fil.filter(e => e.obra_atual_id == obraFiltro);
+    
+    if (statusFiltro !== "todos") {
+        const isAtivo = statusFiltro === "true";
+        fil = fil.filter(e => e.ativo === isAtivo || (isAtivo && e.ativo === undefined));
+    }
 
-            fil.sort((a, b) => a.nome.localeCompare(b.nome));
-            
-            list.innerHTML = fil.map(e => {
-                const phoneClean = (e.telefone||'').replace(/\D/g,'');
-                const wppBtn = phoneClean ? `<a href="https://wa.me/55${phoneClean}" target="_blank" class="p-1.5 border border-green-200 text-green-600 hover:bg-green-50 rounded bg-green-50/50" title="WhatsApp"><i data-lucide="message-circle" width="14"></i></a>` : '';
-                
-                const obraAtual = STATE.obras.find(o => o.id == e.obra_atual_id);
-                const nomeObra = obraAtual ? obraAtual.nome : '<span class="text-slate-400 italic">Sem obra fixa</span>';
-                const diaria = parseFloat(e.valor_diaria || 0);
-                
-                let pt = STATE.ponto.find(x => x.equipe_id == e.id && x.mes === mes && x.ano === ano);
-                let dias = pt ? parseFloat(pt.total_dias || 0) : 0;
-                let total = pt ? parseFloat(pt.valor_total || 0) : (dias * diaria);
-                let status = pt ? pt.status : 'PENDENTE';
-                let isPago = status === 'PAGO';
-                let btnDocColor = e.contrato_assinado ? 'bg-green-600 text-white' : 'bg-slate-800 text-white';
+    fil.sort((a, b) => a.nome.localeCompare(b.nome));
+    
+    list.innerHTML = fil.map(e => {
+        const phoneClean = (e.telefone||'').replace(/\D/g,'');
+        const wppBtn = phoneClean ? `<a href="https://wa.me/55${phoneClean}" target="_blank" class="p-1.5 border border-green-200 text-green-600 hover:bg-green-50 rounded bg-green-50/50" title="WhatsApp"><i data-lucide="message-circle" width="14"></i></a>` : '';
+        
+        const obraAtual = STATE.obras.find(o => o.id == e.obra_atual_id);
+        const nomeObra = obraAtual ? obraAtual.nome : '<span class="text-slate-400 italic">Sem obra fixa</span>';
+        const diaria = parseFloat(e.valor_diaria || 0);
+        
+        let pt = STATE.ponto.find(x => x.equipe_id == e.id && x.mes === mes && x.ano === ano);
+        let dias = pt ? parseFloat(pt.total_dias || 0) : 0;
+        let totalApurado = pt ? parseFloat(pt.valor_total || 0) : (dias * diaria);
+        
+        // --- NOVA LÓGICA DE SALDO ---
+        const pagamentos = pt ? (pt.pagamentos || []) : [];
+        const totalPago = pagamentos.reduce((acc, p) => acc + parseFloat(p.valor), 0);
+        const saldoAReceber = totalApurado - totalPago;
 
-                // Mudança 3: Classes p-2 ao invés de p-4 para diminuir altura do card
-                return `<tr class="border-b hover:bg-slate-50 transition ${e.ativo === false ? 'opacity-60 bg-red-50' : ''}">
-                    <td class="p-2">
-                        <div class="font-bold text-slate-800 text-sm">${e.nome} ${e.ativo === false ? '<span class="text-[9px] text-red-500 font-bold">(DESATIVADO)</span>' : ''}</div>
-                        <div class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded uppercase font-bold inline-block mt-0.5">${e.categoria||'Geral'}</div>
-                    </td>
-                    <td class="p-2 text-xs font-bold text-blue-700"><i data-lucide="building" class="w-3 h-3 inline"></i> ${nomeObra}</td>
-                    <td class="p-2 text-center">
-                        <div class="font-bold text-slate-700 text-xs">${formatMoney(diaria)} <span class="text-[9px] text-slate-400 font-normal">/dia</span></div>
-                    </td>
-                    <td class="p-2 text-center">
-                        <div class="text-xs font-black ${dias > 0 ? 'text-indigo-600' : 'text-slate-400'}">${dias} dias</div>
-                    </td>
-                    <td class="p-2 text-right">
-                        <div class="font-black text-sm ${isPago ? 'text-slate-400' : 'text-green-700'}">${formatMoney(total)}</div>
-                    </td>
-                   <td class="p-2 text-center">
-                        <div class="flex items-center justify-center gap-1">
-                            <span class="px-2 py-1 rounded text-[9px] font-bold ${isPago ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">${isPago ? 'PAGO' : 'PENDENTE'}</span>
-                            ${isPago ? `<button onclick="estornarPagamentoPonto('${pt?.id}', '${e.id}')" class="text-slate-400 hover:text-red-500 transition ml-1" title="Estornar Pagamento e Cancelar Despesa"><i data-lucide="rotate-ccw" width="12"></i></button>` : ''}
-                        </div>
-                    </td>
-                    <td class="p-2 text-center">
-                        <div class="flex items-center justify-center gap-1">
-                            ${!isPago ? `<button onclick="openPontoModal('${e.id}')" class="p-1.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded shadow font-bold text-[10px] flex items-center gap-1"><i data-lucide="calendar-check-2" width="12"></i> PONTO</button>` : ''}
-                            ${!isPago && total > 0 ? `<button onclick="pagarMesPonto('${pt?.id}', '${e.id}')" class="p-1.5 bg-green-600 text-white hover:bg-green-700 rounded shadow font-bold text-[10px] flex items-center gap-1"><i data-lucide="check-circle" width="12"></i> PAGAR</button>` : ''}
-                            <button onclick="imprimirRecibo('${e.id}', '${pt?.id}')" class="p-1.5 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Gerar Recibo"><i data-lucide="receipt" width="14"></i></button>
-                            <button onclick="abrirModalDocumentos('${e.id}')" class="p-1.5 ${btnDocColor} rounded shadow" title="Contratos e Documentos"><i data-lucide="file-signature" width="14"></i></button>
-                            <button onclick="openEquipeForm('${e.id}')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar"><i data-lucide="edit-3" width="14"></i></button>
-                            <button onclick="toggleStatusEquipe('${e.id}', ${e.ativo !== false})" class="p-1.5 border ${e.ativo !== false ? 'border-red-200 text-red-500 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'} rounded" title="${e.ativo !== false ? 'Desativar / Demitir' : 'Reativar'}"><i data-lucide="power" width="14"></i></button>
-                            ${wppBtn}
-                        </div>
-                    </td>
-                </tr>`;
-            }).join('');
-            lucide.createIcons();
+        let badgeStatus = '';
+        let rowClass = "";
+
+        if (totalApurado === 0) {
+            badgeStatus = `<span class="px-2 py-1 rounded text-[9px] font-bold bg-slate-100 text-slate-500">AGUARDANDO</span>`;
+        } else if (saldoAReceber <= 0.05) {
+            badgeStatus = `<span class="px-2 py-1 rounded text-[9px] font-bold bg-green-100 text-green-700">PAGO TOTAL</span>`;
+            rowClass = "bg-green-50/30"; // Linha levemente esverdeada se estiver tudo pago
+        } else if (totalPago > 0) {
+            badgeStatus = `<span class="px-2 py-1 rounded text-[9px] font-bold bg-yellow-100 text-yellow-700">PARCIAL (${formatMoney(saldoAReceber)})</span>`;
+        } else {
+            badgeStatus = `<span class="px-2 py-1 rounded text-[9px] font-bold bg-red-100 text-red-700">PENDENTE</span>`;
         }
+        // ----------------------------
 
+        const btnDocColor = e.contrato_assinado ? 'bg-green-600 text-white' : 'bg-slate-800 text-white';
+
+        return `<tr class="border-b hover:bg-slate-50 transition ${rowClass} ${e.ativo === false ? 'opacity-60 bg-red-50' : ''}">
+            <td class="p-2">
+                <div class="font-bold text-slate-800 text-sm">${e.nome} ${e.ativo === false ? '<span class="text-[9px] text-red-500 font-bold">(DESATIVADO)</span>' : ''}</div>
+                <div class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded uppercase font-bold inline-block mt-0.5">${e.categoria||'Geral'}</div>
+            </td>
+            <td class="p-2 text-xs font-bold text-blue-700"><i data-lucide="building" class="w-3 h-3 inline"></i> ${nomeObra}</td>
+            <td class="p-2 text-center">
+                <div class="font-bold text-slate-700 text-xs">${formatMoney(diaria)} <span class="text-[9px] text-slate-400 font-normal">/dia</span></div>
+            </td>
+            <td class="p-2 text-center">
+                <div class="text-xs font-black ${dias > 0 ? 'text-indigo-600' : 'text-slate-400'}">${dias} dias</div>
+            </td>
+            <td class="p-2 text-right">
+                <div class="font-black text-sm ${saldoAReceber <= 0 ? 'text-slate-400' : 'text-red-600'}">
+                    ${formatMoney(saldoAReceber)}
+                    <div class="text-[9px] text-slate-400 font-normal">Total: ${formatMoney(totalApurado)}</div>
+                </div>
+            </td>
+            <td class="p-2 text-center">
+                <div class="flex items-center justify-center gap-1">
+                    ${badgeStatus}
+                </div>
+            </td>
+            <td class="p-2 text-center">
+                <div class="flex items-center justify-start gap-1">
+                    <button onclick="openPontoModal('${e.id}')" class="p-1.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded shadow font-bold text-[10px] flex items-center gap-1">
+                        <i data-lucide="calendar-check-2" width="12"></i> PONTO / PAGAR
+                    </button>
+                    
+                    <button onclick="imprimirRecibo('${e.id}', '${pt?.id}')" class="p-1.5 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Gerar Recibo">
+                        <i data-lucide="receipt" width="14"></i>
+                    </button>
+                    
+                    <button onclick="abrirModalDocumentos('${e.id}')" class="p-1.5 ${btnDocColor} rounded shadow" title="Contratos e Documentos">
+                        <i data-lucide="file-signature" width="14"></i>
+                    </button>
+                    
+                    <button onclick="openEquipeForm('${e.id}')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar">
+                        <i data-lucide="edit-3" width="14"></i>
+                    </button>
+                    
+                    <button onclick="toggleStatusEquipe('${e.id}', ${e.ativo !== false})" class="p-1.5 border ${e.ativo !== false ? 'border-red-200 text-red-500 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'} rounded" title="${e.ativo !== false ? 'Desativar / Demitir' : 'Reativar'}">
+                        <i data-lucide="power" width="14"></i>
+                    </button>
+                    
+                    ${wppBtn}
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+    lucide.createIcons();
+}
+
+      
         function openEquipeForm(id) {
     document.getElementById('equipe-form-container').classList.remove('hidden');
     if(id) {
@@ -1561,72 +1601,79 @@ async function saveEquipe(e) {
         // CONTROLE DO MODAL DE PONTO (NOVO FLUXO)
         // ==========================================================
         
-        function openPontoModal(equipe_id) {
-            const e = STATE.equipe.find(x => x.id == equipe_id);
-            if(!e) return;
-        
-            const mes = document.getElementById('eqp-filter-mes').value;
-            const ano = document.getElementById('eqp-filter-ano').value;
-            currentPontoDiaria = parseFloat(e.valor_diaria || 0);
-        
-            document.getElementById('ponto-modal-subtitle').innerText = `${e.nome} - Mês: ${mes}/${ano} - Diária Base: ${formatMoney(currentPontoDiaria)}`;
-            document.getElementById('ponto-equipe-id').value = e.id;
-        
-            // Reseta variável de qual modo está ativo
-            window.modoPontoAtivo = null;
-            window.diariasEletronicasAtivas = undefined; 
-        
-            // Configura datas padrão do automático (1º até o último dia do mês filtrado)
-            const primeiroDia = `${ano}-${mes.padStart(2, '0')}-01`;
-            const ultimoDia = new Date(ano, mes, 0).getDate();
-            const ultimoDiaStr = `${ano}-${mes.padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
-            document.getElementById('ponto-auto-data-ini').value = primeiroDia;
-            document.getElementById('ponto-auto-data-fim').value = ultimoDiaStr;
-        
-            // Prepara tela do modo manual (caso ele escolha)
-            let pt = STATE.ponto.find(x => x.equipe_id == e.id && x.mes === mes && x.ano === ano);
-            if(pt && pt.dias_marcados) {
-                currentPontoDias = Array.isArray(pt.dias_marcados) ? pt.dias_marcados : JSON.parse(pt.dias_marcados);
-            } else {
-                currentPontoDias = [];
-            }
-            renderPontoGrid(mes, ano); // Atualiza os quadradinhos e totais do manual
-        
-            // Volta o modal para a tela de SELEÇÃO
-            selecionarModoPonto('selecao');
-        
-            document.getElementById('ponto-modal').classList.remove('hidden');
-            lucide.createIcons();
-        }
+        async function openPontoModal(equipe_id) {
+    const e = STATE.equipe.find(x => x.id == equipe_id);
+    const mes = document.getElementById('eqp-filter-mes').value;
+    const ano = document.getElementById('eqp-filter-ano').value;
+    
+    document.getElementById('ponto-equipe-id').value = equipe_id;
+    document.getElementById('ponto-modal-subtitle').innerText = `${e.nome} • Competência: ${mes}/${ano}`;
+    
+    selecionarModoPonto('selecao');
 
+    let pt = STATE.ponto.find(x => x.equipe_id == equipe_id && x.mes === mes && x.ano === ano);
+    
+    if (!pt) {
+        pt = { id: null, equipe_id: equipe_id, mes: mes, ano: ano, valor_total: 0, total_dias: 0, pagamentos: [] };
+        document.getElementById('ponto-id').value = '';
+    } else {
+        document.getElementById('ponto-id').value = pt.id;
+    }
+
+    // Renderiza Calendário Manual
+    const grid = document.getElementById('ponto-grid');
+    grid.innerHTML = '';
+    const diasNoMes = new Date(ano, mes, 0).getDate();
+    const marcados = pt.dias_marcados || [];
+
+    for (let i = 1; i <= diasNoMes; i++) {
+        const dStr = String(i).padStart(2, '0');
+        const isSel = marcados.includes(dStr);
+        const b = document.createElement('button');
+        b.innerText = i;
+        b.className = `p-2 rounded-lg font-bold text-sm transition ${isSel ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}`;
+        b.onclick = () => {
+            b.classList.toggle('bg-indigo-600'); b.classList.toggle('text-white');
+            b.classList.toggle('bg-slate-100'); b.classList.toggle('text-slate-400');
+            calcularResumoPonto();
+        };
+        grid.appendChild(b);
+    }
+
+    document.getElementById('ponto-total-dias').innerText = pt.total_dias || 0;
+    document.getElementById('ponto-total-valor').innerText = formatMoney(pt.valor_total || 0);
+    
+    // Mostra o histórico de pagamentos/saldo
+    renderizarHistoricoPagamentos(pt);
+
+    document.getElementById('ponto-modal').classList.remove('hidden');
+    lucide.createIcons();
+}
 
          function selecionarModoPonto(modo) {
-            document.getElementById('ponto-view-selecao').classList.add('hidden');
-            document.getElementById('ponto-view-manual').classList.add('hidden');
-            document.getElementById('ponto-view-auto').classList.add('hidden');
-            
-            const btnVoltar = document.getElementById('ponto-btn-voltar');
-        
-            if (modo === 'selecao') {
-                document.getElementById('ponto-view-selecao').classList.remove('hidden');
-                btnVoltar.classList.add('hidden');
-                window.modoPontoAtivo = null;
-            } else if (modo === 'manual') {
-                document.getElementById('ponto-view-manual').classList.remove('hidden');
-                btnVoltar.classList.remove('hidden');
-                window.modoPontoAtivo = 'manual';
-            } else if (modo === 'auto') {
-                document.getElementById('ponto-view-auto').classList.remove('hidden');
-                btnVoltar.classList.remove('hidden');
-                window.modoPontoAtivo = 'auto';
-                
-                // Limpa a tabela para não mostrar lixo de outro funcionário antes de clicar em buscar
-                document.getElementById('ponto-auto-tbody').innerHTML = '<tr><td colspan="4" class="text-center p-6 text-slate-400 font-bold text-xs">Clique em Buscar para carregar a folha.</td></tr>';
-                document.getElementById('ponto-auto-total-dias').innerText = '0.00';
-                document.getElementById('ponto-auto-total-valor').innerText = 'R$ 0,00';
-                window.diariasEletronicasAtivas = undefined; 
-            }
-        }
+    const vSelecao = document.getElementById('ponto-view-selecao');
+    const vManual = document.getElementById('ponto-view-manual');
+    const vAuto = document.getElementById('ponto-view-auto');
+    const vFin = document.getElementById('ponto-financeiro-section');
+    const btnVoltar = document.getElementById('ponto-btn-voltar');
+
+    vSelecao.classList.add('hidden');
+    vManual.classList.add('hidden');
+    vAuto.classList.add('hidden');
+    vFin.classList.add('hidden');
+    btnVoltar.classList.remove('hidden');
+
+    if (modo === 'manual') {
+        vManual.classList.remove('hidden');
+        vFin.classList.remove('hidden');
+    } else if (modo === 'auto') {
+        vAuto.classList.remove('hidden');
+        vFin.classList.remove('hidden');
+    } else {
+        vSelecao.classList.remove('hidden');
+        btnVoltar.classList.add('hidden');
+    }
+}
 
 // -------------------------------------------------------------------
 // LÓGICA DO PONTO ELETRÔNICO (BUSCA E CÁLCULO DIRETO NA TELA NOVA)
@@ -1973,52 +2020,50 @@ async function buscarRegistrosEletronicos() {
         }
 
         async function savePonto() {
-              showLoading(true);
-              const equipe_id = document.getElementById('ponto-equipe-id').value;
-              const e = STATE.equipe.find(x => x.id == equipe_id);
-              const mes = document.getElementById('eqp-filter-mes').value;
-              const ano = document.getElementById('eqp-filter-ano').value;
-              
-              // REGRA DE OURO: Verifica se estamos no modo automático ou manual
-              let totalDias = 0;
-              
-              if (window.modoPontoAtivo === 'auto' && window.diariasEletronicasAtivas !== undefined) {
-                  // Se estamos na aba nova, pega o valor exato (com decimais) apurado pela busca
-                  totalDias = window.diariasEletronicasAtivas; 
-              } else {
-                  // Se estamos na aba antiga, conta os botõezinhos clicados
-                  totalDias = currentPontoDias.length; 
-              }
-          
-              const valorTotal = totalDias * currentPontoDiaria;
-          
-              let pt = STATE.ponto.find(x => x.equipe_id == equipe_id && x.mes === mes && x.ano === ano);
-              const isNew = !pt;
-          
-              const payload = {
-                  equipe_id: equipe_id,
-                  obra_id: e.obra_atual_id,
-                  mes: mes,
-                  ano: ano,
-                  // No modo auto, guardamos o Array vazio no BD, pois a prova do ponto está na tabela jsp_ponto_diario
-                  dias_marcados: (window.modoPontoAtivo === 'auto') ? [] : currentPontoDias, 
-                  total_dias: totalDias,
-                  valor_diaria: currentPontoDiaria,
-                  valor_total: valorTotal,
-                  status: pt ? pt.status : 'PENDENTE'
-              };
-          
-              if(!isNew) payload.id = pt.id;
-          
-              const { error } = await sb.from('jsp_ponto').upsert(payload);
-              
-              if(error) { showLoading(false); return showToast("Erro ao salvar ponto: " + error.message, true); }
-              
-              document.getElementById('ponto-modal').classList.add('hidden');
-              showToast("Fechamento de Ponto salvo com sucesso!"); 
-              loadData();
-          }
+    showLoading(true);
+    const funcId = document.getElementById('ponto-equipe-id').value;
+    const ptId = document.getElementById('ponto-id').value;
+    const mes = document.getElementById('eqp-filter-mes').value;
+    const ano = document.getElementById('eqp-filter-ano').value;
+    const f = STATE.equipe.find(x => x.id == funcId);
 
+    // Vê qual modo está ativo para pegar o valor certo
+    const isManual = !document.getElementById('ponto-view-manual').classList.contains('hidden');
+    
+    let totalDias, valorApurado, marcados = [];
+
+    if (isManual) {
+        const btns = document.getElementById('ponto-grid').querySelectorAll('button');
+        btns.forEach(b => { if(b.classList.contains('bg-indigo-600')) marcados.push(b.innerText.padStart(2, '0')); });
+        totalDias = marcados.length;
+        valorApurado = totalDias * parseFloat(f.valor_diaria || 0);
+    } else {
+        // Modo Auto (QR Code)
+        totalDias = parseFloat(document.getElementById('ponto-auto-total-dias').innerText);
+        valorApurado = parseFloat(document.getElementById('ponto-auto-total-valor').innerText.replace('R$', '').replace('.', '').replace(',', '.'));
+    }
+
+    // Calcula Status baseado no Saldo Atual
+    const ptExistente = STATE.ponto.find(x => x.id == ptId);
+    const totalPago = (ptExistente?.pagamentos || []).reduce((acc, p) => acc + parseFloat(p.valor), 0);
+    let novoStatus = valorApurado > 0 ? (totalPago >= valorApurado - 0.05 ? 'PAGO' : (totalPago > 0 ? 'PARCIAL' : 'PENDENTE')) : 'PENDENTE';
+
+    const payload = {
+        equipe_id: funcId, mes, ano, total_dias: totalDias, valor_total: valorApurado,
+        dias_marcados: marcados, status: novoStatus
+    };
+    if(ptId) payload.id = ptId;
+
+    const { data, error } = await sb.from('jsp_ponto').upsert(payload).select();
+    if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
+
+    showToast("Apuração atualizada!");
+    await loadData();
+    const ptNovo = STATE.ponto.find(x => x.id == (ptId || data[0].id));
+    document.getElementById('ponto-id').value = ptNovo.id;
+    renderizarHistoricoPagamentos(ptNovo);
+    showLoading(false);
+}
       
         async function pagarMesPonto(ponto_id, equipe_id) {
             if(!confirm("Deseja confirmar o pagamento deste mês? Isso criará uma Despesa automática na Obra atual do funcionário.")) return;
@@ -4823,7 +4868,155 @@ function imprimirRelatorioTerc() {
     }, 400);
 }
       
+      ///////nova funções para pagamento parcial ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+        // =====================================================================
+// NOVO SISTEMA DE FECHAMENTO FINANCEIRO E VALES (REGRA DO SALDO)
+// =====================================================================
+
+// 1. Função para renderizar o histórico dentro do Modal
+function renderizarHistoricoPagamentos(pt) {
+    const tbody = document.getElementById('ponto-pagamentos-list');
+    const apurado = parseFloat(pt.valor_total || 0);
+    const pagamentos = pt.pagamentos || [];
+    let totalPago = 0;
+
+    if (pagamentos.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-slate-400 font-medium">Nenhum pagamento lançado.</td></tr>`;
+    } else {
+        tbody.innerHTML = pagamentos.map(pg => {
+            totalPago += parseFloat(pg.valor);
+            return `
+            <tr class="border-b border-slate-200 hover:bg-white transition">
+                <td class="p-2 font-bold text-slate-600">${new Date(pg.data).toLocaleDateString('pt-BR')}</td>
+                <td class="p-2 text-right font-black text-green-700">${formatMoney(pg.valor)}</td>
+                <td class="p-2 text-center">
+                    <button onclick="imprimirReciboVale('${pt.id}', '${pg.id}')" class="text-slate-400 hover:text-blue-600"><i data-lucide="printer" class="w-4 h-4"></i></button>
+                    <button onclick="estornarPagamentoParcial('${pt.id}', '${pg.id}', '${pg.log_id}')" class="text-slate-400 hover:text-red-500 ml-2"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    const saldo = apurado - totalPago;
+    const saldoEl = document.getElementById('ponto-saldo-restante');
+    saldoEl.innerText = formatMoney(saldo);
+    
+    // Cores e Status
+    saldoEl.className = saldo <= 0.05 && apurado > 0 ? "text-3xl font-black text-green-600" : "text-3xl font-black text-orange-600";
+    document.getElementById('novo-pagamento-valor').value = saldo > 0 ? saldo.toFixed(2) : '';
+    
+    lucide.createIcons();
+}
+
+async function lancarPagamentoParcial() {
+    const ptId = document.getElementById('ponto-id').value;
+    const funcId = document.getElementById('ponto-equipe-id').value;
+    const valorInput = parseFloat(document.getElementById('novo-pagamento-valor').value);
+
+    if (!ptId) return showToast("Primeiro salve a apuração (botão verde/azul).", true);
+
+    const pt = STATE.ponto.find(x => x.id == ptId);
+    const e = STATE.equipe.find(x => x.id == funcId);
+    if (!e.obra_atual_id) return showToast("Vincule o funcionário a uma obra antes.", true);
+
+    if (isNaN(valorInput) || valorInput <= 0) return showToast("Valor inválido", true);
+
+    if (!confirm(`Lançar pagamento de ${formatMoney(valorInput)}?`)) return;
+    
+    showLoading(true);
+    const logId = getNextIdNum(STATE.logs).toString();
+    const agora = new Date().toISOString();
+
+    // Insere no financeiro
+    await sb.from('jsp_logs').insert([{
+        id: logId, obra_id: parseInt(e.obra_atual_id), tipo: 'despesa',
+        produto_nome: `Pagamento (${pt.mes}/${pt.ano}) - ${e.nome}`,
+        valor_total: valorInput, data: agora, status_financeiro: 'PAGO', categoria: 'Mão de Obra'
+    }]);
+
+    // Atualiza JSONB no Ponto
+    const novosPg = [...(pt.pagamentos || []), { id: crypto.randomUUID(), data: agora, valor: valorInput, log_id: logId }];
+    const status = (parseFloat(pt.valor_total) - novosPg.reduce((a, b) => a + b.valor, 0)) <= 0.05 ? 'PAGO' : 'PARCIAL';
+
+    await sb.from('jsp_ponto').update({ pagamentos: novosPg, status }).eq('id', ptId);
+
+    showToast("Pagamento baixado!");
+    await loadData();
+    renderizarHistoricoPagamentos(STATE.ponto.find(x => x.id == ptId));
+    showLoading(false);
+}
+
+async function estornarPagamentoParcial(ptId, pgtoId, logId) {
+    if (!confirm("Estornar este valor? A despesa será cancelada.")) return;
+    showLoading(true);
+
+    const pt = STATE.ponto.find(x => x.id == ptId);
+    const pagamentosRestantes = pt.pagamentos.filter(p => p.id !== pgtoId);
+    const totalApurado = parseFloat(pt.valor_total || 0);
+    const totalPagoRestante = pagamentosRestantes.reduce((acc, p) => acc + parseFloat(p.valor), 0);
+    
+    let novoStatus = 'PENDENTE';
+    if (totalPagoRestante > 0) novoStatus = 'PARCIAL';
+    if (totalApurado > 0 && totalPagoRestante >= totalApurado - 0.05) novoStatus = 'PAGO';
+
+    await sb.from('jsp_ponto').update({ pagamentos: pagamentosRestantes, status: novoStatus }).eq('id', ptId);
+    await sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }).eq('id', logId);
+
+    showToast("Estorno concluído!");
+    await loadData();
+    renderizarHistoricoPagamentos(STATE.ponto.find(x => x.id == ptId));
+    showLoading(false);
+}
       
+// 4. Impressão do Recibo EXATO da fração paga
+function imprimirReciboVale(ptId, pgtoId) {
+    const pt = STATE.ponto.find(x => x.id == ptId);
+    const e = STATE.equipe.find(x => x.id == pt.equipe_id);
+    const pgto = pt.pagamentos.find(x => x.id == pgtoId);
+
+    const mes = pt.mes;
+    const ano = pt.ano;
+    const valor = parseFloat(pgto.valor);
+    const dataRecibo = new Date(pgto.data).toLocaleDateString('pt-BR');
+
+    const htmlRecibo = `
+        <div style="font-family: Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
+                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
+                <div style="text-align: right;">
+                    <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO DE PAGAMENTO / VALE</h1>
+                    <p style="margin: 5px 0 0 0; font-size: 18px; color: #1d4ed8; font-weight: bold;">VALOR: ${formatMoney(valor)}</p>
+                </div>
+            </div>
+            
+            <div style="font-size: 14px; line-height: 1.8; text-align: justify; margin-bottom: 40px;">
+                Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA</strong> (CNPJ: 61.893.912/0001-24), a importância supra de <strong>${formatMoney(valor)}</strong>, 
+                referente a adiantamento/pagamento parcial de prestação de serviços de <strong>${e.categoria || 'Serviços Gerais'}</strong>, 
+                referente à competência de <strong>${mes}/${ano}</strong>.
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 30px; font-size: 14px;">
+                Jataí - GO, ${dataRecibo}.
+            </div>
+            
+            <div style="margin-top: 60px; display: flex; justify-content: center;">
+                <div style="text-align: center; width: 60%; border-top: 1px solid #000; padding-top: 10px;">
+                    <strong>${e.nome.toUpperCase()}</strong><br>
+                    <span style="font-size: 12px; color: #64748b;">CPF: ${e.cpf || '_______________________'} | RG: ${e.rg || '_______________________'}</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('print-area').innerHTML = htmlRecibo;
+    setTimeout(() => window.print(), 300);
+}
+        
+
+       ///////nova funções para pagamento parcial ////////////////////////////////////////////////////////////////////////////////////////////////////
+
       
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
