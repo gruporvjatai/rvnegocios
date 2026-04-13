@@ -1,0 +1,82 @@
+/* assets/css/styles.css */
+
+body { 
+    background-color: #f8fafc; 
+    font-family: 'Segoe UI', sans-serif; 
+    -webkit-font-smoothing: antialiased; 
+}
+
+.border { 
+    border-width: 1px !important; 
+    border-style: solid !important; 
+    border-color: #cbd5e1 !important; 
+}
+
+/* Controle de Exibição das Abas */
+.hidden-section { display: none !important; }
+.active-section { 
+    display: block !important; 
+    animation: fadeIn 0.3s ease-in-out; 
+}
+
+@keyframes fadeIn { 
+    from { opacity: 0; transform: translateY(5px); } 
+    to { opacity: 1; transform: translateY(0); } 
+}
+
+/* Loading e Botões */
+.loader { 
+    border: 3px solid #e2e8f0; 
+    border-top: 3px solid #1d4ed8; 
+    border-radius: 50%; 
+    width: 24px; 
+    height: 24px; 
+    animation: spin 1s linear infinite; 
+}
+
+@keyframes spin { 
+    0% { transform: rotate(0deg); } 
+    100% { transform: rotate(360deg); } 
+}
+
+.btn-action { 
+    transition: all 0.2s; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    gap: 8px; 
+    font-weight: bold; 
+    border-radius: 8px; 
+}
+
+.btn-action:active { transform: scale(0.98); }
+
+/* Toggle Day Ponto */
+.day-btn { 
+    cursor: pointer; 
+    transition: all 0.2s; 
+    user-select: none; 
+}
+.day-btn.active { 
+    background-color: #1d4ed8; 
+    color: white; 
+    border-color: #1e40af; 
+}
+
+/* Configurações de Impressão */
+.print-only { display: none; }
+
+@media print {
+    @page { size: A4; margin: 10mm; }
+    body { 
+        background: white; 
+        margin: 0; 
+        padding: 0; 
+        font-family: 'Helvetica', 'Arial', sans-serif; 
+        color: #1e293b; 
+        -webkit-print-color-adjust: exact; 
+        print-color-adjust: exact; 
+    }
+    .no-print { display: none !important; }
+    .print-only { display: block !important; }
+}
