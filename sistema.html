@@ -1482,8 +1482,8 @@
                             <button onclick="abrirModalDocumentos('${e.id}')" class="p-1.5 ${btnDocColor} rounded shadow" title="Contratos e Documentos"><i data-lucide="file-signature" width="14"></i></button>
                             <button onclick="openEquipeForm('${e.id}')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar"><i data-lucide="edit-3" width="14"></i></button>
                             <button onclick="toggleStatusEquipe('${e.id}', ${e.ativo !== false})" class="p-1.5 border ${e.ativo !== false ? 'border-red-200 text-red-500 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'} rounded" title="${e.ativo !== false ? 'Desativar / Demitir' : 'Reativar'}"><i data-lucide="power" width="14"></i></button>
-                            ${!isPago && total > 0 ? `<button onclick="pagarMesPonto('${pt?.id}', '${e.id}')" class="p-1.5 bg-green-600 text-white hover:bg-green-700 rounded shadow font-bold text-[10px] flex items-center gap-1"><i data-lucide="check-circle" width="12"></i> PAGAR</button>` : ''}
                             ${wppBtn}
+                            ${!isPago && total > 0 ? `<button onclick="pagarMesPonto('${pt?.id}', '${e.id}')" class="p-1.5 bg-green-600 text-white hover:bg-green-700 rounded shadow font-bold text-[10px] flex items-center gap-1"><i data-lucide="check-circle" width="12"></i> PAGAR</button>` : ''}
                         </div>
                     </td>
                 </tr>`;
