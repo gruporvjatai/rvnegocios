@@ -547,7 +547,8 @@
       </div>
       
 
-      <!-- NOVO MODAL DE SALDO DE PONTO (SUBSTITUI O ANTIGO) -->
+       <!-- MFECHAENTO DE MODAL DE POTNO============================================================================================================================================= -->
+<!-- NOVO MODAL DE SALDO DE PONTO (CORRIGIDO) -->
 <div id="modal-saldo-ponto" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[95vh] overflow-hidden">
         <!-- Cabeçalho -->
@@ -572,14 +573,13 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mês/Ano</label>
                     <div class="flex gap-2">
-                       <select id="saldo-filtro-mes" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-28" onchange="carregarTabelaSaldo()"></select>
-                       <input type="number" id="saldo-filtro-ano" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-24" placeholder="Ano" onchange="carregarTabelaSaldo()">
-                       <select id="saldo-filtro-status" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-36" onchange="carregarTabelaSaldo()">
+                        <select id="saldo-filtro-mes" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-28" onchange="carregarTabelaSaldo()"></select>
+                        <input type="number" id="saldo-filtro-ano" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-24" placeholder="Ano" onchange="carregarTabelaSaldo()">
                     </div>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
-                    <select id="saldo-filtro-status" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-36">
+                    <select id="saldo-filtro-status" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-36" onchange="carregarTabelaSaldo()">
                         <option value="PENDENTE" selected>Pendentes</option>
                         <option value="PAGO">Já Pagos</option>
                         <option value="TODOS">Todos</option>
@@ -654,6 +654,8 @@
         </div>
     </div>
 </div>
+
+      <!-- MFECHAENTO DE MODAL DE POTNO============================================================================= -->
       
 
       <div id="fornecedor-form-container" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
