@@ -2391,12 +2391,16 @@ async function estornarUltimoFechamento() {
         .eq('pago_em_fechamento', true);
 
     if (mesAno) {
-        // Filtra registros do mês/ano extraído da descrição
-        const { mes, ano } = mesAno;
-        query = query
-            .gte('hora_registro', `${ano}-${mes}-01`)
-            .lte('hora_registro', `${ano}-${mes}-31`);
-    }
+    const { mes, ano } = mesAno;
+    // Calcula o último dia do mês corretamente
+    const ultimoDia = new Date(ano, mes, 0).getDate();
+    const dataInicio = `${ano}-${mes}-01`;
+    const dataFim = `${ano}-${mes}-${String(ultimoDia).padStart(2, '0')}`;
+    
+    query = query
+        .gte('hora_registro', dataInicio)
+        .lte('hora_registro', dataFim);
+}
 
     const { error: errPonto } = await query;
 
