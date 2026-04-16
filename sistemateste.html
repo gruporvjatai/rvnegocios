@@ -572,8 +572,9 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mês/Ano</label>
                     <div class="flex gap-2">
-                        <select id="saldo-filtro-mes" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-28"></select>
-                        <input type="number" id="saldo-filtro-ano" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-24" placeholder="Ano">
+                       <select id="saldo-filtro-mes" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-28" onchange="carregarTabelaSaldo()"></select>
+                       <input type="number" id="saldo-filtro-ano" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-24" placeholder="Ano" onchange="carregarTabelaSaldo()">
+                       <select id="saldo-filtro-status" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-36" onchange="carregarTabelaSaldo()">
                     </div>
                 </div>
                 <div>
@@ -1619,10 +1620,11 @@ function carregarTabelaSaldo() {
     const func = STATE.equipe.find(e => e.id === funcId);
     if (!func) return;
     
-    // Obtém todos os registros do ponto diário para esse funcionário
-    let registros = STATE.ponto_diario.filter(p => p.funcionario_id === funcId && p.status === 'VALIDADO');
+    let registros = STATE.ponto_diario.filter(p => 
+        p.funcionario_id === funcId && 
+        p.status === 'VALIDADO'
+    );
     
-    // Filtra por mês/ano
     if (mes && ano) {
         registros = registros.filter(p => {
             const d = new Date(p.hora_registro);
@@ -1631,27 +1633,42 @@ function carregarTabelaSaldo() {
         });
     }
     
-    // Filtra por status de pagamento (pago_em_fechamento)
     if (statusFiltro === 'PENDENTE') {
         registros = registros.filter(p => !p.pago_em_fechamento);
     } else if (statusFiltro === 'PAGO') {
         registros = registros.filter(p => p.pago_em_fechamento === true);
     }
     
-    // Agrupa por data e calcula fração
+    // Função auxiliar para extrair HH:MM no fuso UTC
+    function formatHoraUTC(isoString) {
+        if (!isoString) return '--:--';
+        const d = new Date(isoString);
+        const hh = String(d.getUTCHours()).padStart(2, '0');
+        const mm = String(d.getUTCMinutes()).padStart(2, '0');
+        return `${hh}:${mm}`;
+    }
+    
+    // Função para calcular diferença em minutos entre duas strings ISO (UTC)
+    function diffMinutesUTC(startIso, endIso) {
+        const start = new Date(startIso);
+        const end = new Date(endIso);
+        return (end.getTime() - start.getTime()) / (1000 * 60);
+    }
+    
     const porDia = {};
     registros.forEach(p => {
         const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
         if (!porDia[dataDia]) porDia[dataDia] = { entradas: [], saidas: [], ajustes: [], registros: [] };
         porDia[dataDia].registros.push(p);
-        if (p.tipo === 'ENTRADA') porDia[dataDia].entradas.push(new Date(p.hora_registro));
-        else if (p.tipo === 'SAIDA') porDia[dataDia].saidas.push(new Date(p.hora_registro));
+        if (p.tipo === 'ENTRADA') porDia[dataDia].entradas.push(p.hora_registro);
+        else if (p.tipo === 'SAIDA') porDia[dataDia].saidas.push(p.hora_registro);
         else if (p.tipo === 'AJUSTE_MANUAL') porDia[dataDia].ajustes.push(p);
     });
     
     const tbody = document.getElementById('saldo-tabela-body');
     tbody.innerHTML = '';
     let totalDiarias = 0;
+    
     const datasOrdenadas = Object.keys(porDia).sort((a,b) => {
         const [da, ma, aa] = a.split('/');
         const [db, mb, ab] = b.split('/');
@@ -1676,17 +1693,23 @@ function carregarTabelaSaldo() {
             horariosStr = `<span class="text-indigo-600 font-bold">Ajuste Manual</span><br>
                            <span class="text-[10px] text-slate-500">${pts.ajustes.map(a => a.observacao || '').join(', ')}</span>`;
         } else {
-            const entradas = pts.entradas.sort((a,b) => a-b);
-            const saidas = pts.saidas.sort((a,b) => a-b);
-            const horas = calcularHorasTrabalhadasNoDia(entradas, saidas);
+            const entradas = pts.entradas.sort();
+            const saidas = pts.saidas.sort();
+            
+            let totalMinutos = 0;
+            for (let i = 0; i < Math.min(entradas.length, saidas.length); i++) {
+                totalMinutos += diffMinutesUTC(entradas[i], saidas[i]);
+            }
+            if (totalMinutos >= 360) totalMinutos -= 60; // desconto almoço
+            const horas = totalMinutos / 60;
+            
             fracao = horas / 8;
             fracao = Math.min(1, Math.max(0, fracao));
             
-            const formatHora = (d) => d ? d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : '--:--';
             horariosStr = entradas.map((e, i) => {
                 const s = saidas[i];
-                return `<span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-xs">${formatHora(e)}</span> → 
-                        <span class="bg-red-100 text-red-700 px-1.5 py-0.5 rounded text-xs">${s ? formatHora(s) : '--:--'}</span>`;
+                return `<span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-xs">${formatHoraUTC(e)}</span> → 
+                        <span class="bg-red-100 text-red-700 px-1.5 py-0.5 rounded text-xs">${s ? formatHoraUTC(s) : '--:--'}</span>`;
             }).join('<br>');
         }
         
@@ -1713,6 +1736,7 @@ function carregarTabelaSaldo() {
     
     lucide.createIcons();
 }
+      
 
 // Lança um ajuste manual (meia diária)
 async function lancarAjusteManual() {
@@ -1732,8 +1756,15 @@ async function lancarAjusteManual() {
     
     showLoading(true);
     
+    // Determinar o próximo ID inteiro
+    let nextId = 1;
+    if (STATE.ponto_diario && STATE.ponto_diario.length > 0) {
+        const maxId = Math.max(...STATE.ponto_diario.map(p => parseInt(p.id) || 0));
+        nextId = maxId + 1;
+    }
+    
     const payload = {
-        id: crypto.randomUUID(),
+        id: nextId,
         funcionario_id: funcId,
         obra_id: func.obra_atual_id,
         tipo: 'AJUSTE_MANUAL',
@@ -1752,7 +1783,6 @@ async function lancarAjusteManual() {
         return showToast('Erro ao lançar ajuste: ' + error.message, true);
     }
     
-    // Recarrega dados e tabela
     await loadData();
     carregarTabelaSaldo();
     showToast('Ajuste lançado com sucesso!');
@@ -1859,11 +1889,11 @@ function calcularTotalDiariasDosRegistros(registros) {
 
 // Impressão do extrato filtrado
 function imprimirExtratoSaldo() {
-    // Gera HTML para impressão com base nos dados da tabela atual
     const funcId = document.getElementById('saldo-equipe-id').value;
     const func = STATE.equipe.find(e => e.id === funcId);
     const mes = document.getElementById('saldo-filtro-mes').value;
     const ano = document.getElementById('saldo-filtro-ano').value;
+    const statusFiltro = document.getElementById('saldo-filtro-status').value;
     const totalDiarias = document.getElementById('saldo-total-diarias').innerText;
     const valorTotal = document.getElementById('saldo-total-valor').innerText;
     
@@ -1872,27 +1902,83 @@ function imprimirExtratoSaldo() {
         const tds = tr.querySelectorAll('td');
         return {
             data: tds[0]?.innerText || '',
-            horarios: tds[1]?.innerHTML || '',
+            horarios: tds[1]?.innerText || '',
             fracao: tds[2]?.innerText || '',
             status: tds[3]?.innerText || ''
         };
     });
     
+    const nomeMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][parseInt(mes)-1] || mes;
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    
     let html = `
-        <div style="font-family: Arial; padding: 20px;">
-            <h2>Extrato de Ponto - ${func.nome}</h2>
-            <p>Período: ${mes}/${ano} | Diária: ${formatMoney(func.valor_diaria)}</p>
-            <table border="1" cellpadding="8" style="border-collapse: collapse; width: 100%;">
-                <thead><tr><th>Data</th><th>Horários</th><th>Diária</th><th>Status</th></tr></thead>
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; padding: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 15px; margin-bottom: 25px;">
+                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 70px;" />
+                <div style="text-align: right;">
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 900;">EXTRATO DE PONTO</h1>
+                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #1d4ed8; font-weight: bold;">${func.nome}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 12px;">Período: ${nomeMes}/${ano} | Diária: ${formatMoney(func.valor_diaria)}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 11px;">Status: ${statusFiltro}</p>
+                </div>
+            </div>
+            
+            <table width="100%" style="border-collapse: collapse; margin-bottom: 30px; font-size: 13px;">
+                <thead>
+                    <tr style="background-color: #f1f5f9;">
+                        <th style="padding: 12px; border: 1px solid #cbd5e1;">Data</th>
+                        <th style="padding: 12px; border: 1px solid #cbd5e1;">Horários</th>
+                        <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Diária</th>
+                        <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Status</th>
+                    </tr>
+                </thead>
                 <tbody>
     `;
+    
     linhas.forEach(l => {
-        html += `<tr><td>${l.data}</td><td>${l.horarios}</td><td>${l.fracao}</td><td>${l.status}</td></tr>`;
+        html += `<tr>
+            <td style="padding: 10px; border: 1px solid #cbd5e1;">${l.data}</td>
+            <td style="padding: 10px; border: 1px solid #cbd5e1;">${l.horarios}</td>
+            <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold;">${l.fracao}</td>
+            <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center;">${l.status}</td>
+        </tr>`;
     });
-    html += `</tbody></table>
-        <p style="margin-top: 20px;"><strong>Total Diárias: ${totalDiarias}</strong><br>
-        <strong>Valor a Pagar: ${valorTotal}</strong></p>
-        <p>Emitido em ${new Date().toLocaleString()}</p>
+    
+    html += `
+                </tbody>
+            </table>
+            
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 40px;">
+                <div style="width: 300px; background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-weight: bold;">Total de Diárias:</span>
+                        <span style="font-weight: 900; font-size: 16px;">${totalDiarias}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; border-top: 1px solid #e2e8f0; padding-top: 8px;">
+                        <span style="font-weight: bold;">Valor a Pagar:</span>
+                        <span style="font-weight: 900; color: #1d4ed8; font-size: 18px;">${valorTotal}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; margin-top: 60px;">
+                <div style="text-align: center; width: 40%;">
+                    <div style="border-top: 1px solid #94a3b8; padding-top: 10px;">
+                        <strong>RV NEGÓCIOS E COMPANHIA</strong><br>
+                        <span style="font-size: 11px;">Contratante</span>
+                    </div>
+                </div>
+                <div style="text-align: center; width: 40%;">
+                    <div style="border-top: 1px solid #94a3b8; padding-top: 10px;">
+                        <strong>${func.nome.toUpperCase()}</strong><br>
+                        <span style="font-size: 11px;">Profissional</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; font-size: 10px; color: #94a3b8; margin-top: 40px; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
+                Emitido em ${hoje} - RV Negócios
+            </div>
         </div>
     `;
     
@@ -1906,19 +1992,43 @@ function imprimirReciboSaldo(equipeId) {
     if (!func) return;
     
     const saldo = calcularSaldoPendenteFuncionario(equipeId);
-    const valorTotal = saldo.totalDiarias * parseFloat(func.valor_diaria || 0);
+    const totalDiarias = saldo.totalDiarias;
+    const valorTotal = totalDiarias * parseFloat(func.valor_diaria || 0);
+    const hoje = new Date().toLocaleDateString('pt-BR');
     
     const html = `
-        <div style="font-family: Arial; padding: 30px; border: 1px solid #ccc;">
-            <h2>Recibo de Saldo de Ponto</h2>
-            <p><strong>Funcionário:</strong> ${func.nome}</p>
-            <p><strong>Diária:</strong> ${formatMoney(func.valor_diaria)}</p>
-            <p><strong>Saldo de Diárias Pendentes:</strong> ${saldo.totalDiarias.toFixed(2)}</p>
-            <p><strong>Valor Total a Receber:</strong> ${formatMoney(valorTotal)}</p>
-            <p>Data: ${new Date().toLocaleDateString()}</p>
-            <p style="margin-top: 50px;">___________________________<br>Assinatura</p>
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
+                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
+                <div style="text-align: right;">
+                    <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO DE SALDO</h1>
+                    <p style="margin: 5px 0 0 0; font-size: 18px; color: #1d4ed8; font-weight: bold;">VALOR: ${formatMoney(valorTotal)}</p>
+                </div>
+            </div>
+            
+            <div style="font-size: 14px; line-height: 1.8; text-align: justify; margin-bottom: 40px;">
+                Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA</strong> (CNPJ: 61.893.912/0001-24), a importância de <strong>${formatMoney(valorTotal)}</strong>, 
+                referente ao saldo de diárias trabalhadas e ainda não pagas, totalizando <strong>${totalDiarias.toFixed(2)} dias</strong> 
+                com a diária acordada em <strong>${formatMoney(func.valor_diaria)}</strong>.
+            </div>
+            
+            <div style="font-size: 14px; margin-bottom: 40px;">
+                Para maior clareza, firmo(amos) o presente recibo para que produza os seus efeitos legais.
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 30px; font-size: 14px;">
+                Jataí - GO, ${hoje}.
+            </div>
+            
+            <div style="margin-top: 60px; display: flex; justify-content: center;">
+                <div style="text-align: center; width: 60%; border-top: 1px solid #000; padding-top: 10px;">
+                    <strong>${func.nome.toUpperCase()}</strong><br>
+                    <span style="font-size: 12px; color: #64748b;">CPF: ${func.cpf || '_______________________'} | RG: ${func.rg || '_______________________'}</span>
+                </div>
+            </div>
         </div>
     `;
+    
     document.getElementById('print-area').innerHTML = html;
     setTimeout(() => window.print(), 300);
 }
