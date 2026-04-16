@@ -1169,7 +1169,7 @@
         const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
 
         // ====== VARIÁVEIS DE ESTADO ======
-        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], users: [], equipe: [], fases: [], ponto: [], terceirizados: [], producao_terc: [] };
+        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], users: [], equipe: [], fases: [], ponto: [], terceirizados: [], producao_terc: [], ponto_diario: [] };
         let CART = [];
         let CURRENT_OC_ID = null; 
 
@@ -1247,49 +1247,47 @@
         }
 
         async function loadData() {
-            try {
-                const [resObras, resForn, resProd, resLog, resEqp, resFases, resPonto, resTerc, resProdTerc] = await Promise.all([
-                      fetchAllRecords('jsp_obras'),
-                      fetchAllRecords('jsp_fornecedores'),
-                      fetchAllRecords('jsp_produtos'),
-                      fetchAllRecords('jsp_logs'),
-                      fetchAllRecords('jsp_equipe').catch(() => ({ data: [] })),
-                      fetchAllRecords('jsp_fase').catch(() => ({ data: [] })),
-                      fetchAllRecords('jsp_ponto').catch(() => ({ data: [] })),
-                      fetchAllRecords('jsp_terceirizados').catch(() => ({ data: [] })),
-                      fetchAllRecords('jsp_ponto_diario').catch(() => ({ data: [] }))
-                      fetchAllRecords('jsp_producao_terc').catch(() => ({ data: [] }))
-                  ]);
+    try {
+        const [resObras, resForn, resProd, resLog, resEqp, resFases, resPonto, resTerc, resPontoDiario, resProdTerc] = await Promise.all([
+            fetchAllRecords('jsp_obras'),
+            fetchAllRecords('jsp_fornecedores'),
+            fetchAllRecords('jsp_produtos'),
+            fetchAllRecords('jsp_logs'),
+            fetchAllRecords('jsp_equipe').catch(() => ({ data: [] })),
+            fetchAllRecords('jsp_fase').catch(() => ({ data: [] })),
+            fetchAllRecords('jsp_ponto').catch(() => ({ data: [] })),
+            fetchAllRecords('jsp_terceirizados').catch(() => ({ data: [] })),
+            fetchAllRecords('jsp_ponto_diario').catch(() => ({ data: [] })),
+            fetchAllRecords('jsp_producao_terc').catch(() => ({ data: [] }))
+        ]);
 
-                STATE.obras = resObras.data || [];
-                STATE.fornecedores = resForn.data || [];
-                STATE.produtos = resProd.data || [];
-                STATE.logs = resLog.data || [];
-                STATE.equipe = resEqp.data || [];
-                STATE.fases = (resFases.data || []).sort((a,b) => a.ordem - b.ordem);
-                STATE.ponto = resPonto.data || [];
-                STATE.terceirizados = resTerc.data || [];
-                STATE.ponto_diario = resPontoDiario.data || [];
-                STATE.producao_terc = resProdTerc.data || [];
-              
-              
+        STATE.obras = resObras.data || [];
+        STATE.fornecedores = resForn.data || [];
+        STATE.produtos = resProd.data || [];
+        STATE.logs = resLog.data || [];
+        STATE.equipe = resEqp.data || [];
+        STATE.fases = (resFases.data || []).sort((a,b) => a.ordem - b.ordem);
+        STATE.ponto = resPonto.data || [];
+        STATE.terceirizados = resTerc.data || [];
+        STATE.ponto_diario = resPontoDiario.data || [];   // NOVA LINHA
+        STATE.producao_terc = resProdTerc.data || [];
 
-                if (dadosUsuario.nivel === 'admin') {
-                    const navUsersBtn = document.getElementById('nav-users');
-                    if (navUsersBtn) navUsersBtn.classList.remove('hidden');
-                    const resUsers = await fetchAllRecords('jsp_usuarios');
-                    STATE.users = resUsers.data || [];
-                }
-
-                updateSelects();
-                if(!document.querySelector('.active-section')) navigate('dash');
-                else navigate(document.querySelector('.active-section').id.replace('view-',''));
-                showLoading(false);
-            } catch (err) {
-                showLoading(false);
-                showToast("Erro ao conectar no banco: " + err.message, true);
-            }
+        if (dadosUsuario.nivel === 'admin') {
+            const navUsersBtn = document.getElementById('nav-users');
+            if (navUsersBtn) navUsersBtn.classList.remove('hidden');
+            const resUsers = await fetchAllRecords('jsp_usuarios');
+            STATE.users = resUsers.data || [];
         }
+
+        updateSelects();
+        if(!document.querySelector('.active-section')) navigate('dash');
+        else navigate(document.querySelector('.active-section').id.replace('view-',''));
+        showLoading(false);
+    } catch (err) {
+        showLoading(false);
+        showToast("Erro ao conectar no banco: " + err.message, true);
+    }
+}
 
         function getNextIdNum(array) {
             let max = 0;
