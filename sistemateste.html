@@ -637,6 +637,7 @@
         </div>
 
         <!-- Rodapé com totais e ação -->
+        <!-- Rodapé com totais e ações -->
         <div class="p-4 bg-white border-t flex justify-between items-center shrink-0">
             <div>
                 <span class="text-sm font-bold text-slate-500">Total de Diárias Pendentes:</span>
@@ -647,9 +648,14 @@
                     <div class="text-xs text-slate-500 font-bold uppercase">Valor a Pagar</div>
                     <div id="saldo-total-valor" class="text-2xl font-black text-green-600">R$ 0,00</div>
                 </div>
-                <button onclick="fecharPagamentoSaldo()" class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2">
-                    <i data-lucide="check-circle" class="w-5 h-5"></i> Fechar Pagamento
-                </button>
+                <div class="flex gap-2">
+                    <button onclick="estornarUltimoFechamento()" class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2" title="Estornar o último fechamento de ponto (desfaz a despesa e libera os registros)">
+                        <i data-lucide="rotate-ccw" class="w-5 h-5"></i> Estornar
+                    </button>
+                    <button onclick="fecharPagamentoSaldo()" class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2">
+                        <i data-lucide="check-circle" class="w-5 h-5"></i> Fechar Pagamento
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -2331,6 +2337,80 @@ async function buscarRegistrosEletronicos() {
     }
 }
 
+async function estornarUltimoFechamento() {
+    const funcId = document.getElementById('saldo-equipe-id').value;
+    const func = STATE.equipe.find(e => e.id === funcId);
+    if (!func) return;
+
+    // Busca a despesa mais recente gerada para este funcionário com a descrição padrão
+    // Ordena por data decrescente para pegar a última
+    const despesas = STATE.logs.filter(l => 
+        l.tipo === 'despesa' &&
+        l.produto_nome && l.produto_nome.includes(`Pagamento de ponto - ${func.nome}`) &&
+        (l.status_financeiro === 'PENDENTE' || l.status_financeiro === 'PAGO')
+    ).sort((a, b) => new Date(b.data) - new Date(a.data));
+
+    if (despesas.length === 0) {
+        return showToast('Nenhum pagamento de ponto encontrado para estornar.', true);
+    }
+
+    const ultimaDespesa = despesas[0];
+    
+    // Extrai mês/ano da descrição (assumindo formato "Pagamento de ponto - Nome - Período MM/AAAA")
+    let mesAno = null;
+    const match = ultimaDespesa.produto_nome.match(/Período (\d{2})\/(\d{4})/);
+    if (match) {
+        mesAno = { mes: match[1], ano: match[2] };
+    }
+
+    let confirmMsg = `Estornar o pagamento de ${formatMoney(ultimaDespesa.valor_total)} (${ultimaDespesa.status_financeiro})?`;
+    if (mesAno) confirmMsg += `\nPeríodo: ${mesAno.mes}/${mesAno.ano}`;
+    confirmMsg += `\n\nOs registros de ponto voltarão a ficar pendentes.`;
+    
+    if (!confirm(confirmMsg)) return;
+
+    showLoading(true);
+
+    // 1. Cancelar a despesa no financeiro
+    const { error: errFin } = await sb.from('jsp_logs')
+        .update({ status_financeiro: 'CANCELADO' })
+        .eq('id', ultimaDespesa.id)
+        .eq('tipo', 'despesa');
+
+    if (errFin) {
+        showLoading(false);
+        return showToast('Erro ao cancelar despesa: ' + errFin.message, true);
+    }
+
+    // 2. Reverter marcação pago_em_fechamento nos registros de ponto
+    //    Vamos reverter TODOS os registros do funcionário que estão marcados como pagos,
+    //    mas apenas aqueles que correspondem ao período da despesa (se houver período).
+    let query = sb.from('jsp_ponto_diario')
+        .update({ pago_em_fechamento: false })
+        .eq('funcionario_id', funcId)
+        .eq('pago_em_fechamento', true);
+
+    if (mesAno) {
+        // Filtra registros do mês/ano extraído da descrição
+        const { mes, ano } = mesAno;
+        query = query
+            .gte('hora_registro', `${ano}-${mes}-01`)
+            .lte('hora_registro', `${ano}-${mes}-31`);
+    }
+
+    const { error: errPonto } = await query;
+
+    if (errPonto) {
+        showLoading(false);
+        return showToast('Erro ao reverter registros de ponto: ' + errPonto.message, true);
+    }
+
+    await loadData();
+    carregarTabelaSaldo(); // Atualiza o modal
+    renderEquipe();        // Atualiza a listagem principal
+    showToast('Estorno realizado com sucesso! Despesa cancelada e registros liberados.');
+}
+      
 
       function imprimirFolhaPontoEletronico() {
     if (!window.dadosFolhaImpressao || window.dadosFolhaImpressao.length === 0) {
