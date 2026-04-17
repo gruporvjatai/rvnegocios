@@ -548,7 +548,7 @@
       
 
        <!-- MFECHAENTO DE MODAL DE POTNO============================================================================================================================================= -->
-<!-- NOVO MODAL DE SALDO DE PONTO (CORRIGIDO) -->
+<!-- MODAL DE SALDO DE PONTO (CORRIGIDO) -->
 <div id="modal-saldo-ponto" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[95vh] overflow-hidden">
         <!-- Cabeçalho -->
@@ -609,7 +609,7 @@
                 </div>
             </div>
 
-            <!-- Lançamento de ajuste manual (meia diária) -->
+            <!-- Lançamento de ajuste manual -->
             <div class="mt-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                 <h4 class="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2">
                     <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-600"></i> Lançar Ajuste Manual (Meia Diária)
@@ -636,35 +636,27 @@
             </div>
         </div>
 
-        <!-- Rodapé com totais e ação -->
         <!-- Rodapé com totais e ações -->
         <div class="p-4 bg-white border-t flex justify-between items-center shrink-0">
             <div>
                 <span class="text-sm font-bold text-slate-500">Total de Diárias Pendentes:</span>
                 <span id="saldo-total-diarias" class="text-2xl font-black text-indigo-700 ml-2">0.00</span>
             </div>
-           <!-- Rodapé com totais e ações -->
-            <div class="p-4 bg-white border-t flex justify-between items-center shrink-0">
-                <div>
-                    <span class="text-sm font-bold text-slate-500">Total de Diárias Pendentes:</span>
-                    <span id="saldo-total-diarias" class="text-2xl font-black text-indigo-700 ml-2">0.00</span>
+            <div class="flex items-center gap-4">
+                <div class="text-right">
+                    <div class="text-xs text-slate-500 font-bold uppercase">Valor a Pagar</div>
+                    <div id="saldo-total-valor" class="text-2xl font-black text-green-600">R$ 0,00</div>
                 </div>
-                <div class="flex items-center gap-4">
-                    <div class="text-right">
-                        <div class="text-xs text-slate-500 font-bold uppercase">Valor a Pagar</div>
-                        <div id="saldo-total-valor" class="text-2xl font-black text-green-600">R$ 0,00</div>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="imprimirReciboDoModal()" class="bg-slate-700 hover:bg-slate-800 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2" title="Imprimir recibo com os dados filtrados">
-                            <i data-lucide="receipt" class="w-5 h-5"></i> Recibo
-                        </button>
-                        <button onclick="estornarUltimoFechamento()" class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2" title="Estornar o último fechamento de ponto">
-                            <i data-lucide="rotate-ccw" class="w-5 h-5"></i> Estornar
-                        </button>
-                        <button onclick="fecharPagamentoSaldo()" class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2">
-                            <i data-lucide="check-circle" class="w-5 h-5"></i> Fechar Pagamento
-                        </button>
-                    </div>
+                <div class="flex gap-2">
+                    <button onclick="imprimirReciboDoModal()" class="bg-slate-700 hover:bg-slate-800 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2" title="Imprimir recibo com os dados filtrados">
+                        <i data-lucide="receipt" class="w-5 h-5"></i> Recibo
+                    </button>
+                    <button onclick="estornarUltimoFechamento()" class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2" title="Estornar o último fechamento de ponto">
+                        <i data-lucide="rotate-ccw" class="w-5 h-5"></i> Estornar
+                    </button>
+                    <button onclick="fecharPagamentoSaldo()" class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2">
+                        <i data-lucide="check-circle" class="w-5 h-5"></i> Fechar Pagamento
+                    </button>
                 </div>
             </div>
         </div>
@@ -1798,8 +1790,7 @@ function carregarTabelaSaldo() {
         registros = registros.filter(p => p.pago_em_fechamento === true);
     }
     
-    // Função auxiliar para extrair HH:MM no fuso UTC
-    function formatHoraUTC(isoString) {
+   function formatHoraUTC(isoString) {
         if (!isoString) return '--:--';
         const d = new Date(isoString);
         const hh = String(d.getUTCHours()).padStart(2, '0');
@@ -1807,13 +1798,13 @@ function carregarTabelaSaldo() {
         return `${hh}:${mm}`;
     }
     
-    // Função para calcular diferença em minutos entre duas strings ISO (UTC)
     function diffMinutesUTC(startIso, endIso) {
         const start = new Date(startIso);
         const end = new Date(endIso);
         return (end.getTime() - start.getTime()) / (1000 * 60);
     }
     
+    // Agrupa por data
     const porDia = {};
     registros.forEach(p => {
         const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
@@ -1855,14 +1846,37 @@ function carregarTabelaSaldo() {
             const entradas = pts.entradas.sort();
             const saidas = pts.saidas.sort();
             
+            // Calcula total de minutos trabalhados no dia (pares entrada-saída)
             let totalMinutos = 0;
             for (let i = 0; i < Math.min(entradas.length, saidas.length); i++) {
                 totalMinutos += diffMinutesUTC(entradas[i], saidas[i]);
             }
-            if (totalMinutos >= 360) totalMinutos -= 60; // desconto almoço
+            
+            // Desconto de 1 hora de almoço se trabalhou mais de 6 horas
+            if (totalMinutos >= 360) {
+                totalMinutos -= 60;
+            }
+            
+            // Converte para horas
             const horas = totalMinutos / 60;
             
-            fracao = horas / 8;
+            // Jornada base: 8 horas = 480 minutos
+            const JORNADA_BASE_MINUTOS = 480;
+            const TOLERANCIA_MINUTOS = 20;
+            
+            // Calcula a diferença em minutos
+            const faltaMinutos = Math.max(0, JORNADA_BASE_MINUTOS - totalMinutos);
+            
+            // Se a falta for maior que a tolerância, desconta integralmente a falta
+            let horasConsideradas;
+            if (faltaMinutos > TOLERANCIA_MINUTOS) {
+                horasConsideradas = horas;
+            } else {
+                horasConsideradas = 8; // dentro da tolerância, considera jornada completa
+            }
+            
+            // Calcula fração (máximo 1)
+            fracao = horasConsideradas / 8;
             fracao = Math.min(1, Math.max(0, fracao));
             
             horariosStr = entradas.map((e, i) => {
