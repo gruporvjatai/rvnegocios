@@ -1801,7 +1801,6 @@ async function fecharPagamentoSaldo() {
     const funcId = document.getElementById('saldo-equipe-id').value;
     const mes = document.getElementById('saldo-filtro-mes').value;
     const ano = document.getElementById('saldo-filtro-ano').value;
-    const statusFiltro = document.getElementById('saldo-filtro-status').value;
     
     const func = STATE.equipe.find(e => e.id === funcId);
     if (!func) return;
@@ -1813,6 +1812,7 @@ async function fecharPagamentoSaldo() {
         !p.pago_em_fechamento
     );
     
+    // Aplica filtro de período
     if (mes && ano) {
         registros = registros.filter(p => {
             const d = new Date(p.hora_registro);
@@ -1825,7 +1825,7 @@ async function fecharPagamentoSaldo() {
         return showToast('Nenhum registro pendente para fechar.', true);
     }
     
-    // Calcula total
+    // Calcula total de diárias
     const totalDiarias = calcularTotalDiariasDosRegistros(registros);
     const valorTotal = totalDiarias * parseFloat(func.valor_diaria || 0);
     
@@ -2343,7 +2343,6 @@ async function estornarUltimoFechamento() {
     if (!func) return;
 
     // Busca a despesa mais recente gerada para este funcionário com a descrição padrão
-    // Ordena por data decrescente para pegar a última
     const despesas = STATE.logs.filter(l => 
         l.tipo === 'despesa' &&
         l.produto_nome && l.produto_nome.includes(`Pagamento de ponto - ${func.nome}`) &&
@@ -2356,7 +2355,7 @@ async function estornarUltimoFechamento() {
 
     const ultimaDespesa = despesas[0];
     
-    // Extrai mês/ano da descrição (assumindo formato "Pagamento de ponto - Nome - Período MM/AAAA")
+    // Extrai mês/ano da descrição (formato "Pagamento de ponto - Nome - Período MM/AAAA")
     let mesAno = null;
     const match = ultimaDespesa.produto_nome.match(/Período (\d{2})\/(\d{4})/);
     if (match) {
@@ -2382,25 +2381,23 @@ async function estornarUltimoFechamento() {
         return showToast('Erro ao cancelar despesa: ' + errFin.message, true);
     }
 
-    // 2. Reverter marcação pago_em_fechamento nos registros de ponto
-    //    Vamos reverter TODOS os registros do funcionário que estão marcados como pagos,
-    //    mas apenas aqueles que correspondem ao período da despesa (se houver período).
+    // 2. Reverter marcação pago_em_fechamento nos registros de ponto do período
     let query = sb.from('jsp_ponto_diario')
         .update({ pago_em_fechamento: false })
         .eq('funcionario_id', funcId)
         .eq('pago_em_fechamento', true);
 
     if (mesAno) {
-    const { mes, ano } = mesAno;
-    // Calcula o último dia do mês corretamente
-    const ultimoDia = new Date(ano, mes, 0).getDate();
-    const dataInicio = `${ano}-${mes}-01`;
-    const dataFim = `${ano}-${mes}-${String(ultimoDia).padStart(2, '0')}`;
-    
-    query = query
-        .gte('hora_registro', dataInicio)
-        .lte('hora_registro', dataFim);
-}
+        const { mes, ano } = mesAno;
+        // Calcula o último dia do mês corretamente (lida com fevereiro e anos bissextos)
+        const ultimoDia = new Date(ano, mes, 0).getDate();
+        const dataInicio = `${ano}-${mes}-01`;
+        const dataFim = `${ano}-${mes}-${String(ultimoDia).padStart(2, '0')}`;
+        
+        query = query
+            .gte('hora_registro', dataInicio)
+            .lte('hora_registro', dataFim);
+    }
 
     const { error: errPonto } = await query;
 
@@ -2413,8 +2410,7 @@ async function estornarUltimoFechamento() {
     carregarTabelaSaldo(); // Atualiza o modal
     renderEquipe();        // Atualiza a listagem principal
     showToast('Estorno realizado com sucesso! Despesa cancelada e registros liberados.');
-}
-      
+}      
 
       function imprimirFolhaPontoEletronico() {
     if (!window.dadosFolhaImpressao || window.dadosFolhaImpressao.length === 0) {
