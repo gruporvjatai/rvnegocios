@@ -1676,50 +1676,39 @@ function calcularSaldoPendenteFuncionario(funcId, mesFiltro = null, anoFiltro = 
 function calcularHorasTrabalhadasNoDia(entradas, saidas) {
     if (entradas.length === 0 || saidas.length === 0) return 0;
     
-    // Combina e ordena cronologicamente
     const pontos = [
         ...entradas.map(e => ({ tipo: 'E', hora: e })),
         ...saidas.map(s => ({ tipo: 'S', hora: s }))
     ].sort((a, b) => a.hora - b.hora);
     
     let totalMinutos = 0;
-    // Considera pares E-S consecutivos
     for (let i = 0; i < pontos.length - 1; i++) {
-        if (pontos[i].tipo === 'E' && pontos[i + 1].tipo === 'S') {
-            totalMinutos += (pontos[i + 1].hora - pontos[i].hora) / (1000 * 60);
+        if (pontos[i].tipo === 'E' && pontos[i+1].tipo === 'S') {
+            totalMinutos += (pontos[i+1].hora - pontos[i].hora) / (1000 * 60);
         }
     }
     
-    // Desconta 1h de almoço se trabalhou mais de 6h (360 minutos)
     if (totalMinutos >= 360) {
         totalMinutos -= 60;
     }
     
-    // Converte para horas
-    let horas = totalMinutos / 60;
+    const JORNADA_BASE = 480;
+    const TOLERANCIA = 20;
     
-    // Jornada base: 8 horas (480 minutos)
-    const JORNADA_BASE_MINUTOS = 480;
-    const TOLERANCIA_MINUTOS = 20;
+    let minutosConsiderados = totalMinutos;
+    const falta = JORNADA_BASE - totalMinutos;
     
-    // Calcula a diferença em minutos
-    const minutosTrabalhados = totalMinutos;
-    const minutosEsperados = JORNADA_BASE_MINUTOS;
-    const faltaMinutos = Math.max(0, minutosEsperados - minutosTrabalhados);
-    
-    // Se a falta for maior que a tolerância, desconta integralmente a falta
-    if (faltaMinutos > TOLERANCIA_MINUTOS) {
-        horas = minutosTrabalhados / 60;
+    if (falta > TOLERANCIA) {
+        minutosConsiderados = totalMinutos;
     } else {
-        // Se a falta estiver dentro da tolerância, considera a jornada completa
-        horas = 8;
+        minutosConsiderados = JORNADA_BASE;
     }
     
-    // Garante que não ultrapasse 8 horas (caso tenha horas extras, serão ignoradas para a diária)
+    let horas = minutosConsiderados / 60;
     horas = Math.min(8, horas);
-    
     return horas;
 }
+    
 
 // Abre o modal de saldo para um funcionário
 function abrirModalSaldo(equipeId) {
@@ -1761,7 +1750,6 @@ function fecharModalSaldo() {
     document.getElementById('modal-saldo-ponto').classList.add('hidden');
 }
 
-// Carrega a tabela com base nos filtros
 function carregarTabelaSaldo() {
     const funcId = document.getElementById('saldo-equipe-id').value;
     const mes = document.getElementById('saldo-filtro-mes').value;
@@ -1790,7 +1778,8 @@ function carregarTabelaSaldo() {
         registros = registros.filter(p => p.pago_em_fechamento === true);
     }
     
-   function formatHoraUTC(isoString) {
+    // Funções auxiliares
+    function formatHoraUTC(isoString) {
         if (!isoString) return '--:--';
         const d = new Date(isoString);
         const hh = String(d.getUTCHours()).padStart(2, '0');
@@ -1846,39 +1835,44 @@ function carregarTabelaSaldo() {
             const entradas = pts.entradas.sort();
             const saidas = pts.saidas.sort();
             
-            // Calcula total de minutos trabalhados no dia (pares entrada-saída)
+            // Combina todos os pontos ordenados por horário
+            const pontos = [
+                ...entradas.map(e => ({ tipo: 'E', hora: e })),
+                ...saidas.map(s => ({ tipo: 'S', hora: s }))
+            ].sort((a, b) => new Date(a.hora) - new Date(b.hora));
+            
             let totalMinutos = 0;
-            for (let i = 0; i < Math.min(entradas.length, saidas.length); i++) {
-                totalMinutos += diffMinutesUTC(entradas[i], saidas[i]);
+            // Calcula minutos trabalhados considerando pares E-S consecutivos
+            for (let i = 0; i < pontos.length - 1; i++) {
+                if (pontos[i].tipo === 'E' && pontos[i+1].tipo === 'S') {
+                    totalMinutos += diffMinutesUTC(pontos[i].hora, pontos[i+1].hora);
+                }
             }
             
-            // Desconto de 1 hora de almoço se trabalhou mais de 6 horas
+            // Desconto de 1 hora de almoço se trabalhou mais de 6 horas (360 minutos)
             if (totalMinutos >= 360) {
                 totalMinutos -= 60;
             }
             
-            // Converte para horas
-            const horas = totalMinutos / 60;
+            // Jornada base: 8 horas = 480 minutos. Tolerância de 20 minutos para menos.
+            const JORNADA_BASE = 480;
+            const TOLERANCIA = 20;
             
-            // Jornada base: 8 horas = 480 minutos
-            const JORNADA_BASE_MINUTOS = 480;
-            const TOLERANCIA_MINUTOS = 20;
+            let minutosConsiderados = totalMinutos;
+            const falta = JORNADA_BASE - totalMinutos;
             
-            // Calcula a diferença em minutos
-            const faltaMinutos = Math.max(0, JORNADA_BASE_MINUTOS - totalMinutos);
-            
-            // Se a falta for maior que a tolerância, desconta integralmente a falta
-            let horasConsideradas;
-            if (faltaMinutos > TOLERANCIA_MINUTOS) {
-                horasConsideradas = horas;
+            // Se a falta for maior que a tolerância, usa os minutos reais; senão, considera jornada completa
+            if (falta > TOLERANCIA) {
+                minutosConsiderados = totalMinutos;
             } else {
-                horasConsideradas = 8; // dentro da tolerância, considera jornada completa
+                minutosConsiderados = JORNADA_BASE;
             }
             
             // Calcula fração (máximo 1)
-            fracao = horasConsideradas / 8;
+            fracao = minutosConsiderados / JORNADA_BASE;
             fracao = Math.min(1, Math.max(0, fracao));
             
+            // Monta string de horários para exibição
             horariosStr = entradas.map((e, i) => {
                 const s = saidas[i];
                 return `<span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-xs">${formatHoraUTC(e)}</span> → 
