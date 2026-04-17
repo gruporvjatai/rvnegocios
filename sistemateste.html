@@ -260,7 +260,7 @@
           <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
               <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i data-lucide="users" class="text-blue-700"></i> Equipe </h2>
               <div class="flex gap-2 w-full md:w-auto">
-                  <button onclick="imprimirFolha()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="printer" class="w-4 h-4"></i> Imprimir Folha</button>
+                  <button onclick="abrirModalFolhaPagamento()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="printer" class="w-4 h-4"></i> Imprimir Folha</button>
                   <button onclick="openEquipeForm()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Cadastrar Membro</button>
               </div>
           </div>
@@ -643,18 +643,28 @@
                 <span class="text-sm font-bold text-slate-500">Total de Diárias Pendentes:</span>
                 <span id="saldo-total-diarias" class="text-2xl font-black text-indigo-700 ml-2">0.00</span>
             </div>
-            <div class="flex items-center gap-4">
-                <div class="text-right">
-                    <div class="text-xs text-slate-500 font-bold uppercase">Valor a Pagar</div>
-                    <div id="saldo-total-valor" class="text-2xl font-black text-green-600">R$ 0,00</div>
+           <!-- Rodapé com totais e ações -->
+            <div class="p-4 bg-white border-t flex justify-between items-center shrink-0">
+                <div>
+                    <span class="text-sm font-bold text-slate-500">Total de Diárias Pendentes:</span>
+                    <span id="saldo-total-diarias" class="text-2xl font-black text-indigo-700 ml-2">0.00</span>
                 </div>
-                <div class="flex gap-2">
-                    <button onclick="estornarUltimoFechamento()" class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2" title="Estornar o último fechamento de ponto (desfaz a despesa e libera os registros)">
-                        <i data-lucide="rotate-ccw" class="w-5 h-5"></i> Estornar
-                    </button>
-                    <button onclick="fecharPagamentoSaldo()" class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2">
-                        <i data-lucide="check-circle" class="w-5 h-5"></i> Fechar Pagamento
-                    </button>
+                <div class="flex items-center gap-4">
+                    <div class="text-right">
+                        <div class="text-xs text-slate-500 font-bold uppercase">Valor a Pagar</div>
+                        <div id="saldo-total-valor" class="text-2xl font-black text-green-600">R$ 0,00</div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="imprimirReciboDoModal()" class="bg-slate-700 hover:bg-slate-800 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2" title="Imprimir recibo com os dados filtrados">
+                            <i data-lucide="receipt" class="w-5 h-5"></i> Recibo
+                        </button>
+                        <button onclick="estornarUltimoFechamento()" class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2" title="Estornar o último fechamento de ponto">
+                            <i data-lucide="rotate-ccw" class="w-5 h-5"></i> Estornar
+                        </button>
+                        <button onclick="fecharPagamentoSaldo()" class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2">
+                            <i data-lucide="check-circle" class="w-5 h-5"></i> Fechar Pagamento
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1161,6 +1171,68 @@
     </div>
 </div>
 
+
+<!-- MODAL PARA IMPRESSÃO DE FOLHA DE PAGAMENTOS -->
+<div id="modal-folha-pagamento" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh] overflow-hidden">
+        <div class="bg-indigo-600 p-4 text-white flex justify-between items-center shrink-0">
+            <h3 class="font-black text-lg flex items-center gap-2">
+                <i data-lucide="printer" class="w-5 h-5"></i> Imprimir Folha de Pagamentos
+            </h3>
+            <button onclick="document.getElementById('modal-folha-pagamento').classList.add('hidden')" class="text-white hover:bg-white/20 p-2 rounded-lg transition">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div class="p-5 overflow-y-auto flex-1 bg-slate-50">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status Financeiro</label>
+                    <select id="folha-status" class="w-full p-3 border rounded-lg text-sm font-bold bg-white">
+                        <option value="PENDENTE" selected>Apenas Pendentes (Não Baixados)</option>
+                        <option value="PAGO">Apenas Pagos</option>
+                        <option value="TODOS">Todos</option>
+                    </select>
+                    <p class="text-[10px] text-slate-400 mt-1">"Pendentes" são os que ainda não tiveram baixa no financeiro.</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Obra</label>
+                    <select id="folha-obra" class="w-full p-3 border rounded-lg text-sm font-bold bg-white">
+                        <option value="">Todas as Obras</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status do Funcionário</label>
+                    <select id="folha-status-func" class="w-full p-3 border rounded-lg text-sm font-bold bg-white">
+                        <option value="true" selected>Ativos</option>
+                        <option value="false">Desativados</option>
+                        <option value="todos">Todos</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mês</label>
+                        <select id="folha-mes" class="w-full p-3 border rounded-lg text-sm font-bold bg-white">
+                            <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option>
+                            <option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option>
+                            <option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option>
+                            <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Ano</label>
+                        <input type="number" id="folha-ano" class="w-full p-3 border rounded-lg text-sm font-bold bg-white" value="">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="p-4 bg-white border-t flex justify-end gap-3 shrink-0">
+            <button onclick="document.getElementById('modal-folha-pagamento').classList.add('hidden')" class="px-5 py-3 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300 transition">Cancelar</button>
+            <button onclick="executarImpressaoFolha()" class="px-5 py-3 bg-blue-700 text-white rounded-xl font-bold shadow-lg hover:bg-blue-800 transition flex items-center gap-2">
+                <i data-lucide="printer" class="w-5 h-5"></i> Imprimir
+            </button>
+        </div>
+    </div>
+</div>      
       
     </main>
 
@@ -1475,9 +1547,9 @@
                     <button onclick="abrirModalSaldo('${e.id}')" class="p-1.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded shadow font-bold text-[10px] flex items-center gap-1">
                         <i data-lucide="calculator" width="12"></i> CALCULAR
                     </button>
-                    <button onclick="imprimirReciboSaldo('${e.id}')" class="p-1.5 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Gerar Recibo do Saldo">
+                    <!--<button onclick="imprimirReciboSaldo('${e.id}')" class="p-1.5 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Gerar Recibo do Saldo">
                         <i data-lucide="receipt" width="14"></i>
-                    </button>
+                    </button>-->
                     <button onclick="abrirModalDocumentos('${e.id}')" class="p-1.5 ${btnDocColor} rounded shadow" title="Contratos e Documentos">
                         <i data-lucide="file-signature" width="14"></i>
                     </button>
@@ -1496,6 +1568,54 @@
     
     lucide.createIcons();
 }
+
+      function imprimirReciboDoModal() {
+            const funcId = document.getElementById('saldo-equipe-id').value;
+            const func = STATE.equipe.find(e => e.id === funcId);
+            if (!func) return;
+            
+            const totalDiarias = document.getElementById('saldo-total-diarias').innerText;
+            const valorTotal = document.getElementById('saldo-total-valor').innerText;
+            const mes = document.getElementById('saldo-filtro-mes').value;
+            const ano = document.getElementById('saldo-filtro-ano').value;
+            const hoje = new Date().toLocaleDateString('pt-BR');
+            
+            const html = `
+                <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
+                        <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
+                        <div style="text-align: right;">
+                            <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO DE PONTO</h1>
+                            <p style="margin: 5px 0 0 0; font-size: 18px; color: #1d4ed8; font-weight: bold;">VALOR: ${valorTotal}</p>
+                        </div>
+                    </div>
+                    
+                    <div style="font-size: 14px; line-height: 1.8; text-align: justify; margin-bottom: 40px;">
+                        Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA</strong> (CNPJ: 61.893.912/0001-24), a importância de <strong>${valorTotal}</strong>, 
+                        referente ao pagamento de diárias trabalhadas no período de <strong>${mes}/${ano}</strong>, totalizando <strong>${totalDiarias} dias</strong> 
+                        com a diária acordada em <strong>${formatMoney(func.valor_diaria)}</strong>.
+                    </div>
+                    
+                    <div style="font-size: 14px; margin-bottom: 40px;">
+                        Para maior clareza, firmo(amos) o presente recibo para que produza os seus efeitos legais.
+                    </div>
+                    
+                    <div style="text-align: center; margin-bottom: 30px; font-size: 14px;">
+                        Jataí - GO, ${hoje}.
+                    </div>
+                    
+                    <div style="margin-top: 60px; display: flex; justify-content: center;">
+                        <div style="text-align: center; width: 60%; border-top: 1px solid #000; padding-top: 10px;">
+                            <strong>${func.nome.toUpperCase()}</strong><br>
+                            <span style="font-size: 12px; color: #64748b;">CPF: ${func.cpf || '_______________________'} | RG: ${func.rg || '_______________________'}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('print-area').innerHTML = html;
+            setTimeout(() => window.print(), 300);
+        }
 
 
       
@@ -1563,19 +1683,50 @@ function calcularSaldoPendenteFuncionario(funcId, mesFiltro = null, anoFiltro = 
 // Função auxiliar para calcular horas trabalhadas no dia (baseado no código existente)
 function calcularHorasTrabalhadasNoDia(entradas, saidas) {
     if (entradas.length === 0 || saidas.length === 0) return 0;
-    // Ordena cronologicamente
-    const pontos = [...entradas.map(e => ({tipo:'E', hora:e})), ...saidas.map(s => ({tipo:'S', hora:s}))]
-                    .sort((a,b) => a.hora - b.hora);
+    
+    // Combina e ordena cronologicamente
+    const pontos = [
+        ...entradas.map(e => ({ tipo: 'E', hora: e })),
+        ...saidas.map(s => ({ tipo: 'S', hora: s }))
+    ].sort((a, b) => a.hora - b.hora);
+    
     let totalMinutos = 0;
     // Considera pares E-S consecutivos
     for (let i = 0; i < pontos.length - 1; i++) {
-        if (pontos[i].tipo === 'E' && pontos[i+1].tipo === 'S') {
-            totalMinutos += (pontos[i+1].hora - pontos[i].hora) / (1000 * 60);
+        if (pontos[i].tipo === 'E' && pontos[i + 1].tipo === 'S') {
+            totalMinutos += (pontos[i + 1].hora - pontos[i].hora) / (1000 * 60);
         }
     }
-    // Desconta 1h de almoço se trabalhou mais de 6h
-    if (totalMinutos >= 360) totalMinutos -= 60;
-    return totalMinutos / 60;
+    
+    // Desconta 1h de almoço se trabalhou mais de 6h (360 minutos)
+    if (totalMinutos >= 360) {
+        totalMinutos -= 60;
+    }
+    
+    // Converte para horas
+    let horas = totalMinutos / 60;
+    
+    // Jornada base: 8 horas (480 minutos)
+    const JORNADA_BASE_MINUTOS = 480;
+    const TOLERANCIA_MINUTOS = 20;
+    
+    // Calcula a diferença em minutos
+    const minutosTrabalhados = totalMinutos;
+    const minutosEsperados = JORNADA_BASE_MINUTOS;
+    const faltaMinutos = Math.max(0, minutosEsperados - minutosTrabalhados);
+    
+    // Se a falta for maior que a tolerância, desconta integralmente a falta
+    if (faltaMinutos > TOLERANCIA_MINUTOS) {
+        horas = minutosTrabalhados / 60;
+    } else {
+        // Se a falta estiver dentro da tolerância, considera a jornada completa
+        horas = 8;
+    }
+    
+    // Garante que não ultrapasse 8 horas (caso tenha horas extras, serão ignoradas para a diária)
+    horas = Math.min(8, horas);
+    
+    return horas;
 }
 
 // Abre o modal de saldo para um funcionário
@@ -2683,76 +2834,159 @@ async function estornarUltimoFechamento() {
             
             showToast("Pagamento e Despesa lançados com sucesso!"); loadData();
         }
-
-        function imprimirFolha() {
-    const mes = document.getElementById('eqp-filter-mes').value;
-    const ano = document.getElementById('eqp-filter-ano').value;
-    const term = document.getElementById('eqp-search').value.toLowerCase();
-    const obraFiltro = document.getElementById('eqp-obra-filter').value;
-    const statusFiltro = document.getElementById('eqp-filter-status').value;
+function abrirModalFolhaPagamento() {
+    // Preenche o select de obras
+    const selectObra = document.getElementById('folha-obra');
+    selectObra.innerHTML = '<option value="">Todas as Obras</option>' + 
+        STATE.obras.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
     
-    let fil = STATE.equipe.filter(e => e.nome.toLowerCase().includes(term) || (e.categoria||'').toLowerCase().includes(term));
-    if(obraFiltro) fil = fil.filter(e => e.obra_atual_id == obraFiltro);
-    if (statusFiltro !== "todos") {
-        const isAtivo = statusFiltro === "true";
-        fil = fil.filter(e => e.ativo === isAtivo || (isAtivo && e.ativo === undefined));
-    }
-
-    let htmlReport = `
-        <div style="font-family: Arial, sans-serif; color: #333; width: 100%;">
-            <div style="text-align: center; border-bottom: 2px solid #1d4ed8; padding-bottom: 10px; margin-bottom: 20px;">
-                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px; margin-bottom: 10px;" />
-                <h2 style="margin: 0; color: #1e293b; font-size: 20px; font-weight: 900;">RELATÓRIO DE FREQUÊNCIA E PAGAMENTO</h2>
-                <h3 style="margin: 5px 0 0 0; color: #1d4ed8;">Competência: ${mes}/${ano}</h3>
-                ${obraFiltro ? `<p style="margin: 5px 0 0 0; font-size: 14px; color: #64748b;">Obra: ${STATE.obras.find(o=>o.id==obraFiltro)?.nome}</p>` : ''}
-            </div>
-            <table width="100%" style="border-collapse: collapse; text-align: left; font-size: 11px;">
-                <thead>
-                    <tr style="background-color: #f1f5f9; color: #1e293b;">
-                        <th style="padding: 8px; border: 1px solid #cbd5e1;">Funcionário / PIX</th>
-                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">Diária</th>
-                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">Dias Trabalhados</th>
-                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: right;">Total R$ (Subtotal)</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
-
-    let somaTotal = 0;
-    fil.forEach(e => {
-        let pt = STATE.ponto.find(x => x.equipe_id == e.id && x.mes === mes && x.ano === ano);
-        let dias = pt ? parseFloat(pt.total_dias || 0) : 0;
-        let diaria = parseFloat(e.valor_diaria || 0);
-        let total = pt ? parseFloat(pt.valor_total || 0) : (dias * diaria);
-        somaTotal += total;
-
-        // Adicionada a Chave PIX abaixo do Nome, com destaque.
-        htmlReport += `
-            <tr>
-                <td style="padding: 8px; border: 1px solid #cbd5e1;">
-                    <div style="font-weight: 900; font-size: 12px;">${e.nome.toUpperCase()}</div>
-                    <div style="font-size: 10px; color: #1d4ed8; font-weight: bold; margin-top: 2px;">PIX: ${e.chave_pix || '<span style="color:#ef4444">NÃO INFORMADO</span>'}</div>
-                    <div style="font-size: 9px; color:#64748b; text-transform: uppercase; margin-top: 2px;">FUNÇÃO: ${e.categoria||'Geral'}</div>
-                </td>
-                <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${formatMoney(diaria)}</td>
-                <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #1d4ed8;">${dias}</td>
-                <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: right; font-weight: bold; font-size: 12px;">${formatMoney(total)}</td>
-            </tr>
-        `;
-    });
-
-    htmlReport += `
-                </tbody>
-            </table>
-            <div style="margin-top: 20px; text-align: right; font-size: 16px;">
-                <strong>TOTAL GERAL PAGO: <span style="color: #b91c1c;">${formatMoney(somaTotal)}</span></strong>
-            </div>
-        </div>
-    `;
-
-    document.getElementById('print-area').innerHTML = htmlReport;
-    setTimeout(() => window.print(), 300);
+    // Define mês/ano atual como padrão
+    const hoje = new Date();
+    document.getElementById('folha-mes').value = String(hoje.getMonth() + 1).padStart(2, '0');
+    document.getElementById('folha-ano').value = hoje.getFullYear();
+    
+    document.getElementById('modal-folha-pagamento').classList.remove('hidden');
+    lucide.createIcons();
 }
+
+function executarImpressaoFolha() {
+      const statusFinanceiro = document.getElementById('folha-status').value;
+      const obraFiltro = document.getElementById('folha-obra').value;
+      const statusFunc = document.getElementById('folha-status-func').value;
+      const mes = document.getElementById('folha-mes').value;
+      const ano = document.getElementById('folha-ano').value;
+      
+      // Filtra funcionários
+      let funcionarios = STATE.equipe.filter(e => {
+          // Filtro de status
+          if (statusFunc === 'true' && e.ativo === false) return false;
+          if (statusFunc === 'false' && e.ativo !== false) return false;
+          return true;
+      });
+      
+      if (obraFiltro) {
+          funcionarios = funcionarios.filter(e => e.obra_atual_id == obraFiltro);
+      }
+      
+      // Para cada funcionário, busca as despesas de ponto PENDENTES ou PAGAS conforme filtro
+      const dadosFolha = [];
+      
+      funcionarios.forEach(func => {
+          // Busca todas as despesas de ponto deste funcionário
+          const despesasPonto = STATE.logs.filter(l => 
+              l.tipo === 'despesa' &&
+              l.produto_nome && l.produto_nome.includes(`Pagamento de ponto - ${func.nome}`) &&
+              (statusFinanceiro === 'TODOS' || l.status_financeiro === statusFinanceiro)
+          );
+          
+          // Se houver filtro de mês/ano, filtra também
+          let despesasFiltradas = despesasPonto;
+          if (mes && ano) {
+              despesasFiltradas = despesasPonto.filter(d => {
+                  const match = d.produto_nome.match(/Período (\d{2})\/(\d{4})/);
+                  return match && match[1] === mes && match[2] === ano;
+              });
+          }
+          
+          if (despesasFiltradas.length === 0) return;
+          
+          // Soma os valores e diárias (extrai das observações)
+          let totalValor = 0;
+          let totalDiarias = 0;
+          despesasFiltradas.forEach(d => {
+              totalValor += parseFloat(d.valor_total);
+              // Tenta extrair o total de diárias da observação
+              const diariasMatch = d.observacao?.match(/Total diárias: ([\d.]+)/);
+              if (diariasMatch) {
+                  totalDiarias += parseFloat(diariasMatch[1]);
+              }
+          });
+          
+          dadosFolha.push({
+              nome: func.nome,
+              pix: func.chave_pix || 'Não informado',
+              categoria: func.categoria || 'Geral',
+              diaria: parseFloat(func.valor_diaria || 0),
+              totalDiarias: totalDiarias,
+              valorTotal: totalValor
+          });
+      });
+      
+      if (dadosFolha.length === 0) {
+          return showToast('Nenhum registro encontrado com os filtros selecionados.', true);
+      }
+      
+      // Ordena por nome
+      dadosFolha.sort((a, b) => a.nome.localeCompare(b.nome));
+      
+      const nomeMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][parseInt(mes)-1] || 'Todos';
+      const hoje = new Date().toLocaleDateString('pt-BR');
+      
+      let html = `
+          <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; padding: 30px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 15px; margin-bottom: 25px;">
+                  <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 70px;" />
+                  <div style="text-align: right;">
+                      <h1 style="margin: 0; font-size: 24px; font-weight: 900;">FOLHA DE PAGAMENTOS</h1>
+                      <p style="margin: 5px 0 0 0; font-size: 14px; color: #1d4ed8; font-weight: bold;">Status: ${statusFinanceiro === 'PENDENTE' ? 'PENDENTES (NÃO BAIXADOS)' : statusFinanceiro}</p>
+                      <p style="margin: 2px 0 0 0; font-size: 12px;">Período: ${mes ? nomeMes + '/' + ano : 'Todos'}</p>
+                  </div>
+              </div>
+              
+              <table width="100%" style="border-collapse: collapse; margin-bottom: 30px; font-size: 12px;">
+                  <thead>
+                      <tr style="background-color: #f1f5f9;">
+                          <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: left;">Funcionário / PIX</th>
+                          <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Diária Base</th>
+                          <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Total Diárias</th>
+                          <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: right;">Valor Total</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+      `;
+      
+      let somaGeral = 0;
+      dadosFolha.forEach(d => {
+          somaGeral += d.valorTotal;
+          html += `
+              <tr>
+                  <td style="padding: 10px; border: 1px solid #cbd5e1;">
+                      <div style="font-weight: 800;">${d.nome.toUpperCase()}</div>
+                      <div style="font-size: 11px; color: #1d4ed8; margin-top: 4px;">
+                          <span style="color: #64748b;">PIX:</span> ${d.pix}
+                      </div>
+                      <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">${d.categoria}</div>
+                  </td>
+                  <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center;">${formatMoney(d.diaria)}</td>
+                  <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold;">${d.totalDiarias.toFixed(2)}</td>
+                  <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: right; font-weight: 900; color: #1d4ed8;">${formatMoney(d.valorTotal)}</td>
+              </tr>
+          `;
+      });
+      
+      html += `
+                  </tbody>
+              </table>
+              
+              <div style="display: flex; justify-content: flex-end; margin-bottom: 40px;">
+                  <div style="width: 300px; background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px;">
+                      <div style="display: flex; justify-content: space-between;">
+                          <span style="font-weight: bold;">TOTAL GERAL:</span>
+                          <span style="font-weight: 900; color: #b91c1c; font-size: 18px;">${formatMoney(somaGeral)}</span>
+                      </div>
+                  </div>
+              </div>
+              
+              <div style="text-align: center; font-size: 10px; color: #94a3b8; margin-top: 40px; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
+                  Emitido em ${hoje} - RV Negócios
+              </div>
+          </div>
+      `;
+      
+      document.getElementById('modal-folha-pagamento').classList.add('hidden');
+      document.getElementById('print-area').innerHTML = html;
+      setTimeout(() => window.print(), 300);
+  }
 
         function imprimirRecibo(equipe_id, ponto_id) {
             const mes = document.getElementById('eqp-filter-mes').value;
