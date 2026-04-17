@@ -260,7 +260,7 @@
           <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
               <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i data-lucide="users" class="text-blue-700"></i> Equipe </h2>
               <div class="flex gap-2 w-full md:w-auto">
-                  <button onclick="imprimirFolha()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="printer" class="w-4 h-4"></i> Imprimir Folha</button>
+                  <button onclick="abrirModalFolhaPagamento()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="printer" class="w-4 h-4"></i> Imprimir Folha</button>
                   <button onclick="openEquipeForm()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Cadastrar Membro</button>
               </div>
           </div>
@@ -547,135 +547,124 @@
       </div>
       
 
-      <div id="ponto-modal" class="hidden fixed inset-0 bg-black/65 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[95vh]">
-        
+       <!-- MFECHAENTO DE MODAL DE POTNO============================================================================================================================================= -->
+<!-- MODAL DE SALDO DE PONTO (CORRIGIDO) -->
+<div id="modal-saldo-ponto" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[95vh] overflow-hidden">
+        <!-- Cabeçalho -->
         <div class="bg-indigo-600 p-4 text-white flex justify-between items-center shrink-0">
-            <div class="flex items-center gap-3">
-                <button id="ponto-btn-voltar" onclick="selecionarModoPonto('selecao')" class="hidden bg-indigo-700 hover:bg-indigo-800 p-1.5 rounded-lg transition" title="Voltar">
-                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
-                </button>
-                <div>
-                    <h3 class="font-black text-lg flex items-center gap-2">Fechamento de Ponto</h3>
-                    <p id="ponto-modal-subtitle" class="text-[11px] font-medium opacity-80 mt-0.5">Carregando...</p>
-                </div>
+            <div>
+                <h3 class="font-black text-lg flex items-center gap-2">
+                    <i data-lucide="calculator" class="w-5 h-5"></i> Saldo de Ponto
+                </h3>
+                <p id="saldo-modal-subtitle" class="text-xs font-medium opacity-90 mt-0.5"></p>
             </div>
-            <button onclick="document.getElementById('ponto-modal').classList.add('hidden')" class="text-white hover:bg-white/20 p-2 rounded-lg transition" title="Fechar">
+            <button onclick="fecharModalSaldo()" class="text-white hover:bg-white/20 p-2 rounded-lg transition">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
 
-        <div class="p-6 overflow-y-auto flex-1 custom-scrollbar">
-            <input type="hidden" id="ponto-equipe-id">
+        <!-- Corpo com scroll -->
+        <div class="p-5 overflow-y-auto flex-1 bg-slate-50">
+            <input type="hidden" id="saldo-equipe-id">
             
-            <div id="ponto-view-selecao" class="flex flex-col gap-4">
-                <h4 class="text-center font-bold text-slate-600 mb-2">Como deseja fechar o ponto deste mês?</h4>
-                
-                <button onclick="selecionarModoPonto('auto')" class="p-6 border-2 border-blue-200 hover:border-blue-500 rounded-2xl bg-blue-50 hover:bg-blue-100 flex flex-col items-center gap-3 transition text-center group">
-                    <div class="p-4 bg-blue-600 text-white rounded-full group-hover:scale-110 transition-transform">
-                        <i data-lucide="smartphone-nfc" class="w-8 h-8"></i>
+            <!-- Filtros -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-4 flex flex-wrap gap-3 items-end">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mês/Ano</label>
+                    <div class="flex gap-2">
+                        <select id="saldo-filtro-mes" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-28" onchange="carregarTabelaSaldo()"></select>
+                        <input type="number" id="saldo-filtro-ano" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-24" placeholder="Ano" onchange="carregarTabelaSaldo()">
                     </div>
-                    <div>
-                        <h5 class="font-black text-lg text-blue-800">Ponto Eletrônico (QR Code)</h5>
-                        <p class="text-xs text-blue-600 mt-1 font-medium">Busca os registros automáticos do app, calcula as horas e gera a folha de ponto.</p>
-                    </div>
-                </button>
-
-                <button onclick="selecionarModoPonto('manual')" class="p-6 border-2 border-slate-200 hover:border-slate-400 rounded-2xl bg-slate-50 hover:bg-slate-100 flex flex-col items-center gap-3 transition text-center group">
-                    <div class="p-4 bg-slate-400 text-white rounded-full group-hover:scale-110 transition-transform">
-                        <i data-lucide="calendar-check-2" class="w-8 h-8"></i>
-                    </div>
-                    <div>
-                        <h5 class="font-black text-lg text-slate-700">Ponto Manual (Antigo)</h5>
-                        <p class="text-xs text-slate-500 mt-1 font-medium">Você marca os dias trabalhados clicando no calendário.</p>
-                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
+                    <select id="saldo-filtro-status" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-36" onchange="carregarTabelaSaldo()">
+                        <option value="PENDENTE" selected>Pendentes</option>
+                        <option value="PAGO">Já Pagos</option>
+                        <option value="TODOS">Todos</option>
+                    </select>
+                </div>
+                <div class="flex-1"></div>
+                <button onclick="imprimirExtratoSaldo()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow">
+                    <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Extrato
                 </button>
             </div>
 
-            <div id="ponto-view-manual" class="hidden">
-                <div class="grid grid-cols-7 gap-1 mb-2">
-                    <div class="text-center text-[10px] font-black text-red-500 uppercase">Dom</div>
-                    <div class="text-center text-[10px] font-black text-slate-400 uppercase">Seg</div>
-                    <div class="text-center text-[10px] font-black text-slate-400 uppercase">Ter</div>
-                    <div class="text-center text-[10px] font-black text-slate-400 uppercase">Qua</div>
-                    <div class="text-center text-[10px] font-black text-slate-400 uppercase">Qui</div>
-                    <div class="text-center text-[10px] font-black text-slate-400 uppercase">Sex</div>
-                    <div class="text-center text-[10px] font-black text-slate-400 uppercase">Sáb</div>
+            <!-- Tabela de registros -->
+            <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-100 text-slate-600 border-b">
+                        <tr>
+                            <th class="p-3 text-left text-xs font-bold uppercase">Data</th>
+                            <th class="p-3 text-left text-xs font-bold uppercase">Horários</th>
+                            <th class="p-3 text-center text-xs font-bold uppercase">Diária (Fração)</th>
+                            <th class="p-3 text-center text-xs font-bold uppercase">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="saldo-tabela-body" class="divide-y"></tbody>
+                </table>
+                <div id="saldo-sem-registros" class="p-8 text-center text-slate-400 font-medium hidden">
+                    Nenhum registro encontrado para os filtros.
                 </div>
-            
-                <div id="ponto-grid" class="grid grid-cols-7 gap-2 mb-6">
-                    </div>
-            
-                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-inner mb-4">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-xs font-bold text-slate-500 uppercase">Total de Diárias:</span>
-                        <span id="ponto-total-dias" class="font-black text-indigo-700 text-xl">0</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs font-bold text-slate-500 uppercase">Valor a Pagar:</span>
-                        <span id="ponto-total-valor" class="font-black text-green-600 text-2xl">R$ 0,00</span>
-                    </div>
-                </div>
-            
-                <button type="button" onclick="savePonto()" class="w-full py-3 text-sm font-black bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md flex items-center justify-center gap-2 transition">
-                    <i data-lucide="check-circle" class="w-5 h-5"></i> Salvar Fechamento Manual
-                </button>
             </div>
 
-            <div id="ponto-view-auto" class="hidden flex flex-col">
-                <div class="flex gap-2 mb-4">
-                    <div class="flex-1">
-                        <label class="text-[10px] font-bold text-slate-500 uppercase">De:</label>
-                        <input type="date" id="ponto-auto-data-ini" class="w-full p-2 border rounded-lg text-sm bg-slate-50 font-bold focus:border-blue-500 outline-none">
+            <!-- Lançamento de ajuste manual -->
+            <div class="mt-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <h4 class="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-600"></i> Lançar Ajuste Manual (Meia Diária)
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Data</label>
+                        <input type="date" id="ajuste-data" class="w-full p-2 border rounded-lg text-sm">
                     </div>
-                    <div class="flex-1">
-                        <label class="text-[10px] font-bold text-slate-500 uppercase">Até:</label>
-                        <input type="date" id="ponto-auto-data-fim" class="w-full p-2 border rounded-lg text-sm bg-slate-50 font-bold focus:border-blue-500 outline-none">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Fração (ex: 0.5)</label>
+                        <input type="number" step="0.01" min="0" id="ajuste-fracao" class="w-full p-2 border rounded-lg text-sm font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Justificativa</label>
+                        <input type="text" id="ajuste-justificativa" placeholder="Ex: Esqueceu bater ponto" class="w-full p-2 border rounded-lg text-sm">
                     </div>
                     <div class="flex items-end">
-                        <button onclick="buscarRegistrosEletronicos()" class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow font-bold text-sm h-[38px] px-4"><i data-lucide="search" class="w-4 h-4"></i></button>
+                        <button onclick="lancarAjusteManual()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold flex items-center justify-center gap-1">
+                            <i data-lucide="save" class="w-4 h-4"></i> Lançar
+                        </button>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <div class="border rounded-xl overflow-hidden border-slate-200 mb-4">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-100 border-b border-slate-200 text-slate-600">
-                                <th class="p-2 text-[10px] uppercase font-bold text-center">Data</th>
-                                <th class="p-2 text-[10px] uppercase font-bold text-center">Manhã</th>
-                                <th class="p-2 text-[10px] uppercase font-bold text-center">Tarde</th>
-                                <th class="p-2 text-[10px] uppercase font-bold text-center">Diária (Fração)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ponto-auto-tbody">
-                            </tbody>
-                    </table>
+        <!-- Rodapé com totais e ações -->
+        <div class="p-4 bg-white border-t flex justify-between items-center shrink-0">
+            <div>
+                <span class="text-sm font-bold text-slate-500">Total de Diárias Pendentes:</span>
+                <span id="saldo-total-diarias" class="text-2xl font-black text-indigo-700 ml-2">0.00</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-right">
+                    <div class="text-xs text-slate-500 font-bold uppercase">Valor a Pagar</div>
+                    <div id="saldo-total-valor" class="text-2xl font-black text-green-600">R$ 0,00</div>
                 </div>
-
-                <div class="bg-blue-50 p-4 rounded-xl border border-blue-200 shadow-inner mb-4">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-xs font-bold text-blue-800 uppercase">Total de Diárias Apuradas:</span>
-                        <span id="ponto-auto-total-dias" class="font-black text-blue-700 text-xl">0.00</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs font-bold text-blue-800 uppercase">Valor a Pagar:</span>
-                        <span id="ponto-auto-total-valor" class="font-black text-green-700 text-2xl">R$ 0,00</span>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-2">
-                    <button type="button" onclick="imprimirFolhaPontoEletronico()" class="py-3 text-xs font-black border-2 border-slate-300 text-slate-600 hover:bg-slate-100 rounded-xl flex items-center justify-center gap-2 transition">
-                        <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Folha
+                <div class="flex gap-2">
+                    <button onclick="imprimirReciboDoModal()" class="bg-slate-700 hover:bg-slate-800 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2" title="Imprimir recibo com os dados filtrados">
+                        <i data-lucide="receipt" class="w-5 h-5"></i> Recibo
                     </button>
-                    <button type="button" onclick="savePonto()" class="py-3 text-xs font-black bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md flex items-center justify-center gap-2 transition">
-                        <i data-lucide="check-circle" class="w-4 h-4"></i> Salvar Fechamento
+                    <button onclick="estornarUltimoFechamento()" class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2" title="Estornar o último fechamento de ponto">
+                        <i data-lucide="rotate-ccw" class="w-5 h-5"></i> Estornar Último
+                    </button>
+                    <button onclick="fecharPagamentoSaldo()" class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2">
+                        <i data-lucide="check-circle" class="w-5 h-5"></i> Conferido
                     </button>
                 </div>
             </div>
-
         </div>
     </div>
 </div>
+
+      <!-- MFECHAENTO DE MODAL DE POTNO============================================================================= -->
+      
 
       <div id="fornecedor-form-container" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
         <form onsubmit="saveFornecedor(event)" class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
@@ -1174,6 +1163,109 @@
     </div>
 </div>
 
+
+<!-- MODAL PARA IMPRESSÃO DE FOLHA DE PAGAMENTOS -->
+<div id="modal-folha-pagamento" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh] overflow-hidden">
+        <div class="bg-indigo-600 p-4 text-white flex justify-between items-center shrink-0">
+            <h3 class="font-black text-lg flex items-center gap-2">
+                <i data-lucide="printer" class="w-5 h-5"></i> Imprimir Folha de Pagamentos
+            </h3>
+            <button onclick="document.getElementById('modal-folha-pagamento').classList.add('hidden')" class="text-white hover:bg-white/20 p-2 rounded-lg transition">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div class="p-5 overflow-y-auto flex-1 bg-slate-50">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status Financeiro</label>
+                    <select id="folha-status" class="w-full p-3 border rounded-lg text-sm font-bold bg-white">
+                        <option value="PENDENTE" selected>Apenas Pendentes (Não Baixados)</option>
+                        <option value="PAGO">Apenas Pagos</option>
+                        <option value="TODOS">Todos</option>
+                    </select>
+                    <p class="text-[10px] text-slate-400 mt-1">"Pendentes" são os que ainda não tiveram baixa no financeiro.</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Obra</label>
+                    <select id="folha-obra" class="w-full p-3 border rounded-lg text-sm font-bold bg-white">
+                        <option value="">Todas as Obras</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status do Funcionário</label>
+                    <select id="folha-status-func" class="w-full p-3 border rounded-lg text-sm font-bold bg-white">
+                        <option value="true" selected>Ativos</option>
+                        <option value="false">Desativados</option>
+                        <option value="todos">Todos</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mês</label>
+                        <select id="folha-mes" class="w-full p-3 border rounded-lg text-sm font-bold bg-white">
+                            <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option>
+                            <option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option>
+                            <option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option>
+                            <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Ano</label>
+                        <input type="number" id="folha-ano" class="w-full p-3 border rounded-lg text-sm font-bold bg-white" value="">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="p-4 bg-white border-t flex justify-end gap-3 shrink-0">
+            <button onclick="document.getElementById('modal-folha-pagamento').classList.add('hidden')" class="px-5 py-3 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300 transition">Cancelar</button>
+            <button onclick="executarImpressaoFolha()" class="px-5 py-3 bg-blue-700 text-white rounded-xl font-bold shadow-lg hover:bg-blue-800 transition flex items-center gap-2">
+                <i data-lucide="printer" class="w-5 h-5"></i> Imprimir
+            </button>
+        </div>
+    </div>
+</div>     
+
+      <!-- MODAL ADMINISTRATIVO DE REGISTROS DE PONTO -->
+<div id="modal-admin-registros" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl flex flex-col max-h-[95vh] overflow-hidden">
+        <div class="bg-slate-800 p-4 text-white flex justify-between items-center shrink-0">
+            <div>
+                <h3 class="font-black text-lg flex items-center gap-2">
+                    <i data-lucide="database" class="w-5 h-5"></i> Registros de Ponto (Admin)
+                </h3>
+                <p id="admin-registros-subtitle" class="text-xs font-medium opacity-90 mt-0.5"></p>
+            </div>
+            <button onclick="fecharModalAdminRegistros()" class="text-white hover:bg-white/20 p-2 rounded-lg transition">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div class="p-5 overflow-y-auto flex-1 bg-slate-50">
+            <input type="hidden" id="admin-func-id">
+            
+            <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-100 text-slate-600 border-b">
+                        <tr>
+                            <th class="p-3 text-left text-xs font-bold uppercase">Data/Hora</th>
+                            <th class="p-3 text-left text-xs font-bold uppercase">Tipo</th>
+                            <th class="p-3 text-center text-xs font-bold uppercase">Status</th>
+                            <th class="p-3 text-center text-xs font-bold uppercase">Pago?</th>
+                            <th class="p-3 text-center text-xs font-bold uppercase w-20">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-registros-tbody" class="divide-y"></tbody>
+                </table>
+                <div id="admin-sem-registros" class="p-8 text-center text-slate-400 font-medium hidden">
+                    Nenhum registro encontrado.
+                </div>
+            </div>
+        </div>
+        <div class="p-4 bg-white border-t flex justify-end shrink-0">
+            <button onclick="fecharModalAdminRegistros()" class="px-5 py-2.5 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300 transition">Fechar</button>
+        </div>
+    </div>
+</div>
       
     </main>
 
@@ -1191,7 +1283,7 @@
         const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
 
         // ====== VARIÁVEIS DE ESTADO ======
-        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], users: [], equipe: [], fases: [], ponto: [], terceirizados: [], producao_terc: [] };
+        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], users: [], equipe: [], fases: [], ponto: [], terceirizados: [], producao_terc: [], ponto_diario: [] };
         let CART = [];
         let CURRENT_OC_ID = null; 
 
@@ -1269,46 +1361,47 @@
         }
 
         async function loadData() {
-            try {
-                const [resObras, resForn, resProd, resLog, resEqp, resFases, resPonto, resTerc, resProdTerc] = await Promise.all([
-                      fetchAllRecords('jsp_obras'),
-                      fetchAllRecords('jsp_fornecedores'),
-                      fetchAllRecords('jsp_produtos'),
-                      fetchAllRecords('jsp_logs'),
-                      fetchAllRecords('jsp_equipe').catch(() => ({ data: [] })),
-                      fetchAllRecords('jsp_fase').catch(() => ({ data: [] })),
-                      fetchAllRecords('jsp_ponto').catch(() => ({ data: [] })),
-                      fetchAllRecords('jsp_terceirizados').catch(() => ({ data: [] })),
-                      fetchAllRecords('jsp_producao_terc').catch(() => ({ data: [] }))
-                  ]);
+    try {
+        const [resObras, resForn, resProd, resLog, resEqp, resFases, resPonto, resTerc, resPontoDiario, resProdTerc] = await Promise.all([
+            fetchAllRecords('jsp_obras'),
+            fetchAllRecords('jsp_fornecedores'),
+            fetchAllRecords('jsp_produtos'),
+            fetchAllRecords('jsp_logs'),
+            fetchAllRecords('jsp_equipe').catch(() => ({ data: [] })),
+            fetchAllRecords('jsp_fase').catch(() => ({ data: [] })),
+            fetchAllRecords('jsp_ponto').catch(() => ({ data: [] })),
+            fetchAllRecords('jsp_terceirizados').catch(() => ({ data: [] })),
+            fetchAllRecords('jsp_ponto_diario').catch(() => ({ data: [] })),
+            fetchAllRecords('jsp_producao_terc').catch(() => ({ data: [] }))
+        ]);
 
-                STATE.obras = resObras.data || [];
-                STATE.fornecedores = resForn.data || [];
-                STATE.produtos = resProd.data || [];
-                STATE.logs = resLog.data || [];
-                STATE.equipe = resEqp.data || [];
-                STATE.fases = (resFases.data || []).sort((a,b) => a.ordem - b.ordem);
-                STATE.ponto = resPonto.data || [];
-                STATE.terceirizados = resTerc.data || [];
-                STATE.producao_terc = resProdTerc.data || [];
-              
+        STATE.obras = resObras.data || [];
+        STATE.fornecedores = resForn.data || [];
+        STATE.produtos = resProd.data || [];
+        STATE.logs = resLog.data || [];
+        STATE.equipe = resEqp.data || [];
+        STATE.fases = (resFases.data || []).sort((a,b) => a.ordem - b.ordem);
+        STATE.ponto = resPonto.data || [];
+        STATE.terceirizados = resTerc.data || [];
+        STATE.ponto_diario = resPontoDiario.data || [];   // NOVA LINHA
+        STATE.producao_terc = resProdTerc.data || [];
 
-                if (dadosUsuario.nivel === 'admin') {
-                    const navUsersBtn = document.getElementById('nav-users');
-                    if (navUsersBtn) navUsersBtn.classList.remove('hidden');
-                    const resUsers = await fetchAllRecords('jsp_usuarios');
-                    STATE.users = resUsers.data || [];
-                }
-
-                updateSelects();
-                if(!document.querySelector('.active-section')) navigate('dash');
-                else navigate(document.querySelector('.active-section').id.replace('view-',''));
-                showLoading(false);
-            } catch (err) {
-                showLoading(false);
-                showToast("Erro ao conectar no banco: " + err.message, true);
-            }
+        if (dadosUsuario.nivel === 'admin') {
+            const navUsersBtn = document.getElementById('nav-users');
+            if (navUsersBtn) navUsersBtn.classList.remove('hidden');
+            const resUsers = await fetchAllRecords('jsp_usuarios');
+            STATE.users = resUsers.data || [];
         }
+
+        updateSelects();
+        if(!document.querySelector('.active-section')) navigate('dash');
+        else navigate(document.querySelector('.active-section').id.replace('view-',''));
+        showLoading(false);
+    } catch (err) {
+        showLoading(false);
+        showToast("Erro ao conectar no banco: " + err.message, true);
+    }
+}
 
         function getNextIdNum(array) {
             let max = 0;
@@ -1417,79 +1510,745 @@
 
         // ====== CRUD EQUIPE E PONTO ======
        function renderEquipe() {
-            const term = document.getElementById('eqp-search').value.toLowerCase();
-            const obraFiltro = document.getElementById('eqp-obra-filter').value;
-            const mes = document.getElementById('eqp-filter-mes').value;
-            const ano = document.getElementById('eqp-filter-ano').value;
-            const statusFiltro = document.getElementById('eqp-filter-status').value;
-            
-            const list = document.getElementById('equipe-list');
-            
-            // Filtros
-            let fil = STATE.equipe.filter(e => e.nome.toLowerCase().includes(term) || (e.categoria||'').toLowerCase().includes(term));
-            if(obraFiltro) fil = fil.filter(e => e.obra_atual_id == obraFiltro);
-            
-            // Filtro de Ativo/Inativo
-            if (statusFiltro !== "todos") {
-                const isAtivo = statusFiltro === "true";
-                fil = fil.filter(e => e.ativo === isAtivo || (isAtivo && e.ativo === undefined)); // undefined trata os antigos como ativos
-            }
+    const term = document.getElementById('eqp-search').value.toLowerCase();
+    const obraFiltro = document.getElementById('eqp-obra-filter').value;
+    const mes = document.getElementById('eqp-filter-mes').value;
+    const ano = document.getElementById('eqp-filter-ano').value;
+    const statusFiltro = document.getElementById('eqp-filter-status').value;
+    
+    const list = document.getElementById('equipe-list');
+    
+    let fil = STATE.equipe.filter(e => e.nome.toLowerCase().includes(term) || (e.categoria||'').toLowerCase().includes(term));
+    if(obraFiltro) fil = fil.filter(e => e.obra_atual_id == obraFiltro);
+    
+    if (statusFiltro !== "todos") {
+        const isAtivo = statusFiltro === "true";
+        fil = fil.filter(e => e.ativo === isAtivo || (isAtivo && e.ativo === undefined));
+    }
 
-            fil.sort((a, b) => a.nome.localeCompare(b.nome));
-            
-            list.innerHTML = fil.map(e => {
-                const phoneClean = (e.telefone||'').replace(/\D/g,'');
-                const wppBtn = phoneClean ? `<a href="https://wa.me/55${phoneClean}" target="_blank" class="p-1.5 border border-green-200 text-green-600 hover:bg-green-50 rounded bg-green-50/50" title="WhatsApp"><i data-lucide="message-circle" width="14"></i></a>` : '';
-                
-                const obraAtual = STATE.obras.find(o => o.id == e.obra_atual_id);
-                const nomeObra = obraAtual ? obraAtual.nome : '<span class="text-slate-400 italic">Sem obra fixa</span>';
-                const diaria = parseFloat(e.valor_diaria || 0);
-                
-                let pt = STATE.ponto.find(x => x.equipe_id == e.id && x.mes === mes && x.ano === ano);
-                let dias = pt ? parseFloat(pt.total_dias || 0) : 0;
-                let total = pt ? parseFloat(pt.valor_total || 0) : (dias * diaria);
-                let status = pt ? pt.status : 'PENDENTE';
-                let isPago = status === 'PAGO';
-                let btnDocColor = e.contrato_assinado ? 'bg-green-600 text-white' : 'bg-slate-800 text-white';
+    fil.sort((a, b) => a.nome.localeCompare(b.nome));
+    
+    // Para cada funcionário, calcula o saldo de diárias pendentes baseado nos registros VALIDADOS e não pagos
+    fil.forEach(e => {
+        // O cálculo será feito sob demanda ou podemos calcular aqui para exibição rápida?
+        // Para performance, vamos calcular apenas a exibição; a função de cálculo está em calcularSaldoPendente()
+    });
+    
+    list.innerHTML = '';
+    
+    fil.forEach(e => {
+        const phoneClean = (e.telefone||'').replace(/\D/g,'');
+        const wppBtn = phoneClean ? `<a href="https://wa.me/55${phoneClean}" target="_blank" class="p-1.5 border border-green-200 text-green-600 hover:bg-green-50 rounded bg-green-50/50" title="WhatsApp"><i data-lucide="message-circle" width="14"></i></a>` : '';
+        
+        const obraAtual = STATE.obras.find(o => o.id == e.obra_atual_id);
+        const nomeObra = obraAtual ? obraAtual.nome : '<span class="text-slate-400 italic">Sem obra fixa</span>';
+        const diaria = parseFloat(e.valor_diaria || 0);
+        
+        // Calcula saldo pendente
+        const saldo = calcularSaldoPendenteFuncionario(e.id, mes, ano);
+        const totalDiarias = saldo.totalDiarias;
+        const valorTotal = totalDiarias * diaria;
+        const statusSaldo = totalDiarias > 0 ? 'PENDENTE' : 'EM DIA';
+        const isPendente = totalDiarias > 0;
+        
+        const btnDocColor = e.contrato_assinado ? 'bg-green-600 text-white' : 'bg-slate-800 text-white';
+        
+        const row = document.createElement('tr');
+        row.className = `border-b hover:bg-slate-50 transition ${e.ativo === false ? 'opacity-60 bg-red-50' : ''}`;
+        row.innerHTML = `
+            <td class="p-2">
+                <div class="font-bold text-slate-800 text-sm">${e.nome} ${e.ativo === false ? '<span class="text-[9px] text-red-500 font-bold">(DESATIVADO)</span>' : ''}</div>
+                <div class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded uppercase font-bold inline-block mt-0.5">${e.categoria||'Geral'}</div>
+            </td>
+            <td class="p-2 text-xs font-bold text-blue-700"><i data-lucide="building" class="w-3 h-3 inline"></i> ${nomeObra}</td>
+            <td class="p-2 text-center">
+                <div class="font-bold text-slate-700 text-xs">${formatMoney(diaria)} <span class="text-[9px] text-slate-400 font-normal">/dia</span></div>
+            </td>
+            <td class="p-2 text-center">
+                <div class="text-xs font-black ${totalDiarias > 0 ? 'text-indigo-600' : 'text-slate-400'}">${totalDiarias.toFixed(2)} dias</div>
+            </td>
+            <td class="p-2 text-right">
+                <div class="font-black text-sm ${isPendente ? 'text-green-700' : 'text-slate-400'}">${formatMoney(valorTotal)}</div>
+            </td>
+            <td class="p-2 text-center">
+                <div class="flex items-center justify-center gap-1">
+                    <span class="px-2 py-1 rounded text-[9px] font-bold ${isPendente ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}">${statusSaldo}</span>
+                </div>
+            </td>
+            <td class="p-2 text-center">
+                <div class="flex items-center justify-start gap-1">
+                    <button onclick="abrirModalSaldo('${e.id}')" class="p-1.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded shadow font-bold text-[10px] flex items-center gap-1">
+                        <i data-lucide="calculator" width="12"></i> CALCULAR
+                    </button>
+                    <!--<button onclick="imprimirReciboSaldo('${e.id}')" class="p-1.5 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Gerar Recibo do Saldo">
+                        <i data-lucide="receipt" width="14"></i>
+                    </button>-->
+                    <button onclick="abrirModalDocumentos('${e.id}')" class="p-1.5 ${btnDocColor} rounded shadow" title="Contratos e Documentos">
+                        <i data-lucide="file-signature" width="14"></i>
+                    </button>
+                    <button onclick="openEquipeForm('${e.id}')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar">
+                        <i data-lucide="edit-3" width="14"></i>
+                    </button>
+                    <button onclick="toggleStatusEquipe('${e.id}', ${e.ativo !== false})" class="p-1.5 border ${e.ativo !== false ? 'border-red-200 text-red-500 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'} rounded" title="${e.ativo !== false ? 'Desativar / Demitir' : 'Reativar'}">
+                        <i data-lucide="power" width="14"></i>
+                    </button>
+                    ${wppBtn}
+                </div>
+            </td>
+        `;
+        list.appendChild(row);
+    });
+    
+    lucide.createIcons();
+}
 
-                // Mudança 3: Classes p-2 ao invés de p-4 para diminuir altura do card
-                return `<tr class="border-b hover:bg-slate-50 transition ${e.ativo === false ? 'opacity-60 bg-red-50' : ''}">
-                    <td class="p-2">
-                        <div class="font-bold text-slate-800 text-sm">${e.nome} ${e.ativo === false ? '<span class="text-[9px] text-red-500 font-bold">(DESATIVADO)</span>' : ''}</div>
-                        <div class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded uppercase font-bold inline-block mt-0.5">${e.categoria||'Geral'}</div>
-                    </td>
-                    <td class="p-2 text-xs font-bold text-blue-700"><i data-lucide="building" class="w-3 h-3 inline"></i> ${nomeObra}</td>
-                    <td class="p-2 text-center">
-                        <div class="font-bold text-slate-700 text-xs">${formatMoney(diaria)} <span class="text-[9px] text-slate-400 font-normal">/dia</span></div>
-                    </td>
-                    <td class="p-2 text-center">
-                        <div class="text-xs font-black ${dias > 0 ? 'text-indigo-600' : 'text-slate-400'}">${dias} dias</div>
-                    </td>
-                    <td class="p-2 text-right">
-                        <div class="font-black text-sm ${isPago ? 'text-slate-400' : 'text-green-700'}">${formatMoney(total)}</div>
-                    </td>
-                   <td class="p-2 text-center">
-                        <div class="flex items-center justify-center gap-1">
-                            <span class="px-2 py-1 rounded text-[9px] font-bold ${isPago ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">${isPago ? 'PAGO' : 'PENDENTE'}</span>
-                            ${isPago ? `<button onclick="estornarPagamentoPonto('${pt?.id}', '${e.id}')" class="text-slate-400 hover:text-red-500 transition ml-1" title="Estornar Pagamento e Cancelar Despesa"><i data-lucide="rotate-ccw" width="12"></i></button>` : ''}
+      function imprimirReciboDoModal() {
+            const funcId = document.getElementById('saldo-equipe-id').value;
+            const func = STATE.equipe.find(e => e.id === funcId);
+            if (!func) return;
+            
+            const totalDiarias = document.getElementById('saldo-total-diarias').innerText;
+            const valorTotal = document.getElementById('saldo-total-valor').innerText;
+            const mes = document.getElementById('saldo-filtro-mes').value;
+            const ano = document.getElementById('saldo-filtro-ano').value;
+            const hoje = new Date().toLocaleDateString('pt-BR');
+            
+            const html = `
+                <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
+                        <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
+                        <div style="text-align: right;">
+                            <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO SOBRE DIÁRIAS</h1>
+                            <p style="margin: 5px 0 0 0; font-size: 18px; color: #1d4ed8; font-weight: bold;">VALOR: ${valorTotal}</p>
                         </div>
-                    </td>
-                    <td class="p-2 text-center">
-                        <div class="flex items-center justify-start gap-1">
-                            ${!isPago ? `<button onclick="openPontoModal('${e.id}')" class="p-1.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded shadow font-bold text-[10px] flex items-center gap-1"><i data-lucide="calendar-check-2" width="12"></i> PONTO</button>` : ''}
-                            <!--${!isPago && total > 0 ? `<button onclick="pagarMesPonto('${pt?.id}', '${e.id}')" class="p-1.5 bg-green-600 text-white hover:bg-green-700 rounded shadow font-bold text-[10px] flex items-center gap-1"><i data-lucide="check-circle" width="12"></i> PAGAR</button>` : ''}-->
-                            <button onclick="imprimirRecibo('${e.id}', '${pt?.id}')" class="p-1.5 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Gerar Recibo"><i data-lucide="receipt" width="14"></i></button>
-                            <button onclick="abrirModalDocumentos('${e.id}')" class="p-1.5 ${btnDocColor} rounded shadow" title="Contratos e Documentos"><i data-lucide="file-signature" width="14"></i></button>
-                            <button onclick="openEquipeForm('${e.id}')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar"><i data-lucide="edit-3" width="14"></i></button>
-                            <button onclick="toggleStatusEquipe('${e.id}', ${e.ativo !== false})" class="p-1.5 border ${e.ativo !== false ? 'border-red-200 text-red-500 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'} rounded" title="${e.ativo !== false ? 'Desativar / Demitir' : 'Reativar'}"><i data-lucide="power" width="14"></i></button>
-                            ${wppBtn}
-                            ${!isPago && total > 0 ? `<button onclick="pagarMesPonto('${pt?.id}', '${e.id}')" class="p-1.5 bg-green-600 text-white hover:bg-green-700 rounded shadow font-bold text-[10px] flex items-center gap-1"><i data-lucide="check-circle" width="12"></i> PAGAR</button>` : ''}
+                    </div>
+                    
+                    <div style="font-size: 14px; line-height: 1.8; text-align: justify; margin-bottom: 40px;">
+                        Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA</strong> (CNPJ: 61.893.912/0001-24), a importância de <strong>${valorTotal}</strong>, 
+                        referente ao pagamento de diárias trabalhadas no período de <strong>${mes}/${ano}</strong>, totalizando <strong>${totalDiarias} dias</strong> 
+                        com a diária acordada em <strong>${formatMoney(func.valor_diaria)}</strong>.
+                    </div>
+                    
+                    <div style="font-size: 14px; margin-bottom: 40px;">
+                        Para maior clareza, firmo(amos) o presente recibo para que produza os seus efeitos legais.
+                    </div>
+                    
+                    <div style="text-align: center; margin-bottom: 30px; font-size: 14px;">
+                        Jataí - GO, ${hoje}.
+                    </div>
+                    
+                    <div style="margin-top: 60px; display: flex; justify-content: center;">
+                        <div style="text-align: center; width: 60%; border-top: 1px solid #000; padding-top: 10px;">
+                            <strong>${func.nome.toUpperCase()}</strong><br>
+                            <span style="font-size: 12px; color: #64748b;">CPF: ${func.cpf || '_______________________'} | RG: ${func.rg || '_______________________'}</span>
                         </div>
-                    </td>
-                </tr>`;
-            }).join('');
-            lucide.createIcons();
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('print-area').innerHTML = html;
+            setTimeout(() => window.print(), 300);
         }
+
+
+      
+        // ========== NOVAS FUNÇÕES PARA SALDO DE PONTO ==========
+
+/**
+ * Calcula o saldo de diárias pendentes (não pagas) para um funcionário específico
+ * com base nos registros da tabela jsp_ponto_diario (status = 'VALIDADO' e ainda não incluídas em fechamento).
+ * Retorna um objeto: { totalDiarias: number, registros: array }
+ */
+function calcularSaldoPendenteFuncionario(funcId, mesFiltro = null, anoFiltro = null) {
+    const registros = STATE.ponto_diario.filter(p => 
+        p.funcionario_id === funcId && 
+        p.status === 'VALIDADO' &&
+        p.pago_em_fechamento === false
+    );
+    
+    let registrosFiltrados = registros;
+    if (mesFiltro && anoFiltro) {
+        registrosFiltrados = registros.filter(p => {
+            const d = new Date(p.hora_registro);
+            return (d.getUTCMonth() + 1).toString().padStart(2,'0') === mesFiltro && 
+                   d.getUTCFullYear().toString() === anoFiltro;
+        });
+    }
+    
+    // Agrupa por dia
+    const porDia = {};
+    registrosFiltrados.forEach(p => {
+        const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+        if (!porDia[dataDia]) porDia[dataDia] = { entradas: [], saidas: [], ajustes: [] };
+        if (p.tipo === 'ENTRADA') porDia[dataDia].entradas.push(new Date(p.hora_registro));
+        else if (p.tipo === 'SAIDA') porDia[dataDia].saidas.push(new Date(p.hora_registro));
+        else if (p.tipo === 'AJUSTE_MANUAL') porDia[dataDia].ajustes.push(p);
+    });
+    
+    let totalDiarias = 0;
+    
+    Object.values(porDia).forEach(pts => {
+        if (pts.ajustes.length > 0) {
+            totalDiarias += pts.ajustes.reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
+        } else {
+            const horas = calcularHorasTrabalhadasNoDia(pts.entradas, pts.saidas);
+            let fracao = horas / 8;
+            fracao = Math.min(1, Math.max(0, fracao));
+            totalDiarias += fracao;
+        }
+    });
+    
+    return { totalDiarias, registros: registrosFiltrados };
+}
+
+// Função auxiliar para calcular horas trabalhadas no dia (baseado no código existente)
+function calcularHorasTrabalhadasNoDia(entradas, saidas) {
+    if (entradas.length === 0 || saidas.length === 0) return 0;
+    
+    const pontos = [
+        ...entradas.map(e => ({ tipo: 'E', hora: e })),
+        ...saidas.map(s => ({ tipo: 'S', hora: s }))
+    ].sort((a, b) => a.hora - b.hora);
+    
+    let totalMinutos = 0;
+    for (let i = 0; i < pontos.length - 1; i++) {
+        if (pontos[i].tipo === 'E' && pontos[i+1].tipo === 'S') {
+            totalMinutos += (pontos[i+1].hora - pontos[i].hora) / (1000 * 60);
+        }
+    }
+    
+    // NENHUM desconto de almoço, apenas soma os pares
+    
+    const JORNADA_BASE = 480; // 8 horas em minutos
+    const TOLERANCIA = 20;
+    
+    let minutosConsiderados = totalMinutos;
+    const falta = JORNADA_BASE - totalMinutos;
+    
+    if (falta > TOLERANCIA) {
+        minutosConsiderados = totalMinutos;
+    } else {
+        minutosConsiderados = JORNADA_BASE;
+    }
+    
+    let horas = minutosConsiderados / 60;
+    horas = Math.min(8, horas);
+    return horas;
+}
+    
+
+// Abre o modal de saldo para um funcionário
+function abrirModalSaldo(equipeId) {
+    const func = STATE.equipe.find(e => e.id === equipeId);
+    if (!func) return;
+    
+    document.getElementById('saldo-equipe-id').value = equipeId;
+    document.getElementById('saldo-modal-subtitle').innerText = 
+        `${func.nome} - Diária: ${formatMoney(func.valor_diaria || 0)}`;
+    
+    // Preenche selects de mês/ano
+    const hoje = new Date();
+    const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
+    const anoAtual = hoje.getFullYear();
+    
+    const selectMes = document.getElementById('saldo-filtro-mes');
+    selectMes.innerHTML = '';
+    const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    meses.forEach((nome, idx) => {
+        const val = String(idx+1).padStart(2,'0');
+        const option = document.createElement('option');
+        option.value = val;
+        option.textContent = nome;
+        if (val === mesAtual) option.selected = true;
+        selectMes.appendChild(option);
+    });
+    
+    document.getElementById('saldo-filtro-ano').value = anoAtual;
+    document.getElementById('saldo-filtro-status').value = 'PENDENTE';
+    
+    // Carrega a tabela
+    carregarTabelaSaldo();
+    
+    document.getElementById('modal-saldo-ponto').classList.remove('hidden');
+    lucide.createIcons();
+}
+
+function fecharModalSaldo() {
+    document.getElementById('modal-saldo-ponto').classList.add('hidden');
+}
+
+function carregarTabelaSaldo() {
+    const funcId = document.getElementById('saldo-equipe-id').value;
+    const mes = document.getElementById('saldo-filtro-mes').value;
+    const ano = document.getElementById('saldo-filtro-ano').value;
+    const statusFiltro = document.getElementById('saldo-filtro-status').value;
+    
+    const func = STATE.equipe.find(e => e.id === funcId);
+    if (!func) return;
+    
+    let registros = STATE.ponto_diario.filter(p => 
+        p.funcionario_id === funcId && 
+        p.status === 'VALIDADO'
+    );
+    
+    if (mes && ano) {
+        registros = registros.filter(p => {
+            const d = new Date(p.hora_registro);
+            return (d.getUTCMonth() + 1).toString().padStart(2,'0') === mes && 
+                   d.getUTCFullYear().toString() === ano;
+        });
+    }
+    
+    if (statusFiltro === 'PENDENTE') {
+        registros = registros.filter(p => !p.pago_em_fechamento);
+    } else if (statusFiltro === 'PAGO') {
+        registros = registros.filter(p => p.pago_em_fechamento === true);
+    }
+    
+    function formatHoraUTC(isoString) {
+        if (!isoString) return '--:--';
+        const d = new Date(isoString);
+        const hh = String(d.getUTCHours()).padStart(2, '0');
+        const mm = String(d.getUTCMinutes()).padStart(2, '0');
+        return `${hh}:${mm}`;
+    }
+    
+    function diffMinutesUTC(startIso, endIso) {
+        const start = new Date(startIso);
+        const end = new Date(endIso);
+        return (end.getTime() - start.getTime()) / (1000 * 60);
+    }
+    
+    const porDia = {};
+    registros.forEach(p => {
+        const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+        if (!porDia[dataDia]) porDia[dataDia] = { entradas: [], saidas: [], ajustes: [], registros: [] };
+        porDia[dataDia].registros.push(p);
+        if (p.tipo === 'ENTRADA') porDia[dataDia].entradas.push(p.hora_registro);
+        else if (p.tipo === 'SAIDA') porDia[dataDia].saidas.push(p.hora_registro);
+        else if (p.tipo === 'AJUSTE_MANUAL') porDia[dataDia].ajustes.push(p);
+    });
+    
+    const tbody = document.getElementById('saldo-tabela-body');
+    tbody.innerHTML = '';
+    let totalDiarias = 0;
+    
+    const datasOrdenadas = Object.keys(porDia).sort((a,b) => {
+        const [da, ma, aa] = a.split('/');
+        const [db, mb, ab] = b.split('/');
+        return new Date(aa, ma-1, da) - new Date(ab, mb-1, db);
+    });
+    
+    if (datasOrdenadas.length === 0) {
+        document.getElementById('saldo-sem-registros').classList.remove('hidden');
+        document.getElementById('saldo-total-diarias').innerText = '0.00';
+        document.getElementById('saldo-total-valor').innerText = formatMoney(0);
+        return;
+    }
+    document.getElementById('saldo-sem-registros').classList.add('hidden');
+    
+    datasOrdenadas.forEach(dataDia => {
+        const pts = porDia[dataDia];
+        let fracao = 0;
+        let horariosStr = '';
+        
+        if (pts.ajustes.length > 0) {
+            fracao = pts.ajustes.reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
+            horariosStr = `<span class="text-indigo-600 font-bold">Ajuste Manual</span><br>
+                           <span class="text-[10px] text-slate-500">${pts.ajustes.map(a => a.observacao || '').join(', ')}</span>`;
+        } else {
+            const entradas = pts.entradas.sort();
+            const saidas = pts.saidas.sort();
+            
+            // Combina todos os pontos em ordem cronológica
+            const pontos = [
+                ...entradas.map(e => ({ tipo: 'E', hora: e })),
+                ...saidas.map(s => ({ tipo: 'S', hora: s }))
+            ].sort((a, b) => new Date(a.hora) - new Date(b.hora));
+            
+            let totalMinutos = 0;
+            // Soma os minutos de cada par ENTRADA -> SAÍDA consecutivo
+            for (let i = 0; i < pontos.length - 1; i++) {
+                if (pontos[i].tipo === 'E' && pontos[i+1].tipo === 'S') {
+                    totalMinutos += diffMinutesUTC(pontos[i].hora, pontos[i+1].hora);
+                }
+            }
+            
+            // NENHUM DESCONTO DE ALMOÇO - apenas o tempo líquido entre batidas
+            
+            const JORNADA_BASE = 480; // 8 horas em minutos
+            const TOLERANCIA = 20;
+            
+            let minutosConsiderados = totalMinutos;
+            const falta = JORNADA_BASE - totalMinutos;
+            
+            // Se faltou mais que a tolerância, usa o valor real; senão, considera diária cheia
+            if (falta > TOLERANCIA) {
+                minutosConsiderados = totalMinutos;
+            } else {
+                minutosConsiderados = JORNADA_BASE;
+            }
+            
+            fracao = minutosConsiderados / JORNADA_BASE;
+            fracao = Math.min(1, Math.max(0, fracao));
+            
+            horariosStr = entradas.map((e, i) => {
+                const s = saidas[i];
+                return `<span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-xs">${formatHoraUTC(e)}</span> → 
+                        <span class="bg-red-100 text-red-700 px-1.5 py-0.5 rounded text-xs">${s ? formatHoraUTC(s) : '--:--'}</span>`;
+            }).join('<br>');
+        }
+        
+        totalDiarias += fracao;
+        
+        const tr = document.createElement('tr');
+        tr.className = 'border-b hover:bg-slate-50';
+        tr.innerHTML = `
+            <td class="p-3 font-bold text-slate-700">${dataDia}</td>
+            <td class="p-3">${horariosStr}</td>
+            <td class="p-3 text-center font-black ${fracao >= 1 ? 'text-green-600' : 'text-orange-600'}">${fracao.toFixed(2)}</td>
+                       <td class="p-3 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <span class="px-2 py-1 rounded text-[9px] font-bold ${pts.registros[0].pago_em_fechamento ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">
+                                    ${pts.registros[0].pago_em_fechamento ? 'PAGO' : 'PENDENTE'}
+                                </span>
+                                <button onclick="abrirModalAdminRegistros('${funcId}')" class="text-slate-400 hover:text-indigo-600 p-1 rounded transition" title="Acesso Restrito (Senha)">
+                                    <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </td>
+        `;
+        tbody.appendChild(tr);
+    });
+    
+    document.getElementById('saldo-total-diarias').innerText = totalDiarias.toFixed(2);
+    const valorTotal = totalDiarias * parseFloat(func.valor_diaria || 0);
+    document.getElementById('saldo-total-valor').innerText = formatMoney(valorTotal);
+    
+    lucide.createIcons();
+}
+
+      async function excluirRegistroPonto(registroId) {
+          const senha = prompt("🔐 Ação restrita. Digite a senha mestra para excluir o registro:");
+          if (senha !== "147258369") {
+              alert("Senha incorreta. Operação cancelada.");
+              return;
+          }
+          if (!confirm("Tem certeza que deseja excluir este registro permanentemente? Esta ação não pode ser desfeita.")) {
+              return;
+          }
+          
+          showLoading(true);
+          try {
+              const { error } = await sb.from('jsp_ponto_diario').delete().eq('id', registroId);
+              if (error) throw error;
+              showToast("Registro excluído com sucesso.");
+              // Recarrega os dados e atualiza a tabela do modal
+              await loadData();
+              carregarTabelaSaldo();
+          } catch (err) {
+              showToast("Erro ao excluir: " + err.message, true);
+          } finally {
+              showLoading(false);
+          }
+      }
+
+// Lança um ajuste manual (meia diária)
+async function lancarAjusteManual() {
+    const funcId = document.getElementById('saldo-equipe-id').value;
+    const data = document.getElementById('ajuste-data').value;
+    const fracao = parseFloat(document.getElementById('ajuste-fracao').value);
+    const justificativa = document.getElementById('ajuste-justificativa').value;
+    
+    if (!data || isNaN(fracao) || fracao <= 0) {
+        return showToast('Preencha data e fração válida.', true);
+    }
+    
+    const func = STATE.equipe.find(e => e.id === funcId);
+    if (!func || !func.obra_atual_id) {
+        return showToast('Funcionário sem obra vinculada.', true);
+    }
+    
+    showLoading(true);
+    
+    // Determinar o próximo ID inteiro
+    let nextId = 1;
+    if (STATE.ponto_diario && STATE.ponto_diario.length > 0) {
+        const maxId = Math.max(...STATE.ponto_diario.map(p => parseInt(p.id) || 0));
+        nextId = maxId + 1;
+    }
+    
+    const payload = {
+        id: nextId,
+        funcionario_id: funcId,
+        obra_id: func.obra_atual_id,
+        tipo: 'AJUSTE_MANUAL',
+        status: 'VALIDADO',
+        hora_registro: new Date(data + 'T12:00:00').toISOString(),
+        fracao_diaria: fracao,
+        observacao: justificativa || 'Ajuste manual',
+        pago_em_fechamento: false,
+        lat_registro: 'MANUAL',
+        lng_registro: 'MANUAL'
+    };
+    
+    const { error } = await sb.from('jsp_ponto_diario').insert([payload]);
+    if (error) {
+        showLoading(false);
+        return showToast('Erro ao lançar ajuste: ' + error.message, true);
+    }
+    
+    await loadData();
+    carregarTabelaSaldo();
+    showToast('Ajuste lançado com sucesso!');
+}
+
+// Fecha o pagamento das diárias pendentes filtradas
+async function fecharPagamentoSaldo() {
+    const funcId = document.getElementById('saldo-equipe-id').value;
+    const mes = document.getElementById('saldo-filtro-mes').value;
+    const ano = document.getElementById('saldo-filtro-ano').value;
+    
+    const func = STATE.equipe.find(e => e.id === funcId);
+    if (!func) return;
+    
+    // Obtém os registros pendentes conforme filtro atual
+    let registros = STATE.ponto_diario.filter(p => 
+        p.funcionario_id === funcId && 
+        p.status === 'VALIDADO' &&
+        !p.pago_em_fechamento
+    );
+    
+    // Aplica filtro de período
+    if (mes && ano) {
+        registros = registros.filter(p => {
+            const d = new Date(p.hora_registro);
+            return (d.getUTCMonth() + 1).toString().padStart(2,'0') === mes && 
+                   d.getUTCFullYear().toString() === ano;
+        });
+    }
+    
+    if (registros.length === 0) {
+        return showToast('Nenhum registro pendente para fechar.', true);
+    }
+    
+    // Calcula total de diárias
+    const totalDiarias = calcularTotalDiariasDosRegistros(registros);
+    const valorTotal = totalDiarias * parseFloat(func.valor_diaria || 0);
+    
+    if (!confirm(`Fechar pagamento de ${totalDiarias.toFixed(2)} diárias no valor de ${formatMoney(valorTotal)}?`)) return;
+    
+    showLoading(true);
+    
+    // 1. Criar lançamento financeiro (despesa) PENDENTE
+    const descricao = `Pagamento de ponto - ${func.nome} - Período ${mes}/${ano}`;
+    const { error: errFin } = await sb.from('jsp_logs').insert([{
+        id: getNextIdNum(STATE.logs).toString(),
+        obra_id: func.obra_atual_id ? parseInt(func.obra_atual_id) : null,
+        tipo: 'despesa',
+        produto_nome: descricao,
+        valor_total: valorTotal,
+        data: new Date().toISOString(),
+        vencimento: new Date().toISOString(),
+        status_financeiro: 'PENDENTE',
+        categoria: 'Mão de Obra',
+        observacao: `Fechamento de ponto - Funcionário: ${func.nome} - Total diárias: ${totalDiarias.toFixed(2)}`
+    }]);
+    
+    if (errFin) {
+        showLoading(false);
+        return showToast('Erro ao gerar despesa: ' + errFin.message, true);
+    }
+    
+    // 2. Marcar registros como pagos
+    const ids = registros.map(r => r.id);
+    const { error: errPonto } = await sb.from('jsp_ponto_diario')
+        .update({ pago_em_fechamento: true })
+        .in('id', ids);
+    
+    if (errPonto) {
+        showLoading(false);
+        return showToast('Erro ao atualizar registros: ' + errPonto.message, true);
+    }
+    
+    await loadData();
+    fecharModalSaldo();
+    renderEquipe(); // Atualiza a lista principal
+    showToast('Pagamento fechado! Despesa lançada como pendente.');
+}
+
+// Função auxiliar para calcular total de diárias a partir de um array de registros
+function calcularTotalDiariasDosRegistros(registros) {
+    const porDia = {};
+    registros.forEach(p => {
+        const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+        if (!porDia[dataDia]) porDia[dataDia] = { entradas: [], saidas: [], ajustes: [] };
+        if (p.tipo === 'ENTRADA') porDia[dataDia].entradas.push(new Date(p.hora_registro));
+        else if (p.tipo === 'SAIDA') porDia[dataDia].saidas.push(new Date(p.hora_registro));
+        else if (p.tipo === 'AJUSTE_MANUAL') porDia[dataDia].ajustes.push(p);
+    });
+    
+    let total = 0;
+    Object.values(porDia).forEach(pts => {
+        if (pts.ajustes.length > 0) {
+            total += pts.ajustes.reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
+        } else {
+            const horas = calcularHorasTrabalhadasNoDia(pts.entradas, pts.saidas);
+            let fracao = horas / 8;
+            fracao = Math.min(1, Math.max(0, fracao));
+            total += fracao;
+        }
+    });
+    return total;
+}
+
+// Impressão do extrato filtrado
+function imprimirExtratoSaldo() {
+    const funcId = document.getElementById('saldo-equipe-id').value;
+    const func = STATE.equipe.find(e => e.id === funcId);
+    const mes = document.getElementById('saldo-filtro-mes').value;
+    const ano = document.getElementById('saldo-filtro-ano').value;
+    const statusFiltro = document.getElementById('saldo-filtro-status').value;
+    const totalDiarias = document.getElementById('saldo-total-diarias').innerText;
+    const valorTotal = document.getElementById('saldo-total-valor').innerText;
+    
+    const tbody = document.getElementById('saldo-tabela-body');
+    const linhas = Array.from(tbody.querySelectorAll('tr')).map(tr => {
+        const tds = tr.querySelectorAll('td');
+        return {
+            data: tds[0]?.innerText || '',
+            horarios: tds[1]?.innerText || '',
+            fracao: tds[2]?.innerText || '',
+            status: tds[3]?.innerText || ''
+        };
+    });
+    
+    const nomeMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][parseInt(mes)-1] || mes;
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    
+    let html = `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; padding: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 15px; margin-bottom: 25px;">
+                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 70px;" />
+                <div style="text-align: right;">
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 900;">EXTRATO DE PONTO</h1>
+                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #1d4ed8; font-weight: bold;">${func.nome}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 12px;">Período: ${nomeMes}/${ano} | Diária: ${formatMoney(func.valor_diaria)}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 11px;">Status: ${statusFiltro}</p>
+                </div>
+            </div>
+            
+            <table width="100%" style="border-collapse: collapse; margin-bottom: 30px; font-size: 13px;">
+                <thead>
+                    <tr style="background-color: #f1f5f9;">
+                        <th style="padding: 12px; border: 1px solid #cbd5e1;">Data</th>
+                        <th style="padding: 12px; border: 1px solid #cbd5e1;">Horários</th>
+                        <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Diária</th>
+                        <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    linhas.forEach(l => {
+        html += `<tr>
+            <td style="padding: 10px; border: 1px solid #cbd5e1;">${l.data}</td>
+            <td style="padding: 10px; border: 1px solid #cbd5e1;">${l.horarios}</td>
+            <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold;">${l.fracao}</td>
+            <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center;">${l.status}</td>
+        </tr>`;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+            
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 40px;">
+                <div style="width: 300px; background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-weight: bold;">Total de Diárias:</span>
+                        <span style="font-weight: 900; font-size: 16px;">${totalDiarias}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; border-top: 1px solid #e2e8f0; padding-top: 8px;">
+                        <span style="font-weight: bold;">Valor a Pagar:</span>
+                        <span style="font-weight: 900; color: #1d4ed8; font-size: 18px;">${valorTotal}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; margin-top: 60px;">
+                <div style="text-align: center; width: 40%;">
+                    <div style="border-top: 1px solid #94a3b8; padding-top: 10px;">
+                        <strong>RV NEGÓCIOS E COMPANHIA</strong><br>
+                        <span style="font-size: 11px;">Contratante</span>
+                    </div>
+                </div>
+                <div style="text-align: center; width: 40%;">
+                    <div style="border-top: 1px solid #94a3b8; padding-top: 10px;">
+                        <strong>${func.nome.toUpperCase()}</strong><br>
+                        <span style="font-size: 11px;">Profissional</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; font-size: 10px; color: #94a3b8; margin-top: 40px; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
+                Emitido em ${hoje} - RV Negócios
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('print-area').innerHTML = html;
+    setTimeout(() => window.print(), 300);
+}
+
+// Recibo simples do saldo pendente (chamado pelo botão na linha)
+function imprimirReciboSaldo(equipeId) {
+    const func = STATE.equipe.find(e => e.id === equipeId);
+    if (!func) return;
+    
+    const saldo = calcularSaldoPendenteFuncionario(equipeId);
+    const totalDiarias = saldo.totalDiarias;
+    const valorTotal = totalDiarias * parseFloat(func.valor_diaria || 0);
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    
+    const html = `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
+                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
+                <div style="text-align: right;">
+                    <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO DE SALDO</h1>
+                    <p style="margin: 5px 0 0 0; font-size: 18px; color: #1d4ed8; font-weight: bold;">VALOR: ${formatMoney(valorTotal)}</p>
+                </div>
+            </div>
+            
+            <div style="font-size: 14px; line-height: 1.8; text-align: justify; margin-bottom: 40px;">
+                Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA</strong> (CNPJ: 61.893.912/0001-24), a importância de <strong>${formatMoney(valorTotal)}</strong>, 
+                referente ao saldo de diárias trabalhadas e ainda não pagas, totalizando <strong>${totalDiarias.toFixed(2)} dias</strong> 
+                com a diária acordada em <strong>${formatMoney(func.valor_diaria)}</strong>.
+            </div>
+            
+            <div style="font-size: 14px; margin-bottom: 40px;">
+                Para maior clareza, firmo(amos) o presente recibo para que produza os seus efeitos legais.
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 30px; font-size: 14px;">
+                Jataí - GO, ${hoje}.
+            </div>
+            
+            <div style="margin-top: 60px; display: flex; justify-content: center;">
+                <div style="text-align: center; width: 60%; border-top: 1px solid #000; padding-top: 10px;">
+                    <strong>${func.nome.toUpperCase()}</strong><br>
+                    <span style="font-size: 12px; color: #64748b;">CPF: ${func.cpf || '_______________________'} | RG: ${func.rg || '_______________________'}</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('print-area').innerHTML = html;
+    setTimeout(() => window.print(), 300);
+}
+
+      
 
         function openEquipeForm(id) {
     document.getElementById('equipe-form-container').classList.remove('hidden');
@@ -1785,6 +2544,80 @@ async function buscarRegistrosEletronicos() {
     }
 }
 
+async function estornarUltimoFechamento() {
+    const funcId = document.getElementById('saldo-equipe-id').value;
+    const func = STATE.equipe.find(e => e.id === funcId);
+    if (!func) return;
+
+    // Busca a despesa mais recente gerada para este funcionário com a descrição padrão
+    const despesas = STATE.logs.filter(l => 
+        l.tipo === 'despesa' &&
+        l.produto_nome && l.produto_nome.includes(`Pagamento de ponto - ${func.nome}`) &&
+        (l.status_financeiro === 'PENDENTE' || l.status_financeiro === 'PAGO')
+    ).sort((a, b) => new Date(b.data) - new Date(a.data));
+
+    if (despesas.length === 0) {
+        return showToast('Nenhum pagamento de ponto encontrado para estornar.', true);
+    }
+
+    const ultimaDespesa = despesas[0];
+    
+    // Extrai mês/ano da descrição (formato "Pagamento de ponto - Nome - Período MM/AAAA")
+    let mesAno = null;
+    const match = ultimaDespesa.produto_nome.match(/Período (\d{2})\/(\d{4})/);
+    if (match) {
+        mesAno = { mes: match[1], ano: match[2] };
+    }
+
+    let confirmMsg = `Estornar o pagamento de ${formatMoney(ultimaDespesa.valor_total)} (${ultimaDespesa.status_financeiro})?`;
+    if (mesAno) confirmMsg += `\nPeríodo: ${mesAno.mes}/${mesAno.ano}`;
+    confirmMsg += `\n\nOs registros de ponto voltarão a ficar pendentes.`;
+    
+    if (!confirm(confirmMsg)) return;
+
+    showLoading(true);
+
+    // 1. Cancelar a despesa no financeiro
+    const { error: errFin } = await sb.from('jsp_logs')
+        .update({ status_financeiro: 'CANCELADO' })
+        .eq('id', ultimaDespesa.id)
+        .eq('tipo', 'despesa');
+
+    if (errFin) {
+        showLoading(false);
+        return showToast('Erro ao cancelar despesa: ' + errFin.message, true);
+    }
+
+    // 2. Reverter marcação pago_em_fechamento nos registros de ponto do período
+    let query = sb.from('jsp_ponto_diario')
+        .update({ pago_em_fechamento: false })
+        .eq('funcionario_id', funcId)
+        .eq('pago_em_fechamento', true);
+
+    if (mesAno) {
+        const { mes, ano } = mesAno;
+        // Calcula o último dia do mês corretamente (lida com fevereiro e anos bissextos)
+        const ultimoDia = new Date(ano, mes, 0).getDate();
+        const dataInicio = `${ano}-${mes}-01`;
+        const dataFim = `${ano}-${mes}-${String(ultimoDia).padStart(2, '0')}`;
+        
+        query = query
+            .gte('hora_registro', dataInicio)
+            .lte('hora_registro', dataFim);
+    }
+
+    const { error: errPonto } = await query;
+
+    if (errPonto) {
+        showLoading(false);
+        return showToast('Erro ao reverter registros de ponto: ' + errPonto.message, true);
+    }
+
+    await loadData();
+    carregarTabelaSaldo(); // Atualiza o modal
+    renderEquipe();        // Atualiza a listagem principal
+    showToast('Estorno realizado com sucesso! Despesa cancelada e registros liberados.');
+}      
 
       function imprimirFolhaPontoEletronico() {
     if (!window.dadosFolhaImpressao || window.dadosFolhaImpressao.length === 0) {
@@ -2057,76 +2890,159 @@ async function buscarRegistrosEletronicos() {
             
             showToast("Pagamento e Despesa lançados com sucesso!"); loadData();
         }
-
-        function imprimirFolha() {
-    const mes = document.getElementById('eqp-filter-mes').value;
-    const ano = document.getElementById('eqp-filter-ano').value;
-    const term = document.getElementById('eqp-search').value.toLowerCase();
-    const obraFiltro = document.getElementById('eqp-obra-filter').value;
-    const statusFiltro = document.getElementById('eqp-filter-status').value;
+function abrirModalFolhaPagamento() {
+    // Preenche o select de obras
+    const selectObra = document.getElementById('folha-obra');
+    selectObra.innerHTML = '<option value="">Todas as Obras</option>' + 
+        STATE.obras.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
     
-    let fil = STATE.equipe.filter(e => e.nome.toLowerCase().includes(term) || (e.categoria||'').toLowerCase().includes(term));
-    if(obraFiltro) fil = fil.filter(e => e.obra_atual_id == obraFiltro);
-    if (statusFiltro !== "todos") {
-        const isAtivo = statusFiltro === "true";
-        fil = fil.filter(e => e.ativo === isAtivo || (isAtivo && e.ativo === undefined));
-    }
-
-    let htmlReport = `
-        <div style="font-family: Arial, sans-serif; color: #333; width: 100%;">
-            <div style="text-align: center; border-bottom: 2px solid #1d4ed8; padding-bottom: 10px; margin-bottom: 20px;">
-                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px; margin-bottom: 10px;" />
-                <h2 style="margin: 0; color: #1e293b; font-size: 20px; font-weight: 900;">RELATÓRIO DE FREQUÊNCIA E PAGAMENTO</h2>
-                <h3 style="margin: 5px 0 0 0; color: #1d4ed8;">Competência: ${mes}/${ano}</h3>
-                ${obraFiltro ? `<p style="margin: 5px 0 0 0; font-size: 14px; color: #64748b;">Obra: ${STATE.obras.find(o=>o.id==obraFiltro)?.nome}</p>` : ''}
-            </div>
-            <table width="100%" style="border-collapse: collapse; text-align: left; font-size: 11px;">
-                <thead>
-                    <tr style="background-color: #f1f5f9; color: #1e293b;">
-                        <th style="padding: 8px; border: 1px solid #cbd5e1;">Funcionário / PIX</th>
-                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">Diária</th>
-                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">Dias Trabalhados</th>
-                        <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: right;">Total R$ (Subtotal)</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
-
-    let somaTotal = 0;
-    fil.forEach(e => {
-        let pt = STATE.ponto.find(x => x.equipe_id == e.id && x.mes === mes && x.ano === ano);
-        let dias = pt ? parseFloat(pt.total_dias || 0) : 0;
-        let diaria = parseFloat(e.valor_diaria || 0);
-        let total = pt ? parseFloat(pt.valor_total || 0) : (dias * diaria);
-        somaTotal += total;
-
-        // Adicionada a Chave PIX abaixo do Nome, com destaque.
-        htmlReport += `
-            <tr>
-                <td style="padding: 8px; border: 1px solid #cbd5e1;">
-                    <div style="font-weight: 900; font-size: 12px;">${e.nome.toUpperCase()}</div>
-                    <div style="font-size: 10px; color: #1d4ed8; font-weight: bold; margin-top: 2px;">PIX: ${e.chave_pix || '<span style="color:#ef4444">NÃO INFORMADO</span>'}</div>
-                    <div style="font-size: 9px; color:#64748b; text-transform: uppercase; margin-top: 2px;">FUNÇÃO: ${e.categoria||'Geral'}</div>
-                </td>
-                <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${formatMoney(diaria)}</td>
-                <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #1d4ed8;">${dias}</td>
-                <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: right; font-weight: bold; font-size: 12px;">${formatMoney(total)}</td>
-            </tr>
-        `;
-    });
-
-    htmlReport += `
-                </tbody>
-            </table>
-            <div style="margin-top: 20px; text-align: right; font-size: 16px;">
-                <strong>TOTAL GERAL PAGO: <span style="color: #b91c1c;">${formatMoney(somaTotal)}</span></strong>
-            </div>
-        </div>
-    `;
-
-    document.getElementById('print-area').innerHTML = htmlReport;
-    setTimeout(() => window.print(), 300);
+    // Define mês/ano atual como padrão
+    const hoje = new Date();
+    document.getElementById('folha-mes').value = String(hoje.getMonth() + 1).padStart(2, '0');
+    document.getElementById('folha-ano').value = hoje.getFullYear();
+    
+    document.getElementById('modal-folha-pagamento').classList.remove('hidden');
+    lucide.createIcons();
 }
+
+function executarImpressaoFolha() {
+      const statusFinanceiro = document.getElementById('folha-status').value;
+      const obraFiltro = document.getElementById('folha-obra').value;
+      const statusFunc = document.getElementById('folha-status-func').value;
+      const mes = document.getElementById('folha-mes').value;
+      const ano = document.getElementById('folha-ano').value;
+      
+      // Filtra funcionários
+      let funcionarios = STATE.equipe.filter(e => {
+          // Filtro de status
+          if (statusFunc === 'true' && e.ativo === false) return false;
+          if (statusFunc === 'false' && e.ativo !== false) return false;
+          return true;
+      });
+      
+      if (obraFiltro) {
+          funcionarios = funcionarios.filter(e => e.obra_atual_id == obraFiltro);
+      }
+      
+      // Para cada funcionário, busca as despesas de ponto PENDENTES ou PAGAS conforme filtro
+      const dadosFolha = [];
+      
+      funcionarios.forEach(func => {
+          // Busca todas as despesas de ponto deste funcionário
+          const despesasPonto = STATE.logs.filter(l => 
+              l.tipo === 'despesa' &&
+              l.produto_nome && l.produto_nome.includes(`Pagamento de ponto - ${func.nome}`) &&
+              (statusFinanceiro === 'TODOS' || l.status_financeiro === statusFinanceiro)
+          );
+          
+          // Se houver filtro de mês/ano, filtra também
+          let despesasFiltradas = despesasPonto;
+          if (mes && ano) {
+              despesasFiltradas = despesasPonto.filter(d => {
+                  const match = d.produto_nome.match(/Período (\d{2})\/(\d{4})/);
+                  return match && match[1] === mes && match[2] === ano;
+              });
+          }
+          
+          if (despesasFiltradas.length === 0) return;
+          
+          // Soma os valores e diárias (extrai das observações)
+          let totalValor = 0;
+          let totalDiarias = 0;
+          despesasFiltradas.forEach(d => {
+              totalValor += parseFloat(d.valor_total);
+              // Tenta extrair o total de diárias da observação
+              const diariasMatch = d.observacao?.match(/Total diárias: ([\d.]+)/);
+              if (diariasMatch) {
+                  totalDiarias += parseFloat(diariasMatch[1]);
+              }
+          });
+          
+          dadosFolha.push({
+              nome: func.nome,
+              pix: func.chave_pix || 'Não informado',
+              categoria: func.categoria || 'Geral',
+              diaria: parseFloat(func.valor_diaria || 0),
+              totalDiarias: totalDiarias,
+              valorTotal: totalValor
+          });
+      });
+      
+      if (dadosFolha.length === 0) {
+          return showToast('Nenhum registro encontrado com os filtros selecionados.', true);
+      }
+      
+      // Ordena por nome
+      dadosFolha.sort((a, b) => a.nome.localeCompare(b.nome));
+      
+      const nomeMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][parseInt(mes)-1] || 'Todos';
+      const hoje = new Date().toLocaleDateString('pt-BR');
+      
+      let html = `
+          <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; padding: 30px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 15px; margin-bottom: 25px;">
+                  <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 70px;" />
+                  <div style="text-align: right;">
+                      <h1 style="margin: 0; font-size: 24px; font-weight: 900;">FOLHA DE PAGAMENTOS</h1>
+                      <p style="margin: 5px 0 0 0; font-size: 14px; color: #1d4ed8; font-weight: bold;">Status: ${statusFinanceiro === 'PENDENTE' ? 'PENDENTES (NÃO BAIXADOS)' : statusFinanceiro}</p>
+                      <p style="margin: 2px 0 0 0; font-size: 12px;">Período: ${mes ? nomeMes + '/' + ano : 'Todos'}</p>
+                  </div>
+              </div>
+              
+              <table width="100%" style="border-collapse: collapse; margin-bottom: 30px; font-size: 12px;">
+                  <thead>
+                      <tr style="background-color: #f1f5f9;">
+                          <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: left;">Funcionário / PIX</th>
+                          <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Diária Base</th>
+                          <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Total Diárias</th>
+                          <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: right;">Valor Total</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+      `;
+      
+      let somaGeral = 0;
+      dadosFolha.forEach(d => {
+          somaGeral += d.valorTotal;
+          html += `
+              <tr>
+                  <td style="padding: 10px; border: 1px solid #cbd5e1;">
+                      <div style="font-weight: 800;">${d.nome.toUpperCase()}</div>
+                      <div style="font-size: 11px; color: #1d4ed8; margin-top: 4px;">
+                          <span style="color: #64748b;">PIX:</span> ${d.pix}
+                      </div>
+                      <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">${d.categoria}</div>
+                  </td>
+                  <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center;">${formatMoney(d.diaria)}</td>
+                  <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold;">${d.totalDiarias.toFixed(2)}</td>
+                  <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: right; font-weight: 900; color: #1d4ed8;">${formatMoney(d.valorTotal)}</td>
+              </tr>
+          `;
+      });
+      
+      html += `
+                  </tbody>
+              </table>
+              
+              <div style="display: flex; justify-content: flex-end; margin-bottom: 40px;">
+                  <div style="width: 300px; background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px;">
+                      <div style="display: flex; justify-content: space-between;">
+                          <span style="font-weight: bold;">TOTAL GERAL:</span>
+                          <span style="font-weight: 900; color: #b91c1c; font-size: 18px;">${formatMoney(somaGeral)}</span>
+                      </div>
+                  </div>
+              </div>
+              
+              <div style="text-align: center; font-size: 10px; color: #94a3b8; margin-top: 40px; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
+                  Emitido em ${hoje} - RV Negócios
+              </div>
+          </div>
+      `;
+      
+      document.getElementById('modal-folha-pagamento').classList.add('hidden');
+      document.getElementById('print-area').innerHTML = html;
+      setTimeout(() => window.print(), 300);
+  }
 
         function imprimirRecibo(equipe_id, ponto_id) {
             const mes = document.getElementById('eqp-filter-mes').value;
@@ -4824,7 +5740,109 @@ function imprimirRelatorioTerc() {
     }, 400);
 }
       
-      
+      // ========== MODAL ADMINISTRATIVO DE REGISTROS ==========
+
+async function abrirModalAdminRegistros(funcId) {
+    const senha = prompt("🔐 Acesso Restrito. Digite a senha mestra:");
+    if (senha !== "147258369") {
+        alert("Senha incorreta. Acesso negado.");
+        return;
+    }
+    
+    const func = STATE.equipe.find(e => e.id === funcId);
+    if (!func) return;
+    
+    document.getElementById('admin-func-id').value = funcId;
+    document.getElementById('admin-registros-subtitle').innerText = 
+        `${func.nome} - Todos os registros de ponto`;
+    
+    await carregarListaAdminRegistros(funcId);
+    document.getElementById('modal-admin-registros').classList.remove('hidden');
+    lucide.createIcons();
+}
+
+function fecharModalAdminRegistros() {
+    document.getElementById('modal-admin-registros').classList.add('hidden');
+}
+
+async function carregarListaAdminRegistros(funcId) {
+    const tbody = document.getElementById('admin-registros-tbody');
+    tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center">Carregando...</td></tr>';
+    
+    const { data, error } = await sb
+        .from('jsp_ponto_diario')
+        .select('*')
+        .eq('funcionario_id', funcId)
+        .order('hora_registro', { ascending: false });
+    
+    if (error) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Erro: ${error.message}</td></tr>`;
+        return;
+    }
+    
+    if (!data || data.length === 0) {
+        document.getElementById('admin-sem-registros').classList.remove('hidden');
+        tbody.innerHTML = '';
+        return;
+    }
+    document.getElementById('admin-sem-registros').classList.add('hidden');
+    
+    tbody.innerHTML = data.map(reg => {
+        const dataHora = new Date(reg.hora_registro).toLocaleString('pt-BR', { timeZone: 'UTC' });
+        const tipoBadge = reg.tipo === 'ENTRADA' 
+            ? '<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">ENTRADA</span>'
+            : (reg.tipo === 'SAIDA' 
+                ? '<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">SAÍDA</span>'
+                : '<span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-xs font-bold">AJUSTE</span>');
+        const statusBadge = reg.status === 'VALIDADO'
+            ? '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold">VALIDADO</span>'
+            : '<span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs font-bold">PENDENTE</span>';
+        const pagoBadge = reg.pago_em_fechamento
+            ? '<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">Sim</span>'
+            : '<span class="bg-slate-100 text-slate-500 px-2 py-1 rounded text-xs">Não</span>';
+        
+        return `
+            <tr class="border-b hover:bg-slate-50">
+                <td class="p-3 text-xs font-mono">${dataHora}</td>
+                <td class="p-3">${tipoBadge}</td>
+                <td class="p-3 text-center">${statusBadge}</td>
+                <td class="p-3 text-center">${pagoBadge}</td>
+                <td class="p-3 text-center">
+                    <button onclick="excluirRegistroAdmin('${reg.id}')" class="text-red-500 hover:text-red-700 p-1 rounded transition" title="Excluir permanentemente">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+    
+    lucide.createIcons();
+}
+
+async function excluirRegistroAdmin(registroId) {
+    if (!confirm("Tem certeza que deseja excluir este registro permanentemente? Esta ação não pode ser desfeita.")) {
+        return;
+    }
+    
+    showLoading(true);
+    try {
+        const { error } = await sb.from('jsp_ponto_diario').delete().eq('id', registroId);
+        if (error) throw error;
+        showToast("Registro excluído com sucesso.");
+        
+        const funcId = document.getElementById('admin-func-id').value;
+        await carregarListaAdminRegistros(funcId);
+        // Se o modal de saldo estiver aberto, recarrega a tabela principal também
+        if (!document.getElementById('modal-saldo-ponto').classList.contains('hidden')) {
+            await loadData(); // recarrega STATE.ponto_diario
+            carregarTabelaSaldo();
+        }
+    } catch (err) {
+        showToast("Erro ao excluir: " + err.message, true);
+    } finally {
+        showLoading(false);
+    }
+}
       
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
