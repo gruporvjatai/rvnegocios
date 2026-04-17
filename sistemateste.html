@@ -1619,14 +1619,12 @@
  * Retorna um objeto: { totalDiarias: number, registros: array }
  */
 function calcularSaldoPendenteFuncionario(funcId, mesFiltro = null, anoFiltro = null) {
-    // Filtra todos os registros VALIDADOS do funcionário
     const registros = STATE.ponto_diario.filter(p => 
         p.funcionario_id === funcId && 
         p.status === 'VALIDADO' &&
-        p.pago_em_fechamento === false  // Campo novo que precisaremos adicionar (ou usar outro controle)
+        p.pago_em_fechamento === false
     );
     
-    // Se houver filtro de mês/ano, aplica
     let registrosFiltrados = registros;
     if (mesFiltro && anoFiltro) {
         registrosFiltrados = registros.filter(p => {
@@ -1636,7 +1634,7 @@ function calcularSaldoPendenteFuncionario(funcId, mesFiltro = null, anoFiltro = 
         });
     }
     
-    // Calcula diárias fracionadas para cada dia
+    // Agrupa por dia
     const porDia = {};
     registrosFiltrados.forEach(p => {
         const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
@@ -1647,29 +1645,19 @@ function calcularSaldoPendenteFuncionario(funcId, mesFiltro = null, anoFiltro = 
     });
     
     let totalDiarias = 0;
-    const detalhes = [];
     
-    Object.entries(porDia).forEach(([dataDia, pts]) => {
-        let fracao = 0;
-        // Se houver ajuste manual, usa o valor do ajuste (soma se houver vários)
+    Object.values(porDia).forEach(pts => {
         if (pts.ajustes.length > 0) {
-            fracao = pts.ajustes.reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
+            totalDiarias += pts.ajustes.reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
         } else {
-            // Caso contrário, calcula baseado em entradas/saídas (usa lógica existente)
-            const entradas = pts.entradas.sort((a,b) => a - b);
-            const saidas = pts.saidas.sort((a,b) => a - b);
-            let horasTrabalhadas = 0;
-            // Usa a mesma lógica do cálculo eletrônico anterior (função calcularHorasTrabalhadas)
-            // ... (implementar)
-            horasTrabalhadas = calcularHorasTrabalhadasNoDia(entradas, saidas);
-            fracao = horasTrabalhadas / 8; // 8h = 1 diária
-            fracao = Math.min(1, Math.max(0, fracao)); // limita entre 0 e 1
+            const horas = calcularHorasTrabalhadasNoDia(pts.entradas, pts.saidas);
+            let fracao = horas / 8;
+            fracao = Math.min(1, Math.max(0, fracao));
+            totalDiarias += fracao;
         }
-        totalDiarias += fracao;
-        detalhes.push({ data: dataDia, fracao, entradas: pts.entradas, saidas: pts.saidas });
     });
     
-    return { totalDiarias, detalhes, registros: registrosFiltrados };
+    return { totalDiarias, registros: registrosFiltrados };
 }
 
 // Função auxiliar para calcular horas trabalhadas no dia (baseado no código existente)
@@ -1688,11 +1676,9 @@ function calcularHorasTrabalhadasNoDia(entradas, saidas) {
         }
     }
     
-    if (totalMinutos >= 360) {
-        totalMinutos -= 60;
-    }
+    // NENHUM desconto de almoço, apenas soma os pares
     
-    const JORNADA_BASE = 480;
+    const JORNADA_BASE = 480; // 8 horas em minutos
     const TOLERANCIA = 20;
     
     let minutosConsiderados = totalMinutos;
