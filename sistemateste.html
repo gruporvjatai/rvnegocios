@@ -1224,7 +1224,48 @@
             </button>
         </div>
     </div>
-</div>      
+</div>     
+
+      <!-- MODAL ADMINISTRATIVO DE REGISTROS DE PONTO -->
+<div id="modal-admin-registros" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl flex flex-col max-h-[95vh] overflow-hidden">
+        <div class="bg-slate-800 p-4 text-white flex justify-between items-center shrink-0">
+            <div>
+                <h3 class="font-black text-lg flex items-center gap-2">
+                    <i data-lucide="database" class="w-5 h-5"></i> Registros de Ponto (Admin)
+                </h3>
+                <p id="admin-registros-subtitle" class="text-xs font-medium opacity-90 mt-0.5"></p>
+            </div>
+            <button onclick="fecharModalAdminRegistros()" class="text-white hover:bg-white/20 p-2 rounded-lg transition">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div class="p-5 overflow-y-auto flex-1 bg-slate-50">
+            <input type="hidden" id="admin-func-id">
+            
+            <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-100 text-slate-600 border-b">
+                        <tr>
+                            <th class="p-3 text-left text-xs font-bold uppercase">Data/Hora</th>
+                            <th class="p-3 text-left text-xs font-bold uppercase">Tipo</th>
+                            <th class="p-3 text-center text-xs font-bold uppercase">Status</th>
+                            <th class="p-3 text-center text-xs font-bold uppercase">Pago?</th>
+                            <th class="p-3 text-center text-xs font-bold uppercase w-20">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-registros-tbody" class="divide-y"></tbody>
+                </table>
+                <div id="admin-sem-registros" class="p-8 text-center text-slate-400 font-medium hidden">
+                    Nenhum registro encontrado.
+                </div>
+            </div>
+        </div>
+        <div class="p-4 bg-white border-t flex justify-end shrink-0">
+            <button onclick="fecharModalAdminRegistros()" class="px-5 py-2.5 bg-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-300 transition">Fechar</button>
+        </div>
+    </div>
+</div>
       
     </main>
 
@@ -1866,16 +1907,16 @@ function carregarTabelaSaldo() {
             <td class="p-3 font-bold text-slate-700">${dataDia}</td>
             <td class="p-3">${horariosStr}</td>
             <td class="p-3 text-center font-black ${fracao >= 1 ? 'text-green-600' : 'text-orange-600'}">${fracao.toFixed(2)}</td>
-                                   <td class="p-3 text-center">
-                                    <div class="flex items-center justify-center gap-2">
-                                        <span class="px-2 py-1 rounded text-[9px] font-bold ${pts.registros[0].pago_em_fechamento ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">
-                                            ${pts.registros[0].pago_em_fechamento ? 'PAGO' : 'PENDENTE'}
-                                        </span>
-                                        <button onclick="excluirRegistroPonto('${pts.registros[0].id}')" class="text-slate-400 hover:text-red-600 p-1 rounded transition" title="Excluir registro (Senha requerida)">
-                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                        </button>
-                                    </div>
-                                </td>
+                       <td class="p-3 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <span class="px-2 py-1 rounded text-[9px] font-bold ${pts.registros[0].pago_em_fechamento ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">
+                                    ${pts.registros[0].pago_em_fechamento ? 'PAGO' : 'PENDENTE'}
+                                </span>
+                                <button onclick="abrirModalAdminRegistros('${funcId}')" class="text-slate-400 hover:text-indigo-600 p-1 rounded transition" title="Acesso Restrito (Senha)">
+                                    <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </td>
         `;
         tbody.appendChild(tr);
     });
@@ -5699,7 +5740,109 @@ function imprimirRelatorioTerc() {
     }, 400);
 }
       
-      
+      // ========== MODAL ADMINISTRATIVO DE REGISTROS ==========
+
+async function abrirModalAdminRegistros(funcId) {
+    const senha = prompt("🔐 Acesso Restrito. Digite a senha mestra:");
+    if (senha !== "147258369") {
+        alert("Senha incorreta. Acesso negado.");
+        return;
+    }
+    
+    const func = STATE.equipe.find(e => e.id === funcId);
+    if (!func) return;
+    
+    document.getElementById('admin-func-id').value = funcId;
+    document.getElementById('admin-registros-subtitle').innerText = 
+        `${func.nome} - Todos os registros de ponto`;
+    
+    await carregarListaAdminRegistros(funcId);
+    document.getElementById('modal-admin-registros').classList.remove('hidden');
+    lucide.createIcons();
+}
+
+function fecharModalAdminRegistros() {
+    document.getElementById('modal-admin-registros').classList.add('hidden');
+}
+
+async function carregarListaAdminRegistros(funcId) {
+    const tbody = document.getElementById('admin-registros-tbody');
+    tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center">Carregando...</td></tr>';
+    
+    const { data, error } = await sb
+        .from('jsp_ponto_diario')
+        .select('*')
+        .eq('funcionario_id', funcId)
+        .order('hora_registro', { ascending: false });
+    
+    if (error) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Erro: ${error.message}</td></tr>`;
+        return;
+    }
+    
+    if (!data || data.length === 0) {
+        document.getElementById('admin-sem-registros').classList.remove('hidden');
+        tbody.innerHTML = '';
+        return;
+    }
+    document.getElementById('admin-sem-registros').classList.add('hidden');
+    
+    tbody.innerHTML = data.map(reg => {
+        const dataHora = new Date(reg.hora_registro).toLocaleString('pt-BR', { timeZone: 'UTC' });
+        const tipoBadge = reg.tipo === 'ENTRADA' 
+            ? '<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">ENTRADA</span>'
+            : (reg.tipo === 'SAIDA' 
+                ? '<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">SAÍDA</span>'
+                : '<span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-xs font-bold">AJUSTE</span>');
+        const statusBadge = reg.status === 'VALIDADO'
+            ? '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold">VALIDADO</span>'
+            : '<span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs font-bold">PENDENTE</span>';
+        const pagoBadge = reg.pago_em_fechamento
+            ? '<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">Sim</span>'
+            : '<span class="bg-slate-100 text-slate-500 px-2 py-1 rounded text-xs">Não</span>';
+        
+        return `
+            <tr class="border-b hover:bg-slate-50">
+                <td class="p-3 text-xs font-mono">${dataHora}</td>
+                <td class="p-3">${tipoBadge}</td>
+                <td class="p-3 text-center">${statusBadge}</td>
+                <td class="p-3 text-center">${pagoBadge}</td>
+                <td class="p-3 text-center">
+                    <button onclick="excluirRegistroAdmin('${reg.id}')" class="text-red-500 hover:text-red-700 p-1 rounded transition" title="Excluir permanentemente">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+    
+    lucide.createIcons();
+}
+
+async function excluirRegistroAdmin(registroId) {
+    if (!confirm("Tem certeza que deseja excluir este registro permanentemente? Esta ação não pode ser desfeita.")) {
+        return;
+    }
+    
+    showLoading(true);
+    try {
+        const { error } = await sb.from('jsp_ponto_diario').delete().eq('id', registroId);
+        if (error) throw error;
+        showToast("Registro excluído com sucesso.");
+        
+        const funcId = document.getElementById('admin-func-id').value;
+        await carregarListaAdminRegistros(funcId);
+        // Se o modal de saldo estiver aberto, recarrega a tabela principal também
+        if (!document.getElementById('modal-saldo-ponto').classList.contains('hidden')) {
+            await loadData(); // recarrega STATE.ponto_diario
+            carregarTabelaSaldo();
+        }
+    } catch (err) {
+        showToast("Erro ao excluir: " + err.message, true);
+    } finally {
+        showLoading(false);
+    }
+}
       
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
