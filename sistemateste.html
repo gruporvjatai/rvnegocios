@@ -278,8 +278,8 @@
                   <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tipo</label>
                   <select id="eqp-filter-tipo" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
                       <option value="todos">Todos</option>
-                      <option value="diaria">Diária (Próprios)</option>
-                      <option value="metro">Metro (Terceirizados)</option>
+                      <option value="diaria">Diária</option>
+                      <option value="metro">Metro </option>
                   </select>
               </div>
               <div>
@@ -519,8 +519,8 @@
                           <label class="block text-[10px] font-bold text-slate-500 uppercase">Categoria / Função</label>
                           <select id="eqp-cat" required class="w-full p-2 border rounded focus:border-blue-600 outline-none bg-slate-50" onchange="onCategoriaChange()">
                               <option value="" disabled selected>-- Selecione --</option>
-                              <option value="Pedreiro">Pedreiro</option>
-                              <option value="Servente">Servente</option>
+                              <option value="Pedreiro">Pedreiro (Diária)</option>
+                              <option value="Servente">Servente (Diária)</option>
                               <option value="Terceirizado">Terceirizado (Metro)</option>
                           </select>
                       </div>
@@ -1615,7 +1615,15 @@
                     <i data-lucide="ruler" width="12"></i> MEDIÇÃO
                 </button>
                 ${c.valor_total > 0 ? `<button onclick="baixarPagamentoTerc('${c.id}')" class="px-2 py-1.5 bg-green-600 text-white hover:bg-green-700 rounded shadow font-bold text-[10px] flex items-center gap-1"><i data-lucide="check-circle" width="12"></i> BAIXAR</button>` : ''}
-                <button onclick="openEquipeForm('${c.id}', 'terceirizado')" class="p-1.5 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded flex items-center justify-center"><i data-lucide="edit-3" width="14"></i></button>
+                <button onclick="abrirModalDocumentosTerc('${c.id}')" class="p-1.5 bg-slate-800 text-white rounded shadow" title="Contratos">
+                    <i data-lucide="file-signature" width="14"></i>
+                </button>
+                <button onclick="openEquipeForm('${c.id}', 'terceirizado')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar">
+                    <i data-lucide="edit-3" width="14"></i>
+                </button>
+                <button onclick="toggleStatusTerceirizado('${c.id}', ${c.ativo !== false})" class="p-1.5 border ${c.ativo !== false ? 'border-red-200 text-red-500 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'} rounded" title="${c.ativo !== false ? 'Desativar' : 'Reativar'}">
+                    <i data-lucide="power" width="14"></i>
+                </button>
                 ${wppBtn}
             `;
         }
@@ -3277,14 +3285,21 @@ function executarImpressaoFolha() {
         }
 
         async function marcarContratoAssinado() {
-            const id = document.getElementById('doc-equipe-id').value;
-            showLoading(true);
-            const { error } = await sb.from('jsp_equipe').update({ contrato_assinado: true }).eq('id', id);
-            if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
-            showToast("Contrato marcado como assinado com sucesso!");
-            document.getElementById('modal-docs-equipe').classList.add('hidden');
-            loadData();
-        }
+    const id = document.getElementById('doc-equipe-id').value;
+    const isTerc = STATE.terceirizados.some(t => t.id == id);
+    if (isTerc) {
+        showToast("Contrato de terceirizado em desenvolvimento.", false);
+        document.getElementById('modal-docs-equipe').classList.add('hidden');
+        return;
+    }
+    
+    showLoading(true);
+    const { error } = await sb.from('jsp_equipe').update({ contrato_assinado: true }).eq('id', id);
+    if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
+    showToast("Contrato marcado como assinado com sucesso!");
+    document.getElementById('modal-docs-equipe').classList.add('hidden');
+    loadData();
+}
 
      function imprimirDocumento() {
     const id = document.getElementById('doc-equipe-id').value;
@@ -6054,6 +6069,43 @@ function getColaboradoresUnificados() {
             tipoOrigem.value = 'equipe';
         }
     }
+
+      async function toggleStatusTerceirizado(id, isAtivo) {
+    const acao = isAtivo ? "DESATIVAR" : "REATIVAR";
+    if(!confirm(`Tem certeza que deseja ${acao} este terceirizado?`)) return;
+    
+    showLoading(true);
+    const { error } = await sb.from('jsp_terceirizados').update({ ativo: !isAtivo }).eq('id', id);
+    if(error) { 
+        showLoading(false); 
+        return showToast("Erro: " + error.message, true); 
+    }
+    showToast(`Status atualizado com sucesso!`); 
+    loadData();
+}
+
+
+      function abrirModalDocumentosTerc(id) {
+    const t = STATE.terceirizados.find(x => x.id == id);
+    if (!t) return;
+    
+    document.getElementById('doc-equipe-id').value = t.id;
+    document.getElementById('doc-equipe-nome').innerText = `Colaborador: ${t.nome}`;
+    
+    const btnAssinar = document.getElementById('btn-assinar-doc');
+    btnAssinar.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i> Marcar como Assinado`;
+    btnAssinar.classList.remove('bg-emerald-700', 'hover:bg-emerald-800');
+    btnAssinar.classList.add('bg-green-600', 'hover:bg-green-700');
+    btnAssinar.setAttribute('onclick', 'marcarContratoAssinadoTerc()');
+    
+    document.getElementById('modal-docs-equipe').classList.remove('hidden');
+    lucide.createIcons();
+}
+
+function marcarContratoAssinadoTerc() {
+    showToast("Funcionalidade de contrato para terceirizados em breve.", false);
+    // document.getElementById('modal-docs-equipe').classList.add('hidden');
+}
       
       
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
