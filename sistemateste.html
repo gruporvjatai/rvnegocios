@@ -256,66 +256,76 @@
         </div>
       </div>
 
-      <div class="mb-4 bg-white p-4 rounded-xl shadow-sm border grid grid-cols-1 md:grid-cols-6 gap-4">
-          <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
-              <select id="eqp-filter-status" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
-                  <option value="true">Ativos</option>
-                  <option value="false">Desativados</option>
-                  <option value="todos">Todos</option>
-              </select>
-          </div>
-          <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tipo</label>
-              <select id="eqp-filter-tipo" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
-                  <option value="todos">Todos</option>
-                  <option value="diaria">Diária</option>
-                  <option value="metro">Metro </option>
-              </select>
-          </div>
-          <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Início</label>
-              <input type="date" id="eqp-filter-data-inicio" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
-          </div>
-          <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Fim</label>
-              <input type="date" id="eqp-filter-data-fim" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
-          </div>
-          <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Filtrar por Obra</label>
-              <select id="eqp-obra-filter" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
-                  <option value="">Todas as Obras</option>
-              </select>
-          </div>
-          <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Buscar Nome</label>
-              <div class="relative w-full">
-                  <i data-lucide="search" class="absolute left-3 top-2.5 text-slate-400 w-5 h-5"></i>
-                  <input type="text" id="eqp-search" placeholder="Buscar..." class="w-full pl-10 p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onkeyup="renderEquipe()">
-              </div>
-          </div>
-      </div>
-              
-
-          <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
-              <div class="overflow-x-auto">
-                  <table class="w-full text-sm text-left whitespace-nowrap">
-                      <thead class="bg-slate-100 text-slate-700 border-b">
-                          <tr>
-                              <th class="p-4">Funcionário / Categoria</th>
-                              <th class="p-4">Obra Vinculada</th>
-                              <th class="p-4 text-center">Diária (R$)</th>
-                              <th class="p-4 text-center">Dias Trab.</th>
-                              <th class="p-4 text-right">Total a Pagar</th>
-                              <th class="p-4 text-center">Status</th>
-                              <th class="p-4 text-center">Ações</th>
-                          </tr>
-                      </thead>
-                      <tbody id="equipe-list" class="divide-y"></tbody>
-                  </table>
-              </div>
-          </div>
-      </div>
+      <div id="view-equipe" class="hidden-section">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+            <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i data-lucide="users" class="text-blue-700"></i> Equipe </h2>
+            <div class="flex gap-2 w-full md:w-auto">
+                <button onclick="abrirModalFolhaPagamento()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="printer" class="w-4 h-4"></i> Imprimir Folha</button>
+                <button onclick="openEquipeForm()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Cadastrar Membro</button>
+            </div>
+        </div>
+    
+        <!-- FILTROS UNIFICADOS -->
+        <div class="mb-4 bg-white p-4 rounded-xl shadow-sm border grid grid-cols-1 md:grid-cols-6 gap-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
+                <select id="eqp-filter-status" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
+                    <option value="true">Ativos</option>
+                    <option value="false">Desativados</option>
+                    <option value="todos">Todos</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tipo</label>
+                <select id="eqp-filter-tipo" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
+                    <option value="todos">Todos</option>
+                    <option value="diaria">Diária</option>
+                    <option value="metro">Metro </option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Início</label>
+                <input type="date" id="eqp-filter-data-inicio" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Fim</label>
+                <input type="date" id="eqp-filter-data-fim" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Filtrar por Obra</label>
+                <select id="eqp-obra-filter" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
+                    <option value="">Todas as Obras</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Buscar Nome</label>
+                <div class="relative w-full">
+                    <i data-lucide="search" class="absolute left-3 top-2.5 text-slate-400 w-5 h-5"></i>
+                    <input type="text" id="eqp-search" placeholder="Buscar..." class="w-full pl-10 p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onkeyup="renderEquipe()">
+                </div>
+            </div>
+        </div>
+    
+        <!-- TABELA -->
+        <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left whitespace-nowrap">
+                    <thead class="bg-slate-100 text-slate-700 border-b">
+                        <tr>
+                            <th class="p-4">Funcionário / Categoria</th>
+                            <th class="p-4">Obra Vinculada</th>
+                            <th class="p-4 text-center">Diária (R$)</th>
+                            <th class="p-4 text-center">Dias Trab.</th>
+                            <th class="p-4 text-right">Total a Pagar</th>
+                            <th class="p-4 text-center">Status</th>
+                            <th class="p-4 text-center">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="equipe-list" class="divide-y"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
       <div id="view-fornecedores" class="hidden-section">
           <div class="flex justify-between items-center mb-4">
