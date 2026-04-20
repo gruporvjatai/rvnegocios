@@ -701,26 +701,27 @@
             
             <!-- Filtros -->
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-4 flex flex-wrap gap-3 items-end">
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mês/Ano</label>
-                    <div class="flex gap-2">
-                        <select id="saldo-metros-filtro-mes" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-28" onchange="carregarTabelaSaldoMetros()"></select>
-                        <input type="number" id="saldo-metros-filtro-ano" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-24" placeholder="Ano" onchange="carregarTabelaSaldoMetros()">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
-                    <select id="saldo-metros-filtro-status" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-36" onchange="carregarTabelaSaldoMetros()">
-                        <option value="PENDENTE" selected>Pendentes</option>
-                        <option value="PAGO">Já Pagos</option>
-                        <option value="TODOS">Todos</option>
-                    </select>
-                </div>
-                <div class="flex-1"></div>
-                <button onclick="imprimirExtratoSaldoMetros()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow">
-                    <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Extrato
-                </button>
-            </div>
+              <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Início</label>
+                  <input type="date" id="saldo-metros-data-inicio" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="carregarTabelaSaldoMetros()">
+              </div>
+              <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Fim</label>
+                  <input type="date" id="saldo-metros-data-fim" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="carregarTabelaSaldoMetros()">
+              </div>
+              <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
+                  <select id="saldo-metros-filtro-status" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-36" onchange="carregarTabelaSaldoMetros()">
+                      <option value="PENDENTE" selected>Pendentes</option>
+                      <option value="PAGO">Já Pagos</option>
+                      <option value="TODOS">Todos</option>
+                  </select>
+              </div>
+              <div class="flex-1"></div>
+              <button onclick="imprimirExtratoSaldoMetros()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow">
+                  <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Extrato
+              </button>
+          </div>
 
             <!-- Tabela de registros -->
             <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
