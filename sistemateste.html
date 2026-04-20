@@ -4015,13 +4015,7 @@ function executarImpressaoFolha() {
         return;
     }
 
-    const e = STATE.equipe.find(x => x.id == id);
-    
-    if (!e) {
-        alert("Erro ao encontrar os dados do colaborador.");
-        return;
-    }
-    
+    // ========== DATAS (mantidas no topo como original) ==========
     const dataAtual = new Date();
     const dia = dataAtual.getDate();
     const meses = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
@@ -4029,26 +4023,46 @@ function executarImpressaoFolha() {
     const ano = dataAtual.getFullYear();
     const dataExtenso = `${dia} de ${mes} de ${ano}`;
     const hojeCurto = dataAtual.toLocaleDateString('pt-BR');
-    
-    // 1. Busca a obra (AQUI ELA É DECLARADA PELA PRIMEIRA VEZ)
-    const obraVinculada = STATE.obras.find(o => o.id == e.obra_atual_id);
-    const enderecoObra = obraVinculada ? (obraVinculada.endereco || obraVinculada.nome) : 'Endereço não informado / Obra não definida';
-    const diariaTexto = formatMoney(e.valor_diaria || 0);
-    const matricula = parseFloat(e.matricula || 0);
 
-    // 2. LÓGICA DE DATA DE TÉRMINO (USANDO A VARIÁVEL QUE JÁ EXISTE ACIMA)
+    // ========== 🔍 NOVA LÓGICA: BUSCA UNIFICADA ==========
+    // Tenta primeiro em equipe, depois em terceirizados
+    let pessoa = STATE.equipe.find(x => x.id == id);
+    let isTerc = false;
+    if (!pessoa) {
+        pessoa = STATE.terceirizados.find(x => x.id == id);
+        isTerc = true;
+    }
+
+    if (!pessoa) {
+        alert("Erro ao encontrar os dados do colaborador.");
+        return;
+    }
+
+    // ========== MAPEAMENTO DE CAMPOS (compatível com os templates) ==========
+    const nome = pessoa.nome || '';
+    const cpf = isTerc ? (pessoa.cpf_cnpj || '') : (pessoa.cpf || '');
+    const rg = pessoa.rg || '';
+    const endereco = pessoa.endereco || '';
+    const categoria = isTerc ? 'TERCEIRIZADO (METRO)' : (pessoa.categoria || 'Geral');
+    const valorDiaria = isTerc ? parseFloat(pessoa.valor_metro || 0) : parseFloat(pessoa.valor_diaria || 0);
+    const diariaTexto = formatMoney(valorDiaria);
+    const matricula = isTerc ? 'TERC' : (pessoa.matricula || '000');
+    
+    const obraVinculada = STATE.obras.find(o => o.id == pessoa.obra_atual_id);
+    const enderecoObra = obraVinculada ? (obraVinculada.endereco || obraVinculada.nome) : 'Endereço não informado / Obra não definida';
+
+    // Data de início (apenas equipe possui data_contrato; terceirizado fica em branco)
+    let dataInicioContrato = "____/____/______";
+    if (!isTerc && pessoa.data_contrato) {
+        const p = pessoa.data_contrato.split('-');
+        dataInicioContrato = `${p[2]}/${p[1]}/${p[0]}`;
+    }
+
+    // Data de término (baseada na obra)
     let dataTerminoContrato = "____/____/______";
     if (obraVinculada && obraVinculada.data_termino) {
         const partes = obraVinculada.data_termino.split('-');
         dataTerminoContrato = `${partes[2]}/${partes[1]}/${partes[0]}`;
-    }
-
-    // --- LÓGICA DE DATA DE INÍCIO (AGORA VIA CAMPO MANUAL) ---
-    let dataInicioContrato = "____/____/______";
-    if (e.data_contrato) {
-        // Converte AAAA-MM-DD para DD/MM/AAAA
-        const p = e.data_contrato.split('-');
-        dataInicioContrato = `${p[2]}/${p[1]}/${p[0]}`;
     }
     // ---------------------------------------------------------
     
@@ -6794,23 +6808,56 @@ function getColaboradoresUnificados() {
 }
 
 
-      function abrirModalDocumentosTerc(id) {
+     function abrirModalDocumentosTerc(id) {
     const t = STATE.terceirizados.find(x => x.id == id);
     if (!t) return;
     
     document.getElementById('doc-equipe-id').value = t.id;
-    document.getElementById('doc-equipe-nome').innerText = `Colaborador: ${t.nome}`;
+    document.getElementById('doc-equipe-nome').innerText = `Terceirizado: ${t.nome}`;
     
     const btnAssinar = document.getElementById('btn-assinar-doc');
-    btnAssinar.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i> Marcar como Assinado`;
-    btnAssinar.classList.remove('bg-emerald-700', 'hover:bg-emerald-800');
-    btnAssinar.classList.add('bg-green-600', 'hover:bg-green-700');
-    btnAssinar.setAttribute('onclick', 'marcarContratoAssinadoTerc()');
+    const assinado = t.contrato_assinado === true;
+
+    btnAssinar.innerHTML = assinado 
+        ? `<i data-lucide="check-double" class="w-4 h-4"></i> Contrato Já Assinado`
+        : `<i data-lucide="check-circle" class="w-4 h-4"></i> Marcar como Assinado`;
+    
+    btnAssinar.classList.toggle('bg-emerald-700', assinado);
+    btnAssinar.classList.toggle('hover:bg-emerald-800', assinado);
+    btnAssinar.classList.toggle('bg-green-600', !assinado);
+    btnAssinar.classList.toggle('hover:bg-green-700', !assinado);
+
+    btnAssinar.setAttribute('onclick', assinado ? '' : 'marcarContratoAssinadoTerc()');
     
     document.getElementById('modal-docs-equipe').classList.remove('hidden');
     lucide.createIcons();
 }
+      
 
+      async function marcarContratoAssinadoTerc() {
+          const id = document.getElementById('doc-equipe-id').value;
+          const terc = STATE.terceirizados.find(t => t.id == id);
+          if (!terc) {
+              showToast("Terceirizado não encontrado.", true);
+              return;
+          }
+      
+          showLoading(true);
+          // ⚠️ Certifique-se de que a tabela 'jsp_terceirizados' tenha a coluna 'contrato_assinado' (boolean).
+          // Se não tiver, crie-a no Supabase ou use um campo alternativo (ex: 'ativo').
+          const { error } = await sb.from('jsp_terceirizados')
+              .update({ contrato_assinado: true })
+              .eq('id', id);
+      
+          if (error) {
+              showLoading(false);
+              return showToast("Erro: " + error.message, true);
+          }
+      
+          showToast("Contrato marcado como assinado!");
+          document.getElementById('modal-docs-equipe').classList.add('hidden');
+          loadData(); // recarrega STATE
+      }
       
       
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
