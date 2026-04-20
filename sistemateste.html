@@ -265,13 +265,21 @@
               </div>
           </div>
 
-          <div class="mb-4 bg-white p-4 rounded-xl shadow-sm border grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div class="mb-4 bg-white p-4 rounded-xl shadow-sm border grid grid-cols-1 md:grid-cols-6 gap-4">
               <div>
                   <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
                   <select id="eqp-filter-status" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
                       <option value="true">Ativos</option>
                       <option value="false">Desativados</option>
                       <option value="todos">Todos</option>
+                  </select>
+              </div>
+              <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tipo</label>
+                  <select id="eqp-filter-tipo" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
+                      <option value="todos">Todos</option>
+                      <option value="diaria">Diária (Próprios)</option>
+                      <option value="metro">Metro (Terceirizados)</option>
                   </select>
               </div>
               <div>
@@ -297,7 +305,7 @@
                   <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Buscar Nome</label>
                   <div class="relative w-full">
                       <i data-lucide="search" class="absolute left-3 top-2.5 text-slate-400 w-5 h-5"></i>
-                      <input type="text" id="eqp-search" placeholder="Buscar funcionário..." class="w-full pl-10 p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onkeyup="renderEquipe()">
+                      <input type="text" id="eqp-search" placeholder="Buscar..." class="w-full pl-10 p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onkeyup="renderEquipe()">
                   </div>
               </div>
           </div>
@@ -571,11 +579,10 @@
             <!-- Filtros -->
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-4 flex flex-wrap gap-3 items-end">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Período</label>
-                    <div class="flex gap-2 items-center">
-                        <input type="date" id="saldo-filtro-inicio" class="p-2 border rounded-lg text-sm font-bold bg-slate-50">
-                        <span class="text-slate-400">até</span>
-                        <input type="date" id="saldo-filtro-fim" class="p-2 border rounded-lg text-sm font-bold bg-slate-50">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mês/Ano</label>
+                    <div class="flex gap-2">
+                        <select id="saldo-filtro-mes" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-28" onchange="carregarTabelaSaldo()"></select>
+                        <input type="number" id="saldo-filtro-ano" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-24" placeholder="Ano" onchange="carregarTabelaSaldo()">
                     </div>
                 </div>
                 <div>
@@ -587,9 +594,6 @@
                     </select>
                 </div>
                 <div class="flex-1"></div>
-                <button onclick="aplicarFiltroSaldo()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow">
-                    <i data-lucide="filter" class="w-4 h-4"></i> Filtrar
-                </button>
                 <button onclick="imprimirExtratoSaldo()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow">
                     <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Extrato
                 </button>
@@ -898,6 +902,7 @@
                         <select id="usr-level" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-bold">
                             <option value="comprador">Comprador</option>
                             <option value="admin">Administrador</option>
+                            <option value="registros">Registro de Ponto</option>
                         </select>
                     </div>
                     <div>
@@ -1513,90 +1518,139 @@
 
 
         // ====== CRUD EQUIPE E PONTO ======
-       function renderEquipe() {
+      function renderEquipe() {
     const term = document.getElementById('eqp-search').value.toLowerCase();
     const obraFiltro = document.getElementById('eqp-obra-filter').value;
     const mes = document.getElementById('eqp-filter-mes').value;
     const ano = document.getElementById('eqp-filter-ano').value;
     const statusFiltro = document.getElementById('eqp-filter-status').value;
+    const tipoFiltro = document.getElementById('eqp-filter-tipo').value; // NOVO
     
     const list = document.getElementById('equipe-list');
+    const colaboradores = getColaboradoresUnificados();
     
-    let fil = STATE.equipe.filter(e => e.nome.toLowerCase().includes(term) || (e.categoria||'').toLowerCase().includes(term));
-    if(obraFiltro) fil = fil.filter(e => e.obra_atual_id == obraFiltro);
+    let fil = colaboradores.filter(c => 
+        (c.nome || '').toLowerCase().includes(term) || 
+        (c.categoria || '').toLowerCase().includes(term)
+    );
+    
+    if (obraFiltro) {
+        fil = fil.filter(c => c.obra_atual_id == obraFiltro);
+    }
     
     if (statusFiltro !== "todos") {
         const isAtivo = statusFiltro === "true";
-        fil = fil.filter(e => e.ativo === isAtivo || (isAtivo && e.ativo === undefined));
+        fil = fil.filter(c => (c.ativo === true || c.ativo === 'true') === isAtivo);
     }
-
-    fil.sort((a, b) => a.nome.localeCompare(b.nome));
     
-    // Para cada funcionário, calcula o saldo de diárias pendentes baseado nos registros VALIDADOS e não pagos
-    fil.forEach(e => {
-        // O cálculo será feito sob demanda ou podemos calcular aqui para exibição rápida?
-        // Para performance, vamos calcular apenas a exibição; a função de cálculo está em calcularSaldoPendente()
+    if (tipoFiltro !== 'todos') {
+        fil = fil.filter(c => c.tipo === tipoFiltro);
+    }
+    
+    fil.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+    
+    // Pré-calcula produção e valores para cada colaborador
+    fil.forEach(c => {
+        if (c.tipo === 'diaria') {
+            const saldo = calcularSaldoPendenteFuncionario(c.id, mes, ano);
+            c.producao_mes = saldo.totalDiarias;
+            c.valor_total = c.producao_mes * c.valor_base;
+            c.status_pagamento = saldo.totalDiarias > 0 ? 'PENDENTE' : 'EM DIA';
+        } else {
+            const producao = STATE.producao_terc.filter(p => {
+                if (p.terceirizado_id !== c.id) return false;
+                const dt = new Date(p.data_registro);
+                return String(dt.getUTCMonth() + 1).padStart(2, '0') === mes && 
+                       String(dt.getUTCFullYear()) === ano;
+            });
+            const metrosPendentes = producao.filter(p => p.status !== 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros), 0);
+            const metrosPagos = producao.filter(p => p.status === 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros), 0);
+            c.metros_pendentes = metrosPendentes;
+            c.metros_pagos = metrosPagos;
+            c.producao_mes = metrosPendentes; // para exibição principal (pendente)
+            c.valor_total = metrosPendentes * c.valor_base;
+            c.status_pagamento = metrosPendentes > 0 ? 'PENDENTE' : 'EM DIA';
+        }
     });
     
     list.innerHTML = '';
     
-    fil.forEach(e => {
-        const phoneClean = (e.telefone||'').replace(/\D/g,'');
+    fil.forEach(c => {
+        const phoneClean = (c.telefone || '').replace(/\D/g, '');
         const wppBtn = phoneClean ? `<a href="https://wa.me/55${phoneClean}" target="_blank" class="p-1.5 border border-green-200 text-green-600 hover:bg-green-50 rounded bg-green-50/50" title="WhatsApp"><i data-lucide="message-circle" width="14"></i></a>` : '';
         
-        const obraAtual = STATE.obras.find(o => o.id == e.obra_atual_id);
+        const obraAtual = STATE.obras.find(o => o.id == c.obra_atual_id);
         const nomeObra = obraAtual ? obraAtual.nome : '<span class="text-slate-400 italic">Sem obra fixa</span>';
-        const diaria = parseFloat(e.valor_diaria || 0);
+        const diariaOuMetro = c.tipo === 'diaria' ? formatMoney(c.valor_base) : `${formatMoney(c.valor_base)}/m`;
         
-        // Calcula saldo pendente
-        const saldo = calcularSaldoPendenteFuncionario(e.id, mes, ano);
-        const totalDiarias = saldo.totalDiarias;
-        const valorTotal = totalDiarias * diaria;
-        const statusSaldo = totalDiarias > 0 ? 'PENDENTE' : 'EM DIA';
-        const isPendente = totalDiarias > 0;
+        // Badge do tipo
+        const tipoBadge = c.tipo === 'diaria' 
+            ? '<span class="bg-blue-100 text-blue-700 text-[9px] font-bold px-2 py-0.5 rounded">DIÁRIA</span>'
+            : '<span class="bg-purple-100 text-purple-700 text-[9px] font-bold px-2 py-0.5 rounded">METRO</span>';
         
-        const btnDocColor = e.contrato_assinado ? 'bg-green-600 text-white' : 'bg-slate-800 text-white';
+        const isPendente = c.status_pagamento === 'PENDENTE';
+        const valorExibicao = c.valor_total || 0;
+        
+        // Botões de ação condicionais
+        let botoesAcao = '';
+        if (c.tipo === 'diaria') {
+            botoesAcao = `
+                <button onclick="abrirModalSaldo('${c.id}')" class="p-1.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded shadow font-bold text-[10px] flex items-center gap-1">
+                    <i data-lucide="calculator" width="12"></i> CALCULAR
+                </button>
+                <button onclick="abrirModalDocumentos('${c.id}')" class="p-1.5 bg-slate-800 text-white rounded shadow" title="Contratos">
+                    <i data-lucide="file-signature" width="14"></i>
+                </button>
+                <button onclick="openEquipeForm('${c.id}')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar">
+                    <i data-lucide="edit-3" width="14"></i>
+                </button>
+                <button onclick="toggleStatusEquipe('${c.id}', ${c.ativo !== false})" class="p-1.5 border ${c.ativo !== false ? 'border-red-200 text-red-500 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'} rounded" title="${c.ativo !== false ? 'Desativar / Demitir' : 'Reativar'}">
+                    <i data-lucide="power" width="14"></i>
+                </button>
+                ${wppBtn}
+            `;
+        } else {
+            botoesAcao = `
+                <button onclick="openTercProdModal('${c.id}')" class="px-2 py-1.5 bg-slate-800 text-white hover:bg-black rounded shadow font-bold text-[10px] flex items-center gap-1">
+                    <i data-lucide="ruler" width="12"></i> MEDIÇÃO
+                </button>
+                ${c.valor_total > 0 ? `<button onclick="baixarPagamentoTerc('${c.id}')" class="px-2 py-1.5 bg-green-600 text-white hover:bg-green-700 rounded shadow font-bold text-[10px] flex items-center gap-1"><i data-lucide="check-circle" width="12"></i> BAIXAR</button>` : ''}
+                <button onclick="openTercForm('${c.id}')" class="p-1.5 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded flex items-center justify-center"><i data-lucide="edit-3" width="14"></i></button>
+                ${wppBtn}
+            `;
+        }
         
         const row = document.createElement('tr');
-        row.className = `border-b hover:bg-slate-50 transition ${e.ativo === false ? 'opacity-60 bg-red-50' : ''}`;
+        row.className = `border-b hover:bg-slate-50 transition ${c.ativo === false ? 'opacity-60 bg-red-50' : ''}`;
         row.innerHTML = `
             <td class="p-2">
-                <div class="font-bold text-slate-800 text-sm">${e.nome} ${e.ativo === false ? '<span class="text-[9px] text-red-500 font-bold">(DESATIVADO)</span>' : ''}</div>
-                <div class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded uppercase font-bold inline-block mt-0.5">${e.categoria||'Geral'}</div>
+                <div class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                    ${c.nome} 
+                    ${c.ativo === false ? '<span class="text-[9px] text-red-500 font-bold">(DESATIVADO)</span>' : ''}
+                    ${tipoBadge}
+                </div>
+                <div class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded uppercase font-bold inline-block mt-0.5">${c.categoria || 'Geral'}</div>
             </td>
             <td class="p-2 text-xs font-bold text-blue-700"><i data-lucide="building" class="w-3 h-3 inline"></i> ${nomeObra}</td>
             <td class="p-2 text-center">
-                <div class="font-bold text-slate-700 text-xs">${formatMoney(diaria)} <span class="text-[9px] text-slate-400 font-normal">/dia</span></div>
+                <div class="font-bold text-slate-700 text-xs">${diariaOuMetro}</div>
             </td>
             <td class="p-2 text-center">
-                <div class="text-xs font-black ${totalDiarias > 0 ? 'text-indigo-600' : 'text-slate-400'}">${totalDiarias.toFixed(2)} dias</div>
+                <div class="text-xs font-black ${c.producao_mes > 0 ? 'text-indigo-600' : 'text-slate-400'}">
+                    ${c.tipo === 'diaria' ? c.producao_mes.toFixed(2) + ' dias' : c.producao_mes.toFixed(2) + ' m'}
+                </div>
             </td>
             <td class="p-2 text-right">
-                <div class="font-black text-sm ${isPendente ? 'text-green-700' : 'text-slate-400'}">${formatMoney(valorTotal)}</div>
+                <div class="font-black text-sm ${isPendente ? 'text-green-700' : 'text-slate-400'}">${formatMoney(valorExibicao)}</div>
             </td>
             <td class="p-2 text-center">
                 <div class="flex items-center justify-center gap-1">
-                    <span class="px-2 py-1 rounded text-[9px] font-bold ${isPendente ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}">${statusSaldo}</span>
+                    <span class="px-2 py-1 rounded text-[9px] font-bold ${isPendente ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}">${c.status_pagamento}</span>
                 </div>
             </td>
             <td class="p-2 text-center">
                 <div class="flex items-center justify-start gap-1">
-                    <button onclick="abrirModalSaldo('${e.id}')" class="p-1.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded shadow font-bold text-[10px] flex items-center gap-1">
-                        <i data-lucide="calculator" width="12"></i> CALCULAR
-                    </button>
-                    <!--<button onclick="imprimirReciboSaldo('${e.id}')" class="p-1.5 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Gerar Recibo do Saldo">
-                        <i data-lucide="receipt" width="14"></i>
-                    </button>-->
-                    <button onclick="abrirModalDocumentos('${e.id}')" class="p-1.5 ${btnDocColor} rounded shadow" title="Contratos e Documentos">
-                        <i data-lucide="file-signature" width="14"></i>
-                    </button>
-                    <button onclick="openEquipeForm('${e.id}')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar">
-                        <i data-lucide="edit-3" width="14"></i>
-                    </button>
-                    <button onclick="toggleStatusEquipe('${e.id}', ${e.ativo !== false})" class="p-1.5 border ${e.ativo !== false ? 'border-red-200 text-red-500 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'} rounded" title="${e.ativo !== false ? 'Desativar / Demitir' : 'Reativar'}">
-                        <i data-lucide="power" width="14"></i>
-                    </button>
-                    ${wppBtn}
+                    ${botoesAcao}
                 </div>
             </td>
         `;
@@ -1743,6 +1797,17 @@ function calcularHorasTrabalhadasNoDia(entradas, saidas) {
 
 // Abre o modal de saldo para um funcionário
 function abrirModalSaldo(equipeId) {
+    // Verifica se é um terceirizado (metro) pelo ID (os IDs são UUIDs, mas podemos checar no array unificado)
+    const colaborador = getColaboradoresUnificados().find(c => c.id === equipeId);
+    if (!colaborador) return;
+    
+    if (colaborador.tipo === 'metro') {
+        // Redireciona para o modal de medição de terceirizado
+        openTercProdModal(equipeId);
+        return;
+    }
+    
+    // Lógica original para diaristas
     const func = STATE.equipe.find(e => e.id === equipeId);
     if (!func) return;
     
@@ -1750,15 +1815,23 @@ function abrirModalSaldo(equipeId) {
     document.getElementById('saldo-modal-subtitle').innerText = 
         `${func.nome} - Diária: ${formatMoney(func.valor_diaria || 0)}`;
     
-    // Datas padrão: mês atual
     const hoje = new Date();
+    const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
     const anoAtual = hoje.getFullYear();
-    const mesAtual = hoje.getMonth() + 1;
-    const primeiroDia = new Date(anoAtual, mesAtual - 1, 1);
-    const ultimoDia = new Date(anoAtual, mesAtual, 0);
     
-    document.getElementById('saldo-filtro-inicio').value = primeiroDia.toISOString().split('T')[0];
-    document.getElementById('saldo-filtro-fim').value = ultimoDia.toISOString().split('T')[0];
+    const selectMes = document.getElementById('saldo-filtro-mes');
+    selectMes.innerHTML = '';
+    const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    meses.forEach((nome, idx) => {
+        const val = String(idx+1).padStart(2,'0');
+        const option = document.createElement('option');
+        option.value = val;
+        option.textContent = nome;
+        if (val === mesAtual) option.selected = true;
+        selectMes.appendChild(option);
+    });
+    
+    document.getElementById('saldo-filtro-ano').value = anoAtual;
     document.getElementById('saldo-filtro-status').value = 'PENDENTE';
     
     carregarTabelaSaldo();
@@ -1766,18 +1839,14 @@ function abrirModalSaldo(equipeId) {
     lucide.createIcons();
 }
 
-      function aplicarFiltroSaldo() {
-          carregarTabelaSaldo();
-      }
-
 function fecharModalSaldo() {
     document.getElementById('modal-saldo-ponto').classList.add('hidden');
 }
 
 function carregarTabelaSaldo() {
     const funcId = document.getElementById('saldo-equipe-id').value;
-    const dataInicio = document.getElementById('saldo-filtro-inicio').value;
-    const dataFim = document.getElementById('saldo-filtro-fim').value;
+    const mes = document.getElementById('saldo-filtro-mes').value;
+    const ano = document.getElementById('saldo-filtro-ano').value;
     const statusFiltro = document.getElementById('saldo-filtro-status').value;
     
     const func = STATE.equipe.find(e => e.id === funcId);
@@ -1788,13 +1857,11 @@ function carregarTabelaSaldo() {
         p.status === 'VALIDADO'
     );
     
-    // Filtro por intervalo de datas (considerando UTC)
-    if (dataInicio && dataFim) {
-        const inicio = new Date(dataInicio + 'T00:00:00Z');
-        const fim = new Date(dataFim + 'T23:59:59.999Z');
+    if (mes && ano) {
         registros = registros.filter(p => {
             const d = new Date(p.hora_registro);
-            return d >= inicio && d <= fim;
+            return (d.getUTCMonth() + 1).toString().padStart(2,'0') === mes && 
+                   d.getUTCFullYear().toString() === ano;
         });
     }
     
@@ -1803,7 +1870,7 @@ function carregarTabelaSaldo() {
     } else if (statusFiltro === 'PAGO') {
         registros = registros.filter(p => p.pago_em_fechamento === true);
     }
-  
+    
     function formatHoraUTC(isoString) {
         if (!isoString) return '--:--';
         const d = new Date(isoString);
@@ -2004,81 +2071,77 @@ async function lancarAjusteManual() {
 
 // Fecha o pagamento das diárias pendentes filtradas
 async function fecharPagamentoSaldo() {
-        const funcId = document.getElementById('saldo-equipe-id').value;
-        const dataInicio = document.getElementById('saldo-filtro-inicio').value;
-        const dataFim = document.getElementById('saldo-filtro-fim').value;
-        
-        const func = STATE.equipe.find(e => e.id === funcId);
-        if (!func) return;
-        
-        let registros = STATE.ponto_diario.filter(p => 
-            p.funcionario_id === funcId && 
-            p.status === 'VALIDADO' &&
-            !p.pago_em_fechamento
-        );
-        
-        // Filtro por intervalo de datas
-        if (dataInicio && dataFim) {
-            const inicio = new Date(dataInicio + 'T00:00:00Z');
-            const fim = new Date(dataFim + 'T23:59:59.999Z');
-            registros = registros.filter(p => {
-                const d = new Date(p.hora_registro);
-                return d >= inicio && d <= fim;
-            });
-        }
-        
-        if (registros.length === 0) {
-            return showToast('Nenhum registro pendente no período para fechar.', true);
-        }
-        
-        const totalDiarias = calcularTotalDiariasDosRegistros(registros);
-        const valorTotal = totalDiarias * parseFloat(func.valor_diaria || 0);
-        
-        // Formata o período para exibição
-        const dataIniFormat = dataInicio.split('-').reverse().join('/');
-        const dataFimFormat = dataFim.split('-').reverse().join('/');
-        const periodoStr = `${dataIniFormat} a ${dataFimFormat}`;
-        
-        if (!confirm(`Fechar pagamento de ${totalDiarias.toFixed(2)} diárias (${periodoStr}) no valor de ${formatMoney(valorTotal)}?`)) return;
-        
-        showLoading(true);
-        
-        // 1. Criar lançamento financeiro (despesa) PENDENTE
-        const descricao = `Pagamento de ponto - ${func.nome} - Período ${periodoStr}`;
-        const { error: errFin } = await sb.from('jsp_logs').insert([{
-            id: getNextIdNum(STATE.logs).toString(),
-            obra_id: func.obra_atual_id ? parseInt(func.obra_atual_id) : null,
-            tipo: 'despesa',
-            produto_nome: descricao,
-            valor_total: valorTotal,
-            data: new Date().toISOString(),
-            vencimento: new Date().toISOString(),
-            status_financeiro: 'PENDENTE',
-            categoria: 'Mão de Obra',
-            observacao: `Fechamento de ponto - Funcionário: ${func.nome} - Total diárias: ${totalDiarias.toFixed(2)}`
-        }]);
-        
-        if (errFin) {
-            showLoading(false);
-            return showToast('Erro ao gerar despesa: ' + errFin.message, true);
-        }
-        
-        // 2. Marcar registros como pagos
-        const ids = registros.map(r => r.id);
-        const { error: errPonto } = await sb.from('jsp_ponto_diario')
-            .update({ pago_em_fechamento: true })
-            .in('id', ids);
-        
-        if (errPonto) {
-            showLoading(false);
-            return showToast('Erro ao atualizar registros: ' + errPonto.message, true);
-        }
-        
-        await loadData();
-        fecharModalSaldo();
-        renderEquipe();
-        showToast('Pagamento fechado! Despesa lançada como pendente.');
+    const funcId = document.getElementById('saldo-equipe-id').value;
+    const mes = document.getElementById('saldo-filtro-mes').value;
+    const ano = document.getElementById('saldo-filtro-ano').value;
+    
+    const func = STATE.equipe.find(e => e.id === funcId);
+    if (!func) return;
+    
+    // Obtém os registros pendentes conforme filtro atual
+    let registros = STATE.ponto_diario.filter(p => 
+        p.funcionario_id === funcId && 
+        p.status === 'VALIDADO' &&
+        !p.pago_em_fechamento
+    );
+    
+    // Aplica filtro de período
+    if (mes && ano) {
+        registros = registros.filter(p => {
+            const d = new Date(p.hora_registro);
+            return (d.getUTCMonth() + 1).toString().padStart(2,'0') === mes && 
+                   d.getUTCFullYear().toString() === ano;
+        });
     }
+    
+    if (registros.length === 0) {
+        return showToast('Nenhum registro pendente para fechar.', true);
+    }
+    
+    // Calcula total de diárias
+    const totalDiarias = calcularTotalDiariasDosRegistros(registros);
+    const valorTotal = totalDiarias * parseFloat(func.valor_diaria || 0);
+    
+    if (!confirm(`Fechar pagamento de ${totalDiarias.toFixed(2)} diárias no valor de ${formatMoney(valorTotal)}?`)) return;
+    
+    showLoading(true);
+    
+    // 1. Criar lançamento financeiro (despesa) PENDENTE
+    const descricao = `Pagamento de ponto - ${func.nome} - Período ${mes}/${ano}`;
+    const { error: errFin } = await sb.from('jsp_logs').insert([{
+        id: getNextIdNum(STATE.logs).toString(),
+        obra_id: func.obra_atual_id ? parseInt(func.obra_atual_id) : null,
+        tipo: 'despesa',
+        produto_nome: descricao,
+        valor_total: valorTotal,
+        data: new Date().toISOString(),
+        vencimento: new Date().toISOString(),
+        status_financeiro: 'PENDENTE',
+        categoria: 'Mão de Obra',
+        observacao: `Fechamento de ponto - Funcionário: ${func.nome} - Total diárias: ${totalDiarias.toFixed(2)}`
+    }]);
+    
+    if (errFin) {
+        showLoading(false);
+        return showToast('Erro ao gerar despesa: ' + errFin.message, true);
+    }
+    
+    // 2. Marcar registros como pagos
+    const ids = registros.map(r => r.id);
+    const { error: errPonto } = await sb.from('jsp_ponto_diario')
+        .update({ pago_em_fechamento: true })
+        .in('id', ids);
+    
+    if (errPonto) {
+        showLoading(false);
+        return showToast('Erro ao atualizar registros: ' + errPonto.message, true);
+    }
+    
+    await loadData();
+    fecharModalSaldo();
+    renderEquipe(); // Atualiza a lista principal
+    showToast('Pagamento fechado! Despesa lançada como pendente.');
+}
 
 // Função auxiliar para calcular total de diárias a partir de um array de registros
 function calcularTotalDiariasDosRegistros(registros) {
@@ -2109,8 +2172,8 @@ function calcularTotalDiariasDosRegistros(registros) {
 function imprimirExtratoSaldo() {
     const funcId = document.getElementById('saldo-equipe-id').value;
     const func = STATE.equipe.find(e => e.id === funcId);
-    const dataInicio = document.getElementById('saldo-filtro-inicio').value;
-    const dataFim = document.getElementById('saldo-filtro-fim').value;
+    const mes = document.getElementById('saldo-filtro-mes').value;
+    const ano = document.getElementById('saldo-filtro-ano').value;
     const statusFiltro = document.getElementById('saldo-filtro-status').value;
     const totalDiarias = document.getElementById('saldo-total-diarias').innerText;
     const valorTotal = document.getElementById('saldo-total-valor').innerText;
@@ -2126,9 +2189,7 @@ function imprimirExtratoSaldo() {
         };
     });
     
-    const dataIniFormat = dataInicio.split('-').reverse().join('/');
-    const dataFimFormat = dataFim.split('-').reverse().join('/');
-    const periodoStr = `${dataIniFormat} a ${dataFimFormat}`;
+    const nomeMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][parseInt(mes)-1] || mes;
     const hoje = new Date().toLocaleDateString('pt-BR');
     
     let html = `
@@ -2138,13 +2199,21 @@ function imprimirExtratoSaldo() {
                 <div style="text-align: right;">
                     <h1 style="margin: 0; font-size: 24px; font-weight: 900;">EXTRATO DE PONTO</h1>
                     <p style="margin: 5px 0 0 0; font-size: 14px; color: #1d4ed8; font-weight: bold;">${func.nome}</p>
-                    <p style="margin: 2px 0 0 0; font-size: 12px;">Período: ${periodoStr} | Diária: ${formatMoney(func.valor_diaria)}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 12px;">Período: ${nomeMes}/${ano} | Diária: ${formatMoney(func.valor_diaria)}</p>
                     <p style="margin: 2px 0 0 0; font-size: 11px;">Status: ${statusFiltro}</p>
                 </div>
             </div>
-            <!-- restante do HTML da tabela igual, apenas substituindo a referência ao período -->
-            ...
-        </div>
+            
+            <table width="100%" style="border-collapse: collapse; margin-bottom: 30px; font-size: 13px;">
+                <thead>
+                    <tr style="background-color: #f1f5f9;">
+                        <th style="padding: 12px; border: 1px solid #cbd5e1;">Data</th>
+                        <th style="padding: 12px; border: 1px solid #cbd5e1;">Horários</th>
+                        <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Diária</th>
+                        <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
     `;
     
     linhas.forEach(l => {
@@ -2903,143 +2972,171 @@ function abrirModalFolhaPagamento() {
 }
 
 function executarImpressaoFolha() {
-      const statusFinanceiro = document.getElementById('folha-status').value;
-      const obraFiltro = document.getElementById('folha-obra').value;
-      const statusFunc = document.getElementById('folha-status-func').value;
-      const mes = document.getElementById('folha-mes').value;
-      const ano = document.getElementById('folha-ano').value;
-      
-      // Filtra funcionários
-      let funcionarios = STATE.equipe.filter(e => {
-          // Filtro de status
-          if (statusFunc === 'true' && e.ativo === false) return false;
-          if (statusFunc === 'false' && e.ativo !== false) return false;
-          return true;
-      });
-      
-      if (obraFiltro) {
-          funcionarios = funcionarios.filter(e => e.obra_atual_id == obraFiltro);
-      }
-      
-      // Para cada funcionário, busca as despesas de ponto PENDENTES ou PAGAS conforme filtro
-      const dadosFolha = [];
-      
-      funcionarios.forEach(func => {
-          // Busca todas as despesas de ponto deste funcionário
-          const despesasPonto = STATE.logs.filter(l => 
-              l.tipo === 'despesa' &&
-              l.produto_nome && l.produto_nome.includes(`Pagamento de ponto - ${func.nome}`) &&
-              (statusFinanceiro === 'TODOS' || l.status_financeiro === statusFinanceiro)
-          );
-          
-          // Se houver filtro de mês/ano, filtra também
-          let despesasFiltradas = despesasPonto;
-          if (mes && ano) {
-              despesasFiltradas = despesasPonto.filter(d => {
-                  const match = d.produto_nome.match(/Período (\d{2})\/(\d{4})/);
-                  return match && match[1] === mes && match[2] === ano;
-              });
-          }
-          
-          if (despesasFiltradas.length === 0) return;
-          
-          // Soma os valores e diárias (extrai das observações)
-          let totalValor = 0;
-          let totalDiarias = 0;
-          despesasFiltradas.forEach(d => {
-              totalValor += parseFloat(d.valor_total);
-              // Tenta extrair o total de diárias da observação
-              const diariasMatch = d.observacao?.match(/Total diárias: ([\d.]+)/);
-              if (diariasMatch) {
-                  totalDiarias += parseFloat(diariasMatch[1]);
-              }
-          });
-          
-          dadosFolha.push({
-              nome: func.nome,
-              pix: func.chave_pix || 'Não informado',
-              categoria: func.categoria || 'Geral',
-              diaria: parseFloat(func.valor_diaria || 0),
-              totalDiarias: totalDiarias,
-              valorTotal: totalValor
-          });
-      });
-      
-      if (dadosFolha.length === 0) {
-          return showToast('Nenhum registro encontrado com os filtros selecionados.', true);
-      }
-      
-      // Ordena por nome
-      dadosFolha.sort((a, b) => a.nome.localeCompare(b.nome));
-      
-      const nomeMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][parseInt(mes)-1] || 'Todos';
-      const hoje = new Date().toLocaleDateString('pt-BR');
-      
-      let html = `
-          <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; padding: 30px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 15px; margin-bottom: 25px;">
-                  <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 70px;" />
-                  <div style="text-align: right;">
-                      <h1 style="margin: 0; font-size: 24px; font-weight: 900;">FOLHA DE PAGAMENTOS</h1>
-                      <p style="margin: 5px 0 0 0; font-size: 14px; color: #1d4ed8; font-weight: bold;">Status: ${statusFinanceiro === 'PENDENTE' ? 'PENDENTES (NÃO BAIXADOS)' : statusFinanceiro}</p>
-                      <p style="margin: 2px 0 0 0; font-size: 12px;">Período: ${mes ? nomeMes + '/' + ano : 'Todos'}</p>
-                  </div>
-              </div>
-              
-              <table width="100%" style="border-collapse: collapse; margin-bottom: 30px; font-size: 12px;">
-                  <thead>
-                      <tr style="background-color: #f1f5f9;">
-                          <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: left;">Funcionário / PIX</th>
-                          <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Diária Base</th>
-                          <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Total Diárias</th>
-                          <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: right;">Valor Total</th>
-                      </tr>
-                  </thead>
-                  <tbody>
-      `;
-      
-      let somaGeral = 0;
-      dadosFolha.forEach(d => {
-          somaGeral += d.valorTotal;
-          html += `
-              <tr>
-                  <td style="padding: 10px; border: 1px solid #cbd5e1;">
-                      <div style="font-weight: 800;">${d.nome.toUpperCase()}</div>
-                      <div style="font-size: 11px; color: #1d4ed8; margin-top: 4px;">
-                          <span style="color: #64748b;">PIX:</span> ${d.pix}
-                      </div>
-                      <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">${d.categoria}</div>
-                  </td>
-                  <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center;">${formatMoney(d.diaria)}</td>
-                  <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold;">${d.totalDiarias.toFixed(2)}</td>
-                  <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: right; font-weight: 900; color: #1d4ed8;">${formatMoney(d.valorTotal)}</td>
-              </tr>
-          `;
-      });
-      
-      html += `
-                  </tbody>
-              </table>
-              
-              <div style="display: flex; justify-content: flex-end; margin-bottom: 40px;">
-                  <div style="width: 300px; background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px;">
-                      <div style="display: flex; justify-content: space-between;">
-                          <span style="font-weight: bold;">TOTAL GERAL:</span>
-                          <span style="font-weight: 900; color: #b91c1c; font-size: 18px;">${formatMoney(somaGeral)}</span>
-                      </div>
-                  </div>
-              </div>
-              
-              <div style="text-align: center; font-size: 10px; color: #94a3b8; margin-top: 40px; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
-                  Emitido em ${hoje} - RV Negócios
-              </div>
-          </div>
-      `;
-      
-      document.getElementById('modal-folha-pagamento').classList.add('hidden');
-      document.getElementById('print-area').innerHTML = html;
-      setTimeout(() => window.print(), 300);
-  }
+    const statusFinanceiro = document.getElementById('folha-status').value;
+    const obraFiltro = document.getElementById('folha-obra').value;
+    const statusFunc = document.getElementById('folha-status-func').value;
+    const mes = document.getElementById('folha-mes').value;
+    const ano = document.getElementById('folha-ano').value;
+    
+    const colaboradores = getColaboradoresUnificados();
+    
+    // Filtros
+    let filtrados = colaboradores.filter(c => {
+        if (statusFunc === 'true' && c.ativo === false) return false;
+        if (statusFunc === 'false' && c.ativo !== false) return false;
+        if (obraFiltro && c.obra_atual_id != obraFiltro) return false;
+        return true;
+    });
+    
+    const dadosFolha = [];
+    
+    filtrados.forEach(c => {
+        let valorTotal = 0;
+        let quantidade = 0;
+        
+        if (c.tipo === 'diaria') {
+            // Busca despesas de ponto
+            const despesasPonto = STATE.logs.filter(l => 
+                l.tipo === 'despesa' &&
+                l.produto_nome && l.produto_nome.includes(`Pagamento de ponto - ${c.nome}`) &&
+                (statusFinanceiro === 'TODOS' || l.status_financeiro === statusFinanceiro)
+            );
+            
+            let despesasFiltradas = despesasPonto;
+            if (mes && ano) {
+                despesasFiltradas = despesasPonto.filter(d => {
+                    const match = d.produto_nome.match(/Período (\d{2})\/(\d{4})/);
+                    return match && match[1] === mes && match[2] === ano;
+                });
+            }
+            
+            if (despesasFiltradas.length === 0) return;
+            
+            let totalValor = 0;
+            let totalDiarias = 0;
+            despesasFiltradas.forEach(d => {
+                totalValor += parseFloat(d.valor_total);
+                const diariasMatch = d.observacao?.match(/Total diárias: ([\d.]+)/);
+                if (diariasMatch) totalDiarias += parseFloat(diariasMatch[1]);
+            });
+            
+            if (totalValor > 0) {
+                dadosFolha.push({
+                    nome: c.nome,
+                    pix: c.chave_pix || 'Não informado',
+                    tipo: 'Diária',
+                    unidade: 'dias',
+                    quantidade: totalDiarias,
+                    valor_unitario: c.valor_base,
+                    valor_total: totalValor
+                });
+            }
+        } else {
+            // Terceirizados (metro)
+            const producao = STATE.producao_terc.filter(p => {
+                if (p.terceirizado_id !== c.id) return false;
+                const dt = new Date(p.data_registro);
+                const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
+                const a = String(dt.getUTCFullYear());
+                return m === mes && a === ano;
+            });
+            
+            const metros = statusFinanceiro === 'PAGO' 
+                ? producao.filter(p => p.status === 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros), 0)
+                : (statusFinanceiro === 'PENDENTE' 
+                    ? producao.filter(p => p.status !== 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros), 0)
+                    : producao.reduce((acc, p) => acc + parseFloat(p.metros), 0));
+            
+            if (metros === 0) return;
+            
+            const valorTotalMetro = metros * c.valor_base;
+            dadosFolha.push({
+                nome: c.nome,
+                pix: c.chave_pix || 'Não informado',
+                tipo: 'Metro',
+                unidade: 'm',
+                quantidade: metros,
+                valor_unitario: c.valor_base,
+                valor_total: valorTotalMetro
+            });
+        }
+    });
+    
+    if (dadosFolha.length === 0) {
+        return showToast('Nenhum registro encontrado com os filtros selecionados.', true);
+    }
+    
+    dadosFolha.sort((a, b) => a.nome.localeCompare(b.nome));
+    
+    const nomeMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][parseInt(mes)-1] || 'Todos';
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    
+    let html = `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; padding: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 15px; margin-bottom: 25px;">
+                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 70px;" />
+                <div style="text-align: right;">
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 900;">FOLHA DE PAGAMENTOS</h1>
+                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #1d4ed8; font-weight: bold;">Status: ${statusFinanceiro === 'PENDENTE' ? 'PENDENTES (NÃO BAIXADOS)' : statusFinanceiro}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 12px;">Período: ${mes ? nomeMes + '/' + ano : 'Todos'}</p>
+                </div>
+            </div>
+            
+            <table width="100%" style="border-collapse: collapse; margin-bottom: 30px; font-size: 12px;">
+                <thead>
+                    <tr style="background-color: #f1f5f9;">
+                        <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: left;">Funcionário / PIX</th>
+                        <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Tipo</th>
+                        <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Quantidade</th>
+                        <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Valor Unit.</th>
+                        <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: right;">Valor Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    let somaGeral = 0;
+    dadosFolha.forEach(d => {
+        somaGeral += d.valor_total;
+        html += `
+            <tr>
+                <td style="padding: 10px; border: 1px solid #cbd5e1;">
+                    <div style="font-weight: 800;">${d.nome.toUpperCase()}</div>
+                    <div style="font-size: 11px; color: #1d4ed8; margin-top: 4px;">
+                        <span style="color: #64748b;">PIX:</span> ${d.pix}
+                    </div>
+                </td>
+                <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center;">${d.tipo}</td>
+                <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold;">${d.quantidade.toFixed(2)} ${d.unidade}</td>
+                <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center;">${formatMoney(d.valor_unitario)}</td>
+                <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: right; font-weight: 900; color: #1d4ed8;">${formatMoney(d.valor_total)}</td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+            
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 40px;">
+                <div style="width: 300px; background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="font-weight: bold;">TOTAL GERAL:</span>
+                        <span style="font-weight: 900; color: #b91c1c; font-size: 18px;">${formatMoney(somaGeral)}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; font-size: 10px; color: #94a3b8; margin-top: 40px; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
+                Emitido em ${hoje} - RV Negócios
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('modal-folha-pagamento').classList.add('hidden');
+    document.getElementById('print-area').innerHTML = html;
+    setTimeout(() => window.print(), 300);
+}
 
         function imprimirRecibo(equipe_id, ponto_id) {
             const mes = document.getElementById('eqp-filter-mes').value;
@@ -5840,6 +5937,38 @@ async function excluirRegistroAdmin(registroId) {
         showLoading(false);
     }
 }
+
+      // NOVA FUNÇÃO - Unifica equipe própria e terceirizados para exibição
+function getColaboradoresUnificados() {
+    const equipe = STATE.equipe.map(e => ({
+        ...e,
+        tipo: 'diaria',
+        valor_base: parseFloat(e.valor_diaria || 0),
+        unidade: 'dias',
+        table_origin: 'equipe'
+    }));
+
+    const terceirizados = STATE.terceirizados.map(t => ({
+        ...t,
+        nome: t.nome, // já existe, mas garantindo
+        categoria: 'Terceirizado (Metro)',
+        telefone: t.telefone,
+        cpf: t.cpf_cnpj, // padronizando para compatibilidade
+        rg: t.rg,
+        endereco: t.endereco,
+        chave_pix: t.chave_pix,
+        obra_atual_id: t.obra_atual_id,
+        ativo: t.ativo,
+        tipo: 'metro',
+        valor_base: parseFloat(t.valor_metro || 0),
+        unidade: 'metros',
+        table_origin: 'terceirizados'
+    }));
+
+    return [...equipe, ...terceirizados];
+}
+
+      
       
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
