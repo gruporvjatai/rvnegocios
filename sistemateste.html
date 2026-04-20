@@ -4015,17 +4015,7 @@ function executarImpressaoFolha() {
         return;
     }
 
-    // ========== DATAS (mantidas no topo como original) ==========
-    const dataAtual = new Date();
-    const dia = dataAtual.getDate();
-    const meses = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
-    const mes = meses[dataAtual.getMonth()];
-    const ano = dataAtual.getFullYear();
-    const dataExtenso = `${dia} de ${mes} de ${ano}`;
-    const hojeCurto = dataAtual.toLocaleDateString('pt-BR');
-
-    // ========== 🔍 NOVA LÓGICA: BUSCA UNIFICADA ==========
-    // Tenta primeiro em equipe, depois em terceirizados
+    // 🔍 Busca unificada (equipe ou terceirizado)
     let pessoa = STATE.equipe.find(x => x.id == id);
     let isTerc = false;
     if (!pessoa) {
@@ -4038,33 +4028,48 @@ function executarImpressaoFolha() {
         return;
     }
 
-    // ========== MAPEAMENTO DE CAMPOS (compatível com os templates) ==========
-    const nome = pessoa.nome || '';
-    const cpf = isTerc ? (pessoa.cpf_cnpj || '') : (pessoa.cpf || '');
-    const rg = pessoa.rg || '';
-    const endereco = pessoa.endereco || '';
-    const categoria = isTerc ? 'TERCEIRIZADO (METRO)' : (pessoa.categoria || 'Geral');
-    const valorDiaria = isTerc ? parseFloat(pessoa.valor_metro || 0) : parseFloat(pessoa.valor_diaria || 0);
-    const diariaTexto = formatMoney(valorDiaria);
-    const matricula = isTerc ? 'TERC' : (pessoa.matricula || '000');
+    // 📦 Mapeia os campos para um objeto 'e' compatível com o restante da função
+    const e = {
+        nome: pessoa.nome || '',
+        cpf: isTerc ? (pessoa.cpf_cnpj || '') : (pessoa.cpf || ''),
+        rg: pessoa.rg || '',
+        endereco: pessoa.endereco || '',
+        categoria: isTerc ? 'TERCEIRIZADO (METRO)' : (pessoa.categoria || 'Geral'),
+        valor_diaria: isTerc ? parseFloat(pessoa.valor_metro || 0) : parseFloat(pessoa.valor_diaria || 0),
+        matricula: isTerc ? 'TERC' : (pessoa.matricula || '000'),
+        obra_atual_id: pessoa.obra_atual_id,
+        data_contrato: !isTerc ? pessoa.data_contrato : null,
+        contrato_assinado: pessoa.contrato_assinado || false  // se houver
+    };
+
+    // ========== DAQUI PARA BAIXO, O CÓDIGO PERMANECE EXATAMENTE IGUAL ==========
+    const dataAtual = new Date();
+    const dia = dataAtual.getDate();
+    const meses = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+    const mes = meses[dataAtual.getMonth()];
+    const ano = dataAtual.getFullYear();
+    const dataExtenso = `${dia} de ${mes} de ${ano}`;
+    const hojeCurto = dataAtual.toLocaleDateString('pt-BR');
     
-    const obraVinculada = STATE.obras.find(o => o.id == pessoa.obra_atual_id);
+    // Busca a obra
+    const obraVinculada = STATE.obras.find(o => o.id == e.obra_atual_id);
     const enderecoObra = obraVinculada ? (obraVinculada.endereco || obraVinculada.nome) : 'Endereço não informado / Obra não definida';
+    const diariaTexto = formatMoney(e.valor_diaria || 0);
+    const matricula = parseFloat(e.matricula || 0);
 
-    // Data de início (apenas equipe possui data_contrato; terceirizado fica em branco)
-    let dataInicioContrato = "____/____/______";
-    if (!isTerc && pessoa.data_contrato) {
-        const p = pessoa.data_contrato.split('-');
-        dataInicioContrato = `${p[2]}/${p[1]}/${p[0]}`;
-    }
-
-    // Data de término (baseada na obra)
+    // Data de término (da obra)
     let dataTerminoContrato = "____/____/______";
     if (obraVinculada && obraVinculada.data_termino) {
         const partes = obraVinculada.data_termino.split('-');
         dataTerminoContrato = `${partes[2]}/${partes[1]}/${partes[0]}`;
     }
-    // ---------------------------------------------------------
+
+    // Data de início (apenas equipe tem data_contrato)
+    let dataInicioContrato = "____/____/______";
+    if (e.data_contrato) {
+        const p = e.data_contrato.split('-');
+        dataInicioContrato = `${p[2]}/${p[1]}/${p[0]}`;
+    }    // ---------------------------------------------------------
     
     let titulo = "";
     let corpoTexto = "";
