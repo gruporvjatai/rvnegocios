@@ -1837,53 +1837,57 @@
 
       
       function imprimirReciboDoModal() {
-            const funcId = document.getElementById('saldo-equipe-id').value;
-            const func = STATE.equipe.find(e => e.id === funcId);
-            if (!func) return;
-            
-            const totalDiarias = document.getElementById('saldo-total-diarias').innerText;
-            const valorTotal = document.getElementById('saldo-total-valor').innerText;
-            const mes = document.getElementById('saldo-filtro-mes').value;
-            const ano = document.getElementById('saldo-filtro-ano').value;
-            const hoje = new Date().toLocaleDateString('pt-BR');
-            
-            const html = `
-                <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
-                        <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
-                        <div style="text-align: right;">
-                            <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO SOBRE DIÁRIAS</h1>
-                            <p style="margin: 5px 0 0 0; font-size: 18px; color: #1d4ed8; font-weight: bold;">VALOR: ${valorTotal}</p>
-                        </div>
-                    </div>
-                    
-                    <div style="font-size: 14px; line-height: 1.8; text-align: justify; margin-bottom: 40px;">
-                        Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA</strong> (CNPJ: 61.893.912/0001-24), a importância de <strong>${valorTotal}</strong>, 
-                        referente ao pagamento de diárias trabalhadas no período de <strong>${mes}/${ano}</strong>, totalizando <strong>${totalDiarias} dias</strong> 
-                        com a diária acordada em <strong>${formatMoney(func.valor_diaria)}</strong>.
-                    </div>
-                    
-                    <div style="font-size: 14px; margin-bottom: 40px;">
-                        Para maior clareza, firmo(amos) o presente recibo para que produza os seus efeitos legais.
-                    </div>
-                    
-                    <div style="text-align: center; margin-bottom: 30px; font-size: 14px;">
-                        Jataí - GO, ${hoje}.
-                    </div>
-                    
-                    <div style="margin-top: 60px; display: flex; justify-content: center;">
-                        <div style="text-align: center; width: 60%; border-top: 1px solid #000; padding-top: 10px;">
-                            <strong>${func.nome.toUpperCase()}</strong><br>
-                            <span style="font-size: 12px; color: #64748b;">CPF: ${func.cpf || '_______________________'} | RG: ${func.rg || '_______________________'}</span>
-                        </div>
-                    </div>
+    const funcId = document.getElementById('saldo-equipe-id').value;
+    const func = STATE.equipe.find(e => e.id === funcId);
+    if (!func) return;
+    
+    const totalDiarias = document.getElementById('saldo-total-diarias').innerText;
+    const valorTotal = document.getElementById('saldo-total-valor').innerText;
+    const dataInicio = document.getElementById('saldo-filtro-data-inicio').value;
+    const dataFim = document.getElementById('saldo-filtro-data-fim').value;
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    
+    // Formata período
+    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+    const periodo = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
+    
+    const html = `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
+                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
+                <div style="text-align: right;">
+                    <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO SOBRE DIÁRIAS</h1>
+                    <p style="margin: 5px 0 0 0; font-size: 18px; color: #1d4ed8; font-weight: bold;">VALOR: ${valorTotal}</p>
                 </div>
-            `;
+            </div>
             
-            document.getElementById('print-area').innerHTML = html;
-            setTimeout(() => window.print(), 300);
-        }
-
+            <div style="font-size: 14px; line-height: 1.8; text-align: justify; margin-bottom: 40px;">
+                Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA</strong> (CNPJ: 61.893.912/0001-24), a importância de <strong>${valorTotal}</strong>, 
+                referente ao pagamento de diárias trabalhadas no período de <strong>${periodo}</strong>, totalizando <strong>${totalDiarias} dias</strong> 
+                com a diária acordada em <strong>${formatMoney(func.valor_diaria)}</strong>.
+            </div>
+            
+            <div style="font-size: 14px; margin-bottom: 40px;">
+                Para maior clareza, firmo(amos) o presente recibo para que produza os seus efeitos legais.
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 30px; font-size: 14px;">
+                Jataí - GO, ${hoje}.
+            </div>
+            
+            <div style="margin-top: 60px; display: flex; justify-content: center;">
+                <div style="text-align: center; width: 60%; border-top: 1px solid #000; padding-top: 10px;">
+                    <strong>${func.nome.toUpperCase()}</strong><br>
+                    <span style="font-size: 12px; color: #64748b;">CPF: ${func.cpf || '_______________________'} | RG: ${func.rg || '_______________________'}</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('print-area').innerHTML = html;
+    setTimeout(() => window.print(), 300);
+}
 
       
         // ========== NOVAS FUNÇÕES PARA SALDO DE PONTO ==========
@@ -2767,10 +2771,11 @@ async function lancarAjusteManual() {
 }
 
 // Fecha o pagamento das diárias pendentes filtradas
+// Fecha o pagamento das diárias pendentes filtradas (usando intervalo de datas)
 async function fecharPagamentoSaldo() {
     const funcId = document.getElementById('saldo-equipe-id').value;
-    const mes = document.getElementById('saldo-filtro-mes').value;
-    const ano = document.getElementById('saldo-filtro-ano').value;
+    const dataInicio = document.getElementById('saldo-filtro-data-inicio').value;
+    const dataFim = document.getElementById('saldo-filtro-data-fim').value;
     
     const func = STATE.equipe.find(e => e.id === funcId);
     if (!func) return;
@@ -2783,12 +2788,11 @@ async function fecharPagamentoSaldo() {
     );
     
     // Aplica filtro de período
-    if (mes && ano) {
-        registros = registros.filter(p => {
-            const d = new Date(p.hora_registro);
-            return (d.getUTCMonth() + 1).toString().padStart(2,'0') === mes && 
-                   d.getUTCFullYear().toString() === ano;
-        });
+    if (dataInicio) {
+        registros = registros.filter(p => p.hora_registro >= dataInicio + 'T00:00:00');
+    }
+    if (dataFim) {
+        registros = registros.filter(p => p.hora_registro <= dataFim + 'T23:59:59');
     }
     
     if (registros.length === 0) {
@@ -2799,12 +2803,17 @@ async function fecharPagamentoSaldo() {
     const totalDiarias = calcularTotalDiariasDosRegistros(registros);
     const valorTotal = totalDiarias * parseFloat(func.valor_diaria || 0);
     
+    // Formata período para descrição
+    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+    const periodoDesc = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
+    
     if (!confirm(`Fechar pagamento de ${totalDiarias.toFixed(2)} diárias no valor de ${formatMoney(valorTotal)}?`)) return;
     
     showLoading(true);
     
     // 1. Criar lançamento financeiro (despesa) PENDENTE
-    const descricao = `Pagamento de ponto - ${func.nome} - Período ${mes}/${ano}`;
+    const descricao = `Pagamento de ponto - ${func.nome} - Período ${periodoDesc}`;
     const { error: errFin } = await sb.from('jsp_logs').insert([{
         id: getNextIdNum(STATE.logs).toString(),
         obra_id: func.obra_atual_id ? parseInt(func.obra_atual_id) : null,
@@ -2839,7 +2848,7 @@ async function fecharPagamentoSaldo() {
     renderEquipe(); // Atualiza a lista principal
     showToast('Pagamento fechado! Despesa lançada como pendente.');
 }
-
+      
 // Função auxiliar para calcular total de diárias a partir de um array de registros
 function calcularTotalDiariasDosRegistros(registros) {
     const porDia = {};
@@ -2866,11 +2875,12 @@ function calcularTotalDiariasDosRegistros(registros) {
 }
 
 // Impressão do extrato filtrado
+// Impressão do extrato filtrado (usando intervalo de datas)
 function imprimirExtratoSaldo() {
     const funcId = document.getElementById('saldo-equipe-id').value;
     const func = STATE.equipe.find(e => e.id === funcId);
-    const mes = document.getElementById('saldo-filtro-mes').value;
-    const ano = document.getElementById('saldo-filtro-ano').value;
+    const dataInicio = document.getElementById('saldo-filtro-data-inicio').value;
+    const dataFim = document.getElementById('saldo-filtro-data-fim').value;
     const statusFiltro = document.getElementById('saldo-filtro-status').value;
     const totalDiarias = document.getElementById('saldo-total-diarias').innerText;
     const valorTotal = document.getElementById('saldo-total-valor').innerText;
@@ -2886,7 +2896,11 @@ function imprimirExtratoSaldo() {
         };
     });
     
-    const nomeMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][parseInt(mes)-1] || mes;
+    // Formata período para exibição
+    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : 'Início';
+    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'Fim';
+    const periodoExibicao = `${dataIniFormatada} a ${dataFimFormatada}`;
+    
     const hoje = new Date().toLocaleDateString('pt-BR');
     
     let html = `
@@ -2896,7 +2910,7 @@ function imprimirExtratoSaldo() {
                 <div style="text-align: right;">
                     <h1 style="margin: 0; font-size: 24px; font-weight: 900;">EXTRATO DE PONTO</h1>
                     <p style="margin: 5px 0 0 0; font-size: 14px; color: #1d4ed8; font-weight: bold;">${func.nome}</p>
-                    <p style="margin: 2px 0 0 0; font-size: 12px;">Período: ${nomeMes}/${ano} | Diária: ${formatMoney(func.valor_diaria)}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 12px;">Período: ${periodoExibicao} | Diária: ${formatMoney(func.valor_diaria)}</p>
                     <p style="margin: 2px 0 0 0; font-size: 11px;">Status: ${statusFiltro}</p>
                 </div>
             </div>
