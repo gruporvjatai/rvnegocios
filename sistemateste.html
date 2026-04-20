@@ -256,60 +256,46 @@
         </div>
       </div>
 
-      <div id="view-equipe" class="hidden-section">
-          <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
-              <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i data-lucide="users" class="text-blue-700"></i> Equipe </h2>
-              <div class="flex gap-2 w-full md:w-auto">
-                  <button onclick="abrirModalFolhaPagamento()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="printer" class="w-4 h-4"></i> Imprimir Folha</button>
-                  <button onclick="openEquipeForm()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Cadastrar Membro</button>
+      <div class="mb-4 bg-white p-4 rounded-xl shadow-sm border grid grid-cols-1 md:grid-cols-6 gap-4">
+          <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
+              <select id="eqp-filter-status" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
+                  <option value="true">Ativos</option>
+                  <option value="false">Desativados</option>
+                  <option value="todos">Todos</option>
+              </select>
+          </div>
+          <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tipo</label>
+              <select id="eqp-filter-tipo" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
+                  <option value="todos">Todos</option>
+                  <option value="diaria">Diária</option>
+                  <option value="metro">Metro </option>
+              </select>
+          </div>
+          <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Início</label>
+              <input type="date" id="eqp-filter-data-inicio" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
+          </div>
+          <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Fim</label>
+              <input type="date" id="eqp-filter-data-fim" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
+          </div>
+          <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Filtrar por Obra</label>
+              <select id="eqp-obra-filter" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
+                  <option value="">Todas as Obras</option>
+              </select>
+          </div>
+          <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Buscar Nome</label>
+              <div class="relative w-full">
+                  <i data-lucide="search" class="absolute left-3 top-2.5 text-slate-400 w-5 h-5"></i>
+                  <input type="text" id="eqp-search" placeholder="Buscar..." class="w-full pl-10 p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onkeyup="renderEquipe()">
               </div>
           </div>
-
-          <div class="mb-4 bg-white p-4 rounded-xl shadow-sm border grid grid-cols-1 md:grid-cols-6 gap-4">
-              <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
-                  <select id="eqp-filter-status" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
-                      <option value="true">Ativos</option>
-                      <option value="false">Desativados</option>
-                      <option value="todos">Todos</option>
-                  </select>
-              </div>
-              <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tipo</label>
-                  <select id="eqp-filter-tipo" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
-                      <option value="todos">Todos</option>
-                      <option value="diaria">Diária</option>
-                      <option value="metro">Metro </option>
-                  </select>
-              </div>
-              <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mês</label>
-                  <select id="eqp-filter-mes" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
-                      <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option>
-                      <option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option>
-                      <option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option>
-                      <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
-                  </select>
-              </div>
-              <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Ano</label>
-                  <input type="number" id="eqp-filter-ano" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
-              </div>
-              <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Filtrar por Obra</label>
-                  <select id="eqp-obra-filter" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
-                      <option value="">Todas as Obras</option>
-                  </select>
-              </div>
-              <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Buscar Nome</label>
-                  <div class="relative w-full">
-                      <i data-lucide="search" class="absolute left-3 top-2.5 text-slate-400 w-5 h-5"></i>
-                      <input type="text" id="eqp-search" placeholder="Buscar..." class="w-full pl-10 p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onkeyup="renderEquipe()">
-                  </div>
-              </div>
-          </div>
-        
+      </div>
+              
 
           <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
               <div class="overflow-x-auto">
@@ -584,11 +570,12 @@
             <!-- Filtros -->
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-4 flex flex-wrap gap-3 items-end">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mês/Ano</label>
-                    <div class="flex gap-2">
-                        <select id="saldo-filtro-mes" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-28" onchange="carregarTabelaSaldo()"></select>
-                        <input type="number" id="saldo-filtro-ano" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-24" placeholder="Ano" onchange="carregarTabelaSaldo()">
-                    </div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Início</label>
+                    <input type="date" id="saldo-filtro-data-inicio" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="carregarTabelaSaldo()">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Fim</label>
+                    <input type="date" id="saldo-filtro-data-fim" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="carregarTabelaSaldo()">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
@@ -1430,6 +1417,12 @@
             const hoje = new Date();
             const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
             const anoAtual = hoje.getFullYear();
+
+              const primeiroDia = `${anoAtual}-${mesAtual}-01`;
+              const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
+              const ultimoDiaStr = `${anoAtual}-${mesAtual}-${String(ultimoDia).padStart(2, '0')}`;
+              document.getElementById('eqp-filter-data-inicio').value = primeiroDia;
+              document.getElementById('eqp-filter-data-fim').value = ultimoDiaStr;
         
             // Seta defaults da Equipe
             document.getElementById('eqp-filter-mes').value = mesAtual;
@@ -1650,10 +1643,10 @@
       function renderEquipe() {
     const term = document.getElementById('eqp-search').value.toLowerCase();
     const obraFiltro = document.getElementById('eqp-obra-filter').value;
-    const mes = document.getElementById('eqp-filter-mes').value;
-    const ano = document.getElementById('eqp-filter-ano').value;
+    const dataInicio = document.getElementById('eqp-filter-data-inicio').value;
+    const dataFim = document.getElementById('eqp-filter-data-fim').value;
     const statusFiltro = document.getElementById('eqp-filter-status').value;
-    const tipoFiltro = document.getElementById('eqp-filter-tipo').value; // NOVO
+    const tipoFiltro = document.getElementById('eqp-filter-tipo').value;
     
     const list = document.getElementById('equipe-list');
     const colaboradores = getColaboradoresUnificados();
@@ -1678,25 +1671,25 @@
     
     fil.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
     
-    // Pré-calcula produção e valores para cada colaborador
+    // Pré-calcula produção e valores para cada colaborador (usando intervalo de datas)
     fil.forEach(c => {
         if (c.tipo === 'diaria') {
-            const saldo = calcularSaldoPendenteFuncionario(c.id, mes, ano);
+            const saldo = calcularSaldoPendenteFuncionarioPorPeriodo(c.id, dataInicio, dataFim);
             c.producao_mes = saldo.totalDiarias;
             c.valor_total = c.producao_mes * c.valor_base;
             c.status_pagamento = saldo.totalDiarias > 0 ? 'PENDENTE' : 'EM DIA';
         } else {
             const producao = STATE.producao_terc.filter(p => {
                 if (p.terceirizado_id !== c.id) return false;
-                const dt = new Date(p.data_registro);
-                return String(dt.getUTCMonth() + 1).padStart(2, '0') === mes && 
-                       String(dt.getUTCFullYear()) === ano;
+                if (dataInicio && p.data_registro < dataInicio) return false;
+                if (dataFim && p.data_registro > dataFim) return false;
+                return true;
             });
             const metrosPendentes = producao.filter(p => p.status !== 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros), 0);
             const metrosPagos = producao.filter(p => p.status === 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros), 0);
             c.metros_pendentes = metrosPendentes;
             c.metros_pagos = metrosPagos;
-            c.producao_mes = metrosPendentes; // para exibição principal (pendente)
+            c.producao_mes = metrosPendentes;
             c.valor_total = metrosPendentes * c.valor_base;
             c.status_pagamento = metrosPendentes > 0 ? 'PENDENTE' : 'EM DIA';
         }
@@ -1715,7 +1708,6 @@
         const isPendente = c.status_pagamento === 'PENDENTE';
         const valorExibicao = c.valor_total || 0;
         
-        // Botões de ação condicionais
         let botoesAcao = '';
         if (c.tipo === 'diaria') {
             botoesAcao = `
@@ -1733,7 +1725,7 @@
                 </button>
                 ${wppBtn}
             `;
-                } else {
+        } else {
             botoesAcao = `
                 <button onclick="abrirModalSaldoMetros('${c.id}')" class="px-2 py-1.5 bg-slate-800 text-white hover:bg-black rounded shadow font-bold text-[10px] flex items-center gap-1">
                     <i data-lucide="calculator" width="12"></i> CALCULAR
@@ -1790,6 +1782,50 @@
     lucide.createIcons();
 }
 
+
+
+      function calcularSaldoPendenteFuncionarioPorPeriodo(funcId, dataInicio, dataFim) {
+        const registros = STATE.ponto_diario.filter(p => 
+            p.funcionario_id === funcId && 
+            p.status === 'VALIDADO' &&
+            p.pago_em_fechamento === false
+        );
+        
+        let registrosFiltrados = registros;
+        if (dataInicio) {
+            registrosFiltrados = registrosFiltrados.filter(p => p.hora_registro >= dataInicio + 'T00:00:00');
+        }
+        if (dataFim) {
+            registrosFiltrados = registrosFiltrados.filter(p => p.hora_registro <= dataFim + 'T23:59:59');
+        }
+        
+        // Agrupa por dia
+        const porDia = {};
+        registrosFiltrados.forEach(p => {
+            const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+            if (!porDia[dataDia]) porDia[dataDia] = { entradas: [], saidas: [], ajustes: [] };
+            if (p.tipo === 'ENTRADA') porDia[dataDia].entradas.push(new Date(p.hora_registro));
+            else if (p.tipo === 'SAIDA') porDia[dataDia].saidas.push(new Date(p.hora_registro));
+            else if (p.tipo === 'AJUSTE_MANUAL') porDia[dataDia].ajustes.push(p);
+        });
+        
+        let totalDiarias = 0;
+        Object.values(porDia).forEach(pts => {
+            if (pts.ajustes.length > 0) {
+                totalDiarias += pts.ajustes.reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
+            } else {
+                const horas = calcularHorasTrabalhadasNoDia(pts.entradas, pts.saidas);
+                let fracao = horas / 8;
+                fracao = Math.min(1, Math.max(0, fracao));
+                totalDiarias += fracao;
+            }
+        });
+        
+        return { totalDiarias, registros: registrosFiltrados };
+    }
+
+
+      
       function imprimirReciboDoModal() {
             const funcId = document.getElementById('saldo-equipe-id').value;
             const func = STATE.equipe.find(e => e.id === funcId);
@@ -1935,7 +1971,6 @@ function abrirModalSaldo(equipeId) {
         return;
     }
     
-    // Lógica original para diaristas
     const func = STATE.equipe.find(e => e.id === equipeId);
     if (!func) return;
     
@@ -1943,23 +1978,16 @@ function abrirModalSaldo(equipeId) {
     document.getElementById('saldo-modal-subtitle').innerText = 
         `${func.nome} - Diária: ${formatMoney(func.valor_diaria || 0)}`;
     
+    // Define datas padrão: primeiro e último dia do mês atual
     const hoje = new Date();
-    const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
     const anoAtual = hoje.getFullYear();
+    const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
+    const primeiroDia = `${anoAtual}-${mesAtual}-01`;
+    const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
+    const ultimoDiaStr = `${anoAtual}-${mesAtual}-${String(ultimoDia).padStart(2, '0')}`;
     
-    const selectMes = document.getElementById('saldo-filtro-mes');
-    selectMes.innerHTML = '';
-    const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    meses.forEach((nome, idx) => {
-        const val = String(idx+1).padStart(2,'0');
-        const option = document.createElement('option');
-        option.value = val;
-        option.textContent = nome;
-        if (val === mesAtual) option.selected = true;
-        selectMes.appendChild(option);
-    });
-    
-    document.getElementById('saldo-filtro-ano').value = anoAtual;
+    document.getElementById('saldo-filtro-data-inicio').value = primeiroDia;
+    document.getElementById('saldo-filtro-data-fim').value = ultimoDiaStr;
     document.getElementById('saldo-filtro-status').value = 'PENDENTE';
     
     carregarTabelaSaldo();
@@ -1973,8 +2001,8 @@ function fecharModalSaldo() {
 
 function carregarTabelaSaldo() {
     const funcId = document.getElementById('saldo-equipe-id').value;
-    const mes = document.getElementById('saldo-filtro-mes').value;
-    const ano = document.getElementById('saldo-filtro-ano').value;
+    const dataInicio = document.getElementById('saldo-filtro-data-inicio').value;
+    const dataFim = document.getElementById('saldo-filtro-data-fim').value;
     const statusFiltro = document.getElementById('saldo-filtro-status').value;
     
     const func = STATE.equipe.find(e => e.id === funcId);
@@ -1985,12 +2013,11 @@ function carregarTabelaSaldo() {
         p.status === 'VALIDADO'
     );
     
-    if (mes && ano) {
-        registros = registros.filter(p => {
-            const d = new Date(p.hora_registro);
-            return (d.getUTCMonth() + 1).toString().padStart(2,'0') === mes && 
-                   d.getUTCFullYear().toString() === ano;
-        });
+    if (dataInicio) {
+        registros = registros.filter(p => p.hora_registro >= dataInicio + 'T00:00:00');
+    }
+    if (dataFim) {
+        registros = registros.filter(p => p.hora_registro <= dataFim + 'T23:59:59');
     }
     
     if (statusFiltro === 'PENDENTE') {
@@ -2054,29 +2081,24 @@ function carregarTabelaSaldo() {
             const entradas = pts.entradas.sort();
             const saidas = pts.saidas.sort();
             
-            // Combina todos os pontos em ordem cronológica
             const pontos = [
                 ...entradas.map(e => ({ tipo: 'E', hora: e })),
                 ...saidas.map(s => ({ tipo: 'S', hora: s }))
             ].sort((a, b) => new Date(a.hora) - new Date(b.hora));
             
             let totalMinutos = 0;
-            // Soma os minutos de cada par ENTRADA -> SAÍDA consecutivo
             for (let i = 0; i < pontos.length - 1; i++) {
                 if (pontos[i].tipo === 'E' && pontos[i+1].tipo === 'S') {
                     totalMinutos += diffMinutesUTC(pontos[i].hora, pontos[i+1].hora);
                 }
             }
             
-            // NENHUM DESCONTO DE ALMOÇO - apenas o tempo líquido entre batidas
-            
-            const JORNADA_BASE = 480; // 8 horas em minutos
+            const JORNADA_BASE = 480;
             const TOLERANCIA = 20;
             
             let minutosConsiderados = totalMinutos;
             const falta = JORNADA_BASE - totalMinutos;
             
-            // Se faltou mais que a tolerância, usa o valor real; senão, considera diária cheia
             if (falta > TOLERANCIA) {
                 minutosConsiderados = totalMinutos;
             } else {
@@ -2101,16 +2123,16 @@ function carregarTabelaSaldo() {
             <td class="p-3 font-bold text-slate-700">${dataDia}</td>
             <td class="p-3">${horariosStr}</td>
             <td class="p-3 text-center font-black ${fracao >= 1 ? 'text-green-600' : 'text-orange-600'}">${fracao.toFixed(2)}</td>
-                       <td class="p-3 text-center">
-                            <div class="flex items-center justify-center gap-2">
-                                <span class="px-2 py-1 rounded text-[9px] font-bold ${pts.registros[0].pago_em_fechamento ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">
-                                    ${pts.registros[0].pago_em_fechamento ? 'PAGO' : 'PENDENTE'}
-                                </span>
-                                <button onclick="abrirModalAdminRegistros('${funcId}')" class="text-slate-400 hover:text-indigo-600 p-1 rounded transition" title="Acesso Restrito (Senha)">
-                                    <i data-lucide="shield-alert" class="w-4 h-4"></i>
-                                </button>
-                            </div>
-                        </td>
+            <td class="p-3 text-center">
+                <div class="flex items-center justify-center gap-2">
+                    <span class="px-2 py-1 rounded text-[9px] font-bold ${pts.registros[0].pago_em_fechamento ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">
+                        ${pts.registros[0].pago_em_fechamento ? 'PAGO' : 'PENDENTE'}
+                    </span>
+                    <button onclick="abrirModalAdminRegistros('${funcId}')" class="text-slate-400 hover:text-indigo-600 p-1 rounded transition" title="Acesso Restrito (Senha)">
+                        <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </td>
         `;
         tbody.appendChild(tr);
     });
@@ -2121,7 +2143,6 @@ function carregarTabelaSaldo() {
     
     lucide.createIcons();
 }
-
 
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
