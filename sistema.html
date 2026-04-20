@@ -677,8 +677,132 @@
 </div>
 
       <!-- MFECHAENTO DE MODAL DE POTNO============================================================================= -->
+
+
+      <!--  MODAL DE METRO============================================================================= -->
+
+
+
+
+      <!-- MODAL DE SALDO DE METROS (TERCEIRIZADOS) -->
+<div id="modal-saldo-metros" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[95vh] overflow-hidden">
+        <div class="bg-indigo-600 p-4 text-white flex justify-between items-center shrink-0">
+            <div>
+                <h3 class="font-black text-lg flex items-center gap-2">
+                    <i data-lucide="ruler" class="w-5 h-5"></i> Saldo de Metros
+                </h3>
+                <p id="saldo-metros-subtitle" class="text-xs font-medium opacity-90 mt-0.5"></p>
+            </div>
+            <button onclick="fecharModalSaldoMetros()" class="text-white hover:bg-white/20 p-2 rounded-lg transition">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <div class="p-5 overflow-y-auto flex-1 bg-slate-50">
+            <input type="hidden" id="saldo-terc-id">
+            
+            <!-- Filtros -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-4 flex flex-wrap gap-3 items-end">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mês/Ano</label>
+                    <div class="flex gap-2">
+                        <select id="saldo-metros-filtro-mes" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-28" onchange="carregarTabelaSaldoMetros()"></select>
+                        <input type="number" id="saldo-metros-filtro-ano" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-24" placeholder="Ano" onchange="carregarTabelaSaldoMetros()">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
+                    <select id="saldo-metros-filtro-status" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-36" onchange="carregarTabelaSaldoMetros()">
+                        <option value="PENDENTE" selected>Pendentes</option>
+                        <option value="PAGO">Já Pagos</option>
+                        <option value="TODOS">Todos</option>
+                    </select>
+                </div>
+                <div class="flex-1"></div>
+                <button onclick="imprimirExtratoSaldoMetros()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow">
+                    <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Extrato
+                </button>
+            </div>
+
+            <!-- Tabela de registros -->
+            <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-100 text-slate-600 border-b">
+                        <tr>
+                            <th class="p-3 text-left text-xs font-bold uppercase">Data</th>
+                            <th class="p-3 text-center text-xs font-bold uppercase">Metros</th>
+                            <th class="p-3 text-center text-xs font-bold uppercase">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="saldo-metros-tabela-body" class="divide-y"></tbody>
+                </table>
+                <div id="saldo-metros-sem-registros" class="p-8 text-center text-slate-400 font-medium hidden">
+                    Nenhum registro encontrado para os filtros.
+                </div>
+            </div>
+
+            <!-- Lançamento de ajuste manual (metros) -->
+            <div class="mt-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <h4 class="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-600"></i> Lançar Ajuste Manual (Metros)
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Data</label>
+                        <input type="date" id="ajuste-metros-data" class="w-full p-2 border rounded-lg text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Metros</label>
+                        <input type="number" step="0.01" min="0" id="ajuste-metros-valor" class="w-full p-2 border rounded-lg text-sm font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Justificativa</label>
+                        <input type="text" id="ajuste-metros-justificativa" placeholder="Ex: Ajuste manual" class="w-full p-2 border rounded-lg text-sm">
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="lancarAjusteManualMetros()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold flex items-center justify-center gap-1">
+                            <i data-lucide="save" class="w-4 h-4"></i> Lançar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rodapé com totais e ações -->
+        <div class="p-4 bg-white border-t flex justify-between items-center shrink-0">
+            <div>
+                <span class="text-sm font-bold text-slate-500">Total de Metros Pendentes:</span>
+                <span id="saldo-metros-total-metros" class="text-2xl font-black text-indigo-700 ml-2">0.00</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-right">
+                    <div class="text-xs text-slate-500 font-bold uppercase">Valor a Pagar</div>
+                    <div id="saldo-metros-total-valor" class="text-2xl font-black text-green-600">R$ 0,00</div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="imprimirReciboMetrosDoModal()" class="bg-slate-700 hover:bg-slate-800 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2" title="Imprimir recibo com os dados filtrados">
+                        <i data-lucide="receipt" class="w-5 h-5"></i> Recibo
+                    </button>
+                    <button onclick="estornarUltimoFechamentoMetros()" class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2" title="Estornar o último fechamento de metros">
+                        <i data-lucide="rotate-ccw" class="w-5 h-5"></i> Estornar Último
+                    </button>
+                    <button onclick="fecharPagamentoSaldoMetros()" class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2">
+                        <i data-lucide="check-circle" class="w-5 h-5"></i> Conferido
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+      
       
 
+
+      
+      
+<!-- FECHAENTO DE MODAL DE METRO============================================================================= -->
       <div id="fornecedor-form-container" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
         <form onsubmit="saveFornecedor(event)" class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
             <h3 class="font-bold text-lg mb-4">Dados do Fornecedor</h3>
@@ -1609,13 +1733,20 @@
                 </button>
                 ${wppBtn}
             `;
-        } else {
+                } else {
             botoesAcao = `
-                <button onclick="openTercProdModal('${c.id}')" class="px-2 py-1.5 bg-slate-800 text-white hover:bg-black rounded shadow font-bold text-[10px] flex items-center gap-1">
-                    <i data-lucide="ruler" width="12"></i> MEDIÇÃO
+                <button onclick="abrirModalSaldoMetros('${c.id}')" class="px-2 py-1.5 bg-slate-800 text-white hover:bg-black rounded shadow font-bold text-[10px] flex items-center gap-1">
+                    <i data-lucide="calculator" width="12"></i> CALCULAR
                 </button>
-                ${c.valor_total > 0 ? `<button onclick="baixarPagamentoTerc('${c.id}')" class="px-2 py-1.5 bg-green-600 text-white hover:bg-green-700 rounded shadow font-bold text-[10px] flex items-center gap-1"><i data-lucide="check-circle" width="12"></i> BAIXAR</button>` : ''}
-                <button onclick="openEquipeForm('${c.id}', 'terceirizado')" class="p-1.5 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded flex items-center justify-center"><i data-lucide="edit-3" width="14"></i></button>
+                <button onclick="abrirModalDocumentosTerc('${c.id}')" class="p-1.5 bg-slate-800 text-white rounded shadow" title="Contratos">
+                    <i data-lucide="file-signature" width="14"></i>
+                </button>
+                <button onclick="openEquipeForm('${c.id}', 'terceirizado')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar">
+                    <i data-lucide="edit-3" width="14"></i>
+                </button>
+                <button onclick="toggleStatusTerceirizado('${c.id}', ${c.ativo !== false})" class="p-1.5 border ${c.ativo !== false ? 'border-red-200 text-red-500 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'} rounded" title="${c.ativo !== false ? 'Desativar' : 'Reativar'}">
+                    <i data-lucide="power" width="14"></i>
+                </button>
                 ${wppBtn}
             `;
         }
@@ -1796,13 +1927,11 @@ function calcularHorasTrabalhadasNoDia(entradas, saidas) {
 
 // Abre o modal de saldo para um funcionário
 function abrirModalSaldo(equipeId) {
-    // Verifica se é um terceirizado (metro) pelo ID (os IDs são UUIDs, mas podemos checar no array unificado)
     const colaborador = getColaboradoresUnificados().find(c => c.id === equipeId);
     if (!colaborador) return;
     
     if (colaborador.tipo === 'metro') {
-        // Redireciona para o modal de medição de terceirizado
-        openTercProdModal(equipeId);
+        abrirModalSaldoMetros(equipeId);
         return;
     }
     
@@ -1992,6 +2121,544 @@ function carregarTabelaSaldo() {
     
     lucide.createIcons();
 }
+
+
+      /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+      // ========== FUNÇÕES PARA SALDO DE METROS (TERCEIRIZADOS) ==========
+
+function abrirModalSaldoMetros(tercId) {
+    const terc = STATE.terceirizados.find(t => t.id === tercId);
+    if (!terc) return;
+    
+    document.getElementById('saldo-terc-id').value = tercId;
+    document.getElementById('saldo-metros-subtitle').innerText = 
+        `${terc.nome} - Valor do Metro: ${formatMoney(terc.valor_metro || 0)}`;
+    
+    const hoje = new Date();
+    const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
+    const anoAtual = hoje.getFullYear();
+    
+    const selectMes = document.getElementById('saldo-metros-filtro-mes');
+    selectMes.innerHTML = '';
+    const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    meses.forEach((nome, idx) => {
+        const val = String(idx+1).padStart(2,'0');
+        const option = document.createElement('option');
+        option.value = val;
+        option.textContent = nome;
+        if (val === mesAtual) option.selected = true;
+        selectMes.appendChild(option);
+    });
+    
+    document.getElementById('saldo-metros-filtro-ano').value = anoAtual;
+    document.getElementById('saldo-metros-filtro-status').value = 'PENDENTE';
+    
+    carregarTabelaSaldoMetros();
+    document.getElementById('modal-saldo-metros').classList.remove('hidden');
+    lucide.createIcons();
+}
+
+function fecharModalSaldoMetros() {
+    document.getElementById('modal-saldo-metros').classList.add('hidden');
+}
+
+function carregarTabelaSaldoMetros() {
+    const tercId = document.getElementById('saldo-terc-id').value;
+    const mes = document.getElementById('saldo-metros-filtro-mes').value;
+    const ano = document.getElementById('saldo-metros-filtro-ano').value;
+    const statusFiltro = document.getElementById('saldo-metros-filtro-status').value;
+    
+    const terc = STATE.terceirizados.find(t => t.id === tercId);
+    if (!terc) return;
+    
+    let registros = STATE.producao_terc.filter(p => p.terceirizado_id === tercId);
+    
+    if (mes && ano) {
+        registros = registros.filter(p => {
+            const d = new Date(p.data_registro);
+            return (d.getUTCMonth() + 1).toString().padStart(2,'0') === mes && 
+                   d.getUTCFullYear().toString() === ano;
+        });
+    }
+    
+    if (statusFiltro === 'PENDENTE') {
+        registros = registros.filter(p => p.status !== 'PAGO');
+    } else if (statusFiltro === 'PAGO') {
+        registros = registros.filter(p => p.status === 'PAGO');
+    }
+    
+    const tbody = document.getElementById('saldo-metros-tabela-body');
+    tbody.innerHTML = '';
+    let totalMetros = 0;
+    
+    const registrosOrdenados = registros.sort((a,b) => new Date(a.data_registro) - new Date(b.data_registro));
+    
+    if (registrosOrdenados.length === 0) {
+        document.getElementById('saldo-metros-sem-registros').classList.remove('hidden');
+        document.getElementById('saldo-metros-total-metros').innerText = '0.00';
+        document.getElementById('saldo-metros-total-valor').innerText = formatMoney(0);
+        return;
+    }
+    document.getElementById('saldo-metros-sem-registros').classList.add('hidden');
+    
+    registrosOrdenados.forEach(prod => {
+        const metros = parseFloat(prod.metros) || 0;
+        totalMetros += metros;
+        const dataStr = new Date(prod.data_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+        const status = prod.status === 'PAGO' ? 'PAGO' : 'PENDENTE';
+        
+        const tr = document.createElement('tr');
+        tr.className = 'border-b hover:bg-slate-50';
+        tr.innerHTML = `
+          <td class="p-3 font-bold text-slate-700">${dataStr}</td>
+          <td class="p-3 text-center font-black text-indigo-600">${metros.toFixed(2)} m</td>
+          <td class="p-3 text-center">
+              <div class="flex items-center justify-center gap-2">
+                  <span class="px-2 py-1 rounded text-[9px] font-bold ${status === 'PAGO' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">${status}</span>
+                  <button onclick="abrirModalAdminRegistrosMetros('${tercId}')" class="text-slate-400 hover:text-indigo-600 p-1 rounded transition" title="Acesso Restrito (Senha)">
+                      <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                  </button>
+              </div>
+          </td>
+      `;
+        tbody.appendChild(tr);
+    });
+    
+    document.getElementById('saldo-metros-total-metros').innerText = totalMetros.toFixed(2);
+    const valorTotal = totalMetros * parseFloat(terc.valor_metro || 0);
+    document.getElementById('saldo-metros-total-valor').innerText = formatMoney(valorTotal);
+    
+    lucide.createIcons();
+}
+
+
+      // ========== MODAL ADMINISTRATIVO DE METROS ==========
+async function abrirModalAdminRegistrosMetros(tercId) {
+    const senha = prompt("🔐 Acesso Restrito. Digite a senha mestra:");
+    if (senha !== "147258369") {
+        alert("Senha incorreta. Acesso negado.");
+        return;
+    }
+    
+    const terc = STATE.terceirizados.find(t => t.id === tercId);
+    if (!terc) return;
+    
+    document.getElementById('admin-func-id').value = tercId;
+    document.getElementById('admin-registros-subtitle').innerText = 
+        `${terc.nome} - Todos os registros de metragem`;
+    
+    await carregarListaAdminRegistrosMetros(tercId);
+    document.getElementById('modal-admin-registros').classList.remove('hidden');
+    lucide.createIcons();
+}
+
+async function carregarListaAdminRegistrosMetros(tercId) {
+    const tbody = document.getElementById('admin-registros-tbody');
+    tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center">Carregando...</td></tr>';
+    
+    const { data, error } = await sb
+        .from('jsp_producao_terc')
+        .select('*')
+        .eq('terceirizado_id', tercId)
+        .order('data_registro', { ascending: false });
+    
+    if (error) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">Erro: ${error.message}</td></tr>`;
+        return;
+    }
+    
+    if (!data || data.length === 0) {
+        document.getElementById('admin-sem-registros').classList.remove('hidden');
+        tbody.innerHTML = '';
+        return;
+    }
+    document.getElementById('admin-sem-registros').classList.add('hidden');
+    
+    // Ajusta cabeçalhos da tabela para Metros
+    const thead = document.querySelector('#modal-admin-registros thead tr');
+    if (thead) {
+        thead.innerHTML = `
+            <th class="p-3 text-left text-xs font-bold uppercase">Data</th>
+            <th class="p-3 text-center text-xs font-bold uppercase">Metros</th>
+            <th class="p-3 text-center text-xs font-bold uppercase">Status</th>
+            <th class="p-3 text-center text-xs font-bold uppercase w-20">Ações</th>
+        `;
+    }
+    
+    tbody.innerHTML = data.map(reg => {
+        const dataStr = new Date(reg.data_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+        const statusBadge = reg.status === 'PAGO'
+            ? '<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">PAGO</span>'
+            : '<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold">PENDENTE</span>';
+        
+        return `
+            <tr class="border-b hover:bg-slate-50">
+                <td class="p-3 text-xs font-mono">${dataStr}</td>
+                <td class="p-3 text-center font-bold">${parseFloat(reg.metros).toFixed(2)} m</td>
+                <td class="p-3 text-center">${statusBadge}</td>
+                <td class="p-3 text-center">
+                    <button onclick="excluirRegistroAdminMetros('${reg.id}')" class="text-red-500 hover:text-red-700 p-1 rounded transition" title="Excluir permanentemente">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+    
+    lucide.createIcons();
+}
+
+async function excluirRegistroAdminMetros(registroId) {
+    if (!confirm("Tem certeza que deseja excluir este registro permanentemente? Esta ação não pode ser desfeita.")) {
+        return;
+    }
+    
+    showLoading(true);
+    try {
+        const { error } = await sb.from('jsp_producao_terc').delete().eq('id', registroId);
+        if (error) throw error;
+        showToast("Registro excluído com sucesso.");
+        
+        const tercId = document.getElementById('admin-func-id').value;
+        await carregarListaAdminRegistrosMetros(tercId);
+        // Se o modal de saldo metros estiver aberto, recarrega a tabela principal também
+        if (!document.getElementById('modal-saldo-metros').classList.contains('hidden')) {
+            await loadData(); // recarrega STATE.producao_terc
+            carregarTabelaSaldoMetros();
+        }
+    } catch (err) {
+        showToast("Erro ao excluir: " + err.message, true);
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function lancarAjusteManualMetros() {
+    const tercId = document.getElementById('saldo-terc-id').value;
+    const data = document.getElementById('ajuste-metros-data').value;
+    const metros = parseFloat(document.getElementById('ajuste-metros-valor').value);
+    const justificativa = document.getElementById('ajuste-metros-justificativa').value;
+    
+    if (!data || isNaN(metros) || metros <= 0) {
+        return showToast('Preencha data e metragem válida.', true);
+    }
+    
+    const terc = STATE.terceirizados.find(t => t.id === tercId);
+    if (!terc || !terc.obra_atual_id) {
+        return showToast('Terceirizado sem obra vinculada.', true);
+    }
+    
+    showLoading(true);
+    
+    const payload = {
+        id: crypto.randomUUID(),
+        terceirizado_id: tercId,
+        obra_id: terc.obra_atual_id,
+        data_registro: data,
+        metros: metros,
+        status: 'PENDENTE',
+        observacao: justificativa || 'Ajuste manual'
+    };
+    
+    const { error } = await sb.from('jsp_producao_terc').insert([payload]);
+    if (error) {
+        showLoading(false);
+        return showToast('Erro ao lançar ajuste: ' + error.message, true);
+    }
+    
+    await loadData();
+    carregarTabelaSaldoMetros();
+    showToast('Ajuste lançado com sucesso!');
+}
+
+async function fecharPagamentoSaldoMetros() {
+    const tercId = document.getElementById('saldo-terc-id').value;
+    const mes = document.getElementById('saldo-metros-filtro-mes').value;
+    const ano = document.getElementById('saldo-metros-filtro-ano').value;
+    
+    const terc = STATE.terceirizados.find(t => t.id === tercId);
+    if (!terc) return;
+    
+    let registros = STATE.producao_terc.filter(p => 
+        p.terceirizado_id === tercId && p.status !== 'PAGO'
+    );
+    
+    if (mes && ano) {
+        registros = registros.filter(p => {
+            const d = new Date(p.data_registro);
+            return (d.getUTCMonth() + 1).toString().padStart(2,'0') === mes && 
+                   d.getUTCFullYear().toString() === ano;
+        });
+    }
+    
+    if (registros.length === 0) {
+        return showToast('Nenhum registro pendente para fechar.', true);
+    }
+    
+    const totalMetros = registros.reduce((sum, r) => sum + parseFloat(r.metros), 0);
+    const valorTotal = totalMetros * parseFloat(terc.valor_metro || 0);
+    
+    if (!confirm(`Fechar pagamento de ${totalMetros.toFixed(2)} metros no valor de ${formatMoney(valorTotal)}?`)) return;
+    
+    showLoading(true);
+    
+    // 1. Criar lançamento financeiro (despesa) PENDENTE
+    const descricao = `Pagamento de produção - ${terc.nome} - Período ${mes}/${ano}`;
+    const { error: errFin } = await sb.from('jsp_logs').insert([{
+        id: getNextIdNum(STATE.logs).toString(),
+        obra_id: terc.obra_atual_id ? parseInt(terc.obra_atual_id) : null,
+        tipo: 'despesa',
+        produto_nome: descricao,
+        valor_total: valorTotal,
+        data: new Date().toISOString(),
+        vencimento: new Date().toISOString(),
+        status_financeiro: 'PENDENTE',
+        categoria: 'Mão de Obra (Terceirizado)',
+        observacao: `Fechamento de produção - Terceirizado: ${terc.nome} - Total metros: ${totalMetros.toFixed(2)}`
+    }]);
+    
+    if (errFin) {
+        showLoading(false);
+        return showToast('Erro ao gerar despesa: ' + errFin.message, true);
+    }
+    
+    // 2. Marcar registros como pagos
+    const ids = registros.map(r => r.id);
+    const { error: errProd } = await sb.from('jsp_producao_terc')
+        .update({ status: 'PAGO' })
+        .in('id', ids);
+    
+    if (errProd) {
+        showLoading(false);
+        return showToast('Erro ao atualizar registros: ' + errProd.message, true);
+    }
+    
+    await loadData();
+    fecharModalSaldoMetros();
+    renderEquipe();
+    showToast('Pagamento fechado! Despesa lançada como pendente.');
+}
+
+async function estornarUltimoFechamentoMetros() {
+    const tercId = document.getElementById('saldo-terc-id').value;
+    const terc = STATE.terceirizados.find(t => t.id === tercId);
+    if (!terc) return;
+
+    // Busca a despesa mais recente gerada para este terceirizado
+    const despesas = STATE.logs.filter(l => 
+        l.tipo === 'despesa' &&
+        l.produto_nome && l.produto_nome.includes(`Pagamento de produção - ${terc.nome}`) &&
+        (l.status_financeiro === 'PENDENTE' || l.status_financeiro === 'PAGO')
+    ).sort((a, b) => new Date(b.data) - new Date(a.data));
+
+    if (despesas.length === 0) {
+        return showToast('Nenhum pagamento de produção encontrado para estornar.', true);
+    }
+
+    const ultimaDespesa = despesas[0];
+    
+    let mesAno = null;
+    const match = ultimaDespesa.produto_nome.match(/Período (\d{2})\/(\d{4})/);
+    if (match) {
+        mesAno = { mes: match[1], ano: match[2] };
+    }
+
+    let confirmMsg = `Estornar o pagamento de ${formatMoney(ultimaDespesa.valor_total)} (${ultimaDespesa.status_financeiro})?`;
+    if (mesAno) confirmMsg += `\nPeríodo: ${mesAno.mes}/${mesAno.ano}`;
+    confirmMsg += `\n\nOs registros de produção voltarão a ficar pendentes.`;
+    
+    if (!confirm(confirmMsg)) return;
+
+    showLoading(true);
+
+    // 1. Cancelar a despesa no financeiro
+    const { error: errFin } = await sb.from('jsp_logs')
+        .update({ status_financeiro: 'CANCELADO' })
+        .eq('id', ultimaDespesa.id)
+        .eq('tipo', 'despesa');
+
+    if (errFin) {
+        showLoading(false);
+        return showToast('Erro ao cancelar despesa: ' + errFin.message, true);
+    }
+
+    // 2. Reverter marcação de pago nos registros de produção do período
+    let query = sb.from('jsp_producao_terc')
+        .update({ status: 'PENDENTE' })
+        .eq('terceirizado_id', tercId)
+        .eq('status', 'PAGO');
+
+    if (mesAno) {
+        const { mes, ano } = mesAno;
+        const dataInicio = `${ano}-${mes}-01`;
+        const ultimoDia = new Date(ano, mes, 0).getDate();
+        const dataFim = `${ano}-${mes}-${String(ultimoDia).padStart(2, '0')}`;
+        query = query.gte('data_registro', dataInicio).lte('data_registro', dataFim);
+    }
+
+    const { error: errProd } = await query;
+
+    if (errProd) {
+        showLoading(false);
+        return showToast('Erro ao reverter registros de produção: ' + errProd.message, true);
+    }
+
+    await loadData();
+    carregarTabelaSaldoMetros();
+    renderEquipe();
+    showToast('Estorno realizado com sucesso! Despesa cancelada e registros liberados.');
+}
+
+function imprimirExtratoSaldoMetros() {
+    const tercId = document.getElementById('saldo-terc-id').value;
+    const terc = STATE.terceirizados.find(t => t.id === tercId);
+    const mes = document.getElementById('saldo-metros-filtro-mes').value;
+    const ano = document.getElementById('saldo-metros-filtro-ano').value;
+    const statusFiltro = document.getElementById('saldo-metros-filtro-status').value;
+    const totalMetros = document.getElementById('saldo-metros-total-metros').innerText;
+    const valorTotal = document.getElementById('saldo-metros-total-valor').innerText;
+    
+    const tbody = document.getElementById('saldo-metros-tabela-body');
+    const linhas = Array.from(tbody.querySelectorAll('tr')).map(tr => {
+        const tds = tr.querySelectorAll('td');
+        return {
+            data: tds[0]?.innerText || '',
+            metros: tds[1]?.innerText || '',
+            status: tds[2]?.innerText || ''
+        };
+    });
+    
+    const nomeMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][parseInt(mes)-1] || mes;
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    
+    let html = `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; padding: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 15px; margin-bottom: 25px;">
+                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 70px;" />
+                <div style="text-align: right;">
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 900;">EXTRATO DE PRODUÇÃO</h1>
+                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #1d4ed8; font-weight: bold;">${terc.nome}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 12px;">Período: ${nomeMes}/${ano} | Valor Metro: ${formatMoney(terc.valor_metro)}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 11px;">Status: ${statusFiltro}</p>
+                </div>
+            </div>
+            
+            <table width="100%" style="border-collapse: collapse; margin-bottom: 30px; font-size: 13px;">
+                <thead>
+                    <tr style="background-color: #f1f5f9;">
+                        <th style="padding: 12px; border: 1px solid #cbd5e1;">Data</th>
+                        <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Metros</th>
+                        <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    linhas.forEach(l => {
+        html += `<tr>
+            <td style="padding: 10px; border: 1px solid #cbd5e1;">${l.data}</td>
+            <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold;">${l.metros}</td>
+            <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center;">${l.status}</td>
+        </tr>`;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+            
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 40px;">
+                <div style="width: 300px; background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-weight: bold;">Total de Metros:</span>
+                        <span style="font-weight: 900; font-size: 16px;">${totalMetros}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; border-top: 1px solid #e2e8f0; padding-top: 8px;">
+                        <span style="font-weight: bold;">Valor a Pagar:</span>
+                        <span style="font-weight: 900; color: #1d4ed8; font-size: 18px;">${valorTotal}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; margin-top: 60px;">
+                <div style="text-align: center; width: 40%;">
+                    <div style="border-top: 1px solid #94a3b8; padding-top: 10px;">
+                        <strong>RV NEGÓCIOS E COMPANHIA</strong><br>
+                        <span style="font-size: 11px;">Contratante</span>
+                    </div>
+                </div>
+                <div style="text-align: center; width: 40%;">
+                    <div style="border-top: 1px solid #94a3b8; padding-top: 10px;">
+                        <strong>${terc.nome.toUpperCase()}</strong><br>
+                        <span style="font-size: 11px;">Profissional</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; font-size: 10px; color: #94a3b8; margin-top: 40px; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
+                Emitido em ${hoje} - RV Negócios
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('print-area').innerHTML = html;
+    setTimeout(() => window.print(), 300);
+}
+
+function imprimirReciboMetrosDoModal() {
+    const tercId = document.getElementById('saldo-terc-id').value;
+    const terc = STATE.terceirizados.find(t => t.id === tercId);
+    if (!terc) return;
+    
+    const totalMetros = document.getElementById('saldo-metros-total-metros').innerText;
+    const valorTotal = document.getElementById('saldo-metros-total-valor').innerText;
+    const mes = document.getElementById('saldo-metros-filtro-mes').value;
+    const ano = document.getElementById('saldo-metros-filtro-ano').value;
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    
+    const html = `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
+                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
+                <div style="text-align: right;">
+                    <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO DE PRODUÇÃO</h1>
+                    <p style="margin: 5px 0 0 0; font-size: 18px; color: #1d4ed8; font-weight: bold;">VALOR: ${valorTotal}</p>
+                </div>
+            </div>
+            
+            <div style="font-size: 14px; line-height: 1.8; text-align: justify; margin-bottom: 40px;">
+                Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA</strong> (CNPJ: 61.893.912/0001-24), a importância de <strong>${valorTotal}</strong>, 
+                referente ao pagamento de produção por metragem no período de <strong>${mes}/${ano}</strong>, totalizando <strong>${totalMetros} metros</strong> 
+                com o valor acordado de <strong>${formatMoney(terc.valor_metro)} por metro</strong>.
+            </div>
+            
+            <div style="font-size: 14px; margin-bottom: 40px;">
+                Para maior clareza, firmo(amos) o presente recibo para que produza os seus efeitos legais.
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 30px; font-size: 14px;">
+                Jataí - GO, ${hoje}.
+            </div>
+            
+            <div style="margin-top: 60px; display: flex; justify-content: center;">
+                <div style="text-align: center; width: 60%; border-top: 1px solid #000; padding-top: 10px;">
+                    <strong>${terc.nome.toUpperCase()}</strong><br>
+                    <span style="font-size: 12px; color: #64748b;">CPF/CNPJ: ${terc.cpf_cnpj || '_______________________'} | RG: ${terc.rg || '_______________________'}</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('print-area').innerHTML = html;
+    setTimeout(() => window.print(), 300);
+}
+
+
+
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
       async function excluirRegistroPonto(registroId) {
           const senha = prompt("🔐 Ação restrita. Digite a senha mestra para excluir o registro:");
@@ -3277,14 +3944,21 @@ function executarImpressaoFolha() {
         }
 
         async function marcarContratoAssinado() {
-            const id = document.getElementById('doc-equipe-id').value;
-            showLoading(true);
-            const { error } = await sb.from('jsp_equipe').update({ contrato_assinado: true }).eq('id', id);
-            if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
-            showToast("Contrato marcado como assinado com sucesso!");
-            document.getElementById('modal-docs-equipe').classList.add('hidden');
-            loadData();
-        }
+    const id = document.getElementById('doc-equipe-id').value;
+    const isTerc = STATE.terceirizados.some(t => t.id == id);
+    if (isTerc) {
+        showToast("Contrato de terceirizado em desenvolvimento.", false);
+        document.getElementById('modal-docs-equipe').classList.add('hidden');
+        return;
+    }
+    
+    showLoading(true);
+    const { error } = await sb.from('jsp_equipe').update({ contrato_assinado: true }).eq('id', id);
+    if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
+    showToast("Contrato marcado como assinado com sucesso!");
+    document.getElementById('modal-docs-equipe').classList.add('hidden');
+    loadData();
+}
 
      function imprimirDocumento() {
     const id = document.getElementById('doc-equipe-id').value;
@@ -5926,6 +6600,17 @@ async function abrirModalAdminRegistros(funcId) {
 
 function fecharModalAdminRegistros() {
     document.getElementById('modal-admin-registros').classList.add('hidden');
+    // Restaura cabeçalhos para diárias
+    const thead = document.querySelector('#modal-admin-registros thead tr');
+    if (thead) {
+        thead.innerHTML = `
+            <th class="p-3 text-left text-xs font-bold uppercase">Data/Hora</th>
+            <th class="p-3 text-left text-xs font-bold uppercase">Tipo</th>
+            <th class="p-3 text-center text-xs font-bold uppercase">Status</th>
+            <th class="p-3 text-center text-xs font-bold uppercase">Pago?</th>
+            <th class="p-3 text-center text-xs font-bold uppercase w-20">Ações</th>
+        `;
+    }
 }
 
 async function carregarListaAdminRegistros(funcId) {
@@ -6054,6 +6739,39 @@ function getColaboradoresUnificados() {
             tipoOrigem.value = 'equipe';
         }
     }
+
+      async function toggleStatusTerceirizado(id, isAtivo) {
+    const acao = isAtivo ? "DESATIVAR" : "REATIVAR";
+    if(!confirm(`Tem certeza que deseja ${acao} este terceirizado?`)) return;
+    
+    showLoading(true);
+    const { error } = await sb.from('jsp_terceirizados').update({ ativo: !isAtivo }).eq('id', id);
+    if(error) { 
+        showLoading(false); 
+        return showToast("Erro: " + error.message, true); 
+    }
+    showToast(`Status atualizado com sucesso!`); 
+    loadData();
+}
+
+
+      function abrirModalDocumentosTerc(id) {
+    const t = STATE.terceirizados.find(x => x.id == id);
+    if (!t) return;
+    
+    document.getElementById('doc-equipe-id').value = t.id;
+    document.getElementById('doc-equipe-nome').innerText = `Colaborador: ${t.nome}`;
+    
+    const btnAssinar = document.getElementById('btn-assinar-doc');
+    btnAssinar.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i> Marcar como Assinado`;
+    btnAssinar.classList.remove('bg-emerald-700', 'hover:bg-emerald-800');
+    btnAssinar.classList.add('bg-green-600', 'hover:bg-green-700');
+    btnAssinar.setAttribute('onclick', 'marcarContratoAssinadoTerc()');
+    
+    document.getElementById('modal-docs-equipe').classList.remove('hidden');
+    lucide.createIcons();
+}
+
       
       
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
