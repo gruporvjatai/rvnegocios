@@ -2214,12 +2214,17 @@ function carregarTabelaSaldoMetros() {
         const tr = document.createElement('tr');
         tr.className = 'border-b hover:bg-slate-50';
         tr.innerHTML = `
-            <td class="p-3 font-bold text-slate-700">${dataStr}</td>
-            <td class="p-3 text-center font-black text-indigo-600">${metros.toFixed(2)} m</td>
-            <td class="p-3 text-center">
-                <span class="px-2 py-1 rounded text-[9px] font-bold ${status === 'PAGO' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">${status}</span>
-            </td>
-        `;
+          <td class="p-3 font-bold text-slate-700">${dataStr}</td>
+          <td class="p-3 text-center font-black text-indigo-600">${metros.toFixed(2)} m</td>
+          <td class="p-3 text-center">
+              <div class="flex items-center justify-center gap-2">
+                  <span class="px-2 py-1 rounded text-[9px] font-bold ${status === 'PAGO' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">${status}</span>
+                  <button onclick="abrirModalAdminRegistrosMetros('${tercId}')" class="text-slate-400 hover:text-indigo-600 p-1 rounded transition" title="Acesso Restrito (Senha)">
+                      <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                  </button>
+              </div>
+          </td>
+      `;
         tbody.appendChild(tr);
     });
     
@@ -2228,6 +2233,108 @@ function carregarTabelaSaldoMetros() {
     document.getElementById('saldo-metros-total-valor').innerText = formatMoney(valorTotal);
     
     lucide.createIcons();
+}
+
+
+      // ========== MODAL ADMINISTRATIVO DE METROS ==========
+async function abrirModalAdminRegistrosMetros(tercId) {
+    const senha = prompt("🔐 Acesso Restrito. Digite a senha mestra:");
+    if (senha !== "147258369") {
+        alert("Senha incorreta. Acesso negado.");
+        return;
+    }
+    
+    const terc = STATE.terceirizados.find(t => t.id === tercId);
+    if (!terc) return;
+    
+    document.getElementById('admin-func-id').value = tercId;
+    document.getElementById('admin-registros-subtitle').innerText = 
+        `${terc.nome} - Todos os registros de metragem`;
+    
+    await carregarListaAdminRegistrosMetros(tercId);
+    document.getElementById('modal-admin-registros').classList.remove('hidden');
+    lucide.createIcons();
+}
+
+async function carregarListaAdminRegistrosMetros(tercId) {
+    const tbody = document.getElementById('admin-registros-tbody');
+    tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center">Carregando...</td></tr>';
+    
+    const { data, error } = await sb
+        .from('jsp_producao_terc')
+        .select('*')
+        .eq('terceirizado_id', tercId)
+        .order('data_registro', { ascending: false });
+    
+    if (error) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">Erro: ${error.message}</td></tr>`;
+        return;
+    }
+    
+    if (!data || data.length === 0) {
+        document.getElementById('admin-sem-registros').classList.remove('hidden');
+        tbody.innerHTML = '';
+        return;
+    }
+    document.getElementById('admin-sem-registros').classList.add('hidden');
+    
+    // Ajusta cabeçalhos da tabela para Metros
+    const thead = document.querySelector('#modal-admin-registros thead tr');
+    if (thead) {
+        thead.innerHTML = `
+            <th class="p-3 text-left text-xs font-bold uppercase">Data</th>
+            <th class="p-3 text-center text-xs font-bold uppercase">Metros</th>
+            <th class="p-3 text-center text-xs font-bold uppercase">Status</th>
+            <th class="p-3 text-center text-xs font-bold uppercase w-20">Ações</th>
+        `;
+    }
+    
+    tbody.innerHTML = data.map(reg => {
+        const dataStr = new Date(reg.data_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+        const statusBadge = reg.status === 'PAGO'
+            ? '<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">PAGO</span>'
+            : '<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold">PENDENTE</span>';
+        
+        return `
+            <tr class="border-b hover:bg-slate-50">
+                <td class="p-3 text-xs font-mono">${dataStr}</td>
+                <td class="p-3 text-center font-bold">${parseFloat(reg.metros).toFixed(2)} m</td>
+                <td class="p-3 text-center">${statusBadge}</td>
+                <td class="p-3 text-center">
+                    <button onclick="excluirRegistroAdminMetros('${reg.id}')" class="text-red-500 hover:text-red-700 p-1 rounded transition" title="Excluir permanentemente">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+    
+    lucide.createIcons();
+}
+
+async function excluirRegistroAdminMetros(registroId) {
+    if (!confirm("Tem certeza que deseja excluir este registro permanentemente? Esta ação não pode ser desfeita.")) {
+        return;
+    }
+    
+    showLoading(true);
+    try {
+        const { error } = await sb.from('jsp_producao_terc').delete().eq('id', registroId);
+        if (error) throw error;
+        showToast("Registro excluído com sucesso.");
+        
+        const tercId = document.getElementById('admin-func-id').value;
+        await carregarListaAdminRegistrosMetros(tercId);
+        // Se o modal de saldo metros estiver aberto, recarrega a tabela principal também
+        if (!document.getElementById('modal-saldo-metros').classList.contains('hidden')) {
+            await loadData(); // recarrega STATE.producao_terc
+            carregarTabelaSaldoMetros();
+        }
+    } catch (err) {
+        showToast("Erro ao excluir: " + err.message, true);
+    } finally {
+        showLoading(false);
+    }
 }
 
 async function lancarAjusteManualMetros() {
@@ -6493,6 +6600,17 @@ async function abrirModalAdminRegistros(funcId) {
 
 function fecharModalAdminRegistros() {
     document.getElementById('modal-admin-registros').classList.add('hidden');
+    // Restaura cabeçalhos para diárias
+    const thead = document.querySelector('#modal-admin-registros thead tr');
+    if (thead) {
+        thead.innerHTML = `
+            <th class="p-3 text-left text-xs font-bold uppercase">Data/Hora</th>
+            <th class="p-3 text-left text-xs font-bold uppercase">Tipo</th>
+            <th class="p-3 text-center text-xs font-bold uppercase">Status</th>
+            <th class="p-3 text-center text-xs font-bold uppercase">Pago?</th>
+            <th class="p-3 text-center text-xs font-bold uppercase w-20">Ações</th>
+        `;
+    }
 }
 
 async function carregarListaAdminRegistros(funcId) {
