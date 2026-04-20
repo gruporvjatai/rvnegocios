@@ -1418,26 +1418,32 @@
         let CURRENT_OC_ID = null; 
 
         // ====== INICIALIZAÇÃO ======
-        window.onload = function() { 
+       window.onload = function() { 
             const hoje = new Date();
             const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
             const anoAtual = hoje.getFullYear();
-
-              const primeiroDia = `${anoAtual}-${mesAtual}-01`;
-              const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
-              const ultimoDiaStr = `${anoAtual}-${mesAtual}-${String(ultimoDia).padStart(2, '0')}`;
-              document.getElementById('eqp-filter-data-inicio').value = primeiroDia;
-              document.getElementById('eqp-filter-data-fim').value = ultimoDiaStr;
         
-            // Seta defaults da Equipe
-            //document.getElementById('eqp-filter-mes').value = mesAtual;
-            //document.getElementById('eqp-filter-ano').value = anoAtual;
+            const primeiroDia = `${anoAtual}-${mesAtual}-01`;
+            const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
+            const ultimoDiaStr = `${anoAtual}-${mesAtual}-${String(ultimoDia).padStart(2, '0')}`;
+            
+            // Equipe
+            const eqpDataInicio = document.getElementById('eqp-filter-data-inicio');
+            const eqpDataFim = document.getElementById('eqp-filter-data-fim');
+            if(eqpDataInicio) eqpDataInicio.value = primeiroDia;
+            if(eqpDataFim) eqpDataFim.value = ultimoDiaStr;
         
-            // Seta defaults dos Terceirizados (Ajuste 1 e 2)
-            const fMesTerc = document.getElementById('terc-filter-mes');
-            const fAnoTerc = document.getElementById('terc-filter-ano');
-            if(fMesTerc) fMesTerc.value = mesAtual;
-            if(fAnoTerc) fAnoTerc.value = anoAtual;
+            // Terceirizados (novos campos de data)
+            const tercDataInicio = document.getElementById('terc-filter-data-inicio');
+            const tercDataFim = document.getElementById('terc-filter-data-fim');
+            if(tercDataInicio) tercDataInicio.value = primeiroDia;
+            if(tercDataFim) tercDataFim.value = ultimoDiaStr;
+        
+            // Remove as linhas antigas de mês/ano (se ainda existirem)
+            // const fMesTerc = document.getElementById('terc-filter-mes');
+            // const fAnoTerc = document.getElementById('terc-filter-ano');
+            // if(fMesTerc) fMesTerc.value = mesAtual;
+            // if(fAnoTerc) fAnoTerc.value = anoAtual;
         
             if (dadosUsuario) { showLoading(true); loadData(); }
         };
@@ -2167,29 +2173,23 @@ function abrirModalSaldoMetros(tercId) {
     document.getElementById('saldo-metros-subtitle').innerText = 
         `${terc.nome} - Valor do Metro: ${formatMoney(terc.valor_metro || 0)}`;
     
+    // Define datas padrão: primeiro e último dia do mês atual
     const hoje = new Date();
-    const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
     const anoAtual = hoje.getFullYear();
+    const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
+    const primeiroDia = `${anoAtual}-${mesAtual}-01`;
+    const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
+    const ultimoDiaStr = `${anoAtual}-${mesAtual}-${String(ultimoDia).padStart(2, '0')}`;
     
-    const selectMes = document.getElementById('saldo-metros-filtro-mes');
-    selectMes.innerHTML = '';
-    const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    meses.forEach((nome, idx) => {
-        const val = String(idx+1).padStart(2,'0');
-        const option = document.createElement('option');
-        option.value = val;
-        option.textContent = nome;
-        if (val === mesAtual) option.selected = true;
-        selectMes.appendChild(option);
-    });
-    
-    document.getElementById('saldo-metros-filtro-ano').value = anoAtual;
+    document.getElementById('saldo-metros-data-inicio').value = primeiroDia;
+    document.getElementById('saldo-metros-data-fim').value = ultimoDiaStr;
     document.getElementById('saldo-metros-filtro-status').value = 'PENDENTE';
     
     carregarTabelaSaldoMetros();
     document.getElementById('modal-saldo-metros').classList.remove('hidden');
     lucide.createIcons();
 }
+      
 
 function fecharModalSaldoMetros() {
     document.getElementById('modal-saldo-metros').classList.add('hidden');
@@ -2197,8 +2197,8 @@ function fecharModalSaldoMetros() {
 
 function carregarTabelaSaldoMetros() {
     const tercId = document.getElementById('saldo-terc-id').value;
-    const mes = document.getElementById('saldo-metros-filtro-mes').value;
-    const ano = document.getElementById('saldo-metros-filtro-ano').value;
+    const dataInicio = document.getElementById('saldo-metros-data-inicio').value;
+    const dataFim = document.getElementById('saldo-metros-data-fim').value;
     const statusFiltro = document.getElementById('saldo-metros-filtro-status').value;
     
     const terc = STATE.terceirizados.find(t => t.id === tercId);
@@ -2206,12 +2206,11 @@ function carregarTabelaSaldoMetros() {
     
     let registros = STATE.producao_terc.filter(p => p.terceirizado_id === tercId);
     
-    if (mes && ano) {
-        registros = registros.filter(p => {
-            const d = new Date(p.data_registro);
-            return (d.getUTCMonth() + 1).toString().padStart(2,'0') === mes && 
-                   d.getUTCFullYear().toString() === ano;
-        });
+    if (dataInicio) {
+        registros = registros.filter(p => p.data_registro >= dataInicio);
+    }
+    if (dataFim) {
+        registros = registros.filter(p => p.data_registro <= dataFim);
     }
     
     if (statusFiltro === 'PENDENTE') {
@@ -2406,8 +2405,8 @@ async function lancarAjusteManualMetros() {
 
 async function fecharPagamentoSaldoMetros() {
     const tercId = document.getElementById('saldo-terc-id').value;
-    const mes = document.getElementById('saldo-metros-filtro-mes').value;
-    const ano = document.getElementById('saldo-metros-filtro-ano').value;
+    const dataInicio = document.getElementById('saldo-metros-data-inicio').value;
+    const dataFim = document.getElementById('saldo-metros-data-fim').value;
     
     const terc = STATE.terceirizados.find(t => t.id === tercId);
     if (!terc) return;
@@ -2416,12 +2415,11 @@ async function fecharPagamentoSaldoMetros() {
         p.terceirizado_id === tercId && p.status !== 'PAGO'
     );
     
-    if (mes && ano) {
-        registros = registros.filter(p => {
-            const d = new Date(p.data_registro);
-            return (d.getUTCMonth() + 1).toString().padStart(2,'0') === mes && 
-                   d.getUTCFullYear().toString() === ano;
-        });
+    if (dataInicio) {
+        registros = registros.filter(p => p.data_registro >= dataInicio);
+    }
+    if (dataFim) {
+        registros = registros.filter(p => p.data_registro <= dataFim);
     }
     
     if (registros.length === 0) {
@@ -2431,12 +2429,15 @@ async function fecharPagamentoSaldoMetros() {
     const totalMetros = registros.reduce((sum, r) => sum + parseFloat(r.metros), 0);
     const valorTotal = totalMetros * parseFloat(terc.valor_metro || 0);
     
+    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+    const periodoDesc = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
+    
     if (!confirm(`Fechar pagamento de ${totalMetros.toFixed(2)} metros no valor de ${formatMoney(valorTotal)}?`)) return;
     
     showLoading(true);
     
-    // 1. Criar lançamento financeiro (despesa) PENDENTE
-    const descricao = `Pagamento de produção - ${terc.nome} - Período ${mes}/${ano}`;
+    const descricao = `Pagamento de metragem - ${terc.nome} - Período ${periodoDesc}`;
     const { error: errFin } = await sb.from('jsp_logs').insert([{
         id: getNextIdNum(STATE.logs).toString(),
         obra_id: terc.obra_atual_id ? parseInt(terc.obra_atual_id) : null,
@@ -2447,7 +2448,7 @@ async function fecharPagamentoSaldoMetros() {
         vencimento: new Date().toISOString(),
         status_financeiro: 'PENDENTE',
         categoria: 'Mão de Obra (Terceirizado)',
-        observacao: `Fechamento de produção - Terceirizado: ${terc.nome} - Total metros: ${totalMetros.toFixed(2)}`
+        observacao: `Fechamento de metragem - Terceirizado: ${terc.nome} - Total metros: ${totalMetros.toFixed(2)}`
     }]);
     
     if (errFin) {
@@ -2455,7 +2456,6 @@ async function fecharPagamentoSaldoMetros() {
         return showToast('Erro ao gerar despesa: ' + errFin.message, true);
     }
     
-    // 2. Marcar registros como pagos
     const ids = registros.map(r => r.id);
     const { error: errProd } = await sb.from('jsp_producao_terc')
         .update({ status: 'PAGO' })
@@ -2477,28 +2477,29 @@ async function estornarUltimoFechamentoMetros() {
     const terc = STATE.terceirizados.find(t => t.id === tercId);
     if (!terc) return;
 
-    // Busca a despesa mais recente gerada para este terceirizado
+    // Busca a despesa mais recente gerada para este terceirizado (metragem)
     const despesas = STATE.logs.filter(l => 
         l.tipo === 'despesa' &&
-        l.produto_nome && l.produto_nome.includes(`Pagamento de produção - ${terc.nome}`) &&
+        l.produto_nome && l.produto_nome.includes(`Pagamento de metragem - ${terc.nome}`) &&
         (l.status_financeiro === 'PENDENTE' || l.status_financeiro === 'PAGO')
     ).sort((a, b) => new Date(b.data) - new Date(a.data));
 
     if (despesas.length === 0) {
-        return showToast('Nenhum pagamento de produção encontrado para estornar.', true);
+        return showToast('Nenhum pagamento de metragem encontrado para estornar.', true);
     }
 
     const ultimaDespesa = despesas[0];
     
-    let mesAno = null;
-    const match = ultimaDespesa.produto_nome.match(/Período (\d{2})\/(\d{4})/);
+    // Extrai período da descrição (formato "Pagamento de metragem - Nome - Período dd/mm/aaaa a dd/mm/aaaa")
+    let periodo = null;
+    const match = ultimaDespesa.produto_nome.match(/Período (.*)$/);
     if (match) {
-        mesAno = { mes: match[1], ano: match[2] };
+        periodo = match[1];
     }
 
     let confirmMsg = `Estornar o pagamento de ${formatMoney(ultimaDespesa.valor_total)} (${ultimaDespesa.status_financeiro})?`;
-    if (mesAno) confirmMsg += `\nPeríodo: ${mesAno.mes}/${mesAno.ano}`;
-    confirmMsg += `\n\nOs registros de produção voltarão a ficar pendentes.`;
+    if (periodo) confirmMsg += `\nPeríodo: ${periodo}`;
+    confirmMsg += `\n\nOs registros de metragem voltarão a ficar pendentes.`;
     
     if (!confirm(confirmMsg)) return;
 
@@ -2515,38 +2516,40 @@ async function estornarUltimoFechamentoMetros() {
         return showToast('Erro ao cancelar despesa: ' + errFin.message, true);
     }
 
-    // 2. Reverter marcação de pago nos registros de produção do período
+    // 2. Reverter status PAGO para PENDENTE nos registros de produção do período
     let query = sb.from('jsp_producao_terc')
         .update({ status: 'PENDENTE' })
         .eq('terceirizado_id', tercId)
         .eq('status', 'PAGO');
 
-    if (mesAno) {
-        const { mes, ano } = mesAno;
-        const dataInicio = `${ano}-${mes}-01`;
-        const ultimoDia = new Date(ano, mes, 0).getDate();
-        const dataFim = `${ano}-${mes}-${String(ultimoDia).padStart(2, '0')}`;
-        query = query.gte('data_registro', dataInicio).lte('data_registro', dataFim);
+    if (periodo) {
+        // Tenta extrair datas do período (formato "dd/mm/aaaa a dd/mm/aaaa")
+        const partes = periodo.split(' a ');
+        if (partes.length === 2) {
+            const dataInicio = partes[0].split('/').reverse().join('-');
+            const dataFim = partes[1].split('/').reverse().join('-');
+            query = query.gte('data_registro', dataInicio).lte('data_registro', dataFim);
+        }
     }
 
     const { error: errProd } = await query;
 
     if (errProd) {
         showLoading(false);
-        return showToast('Erro ao reverter registros de produção: ' + errProd.message, true);
+        return showToast('Erro ao reverter registros de metragem: ' + errProd.message, true);
     }
 
     await loadData();
     carregarTabelaSaldoMetros();
     renderEquipe();
-    showToast('Estorno realizado com sucesso! Despesa cancelada e registros liberados.');
+    showToast('Estorno realizado com sucesso! Despesa cancelada e metragens liberadas.');
 }
 
 function imprimirExtratoSaldoMetros() {
     const tercId = document.getElementById('saldo-terc-id').value;
     const terc = STATE.terceirizados.find(t => t.id === tercId);
-    const mes = document.getElementById('saldo-metros-filtro-mes').value;
-    const ano = document.getElementById('saldo-metros-filtro-ano').value;
+    const dataInicio = document.getElementById('saldo-metros-data-inicio').value;
+    const dataFim = document.getElementById('saldo-metros-data-fim').value;
     const statusFiltro = document.getElementById('saldo-metros-filtro-status').value;
     const totalMetros = document.getElementById('saldo-metros-total-metros').innerText;
     const valorTotal = document.getElementById('saldo-metros-total-valor').innerText;
@@ -2561,7 +2564,9 @@ function imprimirExtratoSaldoMetros() {
         };
     });
     
-    const nomeMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][parseInt(mes)-1] || mes;
+    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : 'Início';
+    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'Fim';
+    const periodoExibicao = `${dataIniFormatada} a ${dataFimFormatada}`;
     const hoje = new Date().toLocaleDateString('pt-BR');
     
     let html = `
@@ -2569,9 +2574,9 @@ function imprimirExtratoSaldoMetros() {
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 15px; margin-bottom: 25px;">
                 <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 70px;" />
                 <div style="text-align: right;">
-                    <h1 style="margin: 0; font-size: 24px; font-weight: 900;">EXTRATO DE PRODUÇÃO</h1>
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 900;">EXTRATO DE METRAGEM</h1>
                     <p style="margin: 5px 0 0 0; font-size: 14px; color: #1d4ed8; font-weight: bold;">${terc.nome}</p>
-                    <p style="margin: 2px 0 0 0; font-size: 12px;">Período: ${nomeMes}/${ano} | Valor Metro: ${formatMoney(terc.valor_metro)}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 12px;">Período: ${periodoExibicao} | Valor Metro: ${formatMoney(terc.valor_metro)}</p>
                     <p style="margin: 2px 0 0 0; font-size: 11px;">Status: ${statusFiltro}</p>
                 </div>
             </div>
@@ -2644,23 +2649,27 @@ function imprimirReciboMetrosDoModal() {
     
     const totalMetros = document.getElementById('saldo-metros-total-metros').innerText;
     const valorTotal = document.getElementById('saldo-metros-total-valor').innerText;
-    const mes = document.getElementById('saldo-metros-filtro-mes').value;
-    const ano = document.getElementById('saldo-metros-filtro-ano').value;
+    const dataInicio = document.getElementById('saldo-metros-data-inicio').value;
+    const dataFim = document.getElementById('saldo-metros-data-fim').value;
     const hoje = new Date().toLocaleDateString('pt-BR');
+    
+    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+    const periodo = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
     
     const html = `
         <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
                 <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
                 <div style="text-align: right;">
-                    <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO DE PRODUÇÃO</h1>
+                    <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO DE METRAGEM</h1>
                     <p style="margin: 5px 0 0 0; font-size: 18px; color: #1d4ed8; font-weight: bold;">VALOR: ${valorTotal}</p>
                 </div>
             </div>
             
             <div style="font-size: 14px; line-height: 1.8; text-align: justify; margin-bottom: 40px;">
                 Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA</strong> (CNPJ: 61.893.912/0001-24), a importância de <strong>${valorTotal}</strong>, 
-                referente ao pagamento de produção por metragem no período de <strong>${mes}/${ano}</strong>, totalizando <strong>${totalMetros} metros</strong> 
+                referente ao pagamento de produção por metragem no período de <strong>${periodo}</strong>, totalizando <strong>${totalMetros} metros</strong> 
                 com o valor acordado de <strong>${formatMoney(terc.valor_metro)} por metro</strong>.
             </div>
             
@@ -6041,8 +6050,8 @@ function renderTerceirizados() {
     updateSelectTercObra();
     
     const term = document.getElementById('terc-search').value.toLowerCase();
-    const mes = document.getElementById('terc-filter-mes').value;
-    const ano = document.getElementById('terc-filter-ano').value;
+    const dataInicio = document.getElementById('terc-filter-data-inicio')?.value || '';
+    const dataFim = document.getElementById('terc-filter-data-fim')?.value || '';
     const statusFiltro = document.getElementById('terc-filter-status').value;
     const pagFiltro = document.getElementById('terc-filter-pagamento').value; 
     const list = document.getElementById('terc-list');
@@ -6059,28 +6068,24 @@ function renderTerceirizados() {
 
     fil.sort((a, b) => a.nome.localeCompare(b.nome));
     
-    // Processa o HTML e filtra linhas vazias
     const htmlLinhas = fil.map(t => {
         const obraAtual = STATE.obras.find(o => o.id == t.obra_atual_id);
         const nomeObra = obraAtual ? obraAtual.nome : '<span class="text-slate-400 italic font-normal">Geral</span>';
         const valorMetro = parseFloat(t.valor_metro || 0);
         
-        const producaoDoMes = STATE.producao_terc.filter(p => {
+        const producaoDoPeriodo = STATE.producao_terc.filter(p => {
             if (p.terceirizado_id !== t.id) return false;
-            const dt = new Date(p.data_registro);
-            const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
-            const a = String(dt.getUTCFullYear());
-            return m === mes && a === ano;
+            if (dataInicio && p.data_registro < dataInicio) return false;
+            if (dataFim && p.data_registro > dataFim) return false;
+            return true;
         });
 
-        const metrosPendentes = producaoDoMes.filter(p => p.status !== 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
-        const metrosPagos = producaoDoMes.filter(p => p.status === 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
+        const metrosPendentes = producaoDoPeriodo.filter(p => p.status !== 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
+        const metrosPagos = producaoDoPeriodo.filter(p => p.status === 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
         
-        // Aplica o filtro visual da tela
-        if (pagFiltro === 'pendente' && metrosPendentes === 0) return ''; // Esconde se não tem nada pendente
-        if (pagFiltro === 'pago' && metrosPagos === 0) return ''; // Esconde se não tem nada pago
+        if (pagFiltro === 'pendente' && metrosPendentes === 0) return '';
+        if (pagFiltro === 'pago' && metrosPagos === 0) return '';
       
-        
         const valorPendente = metrosPendentes * valorMetro;
         const valorPago = metrosPagos * valorMetro;
 
@@ -6125,7 +6130,7 @@ function renderTerceirizados() {
         </tr>`;
     }).join('');
     
-    list.innerHTML = htmlLinhas || `<tr><td colspan="5" class="p-8 text-center text-slate-400 font-medium">Nenhuma produção atende a este filtro no mês selecionado.</td></tr>`;
+    list.innerHTML = htmlLinhas || `<tr><td colspan="5" class="p-8 text-center text-slate-400 font-medium">Nenhuma produção atende a este filtro no período selecionado.</td></tr>`;
     lucide.createIcons();
 }
       
@@ -6202,17 +6207,15 @@ function openTercProdModal(id) {
 }
 
 function renderTercProdList(id) {
-    const mes = document.getElementById('terc-filter-mes').value;
-    const ano = document.getElementById('terc-filter-ano').value;
+    const dataInicio = document.getElementById('terc-filter-data-inicio')?.value || '';
+    const dataFim = document.getElementById('terc-filter-data-fim')?.value || '';
     const t = STATE.terceirizados.find(x => x.id == id);
     
-    // Filtra produção do mês
     let prod = STATE.producao_terc.filter(p => {
         if(p.terceirizado_id !== id) return false;
-        const dt = new Date(p.data_registro);
-        const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
-        const a = dt.getUTCFullYear();
-        return m === mes && String(a) === ano;
+        if (dataInicio && p.data_registro < dataInicio) return false;
+        if (dataFim && p.data_registro > dataFim) return false;
+        return true;
     });
 
     prod.sort((a,b) => new Date(b.data_registro) - new Date(a.data_registro));
@@ -6237,7 +6240,7 @@ function renderTercProdList(id) {
     }).join('');
 
     if(prod.length === 0) {
-        document.getElementById('prod-terc-list-body').innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-400 font-medium text-xs">Nenhuma medição neste mês.</td></tr>`;
+        document.getElementById('prod-terc-list-body').innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-400 font-medium text-xs">Nenhuma medição neste período.</td></tr>`;
     }
 
     document.getElementById('prod-terc-total-metros').innerText = totalMetros.toFixed(2);
@@ -6341,13 +6344,13 @@ async function imprimirReciboTerc(tercId) {
 
       
 function imprimirRelatorioTerc() {
-    const mes = document.getElementById('terc-filter-mes').value;
-    const ano = document.getElementById('terc-filter-ano').value;
+    const dataInicio = document.getElementById('terc-filter-data-inicio')?.value || '';
+    const dataFim = document.getElementById('terc-filter-data-fim')?.value || '';
     const buscaNome = document.getElementById('terc-search').value.toLowerCase();
     const statusFiltro = document.getElementById('terc-filter-status').value;
     const pagFiltro = document.getElementById('terc-filter-pagamento').value;
     
-    let labelFiltro = pagFiltro === 'pendente' ? 'VALORES PENDENTES A PAGAR' : (pagFiltro === 'pago' ? 'VALORES JÁ PAGOS' : 'PRODUÇÃO TOTAL DO MÊS');
+    let labelFiltro = pagFiltro === 'pendente' ? 'VALORES PENDENTES A PAGAR' : (pagFiltro === 'pago' ? 'VALORES JÁ PAGOS' : 'PRODUÇÃO TOTAL DO PERÍODO');
 
     let fil = STATE.terceirizados.filter(t => {
         const bateNome = t.nome.toLowerCase().includes(buscaNome) || (t.cpf_cnpj||'').includes(buscaNome);
@@ -6359,13 +6362,18 @@ function imprimirRelatorioTerc() {
         return bateNome && bateStatus;
     });
 
+    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : 'Início';
+    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'Fim';
+    const periodoExibicao = (dataInicio || dataFim) ? `${dataIniFormatada} a ${dataFimFormatada}` : 'Todos os períodos';
+    const hoje = new Date().toLocaleDateString('pt-BR');
+
     let htmlRelatorio = `
         <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; padding: 10px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 15px; margin-bottom: 25px;">
                 <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 55px;" />
                 <div style="text-align: right;">
                     <h2 style="margin: 0; font-size: 18px; font-weight: 900; color: #0f172a; text-transform: uppercase;">Folha de Terceirizados</h2>
-                    <p style="margin: 3px 0 0 0; font-size: 13px; color: #1d4ed8; font-weight: bold;">Competência: ${mes}/${ano}</p>
+                    <p style="margin: 3px 0 0 0; font-size: 13px; color: #1d4ed8; font-weight: bold;">Período: ${periodoExibicao}</p>
                     <p style="margin: 3px 0 0 0; font-size: 11px; color: #b91c1c; font-weight: bold;">${labelFiltro}</p>
                 </div>
             </div>
@@ -6386,16 +6394,15 @@ function imprimirRelatorioTerc() {
     let encontrouProducao = false;
 
     fil.forEach(terc => {
-        const producaoDoMes = STATE.producao_terc.filter(p => {
+        const producaoDoPeriodo = STATE.producao_terc.filter(p => {
             if (p.terceirizado_id !== terc.id) return false;
-            const dt = new Date(p.data_registro);
-            const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
-            const a = String(dt.getUTCFullYear());
-            return m === mes && a === ano;
+            if (dataInicio && p.data_registro < dataInicio) return false;
+            if (dataFim && p.data_registro > dataFim) return false;
+            return true;
         });
 
-        const metrosPendentes = producaoDoMes.filter(p => p.status !== 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
-        const metrosPagos = producaoDoMes.filter(p => p.status === 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
+        const metrosPendentes = producaoDoPeriodo.filter(p => p.status !== 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
+        const metrosPagos = producaoDoPeriodo.filter(p => p.status === 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
         
         let metrosConsiderados = 0;
         if (pagFiltro === 'pendente') metrosConsiderados = metrosPendentes;
@@ -6445,42 +6452,37 @@ function imprimirRelatorioTerc() {
     setTimeout(() => window.print(), 400);
 }
       
-        async function baixarPagamentoTerc(tercId) {
-            const mes = document.getElementById('terc-filter-mes').value;
-            const ano = document.getElementById('terc-filter-ano').value;
-            const t = STATE.terceirizados.find(x => x.id == tercId);
-        
-            if(!confirm(`Deseja dar baixa (Marcar como PAGO) em TODAS AS MEDIÇÕES PENDENTES de ${mes}/${ano} para ${t.nome}?`)) return;
-        
-            showLoading(true);
-        
-            // Mapeia apenas os IDs dos registros do mês que estão PENDENTES
-            const idsParaPagar = STATE.producao_terc.filter(p => {
-                if (p.terceirizado_id !== tercId || p.status === 'PAGO') return false;
-                
-                const dt = new Date(p.data_registro);
-                const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
-                const a = String(dt.getUTCFullYear());
-                
-                return m === mes && a === ano;
-            }).map(p => p.id);
-        
-            if (idsParaPagar.length === 0) {
-                showLoading(false);
-                return showToast("Nada pendente para pagar neste período.", true);
-            }
-        
-            const { error } = await sb.from('jsp_producao_terc')
-                .update({ status: 'PAGO' })
-                .in('id', idsParaPagar);
-        
-            if(error) { showLoading(false); return showToast("Erro ao baixar: " + error.message, true); }
-        
-            showToast(`Baixa realizada com sucesso para ${t.nome}!`);
-            await loadData(); // Recarrega os dados do Supabase
-            renderTerceirizados(); // Atualiza a tela
-        }
+       async function baixarPagamentoTerc(tercId) {
+    const dataInicio = document.getElementById('terc-filter-data-inicio')?.value || '';
+    const dataFim = document.getElementById('terc-filter-data-fim')?.value || '';
+    const t = STATE.terceirizados.find(x => x.id == tercId);
 
+    if(!confirm(`Deseja dar baixa (Marcar como PAGO) em TODAS AS MEDIÇÕES PENDENTES no período selecionado para ${t.nome}?`)) return;
+
+    showLoading(true);
+
+    const idsParaPagar = STATE.producao_terc.filter(p => {
+        if (p.terceirizado_id !== tercId || p.status === 'PAGO') return false;
+        if (dataInicio && p.data_registro < dataInicio) return false;
+        if (dataFim && p.data_registro > dataFim) return false;
+        return true;
+    }).map(p => p.id);
+
+    if (idsParaPagar.length === 0) {
+        showLoading(false);
+        return showToast("Nada pendente para pagar neste período.", true);
+    }
+
+    const { error } = await sb.from('jsp_producao_terc')
+        .update({ status: 'PAGO' })
+        .in('id', idsParaPagar);
+
+    if(error) { showLoading(false); return showToast("Erro ao baixar: " + error.message, true); }
+
+    showToast(`Baixa realizada com sucesso para ${t.nome}!`);
+    await loadData();
+    renderTerceirizados();
+}
       function imprimirReciboIndividualTerc() {
     // Pega o ID do terceirizado que está aberto no modal
     const tercId = document.getElementById('prod-terc-id').value;
