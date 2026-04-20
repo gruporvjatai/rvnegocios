@@ -257,79 +257,75 @@
       </div>
 
       <div id="view-equipe" class="hidden-section">
-          <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
-              <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i data-lucide="users" class="text-blue-700"></i> Equipe </h2>
-              <div class="flex gap-2 w-full md:w-auto">
-                  <button onclick="abrirModalFolhaPagamento()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="printer" class="w-4 h-4"></i> Imprimir Folha</button>
-                  <button onclick="openEquipeForm()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Cadastrar Membro</button>
-              </div>
-          </div>
-
-          <div class="mb-4 bg-white p-4 rounded-xl shadow-sm border grid grid-cols-1 md:grid-cols-6 gap-4">
-              <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
-                  <select id="eqp-filter-status" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
-                      <option value="true">Ativos</option>
-                      <option value="false">Desativados</option>
-                      <option value="todos">Todos</option>
-                  </select>
-              </div>
-              <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tipo</label>
-                  <select id="eqp-filter-tipo" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
-                      <option value="todos">Todos</option>
-                      <option value="diaria">Diária</option>
-                      <option value="metro">Metro </option>
-                  </select>
-              </div>
-              <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mês</label>
-                  <select id="eqp-filter-mes" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
-                      <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option>
-                      <option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option>
-                      <option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option>
-                      <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
-                  </select>
-              </div>
-              <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Ano</label>
-                  <input type="number" id="eqp-filter-ano" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
-              </div>
-              <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Filtrar por Obra</label>
-                  <select id="eqp-obra-filter" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
-                      <option value="">Todas as Obras</option>
-                  </select>
-              </div>
-              <div>
-                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Buscar Nome</label>
-                  <div class="relative w-full">
-                      <i data-lucide="search" class="absolute left-3 top-2.5 text-slate-400 w-5 h-5"></i>
-                      <input type="text" id="eqp-search" placeholder="Buscar..." class="w-full pl-10 p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onkeyup="renderEquipe()">
-                  </div>
-              </div>
-          </div>
-        
-
-          <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
-              <div class="overflow-x-auto">
-                  <table class="w-full text-sm text-left whitespace-nowrap">
-                      <thead class="bg-slate-100 text-slate-700 border-b">
-                          <tr>
-                              <th class="p-4">Funcionário / Categoria</th>
-                              <th class="p-4">Obra Vinculada</th>
-                              <th class="p-4 text-center">Diária (R$)</th>
-                              <th class="p-4 text-center">Dias Trab.</th>
-                              <th class="p-4 text-right">Total a Pagar</th>
-                              <th class="p-4 text-center">Status</th>
-                              <th class="p-4 text-center">Ações</th>
-                          </tr>
-                      </thead>
-                      <tbody id="equipe-list" class="divide-y"></tbody>
-                  </table>
-              </div>
-          </div>
-      </div>
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+            <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i data-lucide="users" class="text-blue-700"></i> Equipe </h2>
+            <div class="flex gap-2 w-full md:w-auto">
+                <button onclick="abrirModalFolhaPagamento()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="printer" class="w-4 h-4"></i> Imprimir Folha</button>
+                <button onclick="openEquipeForm()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Cadastrar Membro</button>
+            </div>
+        </div>
+    
+        <!-- FILTROS UNIFICADOS -->
+        <div class="mb-4 bg-white p-4 rounded-xl shadow-sm border grid grid-cols-1 md:grid-cols-6 gap-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
+                <select id="eqp-filter-status" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
+                    <option value="true">Ativos</option>
+                    <option value="false">Desativados</option>
+                    <option value="todos">Todos</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tipo</label>
+                <select id="eqp-filter-tipo" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
+                    <option value="todos">Todos</option>
+                    <option value="diaria">Diária</option>
+                    <option value="metro">Metro </option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Início</label>
+                <input type="date" id="eqp-filter-data-inicio" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Fim</label>
+                <input type="date" id="eqp-filter-data-fim" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Filtrar por Obra</label>
+                <select id="eqp-obra-filter" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
+                    <option value="">Todas as Obras</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Buscar Nome</label>
+                <div class="relative w-full">
+                    <i data-lucide="search" class="absolute left-3 top-2.5 text-slate-400 w-5 h-5"></i>
+                    <input type="text" id="eqp-search" placeholder="Buscar..." class="w-full pl-10 p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onkeyup="renderEquipe()">
+                </div>
+            </div>
+        </div>
+    
+        <!-- TABELA -->
+        <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left whitespace-nowrap">
+                    <thead class="bg-slate-100 text-slate-700 border-b">
+                        <tr>
+                            <th class="p-4">Funcionário / Categoria</th>
+                            <th class="p-4">Obra Vinculada</th>
+                            <th class="p-4 text-center">Diária (R$)</th>
+                            <th class="p-4 text-center">Dias Trab.</th>
+                            <th class="p-4 text-right">Total a Pagar</th>
+                            <th class="p-4 text-center">Status</th>
+                            <th class="p-4 text-center">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="equipe-list" class="divide-y"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
       <div id="view-fornecedores" class="hidden-section">
           <div class="flex justify-between items-center mb-4">
@@ -584,11 +580,12 @@
             <!-- Filtros -->
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-4 flex flex-wrap gap-3 items-end">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mês/Ano</label>
-                    <div class="flex gap-2">
-                        <select id="saldo-filtro-mes" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-28" onchange="carregarTabelaSaldo()"></select>
-                        <input type="number" id="saldo-filtro-ano" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-24" placeholder="Ano" onchange="carregarTabelaSaldo()">
-                    </div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Início</label>
+                    <input type="date" id="saldo-filtro-data-inicio" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="carregarTabelaSaldo()">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Fim</label>
+                    <input type="date" id="saldo-filtro-data-fim" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="carregarTabelaSaldo()">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
@@ -704,26 +701,27 @@
             
             <!-- Filtros -->
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-4 flex flex-wrap gap-3 items-end">
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mês/Ano</label>
-                    <div class="flex gap-2">
-                        <select id="saldo-metros-filtro-mes" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-28" onchange="carregarTabelaSaldoMetros()"></select>
-                        <input type="number" id="saldo-metros-filtro-ano" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-24" placeholder="Ano" onchange="carregarTabelaSaldoMetros()">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
-                    <select id="saldo-metros-filtro-status" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-36" onchange="carregarTabelaSaldoMetros()">
-                        <option value="PENDENTE" selected>Pendentes</option>
-                        <option value="PAGO">Já Pagos</option>
-                        <option value="TODOS">Todos</option>
-                    </select>
-                </div>
-                <div class="flex-1"></div>
-                <button onclick="imprimirExtratoSaldoMetros()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow">
-                    <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Extrato
-                </button>
-            </div>
+              <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Início</label>
+                  <input type="date" id="saldo-metros-data-inicio" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="carregarTabelaSaldoMetros()">
+              </div>
+              <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Fim</label>
+                  <input type="date" id="saldo-metros-data-fim" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="carregarTabelaSaldoMetros()">
+              </div>
+              <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
+                  <select id="saldo-metros-filtro-status" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-36" onchange="carregarTabelaSaldoMetros()">
+                      <option value="PENDENTE" selected>Pendentes</option>
+                      <option value="PAGO">Já Pagos</option>
+                      <option value="TODOS">Todos</option>
+                  </select>
+              </div>
+              <div class="flex-1"></div>
+              <button onclick="imprimirExtratoSaldoMetros()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow">
+                  <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Extrato
+              </button>
+          </div>
 
             <!-- Tabela de registros -->
             <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
@@ -1116,6 +1114,7 @@
                         <option value="" selected disabled hidden>Clique aqui para selecionar...</option>
                         <option value="contrato1">Contrato de Trabalho - Servente</option>
                         <option value="contrato2">Contrato de Trabalho - Pedreiro</option>
+                         <option value="metragem">Contrato de Trabalho - Metragem (M²)</option>
                         <option value="epi">Comprovante de Entrega de EPI's</option>
                     </select>
                 </div>
@@ -1340,19 +1339,14 @@
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mês</label>
-                        <select id="folha-mes" class="w-full p-3 border rounded-lg text-sm font-bold bg-white">
-                            <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option>
-                            <option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option>
-                            <option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option>
-                            <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
-                        </select>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Início</label>
+                        <input type="date" id="folha-data-inicio" class="w-full p-3 border rounded-lg text-sm font-bold bg-white">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Ano</label>
-                        <input type="number" id="folha-ano" class="w-full p-3 border rounded-lg text-sm font-bold bg-white" value="">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Fim</label>
+                        <input type="date" id="folha-data-fim" class="w-full p-3 border rounded-lg text-sm font-bold bg-white">
                     </div>
-                </div>
+                </div>               
             </div>
         </div>
         <div class="p-4 bg-white border-t flex justify-end gap-3 shrink-0">
@@ -1426,20 +1420,32 @@
         let CURRENT_OC_ID = null; 
 
         // ====== INICIALIZAÇÃO ======
-        window.onload = function() { 
+       window.onload = function() { 
             const hoje = new Date();
             const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
             const anoAtual = hoje.getFullYear();
         
-            // Seta defaults da Equipe
-            document.getElementById('eqp-filter-mes').value = mesAtual;
-            document.getElementById('eqp-filter-ano').value = anoAtual;
+            const primeiroDia = `${anoAtual}-${mesAtual}-01`;
+            const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
+            const ultimoDiaStr = `${anoAtual}-${mesAtual}-${String(ultimoDia).padStart(2, '0')}`;
+            
+            // Equipe
+            const eqpDataInicio = document.getElementById('eqp-filter-data-inicio');
+            const eqpDataFim = document.getElementById('eqp-filter-data-fim');
+            if(eqpDataInicio) eqpDataInicio.value = primeiroDia;
+            if(eqpDataFim) eqpDataFim.value = ultimoDiaStr;
         
-            // Seta defaults dos Terceirizados (Ajuste 1 e 2)
-            const fMesTerc = document.getElementById('terc-filter-mes');
-            const fAnoTerc = document.getElementById('terc-filter-ano');
-            if(fMesTerc) fMesTerc.value = mesAtual;
-            if(fAnoTerc) fAnoTerc.value = anoAtual;
+            // Terceirizados (novos campos de data)
+            const tercDataInicio = document.getElementById('terc-filter-data-inicio');
+            const tercDataFim = document.getElementById('terc-filter-data-fim');
+            if(tercDataInicio) tercDataInicio.value = primeiroDia;
+            if(tercDataFim) tercDataFim.value = ultimoDiaStr;
+        
+            // Remove as linhas antigas de mês/ano (se ainda existirem)
+            // const fMesTerc = document.getElementById('terc-filter-mes');
+            // const fAnoTerc = document.getElementById('terc-filter-ano');
+            // if(fMesTerc) fMesTerc.value = mesAtual;
+            // if(fAnoTerc) fAnoTerc.value = anoAtual;
         
             if (dadosUsuario) { showLoading(true); loadData(); }
         };
@@ -1650,10 +1656,10 @@
       function renderEquipe() {
     const term = document.getElementById('eqp-search').value.toLowerCase();
     const obraFiltro = document.getElementById('eqp-obra-filter').value;
-    const mes = document.getElementById('eqp-filter-mes').value;
-    const ano = document.getElementById('eqp-filter-ano').value;
+    const dataInicio = document.getElementById('eqp-filter-data-inicio').value;
+    const dataFim = document.getElementById('eqp-filter-data-fim').value;
     const statusFiltro = document.getElementById('eqp-filter-status').value;
-    const tipoFiltro = document.getElementById('eqp-filter-tipo').value; // NOVO
+    const tipoFiltro = document.getElementById('eqp-filter-tipo').value;
     
     const list = document.getElementById('equipe-list');
     const colaboradores = getColaboradoresUnificados();
@@ -1678,25 +1684,25 @@
     
     fil.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
     
-    // Pré-calcula produção e valores para cada colaborador
+    // Pré-calcula produção e valores para cada colaborador (usando intervalo de datas)
     fil.forEach(c => {
         if (c.tipo === 'diaria') {
-            const saldo = calcularSaldoPendenteFuncionario(c.id, mes, ano);
+            const saldo = calcularSaldoPendenteFuncionarioPorPeriodo(c.id, dataInicio, dataFim);
             c.producao_mes = saldo.totalDiarias;
             c.valor_total = c.producao_mes * c.valor_base;
             c.status_pagamento = saldo.totalDiarias > 0 ? 'PENDENTE' : 'EM DIA';
         } else {
             const producao = STATE.producao_terc.filter(p => {
                 if (p.terceirizado_id !== c.id) return false;
-                const dt = new Date(p.data_registro);
-                return String(dt.getUTCMonth() + 1).padStart(2, '0') === mes && 
-                       String(dt.getUTCFullYear()) === ano;
+                if (dataInicio && p.data_registro < dataInicio) return false;
+                if (dataFim && p.data_registro > dataFim) return false;
+                return true;
             });
             const metrosPendentes = producao.filter(p => p.status !== 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros), 0);
             const metrosPagos = producao.filter(p => p.status === 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros), 0);
             c.metros_pendentes = metrosPendentes;
             c.metros_pagos = metrosPagos;
-            c.producao_mes = metrosPendentes; // para exibição principal (pendente)
+            c.producao_mes = metrosPendentes;
             c.valor_total = metrosPendentes * c.valor_base;
             c.status_pagamento = metrosPendentes > 0 ? 'PENDENTE' : 'EM DIA';
         }
@@ -1715,7 +1721,6 @@
         const isPendente = c.status_pagamento === 'PENDENTE';
         const valorExibicao = c.valor_total || 0;
         
-        // Botões de ação condicionais
         let botoesAcao = '';
         if (c.tipo === 'diaria') {
             botoesAcao = `
@@ -1733,7 +1738,7 @@
                 </button>
                 ${wppBtn}
             `;
-                } else {
+        } else {
             botoesAcao = `
                 <button onclick="abrirModalSaldoMetros('${c.id}')" class="px-2 py-1.5 bg-slate-800 text-white hover:bg-black rounded shadow font-bold text-[10px] flex items-center gap-1">
                     <i data-lucide="calculator" width="12"></i> CALCULAR
@@ -1790,54 +1795,101 @@
     lucide.createIcons();
 }
 
-      function imprimirReciboDoModal() {
-            const funcId = document.getElementById('saldo-equipe-id').value;
-            const func = STATE.equipe.find(e => e.id === funcId);
-            if (!func) return;
-            
-            const totalDiarias = document.getElementById('saldo-total-diarias').innerText;
-            const valorTotal = document.getElementById('saldo-total-valor').innerText;
-            const mes = document.getElementById('saldo-filtro-mes').value;
-            const ano = document.getElementById('saldo-filtro-ano').value;
-            const hoje = new Date().toLocaleDateString('pt-BR');
-            
-            const html = `
-                <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
-                        <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
-                        <div style="text-align: right;">
-                            <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO SOBRE DIÁRIAS</h1>
-                            <p style="margin: 5px 0 0 0; font-size: 18px; color: #1d4ed8; font-weight: bold;">VALOR: ${valorTotal}</p>
-                        </div>
-                    </div>
-                    
-                    <div style="font-size: 14px; line-height: 1.8; text-align: justify; margin-bottom: 40px;">
-                        Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA</strong> (CNPJ: 61.893.912/0001-24), a importância de <strong>${valorTotal}</strong>, 
-                        referente ao pagamento de diárias trabalhadas no período de <strong>${mes}/${ano}</strong>, totalizando <strong>${totalDiarias} dias</strong> 
-                        com a diária acordada em <strong>${formatMoney(func.valor_diaria)}</strong>.
-                    </div>
-                    
-                    <div style="font-size: 14px; margin-bottom: 40px;">
-                        Para maior clareza, firmo(amos) o presente recibo para que produza os seus efeitos legais.
-                    </div>
-                    
-                    <div style="text-align: center; margin-bottom: 30px; font-size: 14px;">
-                        Jataí - GO, ${hoje}.
-                    </div>
-                    
-                    <div style="margin-top: 60px; display: flex; justify-content: center;">
-                        <div style="text-align: center; width: 60%; border-top: 1px solid #000; padding-top: 10px;">
-                            <strong>${func.nome.toUpperCase()}</strong><br>
-                            <span style="font-size: 12px; color: #64748b;">CPF: ${func.cpf || '_______________________'} | RG: ${func.rg || '_______________________'}</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('print-area').innerHTML = html;
-            setTimeout(() => window.print(), 300);
-        }
 
+
+      function calcularSaldoPendenteFuncionarioPorPeriodo(funcId, dataInicio, dataFim) {
+        const registros = STATE.ponto_diario.filter(p => 
+            p.funcionario_id === funcId && 
+            p.status === 'VALIDADO' &&
+            p.pago_em_fechamento === false
+        );
+        
+        let registrosFiltrados = registros;
+        if (dataInicio) {
+            registrosFiltrados = registrosFiltrados.filter(p => p.hora_registro >= dataInicio + 'T00:00:00');
+        }
+        if (dataFim) {
+            registrosFiltrados = registrosFiltrados.filter(p => p.hora_registro <= dataFim + 'T23:59:59');
+        }
+        
+        // Agrupa por dia
+        const porDia = {};
+        registrosFiltrados.forEach(p => {
+            const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+            if (!porDia[dataDia]) porDia[dataDia] = { entradas: [], saidas: [], ajustes: [] };
+            if (p.tipo === 'ENTRADA') porDia[dataDia].entradas.push(new Date(p.hora_registro));
+            else if (p.tipo === 'SAIDA') porDia[dataDia].saidas.push(new Date(p.hora_registro));
+            else if (p.tipo === 'AJUSTE_MANUAL') porDia[dataDia].ajustes.push(p);
+        });
+        
+        let totalDiarias = 0;
+        Object.values(porDia).forEach(pts => {
+            if (pts.ajustes.length > 0) {
+                totalDiarias += pts.ajustes.reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
+            } else {
+                const horas = calcularHorasTrabalhadasNoDia(pts.entradas, pts.saidas);
+                let fracao = horas / 8;
+                fracao = Math.min(1, Math.max(0, fracao));
+                totalDiarias += fracao;
+            }
+        });
+        
+        return { totalDiarias, registros: registrosFiltrados };
+    }
+
+
+      
+      function imprimirReciboDoModal() {
+    const funcId = document.getElementById('saldo-equipe-id').value;
+    const func = STATE.equipe.find(e => e.id === funcId);
+    if (!func) return;
+    
+    const totalDiarias = document.getElementById('saldo-total-diarias').innerText;
+    const valorTotal = document.getElementById('saldo-total-valor').innerText;
+    const dataInicio = document.getElementById('saldo-filtro-data-inicio').value;
+    const dataFim = document.getElementById('saldo-filtro-data-fim').value;
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    
+    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+    const periodo = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
+    
+    const html = `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
+                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
+                <div style="text-align: right;">
+                    <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO SOBRE DIÁRIAS</h1>
+                    <p style="margin: 5px 0 0 0; font-size: 18px; color: #1d4ed8; font-weight: bold;">VALOR: ${valorTotal}</p>
+                </div>
+            </div>
+            
+            <div style="font-size: 14px; line-height: 1.8; text-align: justify; margin-bottom: 40px;">
+                Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA</strong> (CNPJ: 61.893.912/0001-24), a importância de <strong>${valorTotal}</strong>, 
+                referente ao pagamento de diárias trabalhadas no período de <strong>${periodo}</strong>, totalizando <strong>${totalDiarias} dias</strong> 
+                com a diária acordada em <strong>${formatMoney(func.valor_diaria)}</strong>.
+            </div>
+            
+            <div style="font-size: 14px; margin-bottom: 40px;">
+                Para maior clareza, firmo(amos) o presente recibo para que produza os seus efeitos legais.
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 30px; font-size: 14px;">
+                Jataí - GO, ${hoje}.
+            </div>
+            
+            <div style="margin-top: 60px; display: flex; justify-content: center;">
+                <div style="text-align: center; width: 60%; border-top: 1px solid #000; padding-top: 10px;">
+                    <strong>${func.nome.toUpperCase()}</strong><br>
+                    <span style="font-size: 12px; color: #64748b;">CPF: ${func.cpf || '_______________________'} | RG: ${func.rg || '_______________________'}</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('print-area').innerHTML = html;
+    setTimeout(() => window.print(), 300);
+}
 
       
         // ========== NOVAS FUNÇÕES PARA SALDO DE PONTO ==========
@@ -1935,7 +1987,6 @@ function abrirModalSaldo(equipeId) {
         return;
     }
     
-    // Lógica original para diaristas
     const func = STATE.equipe.find(e => e.id === equipeId);
     if (!func) return;
     
@@ -1943,23 +1994,16 @@ function abrirModalSaldo(equipeId) {
     document.getElementById('saldo-modal-subtitle').innerText = 
         `${func.nome} - Diária: ${formatMoney(func.valor_diaria || 0)}`;
     
+    // Define datas padrão: primeiro e último dia do mês atual
     const hoje = new Date();
-    const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
     const anoAtual = hoje.getFullYear();
+    const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
+    const primeiroDia = `${anoAtual}-${mesAtual}-01`;
+    const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
+    const ultimoDiaStr = `${anoAtual}-${mesAtual}-${String(ultimoDia).padStart(2, '0')}`;
     
-    const selectMes = document.getElementById('saldo-filtro-mes');
-    selectMes.innerHTML = '';
-    const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    meses.forEach((nome, idx) => {
-        const val = String(idx+1).padStart(2,'0');
-        const option = document.createElement('option');
-        option.value = val;
-        option.textContent = nome;
-        if (val === mesAtual) option.selected = true;
-        selectMes.appendChild(option);
-    });
-    
-    document.getElementById('saldo-filtro-ano').value = anoAtual;
+    document.getElementById('saldo-filtro-data-inicio').value = primeiroDia;
+    document.getElementById('saldo-filtro-data-fim').value = ultimoDiaStr;
     document.getElementById('saldo-filtro-status').value = 'PENDENTE';
     
     carregarTabelaSaldo();
@@ -1973,8 +2017,8 @@ function fecharModalSaldo() {
 
 function carregarTabelaSaldo() {
     const funcId = document.getElementById('saldo-equipe-id').value;
-    const mes = document.getElementById('saldo-filtro-mes').value;
-    const ano = document.getElementById('saldo-filtro-ano').value;
+    const dataInicio = document.getElementById('saldo-filtro-data-inicio').value;
+    const dataFim = document.getElementById('saldo-filtro-data-fim').value;
     const statusFiltro = document.getElementById('saldo-filtro-status').value;
     
     const func = STATE.equipe.find(e => e.id === funcId);
@@ -1985,12 +2029,11 @@ function carregarTabelaSaldo() {
         p.status === 'VALIDADO'
     );
     
-    if (mes && ano) {
-        registros = registros.filter(p => {
-            const d = new Date(p.hora_registro);
-            return (d.getUTCMonth() + 1).toString().padStart(2,'0') === mes && 
-                   d.getUTCFullYear().toString() === ano;
-        });
+    if (dataInicio) {
+        registros = registros.filter(p => p.hora_registro >= dataInicio + 'T00:00:00');
+    }
+    if (dataFim) {
+        registros = registros.filter(p => p.hora_registro <= dataFim + 'T23:59:59');
     }
     
     if (statusFiltro === 'PENDENTE') {
@@ -2054,29 +2097,24 @@ function carregarTabelaSaldo() {
             const entradas = pts.entradas.sort();
             const saidas = pts.saidas.sort();
             
-            // Combina todos os pontos em ordem cronológica
             const pontos = [
                 ...entradas.map(e => ({ tipo: 'E', hora: e })),
                 ...saidas.map(s => ({ tipo: 'S', hora: s }))
             ].sort((a, b) => new Date(a.hora) - new Date(b.hora));
             
             let totalMinutos = 0;
-            // Soma os minutos de cada par ENTRADA -> SAÍDA consecutivo
             for (let i = 0; i < pontos.length - 1; i++) {
                 if (pontos[i].tipo === 'E' && pontos[i+1].tipo === 'S') {
                     totalMinutos += diffMinutesUTC(pontos[i].hora, pontos[i+1].hora);
                 }
             }
             
-            // NENHUM DESCONTO DE ALMOÇO - apenas o tempo líquido entre batidas
-            
-            const JORNADA_BASE = 480; // 8 horas em minutos
+            const JORNADA_BASE = 480;
             const TOLERANCIA = 20;
             
             let minutosConsiderados = totalMinutos;
             const falta = JORNADA_BASE - totalMinutos;
             
-            // Se faltou mais que a tolerância, usa o valor real; senão, considera diária cheia
             if (falta > TOLERANCIA) {
                 minutosConsiderados = totalMinutos;
             } else {
@@ -2101,16 +2139,16 @@ function carregarTabelaSaldo() {
             <td class="p-3 font-bold text-slate-700">${dataDia}</td>
             <td class="p-3">${horariosStr}</td>
             <td class="p-3 text-center font-black ${fracao >= 1 ? 'text-green-600' : 'text-orange-600'}">${fracao.toFixed(2)}</td>
-                       <td class="p-3 text-center">
-                            <div class="flex items-center justify-center gap-2">
-                                <span class="px-2 py-1 rounded text-[9px] font-bold ${pts.registros[0].pago_em_fechamento ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">
-                                    ${pts.registros[0].pago_em_fechamento ? 'PAGO' : 'PENDENTE'}
-                                </span>
-                                <button onclick="abrirModalAdminRegistros('${funcId}')" class="text-slate-400 hover:text-indigo-600 p-1 rounded transition" title="Acesso Restrito (Senha)">
-                                    <i data-lucide="shield-alert" class="w-4 h-4"></i>
-                                </button>
-                            </div>
-                        </td>
+            <td class="p-3 text-center">
+                <div class="flex items-center justify-center gap-2">
+                    <span class="px-2 py-1 rounded text-[9px] font-bold ${pts.registros[0].pago_em_fechamento ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">
+                        ${pts.registros[0].pago_em_fechamento ? 'PAGO' : 'PENDENTE'}
+                    </span>
+                    <button onclick="abrirModalAdminRegistros('${funcId}')" class="text-slate-400 hover:text-indigo-600 p-1 rounded transition" title="Acesso Restrito (Senha)">
+                        <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </td>
         `;
         tbody.appendChild(tr);
     });
@@ -2121,7 +2159,6 @@ function carregarTabelaSaldo() {
     
     lucide.createIcons();
 }
-
 
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -2138,29 +2175,23 @@ function abrirModalSaldoMetros(tercId) {
     document.getElementById('saldo-metros-subtitle').innerText = 
         `${terc.nome} - Valor do Metro: ${formatMoney(terc.valor_metro || 0)}`;
     
+    // Define datas padrão: primeiro e último dia do mês atual
     const hoje = new Date();
-    const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
     const anoAtual = hoje.getFullYear();
+    const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
+    const primeiroDia = `${anoAtual}-${mesAtual}-01`;
+    const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
+    const ultimoDiaStr = `${anoAtual}-${mesAtual}-${String(ultimoDia).padStart(2, '0')}`;
     
-    const selectMes = document.getElementById('saldo-metros-filtro-mes');
-    selectMes.innerHTML = '';
-    const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    meses.forEach((nome, idx) => {
-        const val = String(idx+1).padStart(2,'0');
-        const option = document.createElement('option');
-        option.value = val;
-        option.textContent = nome;
-        if (val === mesAtual) option.selected = true;
-        selectMes.appendChild(option);
-    });
-    
-    document.getElementById('saldo-metros-filtro-ano').value = anoAtual;
+    document.getElementById('saldo-metros-data-inicio').value = primeiroDia;
+    document.getElementById('saldo-metros-data-fim').value = ultimoDiaStr;
     document.getElementById('saldo-metros-filtro-status').value = 'PENDENTE';
     
     carregarTabelaSaldoMetros();
     document.getElementById('modal-saldo-metros').classList.remove('hidden');
     lucide.createIcons();
 }
+      
 
 function fecharModalSaldoMetros() {
     document.getElementById('modal-saldo-metros').classList.add('hidden');
@@ -2168,8 +2199,8 @@ function fecharModalSaldoMetros() {
 
 function carregarTabelaSaldoMetros() {
     const tercId = document.getElementById('saldo-terc-id').value;
-    const mes = document.getElementById('saldo-metros-filtro-mes').value;
-    const ano = document.getElementById('saldo-metros-filtro-ano').value;
+    const dataInicio = document.getElementById('saldo-metros-data-inicio').value;
+    const dataFim = document.getElementById('saldo-metros-data-fim').value;
     const statusFiltro = document.getElementById('saldo-metros-filtro-status').value;
     
     const terc = STATE.terceirizados.find(t => t.id === tercId);
@@ -2177,12 +2208,11 @@ function carregarTabelaSaldoMetros() {
     
     let registros = STATE.producao_terc.filter(p => p.terceirizado_id === tercId);
     
-    if (mes && ano) {
-        registros = registros.filter(p => {
-            const d = new Date(p.data_registro);
-            return (d.getUTCMonth() + 1).toString().padStart(2,'0') === mes && 
-                   d.getUTCFullYear().toString() === ano;
-        });
+    if (dataInicio) {
+        registros = registros.filter(p => p.data_registro >= dataInicio);
+    }
+    if (dataFim) {
+        registros = registros.filter(p => p.data_registro <= dataFim);
     }
     
     if (statusFiltro === 'PENDENTE') {
@@ -2377,8 +2407,8 @@ async function lancarAjusteManualMetros() {
 
 async function fecharPagamentoSaldoMetros() {
     const tercId = document.getElementById('saldo-terc-id').value;
-    const mes = document.getElementById('saldo-metros-filtro-mes').value;
-    const ano = document.getElementById('saldo-metros-filtro-ano').value;
+    const dataInicio = document.getElementById('saldo-metros-data-inicio').value;
+    const dataFim = document.getElementById('saldo-metros-data-fim').value;
     
     const terc = STATE.terceirizados.find(t => t.id === tercId);
     if (!terc) return;
@@ -2387,12 +2417,11 @@ async function fecharPagamentoSaldoMetros() {
         p.terceirizado_id === tercId && p.status !== 'PAGO'
     );
     
-    if (mes && ano) {
-        registros = registros.filter(p => {
-            const d = new Date(p.data_registro);
-            return (d.getUTCMonth() + 1).toString().padStart(2,'0') === mes && 
-                   d.getUTCFullYear().toString() === ano;
-        });
+    if (dataInicio) {
+        registros = registros.filter(p => p.data_registro >= dataInicio);
+    }
+    if (dataFim) {
+        registros = registros.filter(p => p.data_registro <= dataFim);
     }
     
     if (registros.length === 0) {
@@ -2402,12 +2431,15 @@ async function fecharPagamentoSaldoMetros() {
     const totalMetros = registros.reduce((sum, r) => sum + parseFloat(r.metros), 0);
     const valorTotal = totalMetros * parseFloat(terc.valor_metro || 0);
     
+    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+    const periodoDesc = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
+    
     if (!confirm(`Fechar pagamento de ${totalMetros.toFixed(2)} metros no valor de ${formatMoney(valorTotal)}?`)) return;
     
     showLoading(true);
     
-    // 1. Criar lançamento financeiro (despesa) PENDENTE
-    const descricao = `Pagamento de produção - ${terc.nome} - Período ${mes}/${ano}`;
+    const descricao = `Pagamento de metragem - ${terc.nome} - Período ${periodoDesc}`;
     const { error: errFin } = await sb.from('jsp_logs').insert([{
         id: getNextIdNum(STATE.logs).toString(),
         obra_id: terc.obra_atual_id ? parseInt(terc.obra_atual_id) : null,
@@ -2418,7 +2450,7 @@ async function fecharPagamentoSaldoMetros() {
         vencimento: new Date().toISOString(),
         status_financeiro: 'PENDENTE',
         categoria: 'Mão de Obra (Terceirizado)',
-        observacao: `Fechamento de produção - Terceirizado: ${terc.nome} - Total metros: ${totalMetros.toFixed(2)}`
+        observacao: `Fechamento de metragem - Terceirizado: ${terc.nome} - Total metros: ${totalMetros.toFixed(2)}`
     }]);
     
     if (errFin) {
@@ -2426,7 +2458,6 @@ async function fecharPagamentoSaldoMetros() {
         return showToast('Erro ao gerar despesa: ' + errFin.message, true);
     }
     
-    // 2. Marcar registros como pagos
     const ids = registros.map(r => r.id);
     const { error: errProd } = await sb.from('jsp_producao_terc')
         .update({ status: 'PAGO' })
@@ -2448,28 +2479,29 @@ async function estornarUltimoFechamentoMetros() {
     const terc = STATE.terceirizados.find(t => t.id === tercId);
     if (!terc) return;
 
-    // Busca a despesa mais recente gerada para este terceirizado
+    // Busca a despesa mais recente gerada para este terceirizado (metragem)
     const despesas = STATE.logs.filter(l => 
         l.tipo === 'despesa' &&
-        l.produto_nome && l.produto_nome.includes(`Pagamento de produção - ${terc.nome}`) &&
+        l.produto_nome && l.produto_nome.includes(`Pagamento de metragem - ${terc.nome}`) &&
         (l.status_financeiro === 'PENDENTE' || l.status_financeiro === 'PAGO')
     ).sort((a, b) => new Date(b.data) - new Date(a.data));
 
     if (despesas.length === 0) {
-        return showToast('Nenhum pagamento de produção encontrado para estornar.', true);
+        return showToast('Nenhum pagamento de metragem encontrado para estornar.', true);
     }
 
     const ultimaDespesa = despesas[0];
     
-    let mesAno = null;
-    const match = ultimaDespesa.produto_nome.match(/Período (\d{2})\/(\d{4})/);
+    // Extrai período da descrição (formato "Pagamento de metragem - Nome - Período dd/mm/aaaa a dd/mm/aaaa")
+    let periodo = null;
+    const match = ultimaDespesa.produto_nome.match(/Período (.*)$/);
     if (match) {
-        mesAno = { mes: match[1], ano: match[2] };
+        periodo = match[1];
     }
 
     let confirmMsg = `Estornar o pagamento de ${formatMoney(ultimaDespesa.valor_total)} (${ultimaDespesa.status_financeiro})?`;
-    if (mesAno) confirmMsg += `\nPeríodo: ${mesAno.mes}/${mesAno.ano}`;
-    confirmMsg += `\n\nOs registros de produção voltarão a ficar pendentes.`;
+    if (periodo) confirmMsg += `\nPeríodo: ${periodo}`;
+    confirmMsg += `\n\nOs registros de metragem voltarão a ficar pendentes.`;
     
     if (!confirm(confirmMsg)) return;
 
@@ -2486,38 +2518,40 @@ async function estornarUltimoFechamentoMetros() {
         return showToast('Erro ao cancelar despesa: ' + errFin.message, true);
     }
 
-    // 2. Reverter marcação de pago nos registros de produção do período
+    // 2. Reverter status PAGO para PENDENTE nos registros de produção do período
     let query = sb.from('jsp_producao_terc')
         .update({ status: 'PENDENTE' })
         .eq('terceirizado_id', tercId)
         .eq('status', 'PAGO');
 
-    if (mesAno) {
-        const { mes, ano } = mesAno;
-        const dataInicio = `${ano}-${mes}-01`;
-        const ultimoDia = new Date(ano, mes, 0).getDate();
-        const dataFim = `${ano}-${mes}-${String(ultimoDia).padStart(2, '0')}`;
-        query = query.gte('data_registro', dataInicio).lte('data_registro', dataFim);
+    if (periodo) {
+        // Tenta extrair datas do período (formato "dd/mm/aaaa a dd/mm/aaaa")
+        const partes = periodo.split(' a ');
+        if (partes.length === 2) {
+            const dataInicio = partes[0].split('/').reverse().join('-');
+            const dataFim = partes[1].split('/').reverse().join('-');
+            query = query.gte('data_registro', dataInicio).lte('data_registro', dataFim);
+        }
     }
 
     const { error: errProd } = await query;
 
     if (errProd) {
         showLoading(false);
-        return showToast('Erro ao reverter registros de produção: ' + errProd.message, true);
+        return showToast('Erro ao reverter registros de metragem: ' + errProd.message, true);
     }
 
     await loadData();
     carregarTabelaSaldoMetros();
     renderEquipe();
-    showToast('Estorno realizado com sucesso! Despesa cancelada e registros liberados.');
+    showToast('Estorno realizado com sucesso! Despesa cancelada e metragens liberadas.');
 }
 
 function imprimirExtratoSaldoMetros() {
     const tercId = document.getElementById('saldo-terc-id').value;
     const terc = STATE.terceirizados.find(t => t.id === tercId);
-    const mes = document.getElementById('saldo-metros-filtro-mes').value;
-    const ano = document.getElementById('saldo-metros-filtro-ano').value;
+    const dataInicio = document.getElementById('saldo-metros-data-inicio').value;
+    const dataFim = document.getElementById('saldo-metros-data-fim').value;
     const statusFiltro = document.getElementById('saldo-metros-filtro-status').value;
     const totalMetros = document.getElementById('saldo-metros-total-metros').innerText;
     const valorTotal = document.getElementById('saldo-metros-total-valor').innerText;
@@ -2532,7 +2566,9 @@ function imprimirExtratoSaldoMetros() {
         };
     });
     
-    const nomeMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][parseInt(mes)-1] || mes;
+    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : 'Início';
+    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'Fim';
+    const periodoExibicao = `${dataIniFormatada} a ${dataFimFormatada}`;
     const hoje = new Date().toLocaleDateString('pt-BR');
     
     let html = `
@@ -2540,9 +2576,9 @@ function imprimirExtratoSaldoMetros() {
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 15px; margin-bottom: 25px;">
                 <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 70px;" />
                 <div style="text-align: right;">
-                    <h1 style="margin: 0; font-size: 24px; font-weight: 900;">EXTRATO DE PRODUÇÃO</h1>
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 900;">EXTRATO DE METRAGEM</h1>
                     <p style="margin: 5px 0 0 0; font-size: 14px; color: #1d4ed8; font-weight: bold;">${terc.nome}</p>
-                    <p style="margin: 2px 0 0 0; font-size: 12px;">Período: ${nomeMes}/${ano} | Valor Metro: ${formatMoney(terc.valor_metro)}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 12px;">Período: ${periodoExibicao} | Valor Metro: ${formatMoney(terc.valor_metro)}</p>
                     <p style="margin: 2px 0 0 0; font-size: 11px;">Status: ${statusFiltro}</p>
                 </div>
             </div>
@@ -2615,23 +2651,27 @@ function imprimirReciboMetrosDoModal() {
     
     const totalMetros = document.getElementById('saldo-metros-total-metros').innerText;
     const valorTotal = document.getElementById('saldo-metros-total-valor').innerText;
-    const mes = document.getElementById('saldo-metros-filtro-mes').value;
-    const ano = document.getElementById('saldo-metros-filtro-ano').value;
+    const dataInicio = document.getElementById('saldo-metros-data-inicio').value;
+    const dataFim = document.getElementById('saldo-metros-data-fim').value;
     const hoje = new Date().toLocaleDateString('pt-BR');
+    
+    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+    const periodo = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
     
     const html = `
         <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
                 <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
                 <div style="text-align: right;">
-                    <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO DE PRODUÇÃO</h1>
+                    <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO DE METRAGEM</h1>
                     <p style="margin: 5px 0 0 0; font-size: 18px; color: #1d4ed8; font-weight: bold;">VALOR: ${valorTotal}</p>
                 </div>
             </div>
             
             <div style="font-size: 14px; line-height: 1.8; text-align: justify; margin-bottom: 40px;">
                 Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA</strong> (CNPJ: 61.893.912/0001-24), a importância de <strong>${valorTotal}</strong>, 
-                referente ao pagamento de produção por metragem no período de <strong>${mes}/${ano}</strong>, totalizando <strong>${totalMetros} metros</strong> 
+                referente ao pagamento de produção por metragem no período de <strong>${periodo}</strong>, totalizando <strong>${totalMetros} metros</strong> 
                 com o valor acordado de <strong>${formatMoney(terc.valor_metro)} por metro</strong>.
             </div>
             
@@ -2736,44 +2776,44 @@ async function lancarAjusteManual() {
 }
 
 // Fecha o pagamento das diárias pendentes filtradas
+// Fecha o pagamento das diárias pendentes filtradas (usando intervalo de datas)
 async function fecharPagamentoSaldo() {
     const funcId = document.getElementById('saldo-equipe-id').value;
-    const mes = document.getElementById('saldo-filtro-mes').value;
-    const ano = document.getElementById('saldo-filtro-ano').value;
+    const dataInicio = document.getElementById('saldo-filtro-data-inicio').value;
+    const dataFim = document.getElementById('saldo-filtro-data-fim').value;
     
     const func = STATE.equipe.find(e => e.id === funcId);
     if (!func) return;
     
-    // Obtém os registros pendentes conforme filtro atual
     let registros = STATE.ponto_diario.filter(p => 
         p.funcionario_id === funcId && 
         p.status === 'VALIDADO' &&
         !p.pago_em_fechamento
     );
     
-    // Aplica filtro de período
-    if (mes && ano) {
-        registros = registros.filter(p => {
-            const d = new Date(p.hora_registro);
-            return (d.getUTCMonth() + 1).toString().padStart(2,'0') === mes && 
-                   d.getUTCFullYear().toString() === ano;
-        });
+    if (dataInicio) {
+        registros = registros.filter(p => p.hora_registro >= dataInicio + 'T00:00:00');
+    }
+    if (dataFim) {
+        registros = registros.filter(p => p.hora_registro <= dataFim + 'T23:59:59');
     }
     
     if (registros.length === 0) {
         return showToast('Nenhum registro pendente para fechar.', true);
     }
     
-    // Calcula total de diárias
     const totalDiarias = calcularTotalDiariasDosRegistros(registros);
     const valorTotal = totalDiarias * parseFloat(func.valor_diaria || 0);
+    
+    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+    const periodoDesc = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
     
     if (!confirm(`Fechar pagamento de ${totalDiarias.toFixed(2)} diárias no valor de ${formatMoney(valorTotal)}?`)) return;
     
     showLoading(true);
     
-    // 1. Criar lançamento financeiro (despesa) PENDENTE
-    const descricao = `Pagamento de ponto - ${func.nome} - Período ${mes}/${ano}`;
+    const descricao = `Pagamento de ponto - ${func.nome} - Período ${periodoDesc}`;
     const { error: errFin } = await sb.from('jsp_logs').insert([{
         id: getNextIdNum(STATE.logs).toString(),
         obra_id: func.obra_atual_id ? parseInt(func.obra_atual_id) : null,
@@ -2792,7 +2832,6 @@ async function fecharPagamentoSaldo() {
         return showToast('Erro ao gerar despesa: ' + errFin.message, true);
     }
     
-    // 2. Marcar registros como pagos
     const ids = registros.map(r => r.id);
     const { error: errPonto } = await sb.from('jsp_ponto_diario')
         .update({ pago_em_fechamento: true })
@@ -2805,10 +2844,10 @@ async function fecharPagamentoSaldo() {
     
     await loadData();
     fecharModalSaldo();
-    renderEquipe(); // Atualiza a lista principal
+    renderEquipe();
     showToast('Pagamento fechado! Despesa lançada como pendente.');
 }
-
+      
 // Função auxiliar para calcular total de diárias a partir de um array de registros
 function calcularTotalDiariasDosRegistros(registros) {
     const porDia = {};
@@ -2835,11 +2874,12 @@ function calcularTotalDiariasDosRegistros(registros) {
 }
 
 // Impressão do extrato filtrado
+// Impressão do extrato filtrado (usando intervalo de datas)
 function imprimirExtratoSaldo() {
     const funcId = document.getElementById('saldo-equipe-id').value;
     const func = STATE.equipe.find(e => e.id === funcId);
-    const mes = document.getElementById('saldo-filtro-mes').value;
-    const ano = document.getElementById('saldo-filtro-ano').value;
+    const dataInicio = document.getElementById('saldo-filtro-data-inicio').value;
+    const dataFim = document.getElementById('saldo-filtro-data-fim').value;
     const statusFiltro = document.getElementById('saldo-filtro-status').value;
     const totalDiarias = document.getElementById('saldo-total-diarias').innerText;
     const valorTotal = document.getElementById('saldo-total-valor').innerText;
@@ -2855,7 +2895,9 @@ function imprimirExtratoSaldo() {
         };
     });
     
-    const nomeMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][parseInt(mes)-1] || mes;
+    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : 'Início';
+    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'Fim';
+    const periodoExibicao = `${dataIniFormatada} a ${dataFimFormatada}`;
     const hoje = new Date().toLocaleDateString('pt-BR');
     
     let html = `
@@ -2865,7 +2907,7 @@ function imprimirExtratoSaldo() {
                 <div style="text-align: right;">
                     <h1 style="margin: 0; font-size: 24px; font-weight: 900;">EXTRATO DE PONTO</h1>
                     <p style="margin: 5px 0 0 0; font-size: 14px; color: #1d4ed8; font-weight: bold;">${func.nome}</p>
-                    <p style="margin: 2px 0 0 0; font-size: 12px;">Período: ${nomeMes}/${ano} | Diária: ${formatMoney(func.valor_diaria)}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 12px;">Período: ${periodoExibicao} | Diária: ${formatMoney(func.valor_diaria)}</p>
                     <p style="margin: 2px 0 0 0; font-size: 11px;">Status: ${statusFiltro}</p>
                 </div>
             </div>
@@ -3693,30 +3735,34 @@ async function estornarUltimoFechamento() {
             showToast("Pagamento e Despesa lançados com sucesso!"); loadData();
         }
 function abrirModalFolhaPagamento() {
-    // Preenche o select de obras
     const selectObra = document.getElementById('folha-obra');
     selectObra.innerHTML = '<option value="">Todas as Obras</option>' + 
         STATE.obras.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
     
-    // Define mês/ano atual como padrão
     const hoje = new Date();
-    document.getElementById('folha-mes').value = String(hoje.getMonth() + 1).padStart(2, '0');
-    document.getElementById('folha-ano').value = hoje.getFullYear();
+    const anoAtual = hoje.getFullYear();
+    const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
+    const primeiroDia = `${anoAtual}-${mesAtual}-01`;
+    const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
+    const ultimoDiaStr = `${anoAtual}-${mesAtual}-${String(ultimoDia).padStart(2, '0')}`;
+    
+    document.getElementById('folha-data-inicio').value = primeiroDia;
+    document.getElementById('folha-data-fim').value = ultimoDiaStr;
     
     document.getElementById('modal-folha-pagamento').classList.remove('hidden');
     lucide.createIcons();
 }
+      
 
 function executarImpressaoFolha() {
     const statusFinanceiro = document.getElementById('folha-status').value;
     const obraFiltro = document.getElementById('folha-obra').value;
     const statusFunc = document.getElementById('folha-status-func').value;
-    const mes = document.getElementById('folha-mes').value;
-    const ano = document.getElementById('folha-ano').value;
+    const dataInicio = document.getElementById('folha-data-inicio').value;
+    const dataFim = document.getElementById('folha-data-fim').value;
     
     const colaboradores = getColaboradoresUnificados();
     
-    // Filtros
     let filtrados = colaboradores.filter(c => {
         if (statusFunc === 'true' && c.ativo === false) return false;
         if (statusFunc === 'false' && c.ativo !== false) return false;
@@ -3731,7 +3777,6 @@ function executarImpressaoFolha() {
         let quantidade = 0;
         
         if (c.tipo === 'diaria') {
-            // Busca despesas de ponto
             const despesasPonto = STATE.logs.filter(l => 
                 l.tipo === 'despesa' &&
                 l.produto_nome && l.produto_nome.includes(`Pagamento de ponto - ${c.nome}`) &&
@@ -3739,10 +3784,12 @@ function executarImpressaoFolha() {
             );
             
             let despesasFiltradas = despesasPonto;
-            if (mes && ano) {
+            if (dataInicio || dataFim) {
                 despesasFiltradas = despesasPonto.filter(d => {
-                    const match = d.produto_nome.match(/Período (\d{2})\/(\d{4})/);
-                    return match && match[1] === mes && match[2] === ano;
+                    const dataDesp = d.data ? d.data.split('T')[0] : '';
+                    if (dataInicio && dataDesp < dataInicio) return false;
+                    if (dataFim && dataDesp > dataFim) return false;
+                    return true;
                 });
             }
             
@@ -3768,13 +3815,11 @@ function executarImpressaoFolha() {
                 });
             }
         } else {
-            // Terceirizados (metro)
             const producao = STATE.producao_terc.filter(p => {
                 if (p.terceirizado_id !== c.id) return false;
-                const dt = new Date(p.data_registro);
-                const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
-                const a = String(dt.getUTCFullYear());
-                return m === mes && a === ano;
+                if (dataInicio && p.data_registro < dataInicio) return false;
+                if (dataFim && p.data_registro > dataFim) return false;
+                return true;
             });
             
             const metros = statusFinanceiro === 'PAGO' 
@@ -3804,7 +3849,9 @@ function executarImpressaoFolha() {
     
     dadosFolha.sort((a, b) => a.nome.localeCompare(b.nome));
     
-    const nomeMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][parseInt(mes)-1] || 'Todos';
+    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : 'Início';
+    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'Fim';
+    const periodoExibicao = (dataInicio || dataFim) ? `${dataIniFormatada} a ${dataFimFormatada}` : 'Todos os períodos';
     const hoje = new Date().toLocaleDateString('pt-BR');
     
     let html = `
@@ -3814,7 +3861,7 @@ function executarImpressaoFolha() {
                 <div style="text-align: right;">
                     <h1 style="margin: 0; font-size: 24px; font-weight: 900;">FOLHA DE PAGAMENTOS</h1>
                     <p style="margin: 5px 0 0 0; font-size: 14px; color: #1d4ed8; font-weight: bold;">Status: ${statusFinanceiro === 'PENDENTE' ? 'PENDENTES (NÃO BAIXADOS)' : statusFinanceiro}</p>
-                    <p style="margin: 2px 0 0 0; font-size: 12px;">Período: ${mes ? nomeMes + '/' + ano : 'Todos'}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 12px;">Período: ${periodoExibicao}</p>
                 </div>
             </div>
             
@@ -3969,13 +4016,34 @@ function executarImpressaoFolha() {
         return;
     }
 
-    const e = STATE.equipe.find(x => x.id == id);
-    
-    if (!e) {
+    // 🔍 Busca unificada (equipe ou terceirizado)
+    let pessoa = STATE.equipe.find(x => x.id == id);
+    let isTerc = false;
+    if (!pessoa) {
+        pessoa = STATE.terceirizados.find(x => x.id == id);
+        isTerc = true;
+    }
+
+    if (!pessoa) {
         alert("Erro ao encontrar os dados do colaborador.");
         return;
     }
-    
+
+    // 📦 Mapeia os campos para um objeto 'e' compatível com o restante da função
+    const e = {
+        nome: pessoa.nome || '',
+        cpf: isTerc ? (pessoa.cpf_cnpj || '') : (pessoa.cpf || ''),
+        rg: pessoa.rg || '',
+        endereco: pessoa.endereco || '',
+        categoria: isTerc ? 'TERCEIRIZADO (METRO)' : (pessoa.categoria || 'Geral'),
+        valor_diaria: isTerc ? parseFloat(pessoa.valor_metro || 0) : parseFloat(pessoa.valor_diaria || 0),
+        matricula: isTerc ? 'TERC' : (pessoa.matricula || '000'),
+        obra_atual_id: pessoa.obra_atual_id,
+        data_contrato: !isTerc ? pessoa.data_contrato : null,
+        contrato_assinado: pessoa.contrato_assinado || false  // se houver
+    };
+
+    // ========== DAQUI PARA BAIXO, O CÓDIGO PERMANECE EXATAMENTE IGUAL ==========
     const dataAtual = new Date();
     const dia = dataAtual.getDate();
     const meses = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
@@ -3984,27 +4052,25 @@ function executarImpressaoFolha() {
     const dataExtenso = `${dia} de ${mes} de ${ano}`;
     const hojeCurto = dataAtual.toLocaleDateString('pt-BR');
     
-    // 1. Busca a obra (AQUI ELA É DECLARADA PELA PRIMEIRA VEZ)
+    // Busca a obra
     const obraVinculada = STATE.obras.find(o => o.id == e.obra_atual_id);
     const enderecoObra = obraVinculada ? (obraVinculada.endereco || obraVinculada.nome) : 'Endereço não informado / Obra não definida';
     const diariaTexto = formatMoney(e.valor_diaria || 0);
     const matricula = parseFloat(e.matricula || 0);
 
-    // 2. LÓGICA DE DATA DE TÉRMINO (USANDO A VARIÁVEL QUE JÁ EXISTE ACIMA)
+    // Data de término (da obra)
     let dataTerminoContrato = "____/____/______";
     if (obraVinculada && obraVinculada.data_termino) {
         const partes = obraVinculada.data_termino.split('-');
         dataTerminoContrato = `${partes[2]}/${partes[1]}/${partes[0]}`;
     }
 
-    // --- LÓGICA DE DATA DE INÍCIO (AGORA VIA CAMPO MANUAL) ---
+    // Data de início (apenas equipe tem data_contrato)
     let dataInicioContrato = "____/____/______";
     if (e.data_contrato) {
-        // Converte AAAA-MM-DD para DD/MM/AAAA
         const p = e.data_contrato.split('-');
         dataInicioContrato = `${p[2]}/${p[1]}/${p[0]}`;
-    }
-    // ---------------------------------------------------------
+    }    // ---------------------------------------------------------
     
     let titulo = "";
     let corpoTexto = "";
@@ -4198,6 +4264,99 @@ function executarImpressaoFolha() {
             <p style="text-indent: 40px; margin-bottom: 10px;">Os serviços serão remunerados conforme entregas executadas e aprovadas, mediante Recibo de Prestação de Serviços.</p>
             <div style="margin-left: 40px; margin-bottom: 30px;">
                 <div style="margin-bottom: 5px;"><strong>4.1.</strong> O valor será de <strong>${diariaTexto}</strong> por entrega diária completa.</div>
+                <div style="margin-bottom: 5px;"><strong>4.2.</strong> O pagamento será efetuado a cada 18 (dezoito) dias corridos, com medição quinzenal.</div>
+                <div style="margin-bottom: 5px;"><strong>4.3.</strong> O pagamento será realizado via transferência bancária para a conta indicada pelo CONTRATADO.</div>
+            </div>
+
+            <p style="margin-bottom: 15px;"><strong>CLÁUSULA QUINTA – DO PRAZO</strong></p>
+            <p style="text-indent: 40px; margin-bottom: 30px;">O contrato terá início em <strong>${dataInicioContrato}</strong> e término em <strong> ${dataTerminoContrato} </strong>, podendo ser prorrogado até o limite de 24 (vinte e quatro) meses.</p>
+
+            <br>
+            <p style="margin-bottom: 15px;"><strong>CLÁUSULA SEXTA – DA RESCISÃO</strong></p>
+            <p style="text-indent: 40px; margin-bottom: 30px;">O contrato poderá ser rescindido por qualquer das partes mediante aviso prévio de 5 (cinco) dias, ou de forma imediata nos casos previstos neste instrumento.</p>
+
+
+            <br>
+            <p style="margin-bottom: 15px;"><strong>CLÁUSULA SÉTIMA – DA NATUREZA DO CONTRATO</strong></p>
+            <p style="text-indent: 40px; margin-bottom: 30px;">O presente contrato possui natureza civil, não gerando vínculo empregatício, sendo o CONTRATADO integralmente responsável por obrigações fiscais, previdenciárias e trabalhistas.</p>
+
+
+            <br>
+            <p style="margin-bottom: 15px;"><strong>CLÁUSULA OITAVA – DO SIGILO</strong></p>
+            <p style="text-indent: 40px; margin-bottom: 30px;">O CONTRATADO compromete-se a manter sigilo sobre informações da CONTRATANTE.</p>
+
+
+            <br>
+            <p style="margin-bottom: 15px;"><strong>CLÁUSULA NONA – DO ABANDONO DA OBRA</strong></p>
+            <p style="text-indent: 40px; margin-bottom: 30px;">Em caso de abandono injustificado, valores pendentes somente serão pagos após conclusão da etapa por terceiros e recebimento integral pela CONTRATANTE.</p>
+
+
+            <br>
+            <p style="margin-bottom: 15px;"><strong>CLÁUSULA DÉCIMA – DAS DISPOSIÇÕES GERAIS</strong></p>
+            <p style="text-indent: 40px; margin-bottom: 10px;">O contrato obriga as partes e seus sucessores.</p>
+            <div style="margin-left: 40px; margin-bottom: 10px;">
+                <div style="margin-bottom: 5px;"><strong>10.1.</strong> Alterações somente por escrito.</div>
+            </div>
+            <p style="text-indent: 40px; margin-bottom: 30px;">Fica eleito o foro da comarca de Jataí-GO, para dirimir quaisquer controvérsias.</p>
+        </div>`;
+
+       } else if (tipo === 'metragem') {        
+        titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE FORNECIMENTO DE MÃO DE OBRA QUALIFICADA PARA SERVIÇOS DE CONSTRUÇÃO CIVIL <br> SEM VÍNCULO EMPREGATÍCIO <br><br> Nº ${matricula}/2026 | JATAÍ – GOIÁS`;
+        nomeContratanteAssinatura = "RV NEGOCIOS E COMPANHIA LTDA";
+        
+        corpoTexto = `
+        <div style="text-align: justify; font-size: 12pt; line-height: 1.6;">
+            <p style="text-indent: 40px; margin-bottom: 20px;">Contrato de Prestação de Serviços celebrado entre as seguintes partes:</p>
+
+            <p style="margin-bottom: 5px;"><strong>CONTRATANTE</strong></p>
+            <p style="text-indent: 40px; margin-bottom: 15px;"><strong>RV NEGOCIOS E COMPANHIA LTDA</strong>, pessoa jurídica de direito privado, inscrita no CNPJ nº 61.893.912-0001-24, com sede na Rua Mineiros, sn - Vila Santa Maria, CEP: 75.800-094 - no Município de Jataí, Estado de Goiás, neste ato representada por seu titular NUBIA LAFAIETE APARECIDA DA SILVA, brasileiro(a), portador(a) do CPF nº 320.993.981-00, residente e domiciliado(a) na Rua Mineiros, sn - Vila Santa Maria, CEP: 75.800-094 - no Município de Jataí, Estado de Goiás, doravante denominado(a) simplesmente <strong>CONTRATANTE</strong>.</p>
+
+            <p style="margin-bottom: 5px;"><strong>CONTRATADO</strong></p>
+            <p style="text-indent: 40px; margin-bottom: 15px;"><strong>${(e.nome || '').toUpperCase()}</strong>, portador do RG ${e.rg || '______________'}, inscrito no CPF nº ${e.cpf || '______________'} residente e domiciliado na ${e.endereco || '____________________________________________________'}, no Município de Jataí, Estado de Goiás, doravante denominado simplesmente <strong>CONTRATADO</strong>.</p>
+
+            <p style="text-indent: 40px; margin-bottom: 30px;">As partes acima identificadas, tendo em vista o interesse mútuo, resolvem celebrar o presente contrato de prestação de serviços, que se regerá pelas cláusulas e condições seguintes:</p>
+
+            <p style="margin-bottom: 15px;"><strong>CLÁUSULA PRIMEIRA – DO OBJETO</strong></p>
+            <p style="text-indent: 40px; margin-bottom: 10px;">O presente contrato tem como objeto a prestação de serviços com o fornecimento de mão de obra qualificada para execução de obra de construção civil, a serem executados pelo CONTRATADO, compreendendo as atividades descritas no item 1.3.1, conforme:</p>
+            
+            <div style="margin-left: 40px; margin-bottom: 15px;">
+                <div style="margin-bottom: 8px;"><strong>1.1.</strong> O CONTRATADO realizará os serviços com sua própria mão de obra, ou mediante disponibilização de profissional integrante de sua equipe, com qualificações iguais ou superiores às exigidas.</div>
+                <div style="margin-bottom: 8px;"><strong>1.2.</strong> No caso de envio de subcontratado, os dados do(s) colaborador(es) deverão ser encaminhados com antecedência mínima de 48 (quarenta e oito) horas, acompanhados de documentos pessoais, comprovação de qualificação e programação dos períodos de atuação na obra.</div>
+                <div style="margin-bottom: 8px;"><strong>1.3.</strong> Na execução das atividades, o(s) profissional(is) deverá(ão) realizar os serviços conforme o objeto contratual abaixo:</div>
+                <div style="margin-left: 20px; margin-bottom: 8px; text-align: justify;"><strong>1.3.1.</strong> Coordenação, supervisão e organização das atividades de obra no local de execução dos serviços; orientação e distribuição das tarefas à equipe operacional conforme cronograma definido pela CONTRATANTE; acompanhamento do abastecimento, conferência e correta utilização dos materiais nos pontos indicados; apoio à adequação do espaço para início da obra, incluindo impluração e organização de áreas de almoxarifado, engenharia e administrativo; fiscalização da limpeza e organização da área de trabalho, garantindo a correta destinação dos resíduos e materiais excedentes; acompanhamento das atividades de demolição, desde a cobertura até as fundações, assegurando a execução conforme orientações técnicas; supervisão da implantação de gabarito, locação da obra, escavação, compactação e execução das fundações; acompanhamento das etapas de concretagem de blocos, vigas baldrames, pilares, vigas superiores, lajes e demais elementos estruturais; verificação da correta desforma de caixarias e aplicação de impermeabilizações; controle da produção, transporte e aplicação de argamassas para alvenaria, chapisco, reboco e emboço; orientação quanto à separação, transporte e instalação de materiais hidráulicos e elétricos; supervisão da preparação de superfícies para acabamento, incluindo lixamento, preparo para pintura, execução de pisos e contrapisos; acompanhamento das marcações e cortes em alvenaria para passagem de eletrodutos; controle da limpeza geral do canteiro de obras; apoio à quantificação de materiais e acompanhamento da produção de argamassa para assentamento de pisos cerâmicos e revestimentos, sempre conforme as diretrizes técnicas e orientações da CONTRATANTE.</div>
+            </div>
+
+            <p style="text-indent: 40px; margin-bottom: 10px;"><strong>Parágrafo Primeiro:</strong> As atividades serão executadas na obra localizada na <strong>${enderecoObra}</strong>.</p>
+            <p style="text-indent: 40px; margin-bottom: 30px;"><strong>Parágrafo Segundo:</strong> O CONTRATADO declara possuir capacidade técnica, experiência e disponibilidade para execução direta ou por meio de profissionais de sua equipe, responsabilizando-se pela qualidade e segurança dos serviços.</p>
+
+            <p style="margin-bottom: 15px;"><strong>CLÁUSULA SEGUNDA – DAS OBRIGAÇÕES DO CONTRATADO</strong></p>
+            <p style="text-indent: 40px; margin-bottom: 10px;">Além das obrigações implícitas, o CONTRATADO se obriga a:</p>
+            <div style="margin-left: 40px; margin-bottom: 30px;">
+                <div style="margin-bottom: 5px;"><strong>2.1.</strong> Executar os serviços com qualidade, presteza e diligência, observando normas técnicas e orientações da CONTRATANTE.</div>
+                <div style="margin-bottom: 5px;"><strong>2.2.</strong> Utilizar e exigir o uso de Equipamentos de Proteção Individual (EPIs), responsabilizando-se por sua correta utilização.</div>
+                <div style="margin-bottom: 5px;"><strong>2.3.</strong> Responsabilizar-se por danos causados a terceiros ou à CONTRATANTE por dolo ou culpa.</div>
+                <div style="margin-bottom: 5px;"><strong>2.4.</strong> Manter disciplina e ordem no local de trabalho.</div>
+                <div style="margin-bottom: 5px;"><strong>2.5.</strong> Emitir recibos de pagamento pelos serviços prestados.</div>
+                <div style="margin-bottom: 5px;"><strong>2.6.</strong> Arcar com despesas de deslocamento, alimentação e vestuário.</div>
+                <div style="margin-bottom: 5px;"><strong>2.7.</strong> Responsabilizar-se pelo recolhimento de todos os tributos incidentes (ISS, IR, INSS, entre outros).</div>
+                <div style="margin-bottom: 5px;"><strong>2.8.</strong> Cumprir rigorosamente os prazos estabelecidos.</div>
+                <div style="margin-bottom: 5px;"><strong>2.9.</strong> Manter todas as condições de habilitação durante a vigência do contrato.</div>
+            </div>
+
+            <p style="margin-bottom: 15px;"><strong>CLÁUSULA TERCEIRA – DAS OBRIGAÇÕES DO CONTRATANTE</strong></p>
+            <p style="text-indent: 40px; margin-bottom: 10px;">O CONTRANTE se obriga a:</p>
+            <div style="margin-left: 40px; margin-bottom: 30px;">
+                <div style="margin-bottom: 5px;"><strong>3.1.</strong> Fornecer informações e materiais necessários à execução dos serviços.</div>
+                <div style="margin-bottom: 5px;"><strong>3.2.</strong> Fiscalizar a execução dos serviços.</div>
+                <div style="margin-bottom: 5px;"><strong>3.3.</strong> Efetuar os pagamentos conforme estabelecido.</div>
+                <div style="margin-bottom: 5px;"><strong>3.4.</strong> Disponibilizar ambiente de trabalho seguro.</div>
+                <div style="margin-bottom: 5px;"><strong>3.5.</strong> Disponibilizar treinamentos obrigatórios, quando necessário, conforme normas regulamentadoras.</div>
+            </div>
+
+            <p style="margin-bottom: 15px;"><strong>CLÁUSULA QUARTA – DO VALOR E DA FORMA DE PAGAMENTO</strong></p>
+            <p style="text-indent: 40px; margin-bottom: 10px;">Os serviços serão remunerados conforme entregas executadas e aprovadas, mediante Recibo de Prestação de Serviços.</p>
+            <div style="margin-left: 40px; margin-bottom: 30px;">
+                <div style="margin-bottom: 5px;"><strong>4.1.</strong> O valor será de <strong>${diariaTexto}</strong> por metragem diária entregue.</div>
                 <div style="margin-bottom: 5px;"><strong>4.2.</strong> O pagamento será efetuado a cada 18 (dezoito) dias corridos, com medição quinzenal.</div>
                 <div style="margin-bottom: 5px;"><strong>4.3.</strong> O pagamento será realizado via transferência bancária para a conta indicada pelo CONTRATADO.</div>
             </div>
@@ -6005,8 +6164,8 @@ function renderTerceirizados() {
     updateSelectTercObra();
     
     const term = document.getElementById('terc-search').value.toLowerCase();
-    const mes = document.getElementById('terc-filter-mes').value;
-    const ano = document.getElementById('terc-filter-ano').value;
+    const dataInicio = document.getElementById('terc-filter-data-inicio')?.value || '';
+    const dataFim = document.getElementById('terc-filter-data-fim')?.value || '';
     const statusFiltro = document.getElementById('terc-filter-status').value;
     const pagFiltro = document.getElementById('terc-filter-pagamento').value; 
     const list = document.getElementById('terc-list');
@@ -6023,28 +6182,24 @@ function renderTerceirizados() {
 
     fil.sort((a, b) => a.nome.localeCompare(b.nome));
     
-    // Processa o HTML e filtra linhas vazias
     const htmlLinhas = fil.map(t => {
         const obraAtual = STATE.obras.find(o => o.id == t.obra_atual_id);
         const nomeObra = obraAtual ? obraAtual.nome : '<span class="text-slate-400 italic font-normal">Geral</span>';
         const valorMetro = parseFloat(t.valor_metro || 0);
         
-        const producaoDoMes = STATE.producao_terc.filter(p => {
+        const producaoDoPeriodo = STATE.producao_terc.filter(p => {
             if (p.terceirizado_id !== t.id) return false;
-            const dt = new Date(p.data_registro);
-            const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
-            const a = String(dt.getUTCFullYear());
-            return m === mes && a === ano;
+            if (dataInicio && p.data_registro < dataInicio) return false;
+            if (dataFim && p.data_registro > dataFim) return false;
+            return true;
         });
 
-        const metrosPendentes = producaoDoMes.filter(p => p.status !== 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
-        const metrosPagos = producaoDoMes.filter(p => p.status === 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
+        const metrosPendentes = producaoDoPeriodo.filter(p => p.status !== 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
+        const metrosPagos = producaoDoPeriodo.filter(p => p.status === 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
         
-        // Aplica o filtro visual da tela
-        if (pagFiltro === 'pendente' && metrosPendentes === 0) return ''; // Esconde se não tem nada pendente
-        if (pagFiltro === 'pago' && metrosPagos === 0) return ''; // Esconde se não tem nada pago
+        if (pagFiltro === 'pendente' && metrosPendentes === 0) return '';
+        if (pagFiltro === 'pago' && metrosPagos === 0) return '';
       
-        
         const valorPendente = metrosPendentes * valorMetro;
         const valorPago = metrosPagos * valorMetro;
 
@@ -6089,7 +6244,7 @@ function renderTerceirizados() {
         </tr>`;
     }).join('');
     
-    list.innerHTML = htmlLinhas || `<tr><td colspan="5" class="p-8 text-center text-slate-400 font-medium">Nenhuma produção atende a este filtro no mês selecionado.</td></tr>`;
+    list.innerHTML = htmlLinhas || `<tr><td colspan="5" class="p-8 text-center text-slate-400 font-medium">Nenhuma produção atende a este filtro no período selecionado.</td></tr>`;
     lucide.createIcons();
 }
       
@@ -6166,17 +6321,15 @@ function openTercProdModal(id) {
 }
 
 function renderTercProdList(id) {
-    const mes = document.getElementById('terc-filter-mes').value;
-    const ano = document.getElementById('terc-filter-ano').value;
+    const dataInicio = document.getElementById('terc-filter-data-inicio')?.value || '';
+    const dataFim = document.getElementById('terc-filter-data-fim')?.value || '';
     const t = STATE.terceirizados.find(x => x.id == id);
     
-    // Filtra produção do mês
     let prod = STATE.producao_terc.filter(p => {
         if(p.terceirizado_id !== id) return false;
-        const dt = new Date(p.data_registro);
-        const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
-        const a = dt.getUTCFullYear();
-        return m === mes && String(a) === ano;
+        if (dataInicio && p.data_registro < dataInicio) return false;
+        if (dataFim && p.data_registro > dataFim) return false;
+        return true;
     });
 
     prod.sort((a,b) => new Date(b.data_registro) - new Date(a.data_registro));
@@ -6201,7 +6354,7 @@ function renderTercProdList(id) {
     }).join('');
 
     if(prod.length === 0) {
-        document.getElementById('prod-terc-list-body').innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-400 font-medium text-xs">Nenhuma medição neste mês.</td></tr>`;
+        document.getElementById('prod-terc-list-body').innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-400 font-medium text-xs">Nenhuma medição neste período.</td></tr>`;
     }
 
     document.getElementById('prod-terc-total-metros').innerText = totalMetros.toFixed(2);
@@ -6305,13 +6458,13 @@ async function imprimirReciboTerc(tercId) {
 
       
 function imprimirRelatorioTerc() {
-    const mes = document.getElementById('terc-filter-mes').value;
-    const ano = document.getElementById('terc-filter-ano').value;
+    const dataInicio = document.getElementById('terc-filter-data-inicio')?.value || '';
+    const dataFim = document.getElementById('terc-filter-data-fim')?.value || '';
     const buscaNome = document.getElementById('terc-search').value.toLowerCase();
     const statusFiltro = document.getElementById('terc-filter-status').value;
     const pagFiltro = document.getElementById('terc-filter-pagamento').value;
     
-    let labelFiltro = pagFiltro === 'pendente' ? 'VALORES PENDENTES A PAGAR' : (pagFiltro === 'pago' ? 'VALORES JÁ PAGOS' : 'PRODUÇÃO TOTAL DO MÊS');
+    let labelFiltro = pagFiltro === 'pendente' ? 'VALORES PENDENTES A PAGAR' : (pagFiltro === 'pago' ? 'VALORES JÁ PAGOS' : 'PRODUÇÃO TOTAL DO PERÍODO');
 
     let fil = STATE.terceirizados.filter(t => {
         const bateNome = t.nome.toLowerCase().includes(buscaNome) || (t.cpf_cnpj||'').includes(buscaNome);
@@ -6323,13 +6476,18 @@ function imprimirRelatorioTerc() {
         return bateNome && bateStatus;
     });
 
+    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : 'Início';
+    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'Fim';
+    const periodoExibicao = (dataInicio || dataFim) ? `${dataIniFormatada} a ${dataFimFormatada}` : 'Todos os períodos';
+    const hoje = new Date().toLocaleDateString('pt-BR');
+
     let htmlRelatorio = `
         <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; padding: 10px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 15px; margin-bottom: 25px;">
                 <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 55px;" />
                 <div style="text-align: right;">
                     <h2 style="margin: 0; font-size: 18px; font-weight: 900; color: #0f172a; text-transform: uppercase;">Folha de Terceirizados</h2>
-                    <p style="margin: 3px 0 0 0; font-size: 13px; color: #1d4ed8; font-weight: bold;">Competência: ${mes}/${ano}</p>
+                    <p style="margin: 3px 0 0 0; font-size: 13px; color: #1d4ed8; font-weight: bold;">Período: ${periodoExibicao}</p>
                     <p style="margin: 3px 0 0 0; font-size: 11px; color: #b91c1c; font-weight: bold;">${labelFiltro}</p>
                 </div>
             </div>
@@ -6350,16 +6508,15 @@ function imprimirRelatorioTerc() {
     let encontrouProducao = false;
 
     fil.forEach(terc => {
-        const producaoDoMes = STATE.producao_terc.filter(p => {
+        const producaoDoPeriodo = STATE.producao_terc.filter(p => {
             if (p.terceirizado_id !== terc.id) return false;
-            const dt = new Date(p.data_registro);
-            const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
-            const a = String(dt.getUTCFullYear());
-            return m === mes && a === ano;
+            if (dataInicio && p.data_registro < dataInicio) return false;
+            if (dataFim && p.data_registro > dataFim) return false;
+            return true;
         });
 
-        const metrosPendentes = producaoDoMes.filter(p => p.status !== 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
-        const metrosPagos = producaoDoMes.filter(p => p.status === 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
+        const metrosPendentes = producaoDoPeriodo.filter(p => p.status !== 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
+        const metrosPagos = producaoDoPeriodo.filter(p => p.status === 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
         
         let metrosConsiderados = 0;
         if (pagFiltro === 'pendente') metrosConsiderados = metrosPendentes;
@@ -6409,42 +6566,37 @@ function imprimirRelatorioTerc() {
     setTimeout(() => window.print(), 400);
 }
       
-        async function baixarPagamentoTerc(tercId) {
-            const mes = document.getElementById('terc-filter-mes').value;
-            const ano = document.getElementById('terc-filter-ano').value;
-            const t = STATE.terceirizados.find(x => x.id == tercId);
-        
-            if(!confirm(`Deseja dar baixa (Marcar como PAGO) em TODAS AS MEDIÇÕES PENDENTES de ${mes}/${ano} para ${t.nome}?`)) return;
-        
-            showLoading(true);
-        
-            // Mapeia apenas os IDs dos registros do mês que estão PENDENTES
-            const idsParaPagar = STATE.producao_terc.filter(p => {
-                if (p.terceirizado_id !== tercId || p.status === 'PAGO') return false;
-                
-                const dt = new Date(p.data_registro);
-                const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
-                const a = String(dt.getUTCFullYear());
-                
-                return m === mes && a === ano;
-            }).map(p => p.id);
-        
-            if (idsParaPagar.length === 0) {
-                showLoading(false);
-                return showToast("Nada pendente para pagar neste período.", true);
-            }
-        
-            const { error } = await sb.from('jsp_producao_terc')
-                .update({ status: 'PAGO' })
-                .in('id', idsParaPagar);
-        
-            if(error) { showLoading(false); return showToast("Erro ao baixar: " + error.message, true); }
-        
-            showToast(`Baixa realizada com sucesso para ${t.nome}!`);
-            await loadData(); // Recarrega os dados do Supabase
-            renderTerceirizados(); // Atualiza a tela
-        }
+       async function baixarPagamentoTerc(tercId) {
+    const dataInicio = document.getElementById('terc-filter-data-inicio')?.value || '';
+    const dataFim = document.getElementById('terc-filter-data-fim')?.value || '';
+    const t = STATE.terceirizados.find(x => x.id == tercId);
 
+    if(!confirm(`Deseja dar baixa (Marcar como PAGO) em TODAS AS MEDIÇÕES PENDENTES no período selecionado para ${t.nome}?`)) return;
+
+    showLoading(true);
+
+    const idsParaPagar = STATE.producao_terc.filter(p => {
+        if (p.terceirizado_id !== tercId || p.status === 'PAGO') return false;
+        if (dataInicio && p.data_registro < dataInicio) return false;
+        if (dataFim && p.data_registro > dataFim) return false;
+        return true;
+    }).map(p => p.id);
+
+    if (idsParaPagar.length === 0) {
+        showLoading(false);
+        return showToast("Nada pendente para pagar neste período.", true);
+    }
+
+    const { error } = await sb.from('jsp_producao_terc')
+        .update({ status: 'PAGO' })
+        .in('id', idsParaPagar);
+
+    if(error) { showLoading(false); return showToast("Erro ao baixar: " + error.message, true); }
+
+    showToast(`Baixa realizada com sucesso para ${t.nome}!`);
+    await loadData();
+    renderTerceirizados();
+}
       function imprimirReciboIndividualTerc() {
     // Pega o ID do terceirizado que está aberto no modal
     const tercId = document.getElementById('prod-terc-id').value;
@@ -6755,23 +6907,56 @@ function getColaboradoresUnificados() {
 }
 
 
-      function abrirModalDocumentosTerc(id) {
+     function abrirModalDocumentosTerc(id) {
     const t = STATE.terceirizados.find(x => x.id == id);
     if (!t) return;
     
     document.getElementById('doc-equipe-id').value = t.id;
-    document.getElementById('doc-equipe-nome').innerText = `Colaborador: ${t.nome}`;
+    document.getElementById('doc-equipe-nome').innerText = `Terceirizado: ${t.nome}`;
     
     const btnAssinar = document.getElementById('btn-assinar-doc');
-    btnAssinar.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i> Marcar como Assinado`;
-    btnAssinar.classList.remove('bg-emerald-700', 'hover:bg-emerald-800');
-    btnAssinar.classList.add('bg-green-600', 'hover:bg-green-700');
-    btnAssinar.setAttribute('onclick', 'marcarContratoAssinadoTerc()');
+    const assinado = t.contrato_assinado === true;
+
+    btnAssinar.innerHTML = assinado 
+        ? `<i data-lucide="check-double" class="w-4 h-4"></i> Contrato Já Assinado`
+        : `<i data-lucide="check-circle" class="w-4 h-4"></i> Marcar como Assinado`;
+    
+    btnAssinar.classList.toggle('bg-emerald-700', assinado);
+    btnAssinar.classList.toggle('hover:bg-emerald-800', assinado);
+    btnAssinar.classList.toggle('bg-green-600', !assinado);
+    btnAssinar.classList.toggle('hover:bg-green-700', !assinado);
+
+    btnAssinar.setAttribute('onclick', assinado ? '' : 'marcarContratoAssinadoTerc()');
     
     document.getElementById('modal-docs-equipe').classList.remove('hidden');
     lucide.createIcons();
 }
+      
 
+      async function marcarContratoAssinadoTerc() {
+          const id = document.getElementById('doc-equipe-id').value;
+          const terc = STATE.terceirizados.find(t => t.id == id);
+          if (!terc) {
+              showToast("Terceirizado não encontrado.", true);
+              return;
+          }
+      
+          showLoading(true);
+          // ⚠️ Certifique-se de que a tabela 'jsp_terceirizados' tenha a coluna 'contrato_assinado' (boolean).
+          // Se não tiver, crie-a no Supabase ou use um campo alternativo (ex: 'ativo').
+          const { error } = await sb.from('jsp_terceirizados')
+              .update({ contrato_assinado: true })
+              .eq('id', id);
+      
+          if (error) {
+              showLoading(false);
+              return showToast("Erro: " + error.message, true);
+          }
+      
+          showToast("Contrato marcado como assinado!");
+          document.getElementById('modal-docs-equipe').classList.add('hidden');
+          loadData(); // recarrega STATE
+      }
       
       
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
