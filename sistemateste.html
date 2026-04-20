@@ -1615,7 +1615,7 @@
                     <i data-lucide="ruler" width="12"></i> MEDIÇÃO
                 </button>
                 ${c.valor_total > 0 ? `<button onclick="baixarPagamentoTerc('${c.id}')" class="px-2 py-1.5 bg-green-600 text-white hover:bg-green-700 rounded shadow font-bold text-[10px] flex items-center gap-1"><i data-lucide="check-circle" width="12"></i> BAIXAR</button>` : ''}
-                <button onclick="openTercForm('${c.id}')" class="p-1.5 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded flex items-center justify-center"><i data-lucide="edit-3" width="14"></i></button>
+                <button onclick="openEquipeForm('${c.id}', 'terceirizado')" class="p-1.5 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded flex items-center justify-center"><i data-lucide="edit-3" width="14"></i></button>
                 ${wppBtn}
             `;
         }
