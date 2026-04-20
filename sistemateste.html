@@ -71,7 +71,7 @@
         <button onclick="navigate('fin')" id="nav-fin" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="bar-chart-3"></i> <span class="font-medium text-sm">Financeiro Obras</span></button>
         <div class="border-t border-slate-800 my-2 pt-2"></div>
         <button onclick="navigate('equipe')" id="nav-equipe" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="users"></i> <span class="font-medium text-sm">Equipe</span></button>
-        <button id="nav-terc" onclick="navigate('terc')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition font-medium"><i data-lucide="hard-hat" width="20"></i> Terceirizados </button>
+        <!--<button id="nav-terc" onclick="navigate('terc')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition font-medium"><i data-lucide="hard-hat" width="20"></i> Terceirizados </button>-->
         <button onclick="navigate('fornecedores')" id="nav-fornecedores" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="truck"></i> <span class="font-medium text-sm">Fornecedores</span></button>
         <button onclick="navigate('prod')" id="nav-prod" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="package"></i> <span class="font-medium text-sm">Produtos</span></button>
         <button onclick="navigate('fases')" id="nav-fases" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="layers"></i> <span class="font-medium text-sm">Fases de Obra</span></button>
@@ -508,18 +508,20 @@
       </div>
 
       <div id="equipe-form-container" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-        <form onsubmit="saveEquipe(event)" class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <h3 class="font-bold text-lg mb-4 flex items-center gap-2"><i data-lucide="user-plus" class="text-blue-600"></i> Membro da Equipe</h3>
+                <form onsubmit="saveEquipe(event)" class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <h3 class="font-bold text-lg mb-4 flex items-center gap-2"><i data-lucide="user-plus" class="text-blue-600"></i> Cadastro de Colaborador</h3>
             <input type="hidden" id="eqp-id">
+            <input type="hidden" id="eqp-tipo-origem" value="equipe"> <!-- NOVO: indica se é equipe ou terceirizado -->
             <div class="space-y-3">
                 <div><label class="block text-[10px] font-bold text-slate-500 uppercase">Nome Completo</label><input type="text" id="eqp-name" required class="w-full p-2 border rounded focus:border-blue-600 outline-none bg-slate-50"></div>
                 <div class="grid grid-cols-2 gap-3">
                       <div>
                           <label class="block text-[10px] font-bold text-slate-500 uppercase">Categoria / Função</label>
-                          <select id="eqp-cat" class="w-full p-2 border rounded focus:border-blue-600 outline-none bg-slate-50">
+                          <select id="eqp-cat" required class="w-full p-2 border rounded focus:border-blue-600 outline-none bg-slate-50" onchange="onCategoriaChange()">
                               <option value="" disabled selected>-- Selecione --</option>
                               <option value="Pedreiro">Pedreiro</option>
-                              <option value="Servente">Servente</option>                             
+                              <option value="Servente">Servente</option>
+                              <option value="Terceirizado">Terceirizado (Metro)</option>
                           </select>
                       </div>
                       <div>
@@ -544,7 +546,10 @@
                         <input type="date" id="eqp-contrato" class="w-full p-2 border rounded focus:border-blue-600 outline-none bg-white font-bold text-slate-700">
                     </div>
 
-                    <div><label class="block text-[10px] font-bold text-slate-500 uppercase">Valor da Diária (R$)</label><input type="number" step="0.01" id="eqp-diaria" class="w-full p-2 border rounded focus:border-blue-600 outline-none font-black text-green-700 bg-green-50"></div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase" id="label-valor-base">Valor da Diária (R$)</label>
+                        <input type="number" step="0.01" id="eqp-diaria" class="w-full p-2 border rounded focus:border-blue-600 outline-none font-black text-green-700 bg-green-50">
+                    </div>
                 </div>
             </div>
             <div class="flex gap-2 mt-6">
@@ -1582,12 +1587,7 @@
         const obraAtual = STATE.obras.find(o => o.id == c.obra_atual_id);
         const nomeObra = obraAtual ? obraAtual.nome : '<span class="text-slate-400 italic">Sem obra fixa</span>';
         const diariaOuMetro = c.tipo === 'diaria' ? formatMoney(c.valor_base) : `${formatMoney(c.valor_base)}/m`;
-        
-        // Badge do tipo
-        const tipoBadge = c.tipo === 'diaria' 
-            ? '<span class="bg-blue-100 text-blue-700 text-[9px] font-bold px-2 py-0.5 rounded">DIÁRIA</span>'
-            : '<span class="bg-purple-100 text-purple-700 text-[9px] font-bold px-2 py-0.5 rounded">METRO</span>';
-        
+            
         const isPendente = c.status_pagamento === 'PENDENTE';
         const valorExibicao = c.valor_total || 0;
         
@@ -1626,8 +1626,7 @@
             <td class="p-2">
                 <div class="font-bold text-slate-800 text-sm flex items-center gap-2">
                     ${c.nome} 
-                    ${c.ativo === false ? '<span class="text-[9px] text-red-500 font-bold">(DESATIVADO)</span>' : ''}
-                    ${tipoBadge}
+                    ${c.ativo === false ? '<span class="text-[9px] text-red-500 font-bold">(DESATIVADO)</span>' : ''}                    
                 </div>
                 <div class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded uppercase font-bold inline-block mt-0.5">${c.categoria || 'Geral'}</div>
             </td>
@@ -2316,67 +2315,137 @@ function imprimirReciboSaldo(equipeId) {
 
       
 
-        function openEquipeForm(id) {
+        function openEquipeForm(id, tipoOrigem = 'equipe') {
     document.getElementById('equipe-form-container').classList.remove('hidden');
-    if(id) {
-        const e = STATE.equipe.find(x => x.id == id);
-        document.getElementById('eqp-id').value = e.id;
-        document.getElementById('eqp-name').value = e.nome;
-        document.getElementById('eqp-cat').value = e.categoria || '';
-        document.getElementById('eqp-phone').value = e.telefone || '';
-        document.getElementById('eqp-cpf').value = e.cpf || '';
-        document.getElementById('eqp-rg').value = e.rg || '';
-        document.getElementById('eqp-endereco').value = e.endereco || '';
-        document.getElementById('eqp-obra').value = e.obra_atual_id || '';
-        document.getElementById('eqp-diaria').value = e.valor_diaria || '';
-        document.getElementById('eqp-pix').value = e.chave_pix || '';
-        // NOVA LINHA: Carrega a data de contrato
-        document.getElementById('eqp-contrato').value = e.data_contrato || '';
+    const catSelect = document.getElementById('eqp-cat');
+    const tipoHidden = document.getElementById('eqp-tipo-origem');
+    
+    if (id) {
+        if (tipoOrigem === 'terceirizado') {
+            const t = STATE.terceirizados.find(x => x.id == id);
+            if (t) {
+                document.getElementById('eqp-id').value = t.id;
+                document.getElementById('eqp-name').value = t.nome || '';
+                catSelect.value = 'Terceirizado';
+                document.getElementById('eqp-phone').value = t.telefone || '';
+                document.getElementById('eqp-cpf').value = t.cpf_cnpj || '';
+                document.getElementById('eqp-rg').value = t.rg || '';
+                document.getElementById('eqp-endereco').value = t.endereco || '';
+                document.getElementById('eqp-pix').value = t.chave_pix || '';
+                document.getElementById('eqp-obra').value = t.obra_atual_id || '';
+                document.getElementById('eqp-contrato').value = ''; // terceirizado não tem data_contrato
+                document.getElementById('eqp-diaria').value = t.valor_metro || '';
+                tipoHidden.value = 'terceirizado';
+                onCategoriaChange();
+            }
+        } else {
+            const e = STATE.equipe.find(x => x.id == id);
+            if (e) {
+                document.getElementById('eqp-id').value = e.id;
+                document.getElementById('eqp-name').value = e.nome;
+                catSelect.value = e.categoria || 'Servente';
+                document.getElementById('eqp-phone').value = e.telefone || '';
+                document.getElementById('eqp-cpf').value = e.cpf || '';
+                document.getElementById('eqp-rg').value = e.rg || '';
+                document.getElementById('eqp-endereco').value = e.endereco || '';
+                document.getElementById('eqp-pix').value = e.chave_pix || '';
+                document.getElementById('eqp-obra').value = e.obra_atual_id || '';
+                document.getElementById('eqp-contrato').value = e.data_contrato || '';
+                document.getElementById('eqp-diaria').value = e.valor_diaria || '';
+                tipoHidden.value = 'equipe';
+                onCategoriaChange();
+            }
+        }
     } else {
+        // Novo cadastro: reseta formulário
         document.getElementById('equipe-form-container').querySelector('form').reset();
         document.getElementById('eqp-id').value = '';
+        catSelect.value = 'Servente'; // padrão
+        tipoHidden.value = 'equipe';
+        onCategoriaChange();
     }
 }
+      
 async function saveEquipe(e) {
-    e.preventDefault(); showLoading(true);
-    const isNew = !document.getElementById('eqp-id').value;
-    const payload = {
-        nome: document.getElementById('eqp-name').value,
-        categoria: document.getElementById('eqp-cat').value,
-        telefone: document.getElementById('eqp-phone').value,
-        cpf: document.getElementById('eqp-cpf').value,
-        rg: document.getElementById('eqp-rg').value,
-        endereco: document.getElementById('eqp-endereco').value,
-        obra_atual_id: document.getElementById('eqp-obra').value || null,
-        valor_diaria: parseFloat(document.getElementById('eqp-diaria').value) || 0,
-        chave_pix: document.getElementById('eqp-pix').value,        
-        data_contrato: document.getElementById('eqp-contrato').value || null 
-    };
+    e.preventDefault(); 
+    showLoading(true);
     
-    if(isNew) {
-        payload.id = crypto.randomUUID();
-        payload.ativo = true;
-        payload.contrato_assinado = false;
+    const id = document.getElementById('eqp-id').value;
+    const isNew = !id;
+    const tipoOrigem = document.getElementById('eqp-tipo-origem').value; // 'equipe' ou 'terceirizado'
+    
+    const nome = document.getElementById('eqp-name').value;
+    const categoria = document.getElementById('eqp-cat').value;
+    const telefone = document.getElementById('eqp-phone').value;
+    const cpf = document.getElementById('eqp-cpf').value;
+    const rg = document.getElementById('eqp-rg').value;
+    const endereco = document.getElementById('eqp-endereco').value;
+    const chave_pix = document.getElementById('eqp-pix').value;
+    const obra_id = document.getElementById('eqp-obra').value || null;
+    const valor_base = parseFloat(document.getElementById('eqp-diaria').value) || 0;
+    const data_contrato = document.getElementById('eqp-contrato').value || null;
+    
+    if (tipoOrigem === 'terceirizado') {
+        // Salvar na tabela jsp_terceirizados
+        const payload = {
+            nome,
+            cpf_cnpj: cpf,
+            rg,
+            telefone,
+            chave_pix,
+            endereco,
+            obra_atual_id: obra_id,
+            valor_metro: valor_base
+        };
+        
+        if (!isNew) {
+            payload.id = id;
+        } else {
+            payload.id = crypto.randomUUID();
+            payload.ativo = true;
+        }
+        
+        const { error } = await sb.from('jsp_terceirizados').upsert(payload);
+        if (error) {
+            showLoading(false);
+            return showToast("Erro ao salvar terceirizado: " + error.message, true);
+        }
     } else {
-        payload.id = document.getElementById('eqp-id').value;
+        // Salvar na tabela jsp_equipe
+        const payload = {
+            nome,
+            categoria,
+            telefone,
+            cpf,
+            rg,
+            endereco,
+            chave_pix,
+            obra_atual_id: obra_id,
+            valor_diaria: valor_base,
+            data_contrato
+        };
+        
+        if (!isNew) {
+            payload.id = id;
+        } else {
+            payload.id = crypto.randomUUID();
+            payload.ativo = true;
+            payload.contrato_assinado = false;
+        }
+        
+        const { error } = await sb.from('jsp_equipe').upsert(payload);
+        if (error) {
+            showLoading(false);
+            return showToast("Erro ao salvar membro da equipe: " + error.message, true);
+        }
     }
-
-    const { error } = await sb.from('jsp_equipe').upsert(payload);
-    if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
     
     document.getElementById('equipe-form-container').classList.add('hidden');
-    showToast("Membro salvo na equipe!"); loadData();
+    showToast("Cadastro salvo com sucesso!");
+    loadData(); // recarrega os dados
 }
-        async function toggleStatusEquipe(id, isAtivo) {
-            const acao = isAtivo ? "DESATIVAR (Demitir)" : "REATIVAR";
-            if(!confirm(`Tem certeza que deseja ${acao} este colaborador? Ele ${isAtivo ? 'não aparecerá' : 'voltará a aparecer'} na lista padrão.`)) return;
-            
-            showLoading(true);
-            const { error } = await sb.from('jsp_equipe').update({ ativo: !isAtivo }).eq('id', id);
-            if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
-            showToast(`Status atualizado com sucesso!`); loadData();
-        }
 
+      
         // --- Lógica do Ponto ---
         let currentPontoDias = [];
         let currentPontoDiaria = 0;
@@ -5968,6 +6037,23 @@ function getColaboradoresUnificados() {
     return [...equipe, ...terceirizados];
 }
 
+      // NOVA FUNÇÃO - Altera label do campo valor conforme categoria selecionada
+    function onCategoriaChange() {
+        const cat = document.getElementById('eqp-cat').value;
+        const label = document.getElementById('label-valor-base');
+        const input = document.getElementById('eqp-diaria');
+        const tipoOrigem = document.getElementById('eqp-tipo-origem');
+        
+        if (cat === 'Terceirizado') {
+            label.innerText = 'Valor do Metro (R$)';
+            input.placeholder = 'Ex: 50.00';
+            tipoOrigem.value = 'terceirizado';
+        } else {
+            label.innerText = 'Valor da Diária (R$)';
+            input.placeholder = '0.00';
+            tipoOrigem.value = 'equipe';
+        }
+    }
       
       
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
