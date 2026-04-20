@@ -1337,19 +1337,14 @@
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mês</label>
-                        <select id="folha-mes" class="w-full p-3 border rounded-lg text-sm font-bold bg-white">
-                            <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option>
-                            <option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option>
-                            <option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option>
-                            <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
-                        </select>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Início</label>
+                        <input type="date" id="folha-data-inicio" class="w-full p-3 border rounded-lg text-sm font-bold bg-white">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Ano</label>
-                        <input type="number" id="folha-ano" class="w-full p-3 border rounded-lg text-sm font-bold bg-white" value="">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Fim</label>
+                        <input type="date" id="folha-data-fim" class="w-full p-3 border rounded-lg text-sm font-bold bg-white">
                     </div>
-                </div>
+                </div>               
             </div>
         </div>
         <div class="p-4 bg-white border-t flex justify-end gap-3 shrink-0">
@@ -1847,7 +1842,6 @@
     const dataFim = document.getElementById('saldo-filtro-data-fim').value;
     const hoje = new Date().toLocaleDateString('pt-BR');
     
-    // Formata período
     const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
     const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
     const periodo = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
@@ -2780,14 +2774,12 @@ async function fecharPagamentoSaldo() {
     const func = STATE.equipe.find(e => e.id === funcId);
     if (!func) return;
     
-    // Obtém os registros pendentes conforme filtro atual
     let registros = STATE.ponto_diario.filter(p => 
         p.funcionario_id === funcId && 
         p.status === 'VALIDADO' &&
         !p.pago_em_fechamento
     );
     
-    // Aplica filtro de período
     if (dataInicio) {
         registros = registros.filter(p => p.hora_registro >= dataInicio + 'T00:00:00');
     }
@@ -2799,11 +2791,9 @@ async function fecharPagamentoSaldo() {
         return showToast('Nenhum registro pendente para fechar.', true);
     }
     
-    // Calcula total de diárias
     const totalDiarias = calcularTotalDiariasDosRegistros(registros);
     const valorTotal = totalDiarias * parseFloat(func.valor_diaria || 0);
     
-    // Formata período para descrição
     const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
     const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
     const periodoDesc = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
@@ -2812,7 +2802,6 @@ async function fecharPagamentoSaldo() {
     
     showLoading(true);
     
-    // 1. Criar lançamento financeiro (despesa) PENDENTE
     const descricao = `Pagamento de ponto - ${func.nome} - Período ${periodoDesc}`;
     const { error: errFin } = await sb.from('jsp_logs').insert([{
         id: getNextIdNum(STATE.logs).toString(),
@@ -2832,7 +2821,6 @@ async function fecharPagamentoSaldo() {
         return showToast('Erro ao gerar despesa: ' + errFin.message, true);
     }
     
-    // 2. Marcar registros como pagos
     const ids = registros.map(r => r.id);
     const { error: errPonto } = await sb.from('jsp_ponto_diario')
         .update({ pago_em_fechamento: true })
@@ -2845,7 +2833,7 @@ async function fecharPagamentoSaldo() {
     
     await loadData();
     fecharModalSaldo();
-    renderEquipe(); // Atualiza a lista principal
+    renderEquipe();
     showToast('Pagamento fechado! Despesa lançada como pendente.');
 }
       
@@ -2896,11 +2884,9 @@ function imprimirExtratoSaldo() {
         };
     });
     
-    // Formata período para exibição
     const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : 'Início';
     const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'Fim';
     const periodoExibicao = `${dataIniFormatada} a ${dataFimFormatada}`;
-    
     const hoje = new Date().toLocaleDateString('pt-BR');
     
     let html = `
@@ -3738,30 +3724,34 @@ async function estornarUltimoFechamento() {
             showToast("Pagamento e Despesa lançados com sucesso!"); loadData();
         }
 function abrirModalFolhaPagamento() {
-    // Preenche o select de obras
     const selectObra = document.getElementById('folha-obra');
     selectObra.innerHTML = '<option value="">Todas as Obras</option>' + 
         STATE.obras.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
     
-    // Define mês/ano atual como padrão
     const hoje = new Date();
-    document.getElementById('folha-mes').value = String(hoje.getMonth() + 1).padStart(2, '0');
-    document.getElementById('folha-ano').value = hoje.getFullYear();
+    const anoAtual = hoje.getFullYear();
+    const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
+    const primeiroDia = `${anoAtual}-${mesAtual}-01`;
+    const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
+    const ultimoDiaStr = `${anoAtual}-${mesAtual}-${String(ultimoDia).padStart(2, '0')}`;
+    
+    document.getElementById('folha-data-inicio').value = primeiroDia;
+    document.getElementById('folha-data-fim').value = ultimoDiaStr;
     
     document.getElementById('modal-folha-pagamento').classList.remove('hidden');
     lucide.createIcons();
 }
+      
 
 function executarImpressaoFolha() {
     const statusFinanceiro = document.getElementById('folha-status').value;
     const obraFiltro = document.getElementById('folha-obra').value;
     const statusFunc = document.getElementById('folha-status-func').value;
-    const mes = document.getElementById('folha-mes').value;
-    const ano = document.getElementById('folha-ano').value;
+    const dataInicio = document.getElementById('folha-data-inicio').value;
+    const dataFim = document.getElementById('folha-data-fim').value;
     
     const colaboradores = getColaboradoresUnificados();
     
-    // Filtros
     let filtrados = colaboradores.filter(c => {
         if (statusFunc === 'true' && c.ativo === false) return false;
         if (statusFunc === 'false' && c.ativo !== false) return false;
@@ -3776,7 +3766,6 @@ function executarImpressaoFolha() {
         let quantidade = 0;
         
         if (c.tipo === 'diaria') {
-            // Busca despesas de ponto
             const despesasPonto = STATE.logs.filter(l => 
                 l.tipo === 'despesa' &&
                 l.produto_nome && l.produto_nome.includes(`Pagamento de ponto - ${c.nome}`) &&
@@ -3784,10 +3773,12 @@ function executarImpressaoFolha() {
             );
             
             let despesasFiltradas = despesasPonto;
-            if (mes && ano) {
+            if (dataInicio || dataFim) {
                 despesasFiltradas = despesasPonto.filter(d => {
-                    const match = d.produto_nome.match(/Período (\d{2})\/(\d{4})/);
-                    return match && match[1] === mes && match[2] === ano;
+                    const dataDesp = d.data ? d.data.split('T')[0] : '';
+                    if (dataInicio && dataDesp < dataInicio) return false;
+                    if (dataFim && dataDesp > dataFim) return false;
+                    return true;
                 });
             }
             
@@ -3813,13 +3804,11 @@ function executarImpressaoFolha() {
                 });
             }
         } else {
-            // Terceirizados (metro)
             const producao = STATE.producao_terc.filter(p => {
                 if (p.terceirizado_id !== c.id) return false;
-                const dt = new Date(p.data_registro);
-                const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
-                const a = String(dt.getUTCFullYear());
-                return m === mes && a === ano;
+                if (dataInicio && p.data_registro < dataInicio) return false;
+                if (dataFim && p.data_registro > dataFim) return false;
+                return true;
             });
             
             const metros = statusFinanceiro === 'PAGO' 
@@ -3849,7 +3838,9 @@ function executarImpressaoFolha() {
     
     dadosFolha.sort((a, b) => a.nome.localeCompare(b.nome));
     
-    const nomeMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][parseInt(mes)-1] || 'Todos';
+    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : 'Início';
+    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'Fim';
+    const periodoExibicao = (dataInicio || dataFim) ? `${dataIniFormatada} a ${dataFimFormatada}` : 'Todos os períodos';
     const hoje = new Date().toLocaleDateString('pt-BR');
     
     let html = `
@@ -3859,7 +3850,7 @@ function executarImpressaoFolha() {
                 <div style="text-align: right;">
                     <h1 style="margin: 0; font-size: 24px; font-weight: 900;">FOLHA DE PAGAMENTOS</h1>
                     <p style="margin: 5px 0 0 0; font-size: 14px; color: #1d4ed8; font-weight: bold;">Status: ${statusFinanceiro === 'PENDENTE' ? 'PENDENTES (NÃO BAIXADOS)' : statusFinanceiro}</p>
-                    <p style="margin: 2px 0 0 0; font-size: 12px;">Período: ${mes ? nomeMes + '/' + ano : 'Todos'}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 12px;">Período: ${periodoExibicao}</p>
                 </div>
             </div>
             
