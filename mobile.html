@@ -687,45 +687,99 @@
 
         // ====== RENDERERS DASHBOARD & OBRAS ======
         function renderDashboard() {
-            const grid = document.getElementById('dash-grid');
-            const saldosObras = {};
+    const grid = document.getElementById('dash-grid');
+    const saldosObras = {};
+    
+    // Inicializa totais por obra
+    STATE.obras.forEach(o => {
+        saldosObras[o.id] = { 
+            custos: 0, 
+            medicoes: 0,
+            valor_contrato: parseFloat(o.valor_contrato) || 0
+        };
+    });
+
+    // Calcula valores a partir dos logs financeiros (apenas PAGOS)
+    STATE.logs.forEach(l => {
+        if (l.status_financeiro === 'CANCELADO') return;
+        if (!saldosObras[l.obra_id]) return;
+        
+        if (l.tipo === 'receita' && l.status_financeiro === 'PAGO') {
+            saldosObras[l.obra_id].medicoes += parseFloat(l.valor_total || 0);
+        }
+        if ((l.tipo === 'compra' || l.tipo === 'despesa') && l.status_financeiro === 'PAGO') {
+            saldosObras[l.obra_id].custos += parseFloat(l.valor_total || 0);
+        }
+    });
+
+    grid.innerHTML = STATE.obras.map(o => {
+        const s = saldosObras[o.id] || { custos: 0, medicoes: 0, valor_contrato: 0 };
+        const valorContrato = s.valor_contrato;
+        const recebido = s.medicoes;
+        const gasto = s.custos;
+        const aReceber = valorContrato - recebido;
+        const caixaAtual = recebido - gasto;
+        
+        // Percentual de recebimento (barra de progresso)
+        const pctRecebido = valorContrato > 0 ? Math.min((recebido / valorContrato) * 100, 100) : 0;
+        
+        return `
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm relative">
+            <!-- Nome da Obra e Endereço -->
+            <div class="pr-6 mb-2">
+                <h4 class="font-black text-base text-slate-800 leading-tight">${o.nome}</h4>
+                <p class="text-[10px] text-slate-500 font-bold uppercase truncate">
+                    <i data-lucide="map-pin" class="inline w-3 h-3"></i> ${o.endereco || 'Endereço n. inf.'}
+                </p>
+            </div>
             
-            STATE.logs.forEach(l => {
-                if(l.status_financeiro === 'CANCELADO') return;
-                if(!saldosObras[l.obra_id]) saldosObras[l.obra_id] = { custos: 0, medicoes: 0 };
-                
-                if(l.tipo === 'receita' && l.status_financeiro === 'PAGO') {
-                    saldosObras[l.obra_id].medicoes += parseFloat(l.valor_total || 0);
-                }
-                if((l.tipo === 'compra' || l.tipo === 'despesa') && l.status_financeiro === 'PAGO') {
-                    saldosObras[l.obra_id].custos += parseFloat(l.valor_total || 0);
-                }
-            });
-
-            grid.innerHTML = STATE.obras.map(o => {
-                const s = saldosObras[o.id] || {custos: 0, medicoes: 0};
-                const valorContrato = parseFloat(o.valor_contrato) || 0;
-                const saldoContrato = valorContrato - s.medicoes;
-                
-                return `
-                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm relative">
-                    <h4 class="font-black text-lg text-slate-800 pr-10 leading-tight mb-1">${o.nome}</h4>
-                    <p class="text-[10px] text-slate-500 font-bold uppercase truncate mb-3"><i data-lucide="map-pin" class="inline w-3 h-3"></i> ${o.endereco || 'Endereço n. inf.'}</p>
-                    
-                    <div class="bg-slate-50 rounded-lg p-2 flex justify-between items-center mb-3 border border-slate-100">
-                        <span class="text-[10px] font-bold text-slate-500 uppercase">Saldo Contrato</span>
-                        <span class="font-black text-sm text-slate-700">${formatMoney(saldoContrato)}</span>
-                    </div>
-
-                    <div class="border-t border-slate-100 pt-3 flex justify-between items-end">
-                        <span class="text-[10px] font-bold text-slate-400">Total Custos Pagos</span>
-                        <span class="font-black text-xl text-red-600">${formatMoney(s.custos)}</span>
+            <!-- Barra de progresso do contrato -->
+            <div class="w-full bg-slate-100 rounded-full h-1.5 mb-1 mt-2">
+                <div class="bg-blue-600 h-1.5 rounded-full" style="width: ${pctRecebido}%"></div>
+            </div>
+            <div class="text-[9px] font-bold text-slate-400 text-right mb-3">${pctRecebido.toFixed(1)}% recebido</div>
+            
+            <!-- Grid de informações secundárias (tamanho menor) -->
+            <div class="grid grid-cols-2 gap-2 text-[10px]">
+                <div class="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                    <div class="text-slate-400 uppercase font-bold">Contrato</div>
+                    <div class="font-black text-slate-700 text-xs">${formatMoney(valorContrato)}</div>
+                </div>
+                <div class="bg-green-50 p-2 rounded-lg border border-green-100">
+                    <div class="text-green-600 uppercase font-bold">Medições</div>
+                    <div class="font-black text-green-700 text-xs">${formatMoney(recebido)}</div>
+                </div>
+                <div class="bg-orange-50 p-2 rounded-lg border border-orange-100">
+                    <div class="text-orange-600 uppercase font-bold">A Receber</div>
+                    <div class="font-black text-orange-700 text-xs">${formatMoney(aReceber)}</div>
+                </div>
+                <!-- Este campo (Custos) já será destacado abaixo, aqui só valor -->
+                <div class="bg-red-50 p-2 rounded-lg border border-red-100">
+                    <div class="text-red-600 uppercase font-bold">Custos</div>
+                    <div class="font-black text-red-700 text-xs">${formatMoney(gasto)}</div>
+                </div>
+            </div>
+            
+            <!-- DESTAQUE PRINCIPAL: Custos Pagos e Caixa Atual -->
+            <div class="mt-3 pt-3 border-t border-slate-200 flex justify-between items-end">
+                <div>
+                    <span class="text-[10px] font-bold text-slate-500 uppercase">Custos Pagos</span>
+                    <div class="font-black text-xl text-red-600 leading-5">${formatMoney(gasto)}</div>
+                </div>
+                <div class="text-right">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase">Caixa Atual</span>
+                    <div class="font-black text-xl ${caixaAtual >= 0 ? 'text-blue-700' : 'text-red-600'} leading-5">
+                        ${formatMoney(caixaAtual)}
                     </div>
                 </div>
-            `}).join('');
-            lucide.createIcons();
-        }
-
+            </div>
+        </div>
+        `;
+    }).join('');
+    
+    lucide.createIcons();
+}
+      
         function openObraForm(id) {
             if(id) {
                 const o = STATE.obras.find(x => x.id == id);
