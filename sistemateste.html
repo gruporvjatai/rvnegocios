@@ -3024,135 +3024,133 @@ function imprimirReciboSaldo(equipeId) {
 
       
 
-        function openEquipeForm(id, tipoOrigem = 'equipe') {
-    document.getElementById('equipe-form-container').classList.remove('hidden');
-    const catSelect = document.getElementById('eqp-cat');
-    const tipoHidden = document.getElementById('eqp-tipo-origem');
-    
-    if (id) {
-        if (tipoOrigem === 'terceirizado') {
-            const t = STATE.terceirizados.find(x => x.id == id);
-            if (t) {
-                document.getElementById('eqp-id').value = t.id;
-                document.getElementById('eqp-name').value = t.nome || '';
-                catSelect.value = 'Terceirizado';
-                document.getElementById('eqp-phone').value = t.telefone || '';
-                document.getElementById('eqp-cpf').value = t.cpf_cnpj || '';
-                document.getElementById('eqp-rg').value = t.rg || '';
-                document.getElementById('eqp-endereco').value = t.endereco || '';
-                document.getElementById('eqp-pix').value = t.chave_pix || '';
-                document.getElementById('eqp-obra').value = t.obra_atual_id || '';
-                document.getElementById('eqp-contrato').value = ''; // terceirizado não tem data_contrato
-                document.getElementById('eqp-diaria').value = t.valor_metro || '';
-                tipoHidden.value = 'terceirizado';
-                onCategoriaChange();
-            }
-        } else {
-            const e = STATE.equipe.find(x => x.id == id);
-            if (e) {
-                document.getElementById('eqp-id').value = e.id;
-                document.getElementById('eqp-name').value = e.nome;
-                catSelect.value = e.categoria || 'Servente';
-                document.getElementById('eqp-phone').value = e.telefone || '';
-                document.getElementById('eqp-cpf').value = e.cpf || '';
-                document.getElementById('eqp-rg').value = e.rg || '';
-                document.getElementById('eqp-endereco').value = e.endereco || '';
-                document.getElementById('eqp-pix').value = e.chave_pix || '';
-                document.getElementById('eqp-obra').value = e.obra_atual_id || '';
-                document.getElementById('eqp-contrato').value = e.data_contrato || '';
-                document.getElementById('eqp-diaria').value = e.valor_diaria || '';
-                tipoHidden.value = 'equipe';
-                onCategoriaChange();
-            }
-        }
-    } else {
-        // Novo cadastro: reseta formulário
-        document.getElementById('equipe-form-container').querySelector('form').reset();
-        document.getElementById('eqp-id').value = '';
-        catSelect.value = 'Servente'; // padrão
-        tipoHidden.value = 'equipe';
-        onCategoriaChange();
-    }
-}
+       function openEquipeForm(id, tipoOrigem = 'equipe') {
+          document.getElementById('equipe-form-container').classList.remove('hidden');
+          const catSelect = document.getElementById('eqp-cat');
+          const tipoHidden = document.getElementById('eqp-tipo-origem');
+          
+          if (id) {
+              if (tipoOrigem === 'terceirizado') {
+                  const t = STATE.terceirizados.find(x => x.id == id);
+                  if (t) {
+                      document.getElementById('eqp-id').value = t.id;
+                      document.getElementById('eqp-name').value = t.nome || '';
+                      catSelect.value = 'Terceirizado';
+                      document.getElementById('eqp-phone').value = t.telefone || '';
+                      document.getElementById('eqp-cpf').value = t.cpf_cnpj || '';
+                      document.getElementById('eqp-rg').value = t.rg || '';
+                      document.getElementById('eqp-endereco').value = t.endereco || '';
+                      document.getElementById('eqp-pix').value = t.chave_pix || '';
+                      document.getElementById('eqp-obra').value = t.obra_atual_id || '';
+                      document.getElementById('eqp-contrato').value = t.data_contrato || ''; // ✅ agora carrega a data do contrato
+                      document.getElementById('eqp-diaria').value = t.valor_metro || '';
+                      tipoHidden.value = 'terceirizado';
+                      onCategoriaChange();
+                  }
+              } else {
+                  const e = STATE.equipe.find(x => x.id == id);
+                  if (e) {
+                      document.getElementById('eqp-id').value = e.id;
+                      document.getElementById('eqp-name').value = e.nome;
+                      catSelect.value = e.categoria || 'Servente';
+                      document.getElementById('eqp-phone').value = e.telefone || '';
+                      document.getElementById('eqp-cpf').value = e.cpf || '';
+                      document.getElementById('eqp-rg').value = e.rg || '';
+                      document.getElementById('eqp-endereco').value = e.endereco || '';
+                      document.getElementById('eqp-pix').value = e.chave_pix || '';
+                      document.getElementById('eqp-obra').value = e.obra_atual_id || '';
+                      document.getElementById('eqp-contrato').value = e.data_contrato || '';
+                      document.getElementById('eqp-diaria').value = e.valor_diaria || '';
+                      tipoHidden.value = 'equipe';
+                      onCategoriaChange();
+                  }
+              }
+          } else {
+              document.getElementById('equipe-form-container').querySelector('form').reset();
+              document.getElementById('eqp-id').value = '';
+              catSelect.value = 'Servente';
+              tipoHidden.value = 'equipe';
+              onCategoriaChange();
+          }
+      }
       
-async function saveEquipe(e) {
-    e.preventDefault(); 
-    showLoading(true);
-    
-    const id = document.getElementById('eqp-id').value;
-    const isNew = !id;
-    const tipoOrigem = document.getElementById('eqp-tipo-origem').value; // 'equipe' ou 'terceirizado'
-    
-    const nome = document.getElementById('eqp-name').value;
-    const categoria = document.getElementById('eqp-cat').value;
-    const telefone = document.getElementById('eqp-phone').value;
-    const cpf = document.getElementById('eqp-cpf').value;
-    const rg = document.getElementById('eqp-rg').value;
-    const endereco = document.getElementById('eqp-endereco').value;
-    const chave_pix = document.getElementById('eqp-pix').value;
-    const obra_id = document.getElementById('eqp-obra').value || null;
-    const valor_base = parseFloat(document.getElementById('eqp-diaria').value) || 0;
-    const data_contrato = document.getElementById('eqp-contrato').value || null;
-    
-    if (tipoOrigem === 'terceirizado') {
-        // Salvar na tabela jsp_terceirizados
-        const payload = {
-            nome,
-            cpf_cnpj: cpf,
-            rg,
-            telefone,
-            chave_pix,
-            endereco,
-            obra_atual_id: obra_id,
-            valor_metro: valor_base
-        };
-        
-        if (!isNew) {
-            payload.id = id;
-        } else {
-            payload.id = crypto.randomUUID();
-            payload.ativo = true;
-        }
-        
-        const { error } = await sb.from('jsp_terceirizados').upsert(payload);
-        if (error) {
-            showLoading(false);
-            return showToast("Erro ao salvar terceirizado: " + error.message, true);
-        }
-    } else {
-        // Salvar na tabela jsp_equipe
-        const payload = {
-            nome,
-            categoria,
-            telefone,
-            cpf,
-            rg,
-            endereco,
-            chave_pix,
-            obra_atual_id: obra_id,
-            valor_diaria: valor_base,
-            data_contrato
-        };
-        
-        if (!isNew) {
-            payload.id = id;
-        } else {
-            payload.id = crypto.randomUUID();
-            payload.ativo = true;
-            payload.contrato_assinado = false;
-        }
-        
-        const { error } = await sb.from('jsp_equipe').upsert(payload);
-        if (error) {
-            showLoading(false);
-            return showToast("Erro ao salvar membro da equipe: " + error.message, true);
-        }
-    }
-    
-    document.getElementById('equipe-form-container').classList.add('hidden');
-    showToast("Cadastro salvo com sucesso!");
-    loadData(); // recarrega os dados
-}
+      async function saveEquipe(e) {
+          e.preventDefault(); 
+          showLoading(true);
+          
+          const id = document.getElementById('eqp-id').value;
+          const isNew = !id;
+          const tipoOrigem = document.getElementById('eqp-tipo-origem').value;
+          
+          const nome = document.getElementById('eqp-name').value;
+          const categoria = document.getElementById('eqp-cat').value;
+          const telefone = document.getElementById('eqp-phone').value;
+          const cpf = document.getElementById('eqp-cpf').value;
+          const rg = document.getElementById('eqp-rg').value;
+          const endereco = document.getElementById('eqp-endereco').value;
+          const chave_pix = document.getElementById('eqp-pix').value;
+          const obra_id = document.getElementById('eqp-obra').value || null;
+          const valor_base = parseFloat(document.getElementById('eqp-diaria').value) || 0;
+          const data_contrato = document.getElementById('eqp-contrato').value || null;
+          
+          if (tipoOrigem === 'terceirizado') {
+              const payload = {
+                  nome,
+                  cpf_cnpj: cpf,
+                  rg,
+                  telefone,
+                  chave_pix,
+                  endereco,
+                  obra_atual_id: obra_id,
+                  valor_metro: valor_base,
+                  data_contrato: data_contrato      // ✅ campo adicionado
+              };
+              
+              if (!isNew) {
+                  payload.id = id;
+              } else {
+                  payload.id = crypto.randomUUID();
+                  payload.ativo = true;
+              }
+              
+              const { error } = await sb.from('jsp_terceirizados').upsert(payload);
+              if (error) {
+                  showLoading(false);
+                  return showToast("Erro ao salvar terceirizado: " + error.message, true);
+              }
+          } else {
+              const payload = {
+                  nome,
+                  categoria,
+                  telefone,
+                  cpf,
+                  rg,
+                  endereco,
+                  chave_pix,
+                  obra_atual_id: obra_id,
+                  valor_diaria: valor_base,
+                  data_contrato
+              };
+              
+              if (!isNew) {
+                  payload.id = id;
+              } else {
+                  payload.id = crypto.randomUUID();
+                  payload.ativo = true;
+                  payload.contrato_assinado = false;
+              }
+              
+              const { error } = await sb.from('jsp_equipe').upsert(payload);
+              if (error) {
+                  showLoading(false);
+                  return showToast("Erro ao salvar membro da equipe: " + error.message, true);
+              }
+          }
+          
+          document.getElementById('equipe-form-container').classList.add('hidden');
+          showToast("Cadastro salvo com sucesso!");
+          loadData();
+      }
 
       
         // --- Lógica do Ponto ---
