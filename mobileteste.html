@@ -289,9 +289,9 @@
           <!-- NOVO FILTRO DE TIPO (DIÁRIA / METRO) -->
           <div class="mb-4">
               <select id="eqp-filter-tipo" onchange="renderEquipe()" class="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 shadow-sm">
-                  <option value="todos">Todos os Tipos</option>
-                  <option value="diaria">Diária (Próprios)</option>
-                  <option value="metro">Metro (Terceirizados)</option>
+                  <option value="todos">Todos</option>
+                  <option value="diaria">Diária</option>
+                  <option value="metro">Metro</option>
               </select>
           </div>
 
@@ -1555,59 +1555,58 @@
 
         // Abre formulário unificado
         function openEquipeForm(id, tipoOrigem = 'equipe') {
-            document.getElementById('equipe-form-container').classList.remove('hidden');
-            const catSelect = document.getElementById('eqp-categoria');
-            const tipoHidden = document.getElementById('eqp-tipo-origem');
-            
-            if (id) {
-                if (tipoOrigem === 'terceirizado') {
-                    const t = STATE.terceirizados.find(x => x.id == id);
-                    if (t) {
-                        document.getElementById('eqp-id').value = t.id;
-                        document.getElementById('eqp-nome').value = t.nome || '';
-                        catSelect.value = 'Terceirizado';
-                        document.getElementById('eqp-telefone').value = t.telefone || '';
-                        document.getElementById('eqp-cpf').value = t.cpf_cnpj || '';
-                        document.getElementById('eqp-rg').value = t.rg || '';
-                        document.getElementById('eqp-endereco').value = t.endereco || '';
-                        document.getElementById('eqp-chave_pix').value = t.chave_pix || '';
-                        document.getElementById('eqp-obra_atual_id').value = t.obra_atual_id || '';
-                        document.getElementById('eqp-data_contrato').value = '';
-                        document.getElementById('eqp-valor_diaria').value = t.valor_metro || '';
-                        document.getElementById('eqp-ativo').value = (t.ativo === true || t.ativo === 'true') ? 'true' : 'false';
-                        tipoHidden.value = 'terceirizado';
-                        onCategoriaChange();
-                    }
-                } else {
-                    const e = STATE.equipe.find(x => x.id == id);
-                    if (e) {
-                        document.getElementById('eqp-id').value = e.id;
-                        document.getElementById('eqp-nome').value = e.nome || '';
-                        catSelect.value = e.categoria || 'Servente';
-                        document.getElementById('eqp-telefone').value = e.telefone || '';
-                        document.getElementById('eqp-cpf').value = e.cpf || '';
-                        document.getElementById('eqp-rg').value = e.rg || '';
-                        document.getElementById('eqp-endereco').value = e.endereco || '';
-                        document.getElementById('eqp-chave_pix').value = e.chave_pix || '';
-                        document.getElementById('eqp-obra_atual_id').value = e.obra_atual_id || '';
-                        document.getElementById('eqp-data_contrato').value = e.data_contrato || '';
-                        document.getElementById('eqp-valor_diaria').value = e.valor_diaria || '';
-                        document.getElementById('eqp-ativo').value = (e.ativo === true || e.ativo === 'true') ? 'true' : 'false';
-                        tipoHidden.value = 'equipe';
-                        onCategoriaChange();
-                    }
-                }
-            } else {
-                document.getElementById('equipe-form-container').querySelector('form').reset();
-                document.getElementById('eqp-id').value = '';
-                catSelect.value = 'Servente';
-                document.getElementById('eqp-ativo').value = 'true';
-                tipoHidden.value = 'equipe';
-                onCategoriaChange();
-            }
-            openOverlayForm('equipe-form-container');
-        }
-
+          document.getElementById('equipe-form-container').classList.remove('hidden');
+          const catSelect = document.getElementById('eqp-categoria');
+          const tipoHidden = document.getElementById('eqp-tipo-origem');
+          
+          if (id) {
+              if (tipoOrigem === 'terceirizado') {
+                  const t = STATE.terceirizados.find(x => x.id == id);
+                  if (t) {
+                      document.getElementById('eqp-id').value = t.id;
+                      document.getElementById('eqp-nome').value = t.nome || '';
+                      catSelect.value = 'Terceirizado';
+                      document.getElementById('eqp-telefone').value = t.telefone || '';
+                      document.getElementById('eqp-cpf').value = t.cpf_cnpj || '';
+                      document.getElementById('eqp-rg').value = t.rg || '';
+                      document.getElementById('eqp-endereco').value = t.endereco || '';
+                      document.getElementById('eqp-chave_pix').value = t.chave_pix || '';
+                      document.getElementById('eqp-obra_atual_id').value = t.obra_atual_id || '';
+                      document.getElementById('eqp-data_contrato').value = t.data_contrato || ''; // ✅ agora carrega a data
+                      document.getElementById('eqp-valor_diaria').value = t.valor_metro || '';
+                      document.getElementById('eqp-ativo').value = (t.ativo === true || t.ativo === 'true') ? 'true' : 'false';
+                      tipoHidden.value = 'terceirizado';
+                      onCategoriaChange();
+                  }
+              } else {
+                  const e = STATE.equipe.find(x => x.id == id);
+                  if (e) {
+                      document.getElementById('eqp-id').value = e.id;
+                      document.getElementById('eqp-nome').value = e.nome || '';
+                      catSelect.value = e.categoria || 'Servente';
+                      document.getElementById('eqp-telefone').value = e.telefone || '';
+                      document.getElementById('eqp-cpf').value = e.cpf || '';
+                      document.getElementById('eqp-rg').value = e.rg || '';
+                      document.getElementById('eqp-endereco').value = e.endereco || '';
+                      document.getElementById('eqp-chave_pix').value = e.chave_pix || '';
+                      document.getElementById('eqp-obra_atual_id').value = e.obra_atual_id || '';
+                      document.getElementById('eqp-data_contrato').value = e.data_contrato || '';
+                      document.getElementById('eqp-valor_diaria').value = e.valor_diaria || '';
+                      document.getElementById('eqp-ativo').value = (e.ativo === true || e.ativo === 'true') ? 'true' : 'false';
+                      tipoHidden.value = 'equipe';
+                      onCategoriaChange();
+                  }
+              }
+          } else {
+              document.getElementById('equipe-form-container').querySelector('form').reset();
+              document.getElementById('eqp-id').value = '';
+              catSelect.value = 'Servente';
+              document.getElementById('eqp-ativo').value = 'true';
+              tipoHidden.value = 'equipe';
+              onCategoriaChange();
+          }
+          openOverlayForm('equipe-form-container');
+      }
         // Gera ID universal
         function gerarIdSeguro() {
             if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -1623,12 +1622,12 @@
         async function saveEquipe(e) {
             e.preventDefault(); 
             showLoading(true);
-
+        
             const getV = (id) => {
                 const el = document.getElementById(id);
                 return el ? el.value : '';
             };
-
+        
             const idAtual = getV('eqp-id');
             const isNew = !idAtual;
             const tipoOrigem = document.getElementById('eqp-tipo-origem').value;
@@ -1644,14 +1643,14 @@
             const valor_base = parseFloat(getV('eqp-valor_diaria')) || 0;
             const data_contrato = getV('eqp-data_contrato') || null;
             const ativo = getV('eqp-ativo') === 'true';
-
+        
             // Validações básicas
             if (!nome) { showLoading(false); showToast("❌ Nome obrigatório.", true); return; }
             if (!cpf) { showLoading(false); showToast("❌ CPF obrigatório.", true); return; }
             if (!telefone) { showLoading(false); showToast("❌ Telefone obrigatório.", true); return; }
             if (!obra_id) { showLoading(false); showToast("❌ Selecione a obra.", true); return; }
             if (valor_base <= 0) { showLoading(false); showToast("❌ Valor inválido.", true); return; }
-
+        
             if (tipoOrigem === 'terceirizado') {
                 const payload = {
                     nome,
@@ -1662,6 +1661,7 @@
                     endereco,
                     obra_atual_id: obra_id,
                     valor_metro: valor_base,
+                    data_contrato: data_contrato,      // ✅ campo adicionado
                     ativo
                 };
                 
