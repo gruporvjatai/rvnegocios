@@ -158,7 +158,7 @@
                     <option value="Boleto 30/60/90 Dias">Boleto 30/60/90 Dias</option>
                     <option value="Cartão de Crédito">Cartão de Crédito</option>
                     <option value="Cartão de Débito">Cartão de Débito</option>
-                    <option value="Transferência">Transferência</option>
+                    <option value="Carteira">Carteira</option>
                 </select>
                 
                 <label class="text-[9px] font-bold text-slate-500 uppercase mb-1 block">Observações Gerais</label>
@@ -307,42 +307,33 @@
         <button onclick="navigate('menu')" id="btn-menu" class="flex flex-col items-center p-2 text-slate-400 nav-bottom-btn w-1/4 transition-colors"><i data-lucide="menu" class="w-5 h-5 mb-1"></i><span class="text-[10px] font-bold">Menu</span></button>
     </nav>
 
-    <div id="pos-product-modal" class="fixed inset-0 bg-white z-50 flex flex-col mobile-modal modal-hidden no-print">
-        <div class="p-3 border-b flex justify-between items-center bg-slate-50 pt-safe">
-            <h3 class="font-bold text-base">Buscar Material</h3>
-            <button onclick="closeModal('pos-product-modal')" class="p-1.5 text-slate-500 bg-slate-200 rounded-full"><i data-lucide="x" class="w-4 h-4"></i></button>
-        </div>
-        <div class="p-3 border-b shadow-sm">
-            <input type="text" id="pos-modal-search" placeholder="Digite o nome..." class="w-full p-3 bg-slate-100 border-none rounded-xl font-bold outline-none text-sm" onkeyup="renderPosProductModal()" autofocus>
-        </div>
-        <div class="flex-1 overflow-y-auto p-3 bg-slate-50 no-scrollbar" id="pos-modal-grid"></div>
-    </div>
-
-    <div id="pos-fornecedor-modal" class="fixed inset-0 bg-white z-50 flex flex-col mobile-modal modal-hidden no-print">
-        <div class="p-3 border-b flex justify-between items-center bg-slate-50 pt-safe">
-            <h3 class="font-bold text-base">Fornecedor</h3>
-            <button onclick="closeModal('pos-fornecedor-modal')" class="p-1.5 text-slate-500 bg-slate-200 rounded-full"><i data-lucide="x" class="w-4 h-4"></i></button>
-        </div>
-        <div class="p-3 border-b shadow-sm">
-            <input type="text" id="pos-fornecedor-modal-search" placeholder="Buscar fornecedor..." class="w-full p-3 bg-slate-100 border-none rounded-xl font-bold outline-none text-sm" onkeyup="renderPosFornecedorModal()">
-        </div>
-        <div class="flex-1 overflow-y-auto p-3 bg-slate-50 no-scrollbar" id="pos-fornecedor-modal-grid"></div>
-        <div class="p-3 border-t pb-safe bg-white">
-            <button onclick="selectPosFornecedor('', 'A Definir')" class="w-full p-3 bg-slate-200 text-slate-700 font-bold rounded-xl text-sm">Limpar</button>
-        </div>
-    </div>
-
-    <div id="modal-view-oc" class="fixed inset-0 bg-white z-[80] flex flex-col mobile-modal modal-hidden no-print">
-        <div class="p-3 border-b flex justify-between items-center bg-slate-900 text-white pt-safe">
-            <h3 class="font-bold text-sm">Visualizar O.C.</h3>
-            <button onclick="closeModal('modal-view-oc')" class="p-1.5 bg-slate-700 rounded-full"><i data-lucide="x" class="w-4 h-4 text-white"></i></button>
-        </div>
-        <div class="flex-1 overflow-y-auto p-2 bg-slate-100 no-scrollbar relative" id="modal-view-oc-content">
-            </div>
-    </div>
-
-    <div id="overlay-forms" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end justify-center no-print">
-
+     <div id="pos-product-modal" class="fixed inset-0 bg-white z-50 flex flex-col mobile-modal modal-hidden no-print">
+          <div class="p-3 border-b flex justify-between items-center bg-slate-50 pt-safe">
+              <h3 class="font-bold text-base">Buscar Material</h3>
+              <button onclick="closeModal('pos-product-modal')" class="p-1.5 text-slate-500 bg-slate-200 rounded-full"><i data-lucide="x" class="w-4 h-4"></i></button>
+          </div>
+          <div class="p-3 border-b shadow-sm">
+              <input type="text" id="pos-modal-search" placeholder="Digite o nome..." class="w-full p-3 bg-slate-100 border-none rounded-xl font-bold outline-none text-sm" onkeyup="renderPosProductModal()" autofocus>
+          </div>
+      
+          <!-- Botão para novo produto e formulário inline -->
+          <div class="px-3 pt-2">
+              <button type="button" onclick="toggleNovoProdutoForm()" class="w-full p-2.5 border-2 border-dashed border-blue-300 rounded-xl text-blue-600 font-bold text-sm flex items-center justify-center gap-1 hover:bg-blue-50 active:scale-[0.98] transition-all">
+                  <i data-lucide="plus-circle" class="w-4 h-4"></i> Novo Produto
+              </button>
+              <div id="novo-produto-inline" class="hidden mt-3 bg-blue-50 p-3 rounded-xl border border-blue-200 space-y-2">
+                  <input type="text" id="novo-prod-nome" placeholder="Nome do material" class="w-full p-2 bg-white border rounded-lg text-sm outline-none">
+                  <input type="text" id="novo-prod-cat" placeholder="Categoria (ex: Elétrica)" class="w-full p-2 bg-white border rounded-lg text-sm outline-none">
+                  <input type="number" id="novo-prod-preco" placeholder="Preço unitário" step="0.01" class="w-full p-2 bg-white border rounded-lg text-sm outline-none">
+                  <div class="flex gap-2">
+                      <button onclick="salvarNovoProduto()" class="flex-1 bg-blue-700 text-white p-2 rounded-lg font-bold text-sm">Salvar</button>
+                      <button onclick="toggleNovoProdutoForm()" class="px-3 bg-white border border-slate-300 rounded-lg text-sm font-bold text-slate-600">Cancelar</button>
+                  </div>
+              </div>
+          </div>
+  
+      <div class="flex-1 overflow-y-auto p-3 bg-slate-50 no-scrollbar" id="pos-modal-grid"></div>
+  </div>
       <!-- FORMULÁRIO UNIFICADO DE EQUIPE / TERCEIRIZADO -->
       <div id="equipe-form-container" class="hidden w-full bg-white rounded-t-3xl p-5 pb-10 shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar">
             <h3 class="font-bold text-lg mb-4 flex justify-between">Cadastro de Colaborador <button type="button" onclick="closeOverlayForm('equipe-form-container')" class="text-slate-400"><i data-lucide="x"></i></button></h3>
@@ -918,60 +909,65 @@
 
         // ====== O.C. PENDENTES E CONFIRMADAS ======
         function renderOCList() {
-            const list = document.getElementById('oc-list');
-            const term = document.getElementById('oc-search').value.toLowerCase();
-            const obraFilt = document.getElementById('oc-obra-filter').value;
-            const ocs = {};
+    const list = document.getElementById('oc-list');
+    const term = document.getElementById('oc-search').value.toLowerCase();
+    const obraFilt = document.getElementById('oc-obra-filter').value;
+    const ocs = {};
+    
+    STATE.logs.filter(l => (l.tipo === 'oc_pendente' || l.tipo === 'compra') && l.status_financeiro !== 'CANCELADO').forEach(l => {
+        if(obraFilt && String(l.obra_id) !== String(obraFilt)) return;
+        
+        if(!ocs[l.id]) ocs[l.id] = { id: l.id, data: l.data, itemsText: [], total: 0, obra_id: l.obra_id, forn_id: l.fornecedor_id, status: l.tipo === 'compra' ? 'CONFIRMADA' : 'PENDENTE' };
+        ocs[l.id].itemsText.push(l.produto_nome); ocs[l.id].total += parseFloat(l.valor_total);
+        if(l.tipo === 'compra') ocs[l.id].status = 'CONFIRMADA';
+    });
+
+    // Ordenação por número da O.C. (ID) do maior para o menor (mais recente primeiro)
+    let arr = Object.values(ocs).sort((a, b) => Number(b.id) - Number(a.id));
+    
+    if(arr.length === 0) { 
+        list.innerHTML = `<p class="text-center text-slate-400 mt-10 text-xs">Nenhuma O.C. encontrada.</p>`; 
+        return; 
+    }
+
+    list.innerHTML = arr.map(o => {
+        const obra = STATE.obras.find(x=>x.id == o.obra_id);
+        const forn = STATE.fornecedores.find(x=>x.id == o.forn_id);
+        const txt = (obra?.nome || '') + ' ' + (forn?.nome || '') + ' ' + o.id;
+        if(term && !txt.toLowerCase().includes(term)) return '';
+
+        const isConfirmada = o.status === 'CONFIRMADA';
+
+        return `
+        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm relative">
+            <div class="absolute top-2 right-2 text-[8px] font-bold px-1.5 py-0.5 rounded ${isConfirmada ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">${isConfirmada ? 'EFETIVADA' : 'PENDENTE'}</div>
+            <div class="flex justify-between items-start mb-1 pr-14">
+                <div>
+                    <span class="bg-blue-100 text-blue-800 text-[9px] font-bold px-1.5 py-0.5 rounded">#${o.id}</span>
+                    <h4 class="font-bold text-slate-800 mt-1 leading-tight text-xs">${forn?.nome || 'Forn. A Definir'}</h4>
+                    <div class="text-[9px] text-blue-600 font-bold uppercase truncate mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome || 'Sem Obra'}</div>
+                </div>
+            </div>
+            <div class="font-black text-sm text-slate-800 mb-1">${formatMoney(o.total)}</div>
+            <p class="text-[9px] text-slate-500 truncate mb-2 bg-slate-50 p-1 rounded">${o.itemsText.join(', ')}</p>
             
-            STATE.logs.filter(l => (l.tipo === 'oc_pendente' || l.tipo === 'compra') && l.status_financeiro !== 'CANCELADO').forEach(l => {
-                if(obraFilt && String(l.obra_id) !== String(obraFilt)) return;
+            <div class="flex justify-between gap-1 border-t border-slate-100 pt-2 items-center">
+                ${!isConfirmada ? `<button onclick="openConfirmOC('${o.id}')" class="flex-1 bg-green-600 active:bg-green-700 text-white py-1.5 rounded-lg text-[10px] font-bold shadow-sm">Comprar</button>` : `<span class="flex-1 text-slate-400 text-[10px] font-bold">Lançado Caixa</span>`}
                 
-                if(!ocs[l.id]) ocs[l.id] = { id: l.id, data: l.data, itemsText: [], total: 0, obra_id: l.obra_id, forn_id: l.fornecedor_id, status: l.tipo === 'compra' ? 'CONFIRMADA' : 'PENDENTE' };
-                ocs[l.id].itemsText.push(l.produto_nome); ocs[l.id].total += parseFloat(l.valor_total);
-                if(l.tipo === 'compra') ocs[l.id].status = 'CONFIRMADA';
-            });
-
-            let arr = Object.values(ocs).sort((a,b)=> new Date(b.data) - new Date(a.data));
-            if(arr.length === 0) { list.innerHTML = `<p class="text-center text-slate-400 mt-10 text-xs">Nenhuma O.C. encontrada.</p>`; return; }
-
-            list.innerHTML = arr.map(o => {
-                const obra = STATE.obras.find(x=>x.id == o.obra_id);
-                const forn = STATE.fornecedores.find(x=>x.id == o.forn_id);
-                const txt = (obra?.nome || '') + ' ' + (forn?.nome || '') + ' ' + o.id;
-                if(term && !txt.toLowerCase().includes(term)) return '';
-
-                const isConfirmada = o.status === 'CONFIRMADA';
-
-                return `
-                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm relative">
-                    <div class="absolute top-2 right-2 text-[8px] font-bold px-1.5 py-0.5 rounded ${isConfirmada ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">${isConfirmada ? 'EFETIVADA' : 'PENDENTE'}</div>
-                    <div class="flex justify-between items-start mb-1 pr-14">
-                        <div>
-                            <span class="bg-blue-100 text-blue-800 text-[9px] font-bold px-1.5 py-0.5 rounded">#${o.id}</span>
-                            <h4 class="font-bold text-slate-800 mt-1 leading-tight text-xs">${forn?.nome || 'Forn. A Definir'}</h4>
-                            <div class="text-[9px] text-blue-600 font-bold uppercase truncate mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome || 'Sem Obra'}</div>
-                        </div>
-                    </div>
-                    <div class="font-black text-sm text-slate-800 mb-1">${formatMoney(o.total)}</div>
-                    <p class="text-[9px] text-slate-500 truncate mb-2 bg-slate-50 p-1 rounded">${o.itemsText.join(', ')}</p>
-                    
-                    <div class="flex justify-between gap-1 border-t border-slate-100 pt-2 items-center">
-                        ${!isConfirmada ? `<button onclick="openConfirmOC('${o.id}')" class="flex-1 bg-green-600 active:bg-green-700 text-white py-1.5 rounded-lg text-[10px] font-bold shadow-sm">Comprar</button>` : `<span class="flex-1 text-slate-400 text-[10px] font-bold">Lançado Caixa</span>`}
-                        
-                        <div class="flex gap-1 shrink-0">
-                            <button onclick="verOC('${o.id}')" class="p-1.5 border border-slate-200 text-slate-500 rounded-lg active:bg-slate-100" title="Ver OC"><i data-lucide="eye" class="w-4 h-4"></i></button>
-                            ${!isConfirmada ? `<button onclick="loadOCToCart('${o.id}')" class="p-1.5 border border-slate-200 text-slate-500 rounded-lg active:bg-slate-100"><i data-lucide="edit-3" class="w-4 h-4"></i></button>` : ''}
-                            ${isConfirmada ? `<button onclick="estornarOC('${o.id}')" class="p-1.5 border border-orange-200 text-orange-500 rounded-lg active:bg-orange-50" title="Estornar"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>` : ''}
-                            <button onclick="compartilharNative('${o.id}', false)" class="p-1.5 border border-blue-200 text-blue-600 rounded-lg active:bg-blue-50" title="Compartilhar O.C."><i data-lucide="share-2" class="w-4 h-4"></i></button>
-                            <button onclick="compartilharNative('${o.id}', true)" class="p-1.5 border border-indigo-200 text-indigo-600 rounded-lg active:bg-indigo-50" title="Romaneio"><i data-lucide="truck" class="w-4 h-4"></i></button>
-                            ${!isConfirmada ? `<button onclick="deleteOC('${o.id}')" class="p-1.5 border border-red-200 text-red-500 rounded-lg active:bg-red-50"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
-                        </div>
-                    </div>
-                </div>`;
-            }).join('');
-            lucide.createIcons();
-        }
-
+                <div class="flex gap-1 shrink-0">
+                    <button onclick="verOC('${o.id}')" class="p-1.5 border border-slate-200 text-slate-500 rounded-lg active:bg-slate-100" title="Ver OC"><i data-lucide="eye" class="w-4 h-4"></i></button>
+                    ${!isConfirmada ? `<button onclick="loadOCToCart('${o.id}')" class="p-1.5 border border-slate-200 text-slate-500 rounded-lg active:bg-slate-100"><i data-lucide="edit-3" class="w-4 h-4"></i></button>` : ''}
+                    ${isConfirmada ? `<button onclick="estornarOC('${o.id}')" class="p-1.5 border border-orange-200 text-orange-500 rounded-lg active:bg-orange-50" title="Estornar"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>` : ''}
+                    <button onclick="compartilharNative('${o.id}', false)" class="p-1.5 border border-blue-200 text-blue-600 rounded-lg active:bg-blue-50" title="Compartilhar O.C."><i data-lucide="share-2" class="w-4 h-4"></i></button>
+                    <button onclick="compartilharNative('${o.id}', true)" class="p-1.5 border border-indigo-200 text-indigo-600 rounded-lg active:bg-indigo-50" title="Romaneio"><i data-lucide="truck" class="w-4 h-4"></i></button>
+                    ${!isConfirmada ? `<button onclick="deleteOC('${o.id}')" class="p-1.5 border border-red-200 text-red-500 rounded-lg active:bg-red-50"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+    lucide.createIcons();
+}
+      
         function loadOCToCart(id) {
             const itemsLog = STATE.logs.filter(l => String(l.id) === String(id) && l.tipo === 'oc_pendente');
             if(!itemsLog.length) return;
@@ -1784,6 +1780,58 @@
             await loadData();
             navigate('equipe');
         }
+
+
+      // Exibe/esconde o formulário inline de novo produto
+function toggleNovoProdutoForm() {
+    const form = document.getElementById('novo-produto-inline');
+    if (form.classList.contains('hidden')) {
+        form.classList.remove('hidden');
+        document.getElementById('novo-prod-nome').focus();
+    } else {
+        form.classList.add('hidden');
+        // limpa campos
+        document.getElementById('novo-prod-nome').value = '';
+        document.getElementById('novo-prod-cat').value = '';
+        document.getElementById('novo-prod-preco').value = '';
+    }
+}
+
+// Função que salva o produto direto no Supabase
+      async function salvarNovoProduto() {
+          const nome = document.getElementById('novo-prod-nome').value.trim();
+          const categoria = document.getElementById('novo-prod-cat').value.trim();
+          const preco = parseFloat(document.getElementById('novo-prod-preco').value);
+      
+          if (!nome || isNaN(preco) || preco <= 0) {
+              showToast("Preencha nome e preço válido.", true);
+              return;
+          }
+      
+          showLoading(true);
+          // Gera ID numérico simples
+          const maxId = STATE.produtos.reduce((max, p) => Math.max(max, parseInt(p.id) || 0), 0);
+          const novoId = (maxId + 1).toString();
+      
+          const { error } = await sb.from('jsp_produtos').insert({
+              id: novoId,
+              nome: nome,
+              categoria: categoria || 'GERAL',
+              preco: preco
+          });
+      
+          if (error) {
+              showLoading(false);
+              return showToast("Erro ao cadastrar: " + error.message, true);
+          }
+      
+          // Atualiza STATE localmente
+          STATE.produtos.push({ id: novoId, nome, categoria: categoria || 'GERAL', preco });
+          showToast("Produto cadastrado!");
+          toggleNovoProdutoForm(); // esconde formulário
+          renderPosProductModal();   // recarrega lista
+          showLoading(false);
+      }
         
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
