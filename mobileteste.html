@@ -307,33 +307,33 @@
         <button onclick="navigate('menu')" id="btn-menu" class="flex flex-col items-center p-2 text-slate-400 nav-bottom-btn w-1/4 transition-colors"><i data-lucide="menu" class="w-5 h-5 mb-1"></i><span class="text-[10px] font-bold">Menu</span></button>
     </nav>
 
-     <div id="pos-product-modal" class="fixed inset-0 bg-white z-50 flex flex-col mobile-modal modal-hidden no-print">
-          <div class="p-3 border-b flex justify-between items-center bg-slate-50 pt-safe">
-              <h3 class="font-bold text-base">Buscar Material</h3>
-              <button onclick="closeModal('pos-product-modal')" class="p-1.5 text-slate-500 bg-slate-200 rounded-full"><i data-lucide="x" class="w-4 h-4"></i></button>
-          </div>
-          <div class="p-3 border-b shadow-sm">
-              <input type="text" id="pos-modal-search" placeholder="Digite o nome..." class="w-full p-3 bg-slate-100 border-none rounded-xl font-bold outline-none text-sm" onkeyup="renderPosProductModal()" autofocus>
-          </div>
-      
-          <!-- Botão para novo produto e formulário inline -->
-          <div class="px-3 pt-2">
-              <button type="button" onclick="toggleNovoProdutoForm()" class="w-full p-2.5 border-2 border-dashed border-blue-300 rounded-xl text-blue-600 font-bold text-sm flex items-center justify-center gap-1 hover:bg-blue-50 active:scale-[0.98] transition-all">
-                  <i data-lucide="plus-circle" class="w-4 h-4"></i> Novo Produto
-              </button>
-              <div id="novo-produto-inline" class="hidden mt-3 bg-blue-50 p-3 rounded-xl border border-blue-200 space-y-2">
-                  <input type="text" id="novo-prod-nome" placeholder="Nome do material" class="w-full p-2 bg-white border rounded-lg text-sm outline-none">
-                  <input type="text" id="novo-prod-cat" placeholder="Categoria (ex: Elétrica)" class="w-full p-2 bg-white border rounded-lg text-sm outline-none">
-                  <input type="number" id="novo-prod-preco" placeholder="Preço unitário" step="0.01" class="w-full p-2 bg-white border rounded-lg text-sm outline-none">
-                  <div class="flex gap-2">
-                      <button onclick="salvarNovoProduto()" class="flex-1 bg-blue-700 text-white p-2 rounded-lg font-bold text-sm">Salvar</button>
-                      <button onclick="toggleNovoProdutoForm()" class="px-3 bg-white border border-slate-300 rounded-lg text-sm font-bold text-slate-600">Cancelar</button>
-                  </div>
-              </div>
-          </div>
-  
-      <div class="flex-1 overflow-y-auto p-3 bg-slate-50 no-scrollbar" id="pos-modal-grid"></div>
-  </div>
+         <div id="pos-product-modal" class="fixed inset-0 bg-white z-50 flex flex-col mobile-modal modal-hidden no-print">
+            <div class="p-3 border-b flex justify-between items-center bg-slate-50 pt-safe">
+                <h3 class="font-bold text-base">Buscar Material</h3>
+                <button onclick="closeModal('pos-product-modal')" class="p-1.5 text-slate-500 bg-slate-200 rounded-full"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div class="p-3 border-b shadow-sm">
+                <input type="text" id="pos-modal-search" placeholder="Digite o nome..." class="w-full p-3 bg-slate-100 border-none rounded-xl font-bold outline-none text-sm" onkeyup="renderPosProductModal()" autofocus>
+            </div>
+        
+            <!-- NOVO: botão e formulário inline para cadastro rápido -->
+            <div class="px-3 pt-2">
+                <button type="button" onclick="toggleNovoProdutoForm()" class="w-full p-2.5 border-2 border-dashed border-blue-300 rounded-xl text-blue-600 font-bold text-sm flex items-center justify-center gap-1 hover:bg-blue-50 active:scale-[0.98] transition-all">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i> Novo Produto
+                </button>
+                <div id="novo-produto-inline" class="hidden mt-3 bg-blue-50 p-3 rounded-xl border border-blue-200 space-y-2">
+                    <input type="text" id="novo-prod-nome" placeholder="Nome do material" class="w-full p-2 bg-white border rounded-lg text-sm outline-none">
+                    <input type="text" id="novo-prod-cat" placeholder="Categoria (ex: Elétrica)" class="w-full p-2 bg-white border rounded-lg text-sm outline-none">
+                    <input type="number" id="novo-prod-preco" placeholder="Preço unitário" step="0.01" class="w-full p-2 bg-white border rounded-lg text-sm outline-none">
+                    <div class="flex gap-2">
+                        <button onclick="salvarNovoProduto()" class="flex-1 bg-blue-700 text-white p-2 rounded-lg font-bold text-sm">Salvar</button>
+                        <button onclick="toggleNovoProdutoForm()" class="px-3 bg-white border border-slate-300 rounded-lg text-sm font-bold text-slate-600">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+    
+        <div class="flex-1 overflow-y-auto p-3 bg-slate-50 no-scrollbar" id="pos-modal-grid"></div>
+    </div>
       <!-- FORMULÁRIO UNIFICADO DE EQUIPE / TERCEIRIZADO -->
       <div id="equipe-form-container" class="hidden w-full bg-white rounded-t-3xl p-5 pb-10 shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar">
             <h3 class="font-bold text-lg mb-4 flex justify-between">Cadastro de Colaborador <button type="button" onclick="closeOverlayForm('equipe-form-container')" class="text-slate-400"><i data-lucide="x"></i></button></h3>
@@ -1782,22 +1782,21 @@
         }
 
 
-      // Exibe/esconde o formulário inline de novo produto
-function toggleNovoProdutoForm() {
-    const form = document.getElementById('novo-produto-inline');
-    if (form.classList.contains('hidden')) {
-        form.classList.remove('hidden');
-        document.getElementById('novo-prod-nome').focus();
-    } else {
-        form.classList.add('hidden');
-        // limpa campos
-        document.getElementById('novo-prod-nome').value = '';
-        document.getElementById('novo-prod-cat').value = '';
-        document.getElementById('novo-prod-preco').value = '';
-    }
-}
-
-// Função que salva o produto direto no Supabase
+      // Mostra/esconde o mini formulário de novo produto dentro do modal de busca
+      function toggleNovoProdutoForm() {
+          const form = document.getElementById('novo-produto-inline');
+          if (form.classList.contains('hidden')) {
+              form.classList.remove('hidden');
+              document.getElementById('novo-prod-nome').focus();
+          } else {
+              form.classList.add('hidden');
+              document.getElementById('novo-prod-nome').value = '';
+              document.getElementById('novo-prod-cat').value = '';
+              document.getElementById('novo-prod-preco').value = '';
+          }
+      }
+      
+      // Salva o novo produto diretamente no banco e atualiza a lista do modal
       async function salvarNovoProduto() {
           const nome = document.getElementById('novo-prod-nome').value.trim();
           const categoria = document.getElementById('novo-prod-cat').value.trim();
@@ -1809,7 +1808,6 @@ function toggleNovoProdutoForm() {
           }
       
           showLoading(true);
-          // Gera ID numérico simples
           const maxId = STATE.produtos.reduce((max, p) => Math.max(max, parseInt(p.id) || 0), 0);
           const novoId = (maxId + 1).toString();
       
@@ -1822,17 +1820,17 @@ function toggleNovoProdutoForm() {
       
           if (error) {
               showLoading(false);
-              return showToast("Erro ao cadastrar: " + error.message, true);
+              return showToast("Erro: " + error.message, true);
           }
       
-          // Atualiza STATE localmente
+          // Atualiza o STATE local para refletir imediatamente
           STATE.produtos.push({ id: novoId, nome, categoria: categoria || 'GERAL', preco });
-          showToast("Produto cadastrado!");
-          toggleNovoProdutoForm(); // esconde formulário
-          renderPosProductModal();   // recarrega lista
+          showToast("Produto salvo!");
+          toggleNovoProdutoForm();       // esconde o formulário
+          renderPosProductModal();       // recarrega a grid do modal
           showLoading(false);
       }
-        
+              
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
   </body>
