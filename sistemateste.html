@@ -597,8 +597,8 @@
                 </div>
                 <div class="flex-1"></div>
                 <!-- NOVO BOTÃO DE REFRESH -->
-                <button onclick="carregarTabelaSaldo()" class="bg-slate-500 hover:bg-slate-600 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow" title="Atualizar tabela">
-                    <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar
+                <button onclick="recarregarSaldoPonto()" class="text-white hover:bg-white/20 p-1 rounded transition" title="Atualizar">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                 </button>
                 <button onclick="imprimirExtratoSaldo()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow">
                     <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Extrato
@@ -723,8 +723,8 @@
                 </div>
                 <div class="flex-1"></div>
                 <!-- NOVO BOTÃO DE REFRESH -->
-                <button onclick="carregarTabelaSaldoMetros()" class="bg-slate-500 hover:bg-slate-600 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow" title="Atualizar tabela">
-                    <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar
+                <button onclick="recarregarSaldoMetros()" class="text-white hover:bg-white/20 p-1 rounded transition" title="Atualizar">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                 </button>
                 <button onclick="imprimirExtratoSaldoMetros()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow">
                     <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Extrato
@@ -7263,6 +7263,27 @@ function getColaboradoresUnificados() {
           document.getElementById('modal-docs-equipe').classList.add('hidden');
           loadData(); // recarrega STATE
       }
+
+      function recarregarSaldoPonto() {
+          const funcId = document.getElementById('saldo-equipe-id').value;
+          if (!funcId) return;
+          // Recarrega os dados do banco primeiro (opcional, mas seguro)
+          loadData().then(() => {
+              carregarTabelaSaldo();
+          }).catch(() => {
+              carregarTabelaSaldo();
+          });
+      }
+
+      function recarregarSaldoMetros() {
+            const tercId = document.getElementById('saldo-terc-id').value;
+            if (!tercId) return;
+            loadData().then(() => {
+                carregarTabelaSaldoMetros();
+            }).catch(() => {
+                carregarTabelaSaldoMetros();
+            });
+        }
       
       
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
