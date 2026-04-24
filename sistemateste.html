@@ -2093,6 +2093,23 @@ function carregarTabelaSaldo() {
         return (end.getTime() - start.getTime()) / (1000 * 60);
     }
     
+    // 🔧 Função de arredondamento customizada: metade (0,005) para baixo
+    function roundFractionHalfDown(value) {
+        if (value <= 0) return 0;
+        // Evita ultrapassar 1
+        if (value >= 1) return 1;
+        // Multiplica por 100 para trabalhar com centésimos
+        let cents = value * 100;
+        // Separa a parte fracionária do milésimo
+        let decimalPart = cents - Math.floor(cents);
+        // Se o milésimo for exatamente 0.5 (ou muito próximo), arredonda para baixo
+        if (Math.abs(decimalPart - 0.5) < 0.0001) {
+            return Math.floor(cents) / 100;
+        } else {
+            return Math.round(cents) / 100;
+        }
+    }
+    
     const porDia = {};
     registros.forEach(p => {
         const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
@@ -2124,12 +2141,11 @@ function carregarTabelaSaldo() {
     datasOrdenadas.forEach(dataDia => {
         const pts = porDia[dataDia];
         
-        // ---------- 1. Cálculo da fração real (base) a partir das batidas ----------
+        // 1. Cálculo da fração real (base) a partir das batidas
         let baseFracao = 0;
         if (pts.entradas.length > 0 && pts.saidas.length > 0) {
             const entradas = pts.entradas.sort();
             const saidas = pts.saidas.sort();
-            
             const pontos = [
                 ...entradas.map(e => ({ tipo: 'E', hora: e })),
                 ...saidas.map(s => ({ tipo: 'S', hora: s }))
@@ -2141,12 +2157,10 @@ function carregarTabelaSaldo() {
                     totalMinutos += diffMinutesUTC(pontos[i].hora, pontos[i+1].hora);
                 }
             }
-            
-            const JORNADA_BASE = 480; // 8h
-            const TOLERANCIA = 20;    // minutos
+            const JORNADA_BASE = 480;
+            const TOLERANCIA = 20;
             let minutosConsiderados = totalMinutos;
             const falta = JORNADA_BASE - totalMinutos;
-            
             if (falta > TOLERANCIA) {
                 minutosConsiderados = totalMinutos;
             } else {
@@ -2156,20 +2170,21 @@ function carregarTabelaSaldo() {
             baseFracao = Math.min(1, Math.max(0, baseFracao));
         }
         
-        // ---------- 2. Soma dos ajustes manuais ----------
+        // 2. Soma dos ajustes manuais
         let somaAjustes = 0;
         if (pts.ajustes.length > 0) {
             somaAjustes = pts.ajustes.reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
         }
         
-        // ---------- 3. Fração final (base + ajustes) com limite de 1 ----------
+        // 3. Fração final (base + ajustes) com limite de 1
         let fracao = baseFracao + somaAjustes;
         if (fracao > 1) fracao = 1;
         
-        // ---------- 4. Montagem da string de horários para exibição ----------
-        let horariosStr = '';
+        // 🔧 APLICA O ARREDONDAMENTO CUSTOMIZADO AQUI
+        fracao = roundFractionHalfDown(fracao);
         
-        // Exibe as batidas reais (se houver)
+        // 4. Montagem da string de horários para exibição
+        let horariosStr = '';
         if (pts.entradas.length > 0 || pts.saidas.length > 0) {
             const entradas = pts.entradas.sort();
             const saidas = pts.saidas.sort();
@@ -2184,14 +2199,10 @@ function carregarTabelaSaldo() {
             }
             horariosStr = linhas.join('<br>');
         }
-        
-        // Exibe os ajustes manuais (se houver)
         if (pts.ajustes.length > 0) {
             const ajustesText = pts.ajustes.map(a => a.observacao || 'Ajuste manual').join(', ');
             horariosStr += (horariosStr ? '<br>' : '') + `<div class="text-indigo-600 text-xs mt-1">+ Ajuste manual (${somaAjustes.toFixed(2)} diárias) - ${ajustesText}</div>`;
         }
-        
-        // Caso não haja nenhum registro (não deve ocorrer), exibe mensagem padrão
         if (!horariosStr) horariosStr = '<span class="text-slate-400 text-xs">Nenhum registro</span>';
         
         totalDiarias += fracao;
@@ -2199,7 +2210,7 @@ function carregarTabelaSaldo() {
         const tr = document.createElement('tr');
         tr.className = 'border-b hover:bg-slate-50';
         tr.innerHTML = `
-            <td class="p-3 font-bold text-slate-700">${dataDia}<tr>
+            <td class="p-3 font-bold text-slate-700">${dataDia}</td>
             <td class="p-3">${horariosStr}</td>
             <td class="p-3 text-center font-black ${fracao >= 1 ? 'text-green-600' : 'text-orange-600'}">${fracao.toFixed(2)}</td>
             <td class="p-3 text-center">
@@ -2216,8 +2227,10 @@ function carregarTabelaSaldo() {
         tbody.appendChild(tr);
     });
     
+    // Exibe o total de diárias (já arredondado) e o valor em reais
     document.getElementById('saldo-total-diarias').innerText = totalDiarias.toFixed(2);
     const valorTotal = totalDiarias * parseFloat(func.valor_diaria || 0);
+    // Garante que o valor em reais também seja arredondado para 2 casas
     document.getElementById('saldo-total-valor').innerText = formatMoney(valorTotal);
     
     lucide.createIcons();
@@ -2913,6 +2926,18 @@ async function fecharPagamentoSaldo() {
       
 // Função auxiliar para calcular total de diárias a partir de um array de registros
 function calcularTotalDiariasDosRegistros(registros) {
+    function roundHalfDown(value) {
+        if (value <= 0) return 0;
+        if (value >= 1) return 1;
+        let cents = value * 100;
+        let decimalPart = cents - Math.floor(cents);
+        if (Math.abs(decimalPart - 0.5) < 0.0001) {
+            return Math.floor(cents) / 100;
+        } else {
+            return Math.round(cents) / 100;
+        }
+    }
+    
     const porDia = {};
     registros.forEach(p => {
         const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
@@ -2921,8 +2946,40 @@ function calcularTotalDiariasDosRegistros(registros) {
     });
     let total = 0;
     for (const dia in porDia) {
-        const { fracao } = calcularFracaoDia(porDia[dia]);
-        total += fracao;
+        const pts = porDia[dia];
+        // Separa entradas, saídas e ajustes (mesma lógica do carregarTabelaSaldo)
+        const entradas = pts.filter(p => p.tipo === 'ENTRADA').map(p => new Date(p.hora_registro));
+        const saidas = pts.filter(p => p.tipo === 'SAIDA').map(p => new Date(p.hora_registro));
+        const ajustes = pts.filter(p => p.tipo === 'AJUSTE_MANUAL')
+                            .reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
+        
+        let baseFracao = 0;
+        if (entradas.length && saidas.length) {
+            const pontos = [
+                ...entradas.map(e => ({ tipo: 'E', hora: e })),
+                ...saidas.map(s => ({ tipo: 'S', hora: s }))
+            ].sort((a, b) => a.hora - b.hora);
+            let totalMinutos = 0;
+            for (let i = 0; i < pontos.length - 1; i++) {
+                if (pontos[i].tipo === 'E' && pontos[i+1].tipo === 'S') {
+                    totalMinutos += (pontos[i+1].hora - pontos[i].hora) / (1000 * 60);
+                }
+            }
+            const JORNADA_BASE = 480;
+            const TOLERANCIA = 20;
+            let minutosConsiderados = totalMinutos;
+            const falta = JORNADA_BASE - totalMinutos;
+            if (falta > TOLERANCIA) {
+                minutosConsiderados = totalMinutos;
+            } else {
+                minutosConsiderados = JORNADA_BASE;
+            }
+            baseFracao = minutosConsiderados / JORNADA_BASE;
+            baseFracao = Math.min(1, Math.max(0, baseFracao));
+        }
+        let fracao = baseFracao + ajustes;
+        if (fracao > 1) fracao = 1;
+        total += roundHalfDown(fracao);
     }
     return total;
 }
