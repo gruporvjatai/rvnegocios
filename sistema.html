@@ -1798,44 +1798,95 @@
 
 
       function calcularSaldoPendenteFuncionarioPorPeriodo(funcId, dataInicio, dataFim) {
-        const registros = STATE.ponto_diario.filter(p => 
-            p.funcionario_id === funcId && 
-            p.status === 'VALIDADO' &&
-            p.pago_em_fechamento === false
-        );
-        
-        let registrosFiltrados = registros;
-        if (dataInicio) {
-            registrosFiltrados = registrosFiltrados.filter(p => p.hora_registro >= dataInicio + 'T00:00:00');
-        }
-        if (dataFim) {
-            registrosFiltrados = registrosFiltrados.filter(p => p.hora_registro <= dataFim + 'T23:59:59');
-        }
-        
-        // Agrupa por dia
-        const porDia = {};
-        registrosFiltrados.forEach(p => {
-            const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
-            if (!porDia[dataDia]) porDia[dataDia] = { entradas: [], saidas: [], ajustes: [] };
-            if (p.tipo === 'ENTRADA') porDia[dataDia].entradas.push(new Date(p.hora_registro));
-            else if (p.tipo === 'SAIDA') porDia[dataDia].saidas.push(new Date(p.hora_registro));
-            else if (p.tipo === 'AJUSTE_MANUAL') porDia[dataDia].ajustes.push(p);
-        });
-        
-        let totalDiarias = 0;
-        Object.values(porDia).forEach(pts => {
-            if (pts.ajustes.length > 0) {
-                totalDiarias += pts.ajustes.reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
-            } else {
-                const horas = calcularHorasTrabalhadasNoDia(pts.entradas, pts.saidas);
-                let fracao = horas / 8;
-                fracao = Math.min(1, Math.max(0, fracao));
-                totalDiarias += fracao;
-            }
-        });
-        
-        return { totalDiarias, registros: registrosFiltrados };
+    const registros = STATE.ponto_diario.filter(p => 
+        p.funcionario_id === funcId && 
+        p.status === 'VALIDADO' &&
+        p.pago_em_fechamento === false
+    );
+    
+    let registrosFiltrados = registros;
+    if (dataInicio) {
+        registrosFiltrados = registrosFiltrados.filter(p => p.hora_registro >= dataInicio + 'T00:00:00');
     }
+    if (dataFim) {
+        registrosFiltrados = registrosFiltrados.filter(p => p.hora_registro <= dataFim + 'T23:59:59');
+    }
+    
+    // Agrupa por dia
+    const porDia = new Map();
+    registrosFiltrados.forEach(p => {
+        const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+        if (!porDia.has(dataDia)) porDia.set(dataDia, []);
+        porDia.get(dataDia).push(p);
+    });
+    
+    let totalDiarias = 0;
+    
+    function diffMinutesUTC(startIso, endIso) {
+        return (new Date(endIso) - new Date(startIso)) / (1000 * 60);
+    }
+    
+    function calcularFracaoDiaPeriodo(registrosDoDia) {
+        const entradas = registrosDoDia.filter(r => r.tipo === 'ENTRADA').map(r => r.hora_registro);
+        const saidas   = registrosDoDia.filter(r => r.tipo === 'SAIDA').map(r => r.hora_registro);
+        const ajustes  = registrosDoDia.filter(r => r.tipo === 'AJUSTE_MANUAL')
+                                .reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
+        
+        if (entradas.length === 0 && saidas.length === 0) return Math.min(ajustes, 1);
+        
+        const todosPontos = [
+            ...entradas.map(e => ({ tipo: 'E', hora: e })),
+            ...saidas.map(s => ({ tipo: 'S', hora: s }))
+        ].sort((a, b) => new Date(a.hora) - new Date(b.hora));
+        
+        let startManha = null, endManha = null;
+        let startTarde = null, endTarde = null;
+        
+        for (const p of todosPontos) {
+            const hour = new Date(p.hora).getUTCHours();
+            if (hour < 12) {
+                if (p.tipo === 'E' && !startManha) startManha = p.hora;
+                if (p.tipo === 'S') endManha = p.hora;
+            } else {
+                if (p.tipo === 'E' && !startTarde) startTarde = p.hora;
+                if (p.tipo === 'S') endTarde = p.hora;
+            }
+        }
+        
+        function calcMin(start, end, jornada) {
+            if (!start || !end) return 0;
+            let mins = diffMinutesUTC(start, end);
+            const falta = jornada - mins;
+            if (falta > 0 && falta <= 10) mins = jornada;
+            return Math.min(jornada, Math.max(0, mins));
+        }
+        
+        let minutosManha = calcMin(startManha, endManha, 240);
+        let minutosTarde = calcMin(startTarde, endTarde, 240);
+        let baseFracao = (minutosManha + minutosTarde) / 480;
+        baseFracao = Math.min(1, Math.max(0, baseFracao));
+        
+        let fracao = baseFracao + ajustes;
+        if (fracao > 1) fracao = 1;
+        
+        // arredondamento half-down
+        function roundHalfDown(v) {
+            if (v <= 0) return 0;
+            if (v >= 1) return 1;
+            let cents = v * 100;
+            let dec = cents - Math.floor(cents);
+            if (Math.abs(dec - 0.5) < 0.0001) return Math.floor(cents) / 100;
+            return Math.round(cents) / 100;
+        }
+        return roundHalfDown(fracao);
+    }
+    
+    for (const registrosDoDia of porDia.values()) {
+        totalDiarias += calcularFracaoDiaPeriodo(registrosDoDia);
+    }
+    
+    return { totalDiarias, registros: registrosFiltrados };
+}
 
 
       
@@ -1912,24 +1963,86 @@ function calcularSaldoPendenteFuncionario(funcId, mesFiltro = null, anoFiltro = 
                    d.getUTCFullYear().toString() === anoFiltro;
         });
     }
-    const porDia = {};
+    
+    // Agrupa por dia
+    const porDia = new Map();
     registros.forEach(p => {
         const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
-        if (!porDia[dataDia]) porDia[dataDia] = [];
-        porDia[dataDia].push(p);
+        if (!porDia.has(dataDia)) porDia.set(dataDia, []);
+        porDia.get(dataDia).push(p);
     });
+    
     let totalDiarias = 0;
-    for (const dia in porDia) {
-        const { fracao } = calcularFracaoDia(porDia[dia]);
-        totalDiarias += fracao;
+    
+    function diffMinutesUTC(startIso, endIso) {
+        return (new Date(endIso) - new Date(startIso)) / (1000 * 60);
     }
+    
+    function roundHalfDown(v) {
+        if (v <= 0) return 0;
+        if (v >= 1) return 1;
+        let cents = v * 100;
+        let dec = cents - Math.floor(cents);
+        if (Math.abs(dec - 0.5) < 0.0001) return Math.floor(cents) / 100;
+        return Math.round(cents) / 100;
+    }
+    
+    function calcularFracaoDiaPeriodo(registrosDoDia) {
+        const entradas = registrosDoDia.filter(r => r.tipo === 'ENTRADA').map(r => r.hora_registro);
+        const saidas   = registrosDoDia.filter(r => r.tipo === 'SAIDA').map(r => r.hora_registro);
+        const ajustes  = registrosDoDia.filter(r => r.tipo === 'AJUSTE_MANUAL')
+                                .reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
+        
+        if (entradas.length === 0 && saidas.length === 0) return Math.min(ajustes, 1);
+        
+        const todosPontos = [
+            ...entradas.map(e => ({ tipo: 'E', hora: e })),
+            ...saidas.map(s => ({ tipo: 'S', hora: s }))
+        ].sort((a, b) => new Date(a.hora) - new Date(b.hora));
+        
+        let startManha = null, endManha = null;
+        let startTarde = null, endTarde = null;
+        
+        for (const p of todosPontos) {
+            const hour = new Date(p.hora).getUTCHours();
+            if (hour < 12) {
+                if (p.tipo === 'E' && !startManha) startManha = p.hora;
+                if (p.tipo === 'S') endManha = p.hora;
+            } else {
+                if (p.tipo === 'E' && !startTarde) startTarde = p.hora;
+                if (p.tipo === 'S') endTarde = p.hora;
+            }
+        }
+        
+        function calcMin(start, end, jornada) {
+            if (!start || !end) return 0;
+            let mins = diffMinutesUTC(start, end);
+            const falta = jornada - mins;
+            if (falta > 0 && falta <= 10) mins = jornada;
+            return Math.min(jornada, Math.max(0, mins));
+        }
+        
+        let minutosManha = calcMin(startManha, endManha, 240);
+        let minutosTarde = calcMin(startTarde, endTarde, 240);
+        let baseFracao = (minutosManha + minutosTarde) / 480;
+        baseFracao = Math.min(1, Math.max(0, baseFracao));
+        
+        let fracao = baseFracao + ajustes;
+        if (fracao > 1) fracao = 1;
+        return roundHalfDown(fracao);
+    }
+    
+    for (const registrosDoDia of porDia.values()) {
+        totalDiarias += calcularFracaoDiaPeriodo(registrosDoDia);
+    }
+    
     return { totalDiarias, registros };
 }
 
 
-
-      // ==========================================================
+    
       // Cálculo da fração do dia (entradas/saídas + ajustes manuais)
+      // Tolerância: 10 minutos por período (manhã e tarde)
       // ==========================================================
       function calcularFracaoDia(registros) {
           // Separa entradas, saídas e ajustes
@@ -1938,39 +2051,80 @@ function calcularSaldoPendenteFuncionario(funcId, mesFiltro = null, anoFiltro = 
           const ajustes  = registros.filter(r => r.tipo === 'AJUSTE_MANUAL')
                                     .reduce((sum, r) => sum + (parseFloat(r.fracao_diaria) || 0), 0);
           
-          let fracaoBase = 0;
-          if (entradas.length > 0 && saidas.length > 0) {
-              // Ordena os pontos cronologicamente
-              const pontos = [
-                  ...entradas.map(e => ({ tipo: 'E', hora: e })),
-                  ...saidas.map(s => ({ tipo: 'S', hora: s }))
-              ].sort((a, b) => a.hora - b.hora);
-              
-              let totalMinutos = 0;
-              for (let i = 0; i < pontos.length - 1; i++) {
-                  if (pontos[i].tipo === 'E' && pontos[i+1].tipo === 'S') {
-                      totalMinutos += (pontos[i+1].hora - pontos[i].hora) / (1000 * 60);
-                  }
-              }
-              const JORNADA_BASE = 480; // 8 horas em minutos
-              const TOLERANCIA = 20;    // minutos de tolerância
-              let minutosConsiderados = totalMinutos;
-              const falta = JORNADA_BASE - totalMinutos;
-              if (falta > TOLERANCIA) {
-                  minutosConsiderados = totalMinutos;
+          // Ordena todos os pontos para separar manhã e tarde
+          const todosPontos = [
+              ...entradas.map(e => ({ tipo: 'E', hora: e })),
+              ...saidas.map(s => ({ tipo: 'S', hora: s }))
+          ].sort((a, b) => a.hora - b.hora);
+          
+          // Função auxiliar para calcular minutos entre dois horários (já ordenados)
+          function diffMinutes(a, b) { return (b - a) / (1000 * 60); }
+          
+          // Identifica os períodos: manhã (até 12:00) e tarde (após 12:00)
+          let periodoManha = { start: null, end: null };
+          let periodoTarde = { start: null, end: null };
+          
+          // Encontra o último ponto antes do meio-dia (12:00) e o primeiro após
+          for (let i = 0; i < todosPontos.length; i++) {
+              const hora = todosPontos[i].hora;
+              const hour = hora.getUTCHours();
+              if (hour < 12) {
+                  // Período da manhã: pega a primeira entrada e última saída antes de 12:00
+                  if (todosPontos[i].tipo === 'E' && !periodoManha.start) periodoManha.start = hora;
+                  if (todosPontos[i].tipo === 'S') periodoManha.end = hora;
               } else {
-                  minutosConsiderados = JORNADA_BASE;
+                  // Período da tarde: pega a primeira entrada e última saída após ou igual 12:00
+                  if (todosPontos[i].tipo === 'E' && !periodoTarde.start) periodoTarde.start = hora;
+                  if (todosPontos[i].tipo === 'S') periodoTarde.end = hora;
               }
-              fracaoBase = minutosConsiderados / JORNADA_BASE;
-              fracaoBase = Math.min(1, Math.max(0, fracaoBase));
           }
           
-          let fracaoFinal = fracaoBase + ajustes;
-          if (fracaoFinal > 1) fracaoFinal = 1; // limite de 1 diária por dia
+          // Calcular horas trabalhadas em cada período, aplicando tolerância de 10 minutos
+          const JORNADA_BASE_MINUTOS = 480; // 8h diárias (não usado diretamente agora)
+          const TOLERANCIA_MINUTOS = 10;    // 10 minutos por período
+          
+          let minutosManha = 0;
+          let minutosTarde = 0;
+          
+          // Período da manhã
+          if (periodoManha.start && periodoManha.end) {
+              let diff = diffMinutes(periodoManha.start, periodoManha.end);
+              // Aplica tolerância: se a diferença for menor que a jornada teórica (4h = 240 min)
+              // e a falta for dentro da tolerância, arredonda para 4h
+              const JORNADA_MANHA_MIN = 240; // 4h
+              const faltaManha = JORNADA_MANHA_MIN - diff;
+              if (faltaManha > 0 && faltaManha <= TOLERANCIA_MINUTOS) {
+                  minutosManha = JORNADA_MANHA_MIN;
+              } else {
+                  minutosManha = diff;
+              }
+              minutosManha = Math.min(JORNADA_MANHA_MIN, Math.max(0, minutosManha));
+          }
+          
+          // Período da tarde
+          if (periodoTarde.start && periodoTarde.end) {
+              let diff = diffMinutes(periodoTarde.start, periodoTarde.end);
+              const JORNADA_TARDE_MIN = 240; // 4h
+              const faltaTarde = JORNADA_TARDE_MIN - diff;
+              if (faltaTarde > 0 && faltaTarde <= TOLERANCIA_MINUTOS) {
+                  minutosTarde = JORNADA_TARDE_MIN;
+              } else {
+                  minutosTarde = diff;
+              }
+              minutosTarde = Math.min(JORNADA_TARDE_MIN, Math.max(0, minutosTarde));
+          }
+          
+          // Fração base = (minutosManha + minutosTarde) / 480 (total diário)
+          let baseFracao = (minutosManha + minutosTarde) / 480;
+          baseFracao = Math.min(1, Math.max(0, baseFracao));
+          
+          // Adiciona ajustes manuais e limita a 1
+          let fracaoFinal = baseFracao + ajustes;
+          if (fracaoFinal > 1) fracaoFinal = 1;
           
           return {
               fracao: fracaoFinal,
-              base: fracaoBase,
+              base: baseFracao,
               ajustes: ajustes
           };
       }
@@ -2087,22 +2241,18 @@ function carregarTabelaSaldo() {
         return `${hh}:${mm}`;
     }
     
-    function diffMinutesUTC(startIso, endIso) {
+    function diffMinutes(startIso, endIso) {
         const start = new Date(startIso);
         const end = new Date(endIso);
         return (end.getTime() - start.getTime()) / (1000 * 60);
     }
     
-    // 🔧 Função de arredondamento customizada: metade (0,005) para baixo
+    // Função de arredondamento customizada: metade (0,005) para baixo
     function roundFractionHalfDown(value) {
         if (value <= 0) return 0;
-        // Evita ultrapassar 1
         if (value >= 1) return 1;
-        // Multiplica por 100 para trabalhar com centésimos
         let cents = value * 100;
-        // Separa a parte fracionária do milésimo
         let decimalPart = cents - Math.floor(cents);
-        // Se o milésimo for exatamente 0.5 (ou muito próximo), arredonda para baixo
         if (Math.abs(decimalPart - 0.5) < 0.0001) {
             return Math.floor(cents) / 100;
         } else {
@@ -2141,49 +2291,73 @@ function carregarTabelaSaldo() {
     datasOrdenadas.forEach(dataDia => {
         const pts = porDia[dataDia];
         
-        // 1. Cálculo da fração real (base) a partir das batidas
-        let baseFracao = 0;
-        if (pts.entradas.length > 0 && pts.saidas.length > 0) {
-            const entradas = pts.entradas.sort();
-            const saidas = pts.saidas.sort();
-            const pontos = [
-                ...entradas.map(e => ({ tipo: 'E', hora: e })),
-                ...saidas.map(s => ({ tipo: 'S', hora: s }))
-            ].sort((a, b) => new Date(a.hora) - new Date(b.hora));
-            
-            let totalMinutos = 0;
-            for (let i = 0; i < pontos.length - 1; i++) {
-                if (pontos[i].tipo === 'E' && pontos[i+1].tipo === 'S') {
-                    totalMinutos += diffMinutesUTC(pontos[i].hora, pontos[i+1].hora);
-                }
-            }
-            const JORNADA_BASE = 480;
-            const TOLERANCIA = 20;
-            let minutosConsiderados = totalMinutos;
-            const falta = JORNADA_BASE - totalMinutos;
-            if (falta > TOLERANCIA) {
-                minutosConsiderados = totalMinutos;
+        // === NOVA LÓGICA COM TOLERÂNCIA POR PERÍODO ===
+        // Separa os pontos em manhã (até 12:00) e tarde (>=12:00)
+        const pontosManha = [];
+        const pontosTarde = [];
+        
+        // Junta todos os horários de entrada e saída em ordem
+        const todosPontos = [];
+        pts.entradas.forEach(e => todosPontos.push({ tipo: 'E', hora: e }));
+        pts.saidas.forEach(s => todosPontos.push({ tipo: 'S', hora: s }));
+        todosPontos.sort((a, b) => new Date(a.hora) - new Date(b.hora));
+        
+        let minutosManha = 0;
+        let minutosTarde = 0;
+        let startManha = null, endManha = null;
+        let startTarde = null, endTarde = null;
+        
+        for (let i = 0; i < todosPontos.length; i++) {
+            const ponto = todosPontos[i];
+            const hora = new Date(ponto.hora);
+            const hour = hora.getUTCHours();
+            const minute = hora.getUTCMinutes();
+            const isManha = (hour < 12) || (hour === 12 && minute === 0 && ponto.tipo === 'S'); // saída ao meio-dia conta como manhã?
+            // Vamos considerar: antes das 12:00 é manhã, igual ou depois é tarde.
+            if (hour < 12) {
+                if (ponto.tipo === 'E' && startManha === null) startManha = ponto.hora;
+                if (ponto.tipo === 'S') endManha = ponto.hora;
             } else {
-                minutosConsiderados = JORNADA_BASE;
+                if (ponto.tipo === 'E' && startTarde === null) startTarde = ponto.hora;
+                if (ponto.tipo === 'S') endTarde = ponto.hora;
             }
-            baseFracao = minutosConsiderados / JORNADA_BASE;
-            baseFracao = Math.min(1, Math.max(0, baseFracao));
         }
         
-        // 2. Soma dos ajustes manuais
+        // Função para calcular minutos com tolerância de 10 minutos por período
+        function calcularMinutosComTolerancia(start, end, jornadaMinutos) {
+            if (!start || !end) return 0;
+            let minutos = diffMinutes(start, end);
+            const falta = jornadaMinutos - minutos;
+            if (falta > 0 && falta <= 10) {
+                minutos = jornadaMinutos;
+            }
+            return Math.min(jornadaMinutos, Math.max(0, minutos));
+        }
+        
+        if (startManha && endManha) {
+            minutosManha = calcularMinutosComTolerancia(startManha, endManha, 240); // 4h = 240 min
+        }
+        if (startTarde && endTarde) {
+            minutosTarde = calcularMinutosComTolerancia(startTarde, endTarde, 240);
+        }
+        
+        let baseFracao = (minutosManha + minutosTarde) / 480;
+        baseFracao = Math.min(1, Math.max(0, baseFracao));
+        
+        // Soma dos ajustes manuais
         let somaAjustes = 0;
         if (pts.ajustes.length > 0) {
             somaAjustes = pts.ajustes.reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
         }
         
-        // 3. Fração final (base + ajustes) com limite de 1
+        // Fração final (base + ajustes) com limite de 1
         let fracao = baseFracao + somaAjustes;
         if (fracao > 1) fracao = 1;
         
-        // 🔧 APLICA O ARREDONDAMENTO CUSTOMIZADO AQUI
+        // Aplica o arredondamento half-down
         fracao = roundFractionHalfDown(fracao);
         
-        // 4. Montagem da string de horários para exibição
+        // Montagem da string de horários para exibição
         let horariosStr = '';
         if (pts.entradas.length > 0 || pts.saidas.length > 0) {
             const entradas = pts.entradas.sort();
@@ -2227,10 +2401,8 @@ function carregarTabelaSaldo() {
         tbody.appendChild(tr);
     });
     
-    // Exibe o total de diárias (já arredondado) e o valor em reais
     document.getElementById('saldo-total-diarias').innerText = totalDiarias.toFixed(2);
     const valorTotal = totalDiarias * parseFloat(func.valor_diaria || 0);
-    // Garante que o valor em reais também seja arredondado para 2 casas
     document.getElementById('saldo-total-valor').innerText = formatMoney(valorTotal);
     
     lucide.createIcons();
@@ -2926,64 +3098,82 @@ async function fecharPagamentoSaldo() {
       
 // Função auxiliar para calcular total de diárias a partir de um array de registros
 function calcularTotalDiariasDosRegistros(registros) {
-    function roundHalfDown(value) {
-        if (value <= 0) return 0;
-        if (value >= 1) return 1;
-        let cents = value * 100;
-        let decimalPart = cents - Math.floor(cents);
-        if (Math.abs(decimalPart - 0.5) < 0.0001) {
-            return Math.floor(cents) / 100;
-        } else {
-            return Math.round(cents) / 100;
-        }
-    }
-    
-    const porDia = {};
+    // Agrupa por dia
+    const porDia = new Map();
     registros.forEach(p => {
         const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
-        if (!porDia[dataDia]) porDia[dataDia] = [];
-        porDia[dataDia].push(p);
+        if (!porDia.has(dataDia)) porDia.set(dataDia, []);
+        porDia.get(dataDia).push(p);
     });
+    
     let total = 0;
-    for (const dia in porDia) {
-        const pts = porDia[dia];
-        // Separa entradas, saídas e ajustes (mesma lógica do carregarTabelaSaldo)
-        const entradas = pts.filter(p => p.tipo === 'ENTRADA').map(p => new Date(p.hora_registro));
-        const saidas = pts.filter(p => p.tipo === 'SAIDA').map(p => new Date(p.hora_registro));
-        const ajustes = pts.filter(p => p.tipo === 'AJUSTE_MANUAL')
-                            .reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
+    
+    function diffMinutesUTC(startIso, endIso) {
+        return (new Date(endIso) - new Date(startIso)) / (1000 * 60);
+    }
+    
+    function roundHalfDown(v) {
+        if (v <= 0) return 0;
+        if (v >= 1) return 1;
+        let cents = v * 100;
+        let dec = cents - Math.floor(cents);
+        if (Math.abs(dec - 0.5) < 0.0001) return Math.floor(cents) / 100;
+        return Math.round(cents) / 100;
+    }
+    
+    function calcularFracaoDiaPeriodo(registrosDoDia) {
+        const entradas = registrosDoDia.filter(r => r.tipo === 'ENTRADA').map(r => r.hora_registro);
+        const saidas   = registrosDoDia.filter(r => r.tipo === 'SAIDA').map(r => r.hora_registro);
+        const ajustes  = registrosDoDia.filter(r => r.tipo === 'AJUSTE_MANUAL')
+                                .reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
         
-        let baseFracao = 0;
-        if (entradas.length && saidas.length) {
-            const pontos = [
-                ...entradas.map(e => ({ tipo: 'E', hora: e })),
-                ...saidas.map(s => ({ tipo: 'S', hora: s }))
-            ].sort((a, b) => a.hora - b.hora);
-            let totalMinutos = 0;
-            for (let i = 0; i < pontos.length - 1; i++) {
-                if (pontos[i].tipo === 'E' && pontos[i+1].tipo === 'S') {
-                    totalMinutos += (pontos[i+1].hora - pontos[i].hora) / (1000 * 60);
-                }
-            }
-            const JORNADA_BASE = 480;
-            const TOLERANCIA = 20;
-            let minutosConsiderados = totalMinutos;
-            const falta = JORNADA_BASE - totalMinutos;
-            if (falta > TOLERANCIA) {
-                minutosConsiderados = totalMinutos;
+        if (entradas.length === 0 && saidas.length === 0) return Math.min(ajustes, 1);
+        
+        const todosPontos = [
+            ...entradas.map(e => ({ tipo: 'E', hora: e })),
+            ...saidas.map(s => ({ tipo: 'S', hora: s }))
+        ].sort((a, b) => new Date(a.hora) - new Date(b.hora));
+        
+        let startManha = null, endManha = null;
+        let startTarde = null, endTarde = null;
+        
+        for (const p of todosPontos) {
+            const hour = new Date(p.hora).getUTCHours();
+            if (hour < 12) {
+                if (p.tipo === 'E' && !startManha) startManha = p.hora;
+                if (p.tipo === 'S') endManha = p.hora;
             } else {
-                minutosConsiderados = JORNADA_BASE;
+                if (p.tipo === 'E' && !startTarde) startTarde = p.hora;
+                if (p.tipo === 'S') endTarde = p.hora;
             }
-            baseFracao = minutosConsiderados / JORNADA_BASE;
-            baseFracao = Math.min(1, Math.max(0, baseFracao));
         }
+        
+        function calcMin(start, end, jornada) {
+            if (!start || !end) return 0;
+            let mins = diffMinutesUTC(start, end);
+            const falta = jornada - mins;
+            if (falta > 0 && falta <= 10) mins = jornada;
+            return Math.min(jornada, Math.max(0, mins));
+        }
+        
+        let minutosManha = calcMin(startManha, endManha, 240);
+        let minutosTarde = calcMin(startTarde, endTarde, 240);
+        let baseFracao = (minutosManha + minutosTarde) / 480;
+        baseFracao = Math.min(1, Math.max(0, baseFracao));
+        
         let fracao = baseFracao + ajustes;
         if (fracao > 1) fracao = 1;
-        total += roundHalfDown(fracao);
+        return roundHalfDown(fracao);
     }
+    
+    for (const registrosDoDia of porDia.values()) {
+        total += calcularFracaoDiaPeriodo(registrosDoDia);
+    }
+    
     return total;
 }
 
+      
 // Impressão do extrato filtrado
 // Impressão do extrato filtrado (usando intervalo de datas)
 function imprimirExtratoSaldo() {
