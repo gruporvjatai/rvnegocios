@@ -3,6 +3,13 @@
   <head>
     <base target="_top">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
+    
     <title>Controle de Obras Públicas - RV</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -5255,7 +5262,7 @@ function executarImpressaoFolha() {
                 let btnAcoes = '';
                 if (!isPago) {
                     btnAcoes = l.is_oc ? `
-                        <button onclick="baixarLogOC('${l.id}')" class="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded shadow flex items-center gap-1 text-[10px] font-bold" title="Pagar O.C. Completa"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> BAIXAR O.C.</button>
+                        <button onclick="baixarLogOC('${l.id}')" class="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded shadow flex items-center gap-1 text-[10px] font-bold" title="Pagar O.C. Completa"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> BAIXAR</button>
                         <button onclick="excluirLancamentoOC('${l.id}')" class="bg-slate-200 hover:bg-slate-300 text-slate-600 p-1.5 rounded shadow" title="Cancelar Lançamento"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>
                     ` : `
                         <button onclick="baixarLog('${l.uid}')" class="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded shadow flex items-center gap-1 text-[10px] font-bold" title="Baixar Despesa"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> BAIXAR</button>
