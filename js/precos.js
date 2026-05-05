@@ -127,13 +127,13 @@ function preencherSelectsPrecos() {
 }
 
 function carregarTabelaPrecos() {
-  const produtoId = document.getElementById('filtro-preco-produto')?.value || '';
+  const produtoId = parseInt(document.getElementById('filtro-preco-produto')?.value) || null;
   const dataIni = document.getElementById('filtro-preco-inicio')?.value || '';
   const dataFim = document.getElementById('filtro-preco-fim')?.value || '';
   const origem = document.getElementById('filtro-preco-origem')?.value || '';
 
   let registros = STATE.historico_precos.filter(r => {
-    if (produtoId && r.produto_id !== produtoId) return false;
+    if (produtoId && parseInt(r.produto_id) !== produtoId) return false;
     if (dataIni && r.data_preco < dataIni) return false;
     if (dataFim && r.data_preco > dataFim) return false;
     if (origem && r.origem !== origem) return false;
@@ -144,10 +144,25 @@ function carregarTabelaPrecos() {
 
   const tbody = document.getElementById('tabela-historico-precos');
   tbody.innerHTML = registros.map(r => {
-    const produto = STATE.produtos.find(p => p.id === r.produto_id);
-    const nomeProduto = produto ? produto.nome : 'Produto não encontrado';
-    const fornecedor = STATE.fornecedores.find(f => f.id === r.fornecedor_id);
-    const nomeFornecedor = fornecedor ? fornecedor.nome : (r.observacao?.includes('Fornecedor:') ? r.observacao.split(':')[1] : '—');
+    // Normaliza o ID para comparação independente do tipo
+    const prodId = parseInt(r.produto_id);
+    const produto = STATE.produtos.find(p => parseInt(p.id) === prodId);
+    const nomeProduto = produto ? produto.nome : `Produto #${r.produto_id || '?'}`;
+
+    const fornId = parseInt(r.fornecedor_id);
+    const fornecedor = STATE.fornecedores.find(f => parseInt(f.id) === fornId);
+    const nomeFornecedor = fornecedor ? fornecedor.nome : (r.observacao?.includes('Fornecedor:') ? r.observacao.split(':')[1].trim() : '—');
+
+    // Exibe data de forma segura
+    let dataExibicao = '—';
+    if (r.data_preco) {
+      try {
+        dataExibicao = new Date(r.data_preco + 'T00:00:00').toLocaleDateString('pt-BR');
+      } catch (e) {
+        dataExibicao = r.data_preco;
+      }
+    }
+
     const origemBadge = r.origem === 'automatico' 
       ? '<span class="px-2 py-1 rounded text-[10px] font-bold bg-green-100 text-green-700">O.C.</span>' 
       : '<span class="px-2 py-1 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700">Manual</span>';
@@ -158,7 +173,7 @@ function carregarTabelaPrecos() {
       : `<span class="text-xs text-slate-400 italic">—</span>`;
 
     return `<tr class="border-b hover:bg-slate-50 transition">
-      <td class="p-3">${new Date(r.data_preco + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+      <td class="p-3">${dataExibicao}</td>
       <td class="p-3 font-medium">${nomeProduto}</td>
       <td class="p-3 text-right font-bold ${r.preco_unitario > 0 ? 'text-slate-800' : 'text-red-500'}">${formatMoney(r.preco_unitario)}</td>
       <td class="p-3 text-xs">${nomeFornecedor}</td>
@@ -173,10 +188,10 @@ function carregarTabelaPrecos() {
 async function salvarPrecoManual(e) {
   e.preventDefault();
   const editId = document.getElementById('preco-edit-id').value;
-  const produtoId = document.getElementById('preco-produto').value;
+  const produtoId = parseInt(document.getElementById('preco-produto').value) || null;
   const dataYMD = document.getElementById('preco-data').value;
   const valor = parseFloat(document.getElementById('preco-valor').value);
-  const fornecedorId = document.getElementById('preco-fornecedor').value || null;
+  const fornecedorId = parseInt(document.getElementById('preco-fornecedor').value) || null;
   const obs = document.getElementById('preco-obs').value.trim();
 
   if (!produtoId || !dataYMD || isNaN(valor) || valor <= 0) {
@@ -186,7 +201,7 @@ async function salvarPrecoManual(e) {
   showLoading(true);
 
   const payload = {
-    produto_id: produtoId,
+    produto_id: produtoId,   // número
     data_preco: dataYMD,
     preco_unitario: valor,
     fornecedor_id: fornecedorId,
@@ -196,11 +211,11 @@ async function salvarPrecoManual(e) {
 
   try {
     if (editId) {
-      const { error } = await sb.from('jsp_historico_precos').update(payload).eq('id', editId);
+      payload.id = parseInt(editId);
+      const { error } = await sb.from('jsp_historico_precos').update(payload).eq('id', payload.id);
       if (error) throw error;
       showToast('Registro atualizado!');
     } else {
-      //payload.id = crypto.randomUUID();
       payload.id = getNextIdNum(STATE.historico_precos);
       const { error } = await sb.from('jsp_historico_precos').insert([payload]);
       if (error) throw error;
@@ -208,7 +223,7 @@ async function salvarPrecoManual(e) {
     }
 
     limparFormPreco();
-    await loadData(); // Recarrega STATE.historico_precos
+    await loadData();
     carregarTabelaPrecos();
   } catch (err) {
     showToast('Erro: ' + err.message, true);
@@ -254,13 +269,13 @@ async function excluirPreco(id) {
 }
 
 function abrirRelatorioPrecos() {
-  const produtoId = document.getElementById('filtro-preco-produto')?.value || '';
+  const produtoId = parseInt(document.getElementById('filtro-preco-produto')?.value) || null;
   const dataIni = document.getElementById('filtro-preco-inicio')?.value || '';
   const dataFim = document.getElementById('filtro-preco-fim')?.value || '';
   const origem = document.getElementById('filtro-preco-origem')?.value || '';
 
   const registros = STATE.historico_precos.filter(r => {
-    if (produtoId && r.produto_id !== produtoId) return false;
+    if (produtoId && parseInt(r.produto_id) !== produtoId) return false;
     if (dataIni && r.data_preco < dataIni) return false;
     if (dataFim && r.data_preco > dataFim) return false;
     if (origem && r.origem !== origem) return false;
@@ -272,11 +287,11 @@ function abrirRelatorioPrecos() {
     return;
   }
 
-  // Agrupamento por produto para o relatório
   const agrupado = {};
   registros.forEach(r => {
-    const prod = STATE.produtos.find(p => p.id === r.produto_id);
-    const nome = prod ? prod.nome : 'Desconhecido';
+    const prodId = parseInt(r.produto_id);
+    const prod = STATE.produtos.find(p => parseInt(p.id) === prodId);
+    const nome = prod ? prod.nome : `Produto #${r.produto_id || '?'}`;
     if (!agrupado[nome]) agrupado[nome] = [];
     agrupado[nome].push(r);
   });
@@ -304,11 +319,22 @@ function abrirRelatorioPrecos() {
         <tbody>
     `;
     items.forEach(item => {
-      const forn = STATE.fornecedores.find(f => f.id === item.fornecedor_id);
+      let dataFormatada = '—';
+      if (item.data_preco) {
+        try {
+          dataFormatada = new Date(item.data_preco + 'T00:00:00').toLocaleDateString('pt-BR');
+        } catch (e) {
+          dataFormatada = item.data_preco;
+        }
+      }
+
+      const fornId = parseInt(item.fornecedor_id);
+      const forn = STATE.fornecedores.find(f => parseInt(f.id) === fornId);
       const nomeForn = forn ? forn.nome : '—';
       const origemLabel = item.origem === 'automatico' ? 'O.C.' : 'Manual';
+
       html += `<tr>
-        <td style="padding: 6px; border: 1px solid #cbd5e1;">${new Date(item.data_preco + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+        <td style="padding: 6px; border: 1px solid #cbd5e1;">${dataFormatada}</td>
         <td style="padding: 6px; border: 1px solid #cbd5e1; text-align: right;">${formatMoney(item.preco_unitario)}</td>
         <td style="padding: 6px; border: 1px solid #cbd5e1;">${nomeForn}</td>
         <td style="padding: 6px; border: 1px solid #cbd5e1; text-align: center;">${origemLabel}</td>
