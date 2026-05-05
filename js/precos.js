@@ -200,7 +200,8 @@ async function salvarPrecoManual(e) {
       if (error) throw error;
       showToast('Registro atualizado!');
     } else {
-      payload.id = crypto.randomUUID();
+      //payload.id = crypto.randomUUID();
+      payload.id = getNextIdNum(STATE.historico_precos);
       const { error } = await sb.from('jsp_historico_precos').insert([payload]);
       if (error) throw error;
       showToast('Preço manual lançado!');
@@ -334,15 +335,19 @@ async function registrarPrecosAutomaticos(ocId) {
     const produto = STATE.produtos.find(p => p.nome.trim().toLowerCase() === item.produto_nome.trim().toLowerCase());
     const precoUnitario = parseFloat(item.valor_total) / parseFloat(item.quantidade);
 
-    inserts.push({
-      id: crypto.randomUUID(),
-      produto_id: produto ? produto.id : null,
-      data_preco: dataOC,
-      preco_unitario: precoUnitario,
-      fornecedor_id: item.fornecedor_id ? String(item.fornecedor_id) : null,
-      origem: 'automatico',
-      observacao: `O.C. #${ocId}`
-    });
+   let nextId = getNextIdNum(STATE.historico_precos);
+    for (const item of itensOC) {
+      const precoUnitario = parseFloat(item.valor_total) / parseFloat(item.quantidade);
+      inserts.push({
+        id: nextId++,
+        produto_id: produto ? parseInt(produto.id) : null,
+        data_preco: dataOC,
+        preco_unitario: precoUnitario,
+        fornecedor_id: item.fornecedor_id ? parseInt(item.fornecedor_id) : null,
+        origem: 'automatico',
+        observacao: `O.C. #${ocId}`
+      });
+    }
   }
 
   if (inserts.length > 0) {
