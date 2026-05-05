@@ -1542,6 +1542,7 @@
         STATE.terceirizados = resTerc.data || [];
         STATE.ponto_diario = resPontoDiario.data || []; 
         STATE.producao_terc = resProdTerc.data || [];
+        STATE.historico_precos = resHistPrecos.data || [];
         // Garante que data_preco seja string 'yyyy-mm-dd'
         STATE.historico_precos = STATE.historico_precos.map(r => ({
           ...r,
