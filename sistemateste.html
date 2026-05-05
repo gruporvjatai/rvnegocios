@@ -3,6 +3,13 @@
   <head>
     <base target="_top">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
+    
     <title>Controle de Obras Públicas - RV</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -76,6 +83,8 @@
         <button onclick="navigate('prod')" id="nav-prod" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="package"></i> <span class="font-medium text-sm">Produtos</span></button>
         <button onclick="navigate('fases')" id="nav-fases" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="layers"></i> <span class="font-medium text-sm">Fases de Obra</span></button>
         <button onclick="navigate('reports')" id="nav-reports" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="pie-chart"></i> <span class="font-medium text-sm">Relatórios</span></button>
+        <button onclick="navigate('precos')" id="nav-precos" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="trending-up"></i> <span class="font-medium text-sm">Histórico de Preços</span></button>
+        <div class="border-t border-slate-800 my-2 pt-2"></div>
         <button onclick="navigate('users')" id="nav-users" class="nav-btn w-full hidden flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="shield"></i> <span class="font-medium text-sm">Usuários</span></button>
        </nav>
       <div class="p-3 border-t border-slate-800"> <button onclick="fazerLogout()" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-400 hover:bg-red-900/30 transition-all"><i data-lucide="log-out"></i> <span class="font-medium text-sm">Sair</span></button> </div>
@@ -577,7 +586,7 @@
         <div class="p-5 overflow-y-auto flex-1 bg-slate-50">
             <input type="hidden" id="saldo-equipe-id">
             
-              <!-- Filtros -->
+            <!-- Filtros -->
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-4 flex flex-wrap gap-3 items-end">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Início</label>
@@ -596,10 +605,6 @@
                     </select>
                 </div>
                 <div class="flex-1"></div>
-                <!-- NOVO BOTÃO DE REFRESH -->
-                <button onclick="recarregarSaldoPonto()" class="bg-black/20 hover:bg-white/30 text-white p-1.5 rounded-full transition" title="Atualizar">
-                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                </button>
                 <button onclick="imprimirExtratoSaldo()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow">
                     <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Extrato
                 </button>
@@ -703,33 +708,30 @@
         <div class="p-5 overflow-y-auto flex-1 bg-slate-50">
             <input type="hidden" id="saldo-terc-id">
             
-           <!-- Filtros -->
+            <!-- Filtros -->
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-4 flex flex-wrap gap-3 items-end">
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Início</label>
-                    <input type="date" id="saldo-metros-data-inicio" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="carregarTabelaSaldoMetros()">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Fim</label>
-                    <input type="date" id="saldo-metros-data-fim" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="carregarTabelaSaldoMetros()">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
-                    <select id="saldo-metros-filtro-status" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-36" onchange="carregarTabelaSaldoMetros()">
-                        <option value="PENDENTE" selected>Pendentes</option>
-                        <option value="PAGO">Já Pagos</option>
-                        <option value="TODOS">Todos</option>
-                    </select>
-                </div>
-                <div class="flex-1"></div>
-                <!-- NOVO BOTÃO DE REFRESH -->
-                <button onclick="recarregarSaldoPonto()" class="bg-black/20 hover:bg-white/30 text-white p-1.5 rounded-full transition" title="Atualizar">
-                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                </button>
-                <button onclick="imprimirExtratoSaldoMetros()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow">
-                    <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Extrato
-                </button>
-            </div>
+              <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Início</label>
+                  <input type="date" id="saldo-metros-data-inicio" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="carregarTabelaSaldoMetros()">
+              </div>
+              <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Fim</label>
+                  <input type="date" id="saldo-metros-data-fim" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="carregarTabelaSaldoMetros()">
+              </div>
+              <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
+                  <select id="saldo-metros-filtro-status" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-36" onchange="carregarTabelaSaldoMetros()">
+                      <option value="PENDENTE" selected>Pendentes</option>
+                      <option value="PAGO">Já Pagos</option>
+                      <option value="TODOS">Todos</option>
+                  </select>
+              </div>
+              <div class="flex-1"></div>
+              <button onclick="imprimirExtratoSaldoMetros()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow">
+                  <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Extrato
+              </button>
+          </div>
+
             <!-- Tabela de registros -->
             <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
                 <table class="w-full text-sm">
@@ -1405,6 +1407,8 @@
         </div>
     </div>
 </div>
+
+      <div id="view-precos" class="hidden-section"></div>
       
     </main>
 
@@ -1476,6 +1480,7 @@
             if(viewId === 'fases') renderFases();
             if(viewId === 'reports') { updateSelects(); }
             if(viewId === 'users') renderUsers();
+            if(viewId === 'precos') renderPrecos();
             if(viewId === 'terc') { updateSelects(); renderTerceirizados(); }
             lucide.createIcons();
         }
@@ -1513,7 +1518,7 @@
 
         async function loadData() {
     try {
-        const [resObras, resForn, resProd, resLog, resEqp, resFases, resPonto, resTerc, resPontoDiario, resProdTerc] = await Promise.all([
+        const [resObras, resForn, resProd, resLog, resEqp, resFases, resPonto, resTerc, resPontoDiario, resProdTerc, resHistPrecos] = await Promise.all([
             fetchAllRecords('jsp_obras'),
             fetchAllRecords('jsp_fornecedores'),
             fetchAllRecords('jsp_produtos'),
@@ -1523,6 +1528,7 @@
             fetchAllRecords('jsp_ponto').catch(() => ({ data: [] })),
             fetchAllRecords('jsp_terceirizados').catch(() => ({ data: [] })),
             fetchAllRecords('jsp_ponto_diario').catch(() => ({ data: [] })),
+            fetchAllRecords('jsp_historico_precos').catch(() => ({ data: [] })),
             fetchAllRecords('jsp_producao_terc').catch(() => ({ data: [] }))
         ]);
 
@@ -1534,8 +1540,15 @@
         STATE.fases = (resFases.data || []).sort((a,b) => a.ordem - b.ordem);
         STATE.ponto = resPonto.data || [];
         STATE.terceirizados = resTerc.data || [];
-        STATE.ponto_diario = resPontoDiario.data || [];   // NOVA LINHA
+        STATE.ponto_diario = resPontoDiario.data || []; 
         STATE.producao_terc = resProdTerc.data || [];
+        STATE.historico_precos = resHistPrecos.data || [];
+
+      
+  
+ 
+
+
 
         if (dadosUsuario.nivel === 'admin') {
             const navUsersBtn = document.getElementById('nav-users');
@@ -5262,11 +5275,11 @@ function executarImpressaoFolha() {
                 let btnAcoes = '';
                 if (!isPago) {
                     btnAcoes = l.is_oc ? `
-                        <button onclick="baixarLogOC('${l.id}')" class="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded shadow flex items-center gap-1 text-[10px] font-bold" title="Pagar O.C. Completa"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> BAIXAR O.C.</button>
+                        <button onclick="baixarLogOC('${l.id}')" class="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded shadow flex items-center gap-1 text-[10px] font-bold" title="Pagar O.C. Completa"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> BAIXAR</button>
                         <button onclick="excluirLancamentoOC('${l.id}')" class="bg-slate-200 hover:bg-slate-300 text-slate-600 p-1.5 rounded shadow" title="Cancelar Lançamento"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>
                     ` : `
                         <button onclick="baixarLog('${l.uid}')" class="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded shadow flex items-center gap-1 text-[10px] font-bold" title="Baixar Despesa"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> BAIXAR</button>
-                        <button onclick="excluirLancamento('${l.uid}')" class="bg-slate-200 hover:bg-slate-300 text-slate-600 p-1.5 rounded shadow" title="Cancelar Lançamento"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>
+                        <!--<button onclick="excluirLancamento('${l.uid}')" class="bg-slate-200 hover:bg-slate-300 text-slate-600 p-1.5 rounded shadow" title="Cancelar Lançamento"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>-->
                     `;
                 } else {
                     btnAcoes = l.is_oc ? `
@@ -7263,27 +7276,6 @@ function getColaboradoresUnificados() {
           document.getElementById('modal-docs-equipe').classList.add('hidden');
           loadData(); // recarrega STATE
       }
-
-      function recarregarSaldoPonto() {
-          const funcId = document.getElementById('saldo-equipe-id').value;
-          if (!funcId) return;
-          // Recarrega os dados do banco primeiro (opcional, mas seguro)
-          loadData().then(() => {
-              carregarTabelaSaldo();
-          }).catch(() => {
-              carregarTabelaSaldo();
-          });
-      }
-
-      function recarregarSaldoMetros() {
-            const tercId = document.getElementById('saldo-terc-id').value;
-            if (!tercId) return;
-            loadData().then(() => {
-                carregarTabelaSaldoMetros();
-            }).catch(() => {
-                carregarTabelaSaldoMetros();
-            });
-        }
       
       
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
