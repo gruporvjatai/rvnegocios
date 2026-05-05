@@ -1542,7 +1542,11 @@
         STATE.terceirizados = resTerc.data || [];
         STATE.ponto_diario = resPontoDiario.data || []; 
         STATE.producao_terc = resProdTerc.data || [];
-        STATE.historico_precos = resHistPrecos.data || [];
+        // Garante que data_preco seja string 'yyyy-mm-dd'
+        STATE.historico_precos = STATE.historico_precos.map(r => ({
+          ...r,
+          data_preco: typeof r.data_preco === 'string' ? r.data_preco : r.data_preco instanceof Date ? r.data_preco.toISOString().split('T')[0] : r.data_preco
+        }));
 
       
   
