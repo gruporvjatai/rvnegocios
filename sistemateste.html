@@ -5133,6 +5133,7 @@ function executarImpressaoFolha() {
             document.getElementById('modal-confirm-oc').classList.add('hidden');
             showToast("Compra confirmada e enviada ao Financeiro!");
             loadData();
+            registrarPrecosAutomaticos(id);
         }
 
         function renderDashboard() {
