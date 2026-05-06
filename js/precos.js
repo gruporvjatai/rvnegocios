@@ -133,7 +133,8 @@ function carregarTabelaPrecos() {
   const origem = document.getElementById('filtro-preco-origem')?.value || '';
 
   let registros = STATE.historico_precos.filter(r => {
-    if (produtoId && parseInt(r.produto_id) !== produtoId) return false;
+    // Garantir que r.produto_id seja número para comparação
+    if (produtoId && (Number(r.produto_id) || 0) !== produtoId) return false;
     if (dataIni && r.data_preco < dataIni) return false;
     if (dataFim && r.data_preco > dataFim) return false;
     if (origem && r.origem !== origem) return false;
@@ -144,22 +145,25 @@ function carregarTabelaPrecos() {
 
   const tbody = document.getElementById('tabela-historico-precos');
   tbody.innerHTML = registros.map(r => {
-    // Normaliza o ID para comparação independente do tipo
-    const prodId = parseInt(r.produto_id);
-    const produto = STATE.produtos.find(p => parseInt(p.id) === prodId);
-    const nomeProduto = produto ? produto.nome : `Produto #${r.produto_id || '?'}`;
+    // Busca produto (convertendo para número)
+    const prodId = Number(r.produto_id);
+    const produto = STATE.produtos.find(p => Number(p.id) === prodId);
+    const nomeProduto = produto ? produto.nome : `Produto #${prodId || '?'}`;
 
-    const fornId = parseInt(r.fornecedor_id);
-    const fornecedor = STATE.fornecedores.find(f => parseInt(f.id) === fornId);
-    const nomeFornecedor = fornecedor ? fornecedor.nome : (r.observacao?.includes('Fornecedor:') ? r.observacao.split(':')[1].trim() : '—');
+    // Busca fornecedor (convertendo para número)
+    const fornId = Number(r.fornecedor_id);
+    const fornecedor = STATE.fornecedores.find(f => Number(f.id) === fornId);
+    const nomeFornecedor = fornecedor ? fornecedor.nome : '—';
 
-    // Exibe data de forma segura
+    // Formata data com segurança
     let dataExibicao = '—';
-    if (r.data_preco) {
+    const rawData = r.data_preco;
+    if (rawData) {
       try {
-        dataExibicao = new Date(r.data_preco + 'T00:00:00').toLocaleDateString('pt-BR');
+        // Supabase retorna 'YYYY-MM-DD' como string; adicionamos hora UTC para evitar timezone
+        dataExibicao = new Date(rawData + 'T12:00:00Z').toLocaleDateString('pt-BR', { timeZone: 'UTC' });
       } catch (e) {
-        dataExibicao = r.data_preco;
+        dataExibicao = rawData;
       }
     }
 
@@ -175,7 +179,7 @@ function carregarTabelaPrecos() {
     return `<tr class="border-b hover:bg-slate-50 transition">
       <td class="p-3">${dataExibicao}</td>
       <td class="p-3 font-medium">${nomeProduto}</td>
-      <td class="p-3 text-right font-bold ${r.preco_unitario > 0 ? 'text-slate-800' : 'text-red-500'}">${formatMoney(r.preco_unitario)}</td>
+      <td class="p-3 text-right font-bold">${formatMoney(Number(r.preco_unitario))}</td>
       <td class="p-3 text-xs">${nomeFornecedor}</td>
       <td class="p-3 text-center">${origemBadge}</td>
       <td class="p-3 text-center">${acoes}</td>
@@ -188,10 +192,12 @@ function carregarTabelaPrecos() {
 async function salvarPrecoManual(e) {
   e.preventDefault();
   const editId = document.getElementById('preco-edit-id').value;
+  // Converte para números (ou null se vazio)
   const produtoId = parseInt(document.getElementById('preco-produto').value) || null;
+  const fornecedorId = parseInt(document.getElementById('preco-fornecedor').value) || null;
+
   const dataYMD = document.getElementById('preco-data').value;
   const valor = parseFloat(document.getElementById('preco-valor').value);
-  const fornecedorId = parseInt(document.getElementById('preco-fornecedor').value) || null;
   const obs = document.getElementById('preco-obs').value.trim();
 
   if (!produtoId || !dataYMD || isNaN(valor) || valor <= 0) {
@@ -201,10 +207,10 @@ async function salvarPrecoManual(e) {
   showLoading(true);
 
   const payload = {
-    produto_id: produtoId,   // número
+    produto_id: produtoId,        // número
     data_preco: dataYMD,
     preco_unitario: valor,
-    fornecedor_id: fornecedorId,
+    fornecedor_id: fornecedorId,  // número ou null
     origem: 'manual',
     observacao: obs || null,
   };
@@ -223,7 +229,7 @@ async function salvarPrecoManual(e) {
     }
 
     limparFormPreco();
-    await loadData();
+    await loadData(); // Recarrega o STATE
     carregarTabelaPrecos();
   } catch (err) {
     showToast('Erro: ' + err.message, true);
@@ -355,32 +361,27 @@ async function registrarPrecosAutomaticos(ocId) {
 
   const inserts = [];
   const dataOC = itensOC[0]?.data ? new Date(itensOC[0].data).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+  let nextId = getNextIdNum(STATE.historico_precos);
 
   for (const item of itensOC) {
-    // Tenta encontrar o produto pelo nome exato
     const produto = STATE.produtos.find(p => p.nome.trim().toLowerCase() === item.produto_nome.trim().toLowerCase());
     const precoUnitario = parseFloat(item.valor_total) / parseFloat(item.quantidade);
-
-   let nextId = getNextIdNum(STATE.historico_precos);
-    for (const item of itensOC) {
-      const precoUnitario = parseFloat(item.valor_total) / parseFloat(item.quantidade);
-      inserts.push({
-        id: nextId++,
-        produto_id: produto ? parseInt(produto.id) : null,
-        data_preco: dataOC,
-        preco_unitario: precoUnitario,
-        fornecedor_id: item.fornecedor_id ? parseInt(item.fornecedor_id) : null,
-        origem: 'automatico',
-        observacao: `O.C. #${ocId}`
-      });
-    }
+    inserts.push({
+      id: nextId++,
+      produto_id: produto ? Number(produto.id) : null,
+      data_preco: dataOC,
+      preco_unitario: precoUnitario,
+      fornecedor_id: item.fornecedor_id ? Number(item.fornecedor_id) : null,
+      origem: 'automatico',
+      observacao: `O.C. #${ocId}`
+    });
   }
 
   if (inserts.length > 0) {
     const { error } = await sb.from('jsp_historico_precos').insert(inserts);
-    if (error) console.error('Erro ao registrar preços automáticos:', error);
-    else {
-      // Recarrega o STATE sem dar reload na tela toda
+    if (error) {
+      console.error('Erro ao registrar preços automáticos:', error);
+    } else {
       const { data } = await fetchAllRecords('jsp_historico_precos');
       STATE.historico_precos = data || [];
     }
