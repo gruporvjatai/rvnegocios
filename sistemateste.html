@@ -1480,7 +1480,7 @@
             if(viewId === 'fases') renderFases();
             if(viewId === 'reports') { updateSelects(); }
             if(viewId === 'users') renderUsers();
-            if(viewId === 'precos') renderPrecos();
+            if (viewId === 'precos') renderViewHistoricoPrecos();
             if(viewId === 'terc') { updateSelects(); renderTerceirizados(); }
             lucide.createIcons();
         }
@@ -1528,7 +1528,7 @@
             fetchAllRecords('jsp_ponto').catch(() => ({ data: [] })),
             fetchAllRecords('jsp_terceirizados').catch(() => ({ data: [] })),
             fetchAllRecords('jsp_ponto_diario').catch(() => ({ data: [] })),
-            fetchAllRecords('jsp_historico_precos').catch(() => ({ data: [] })),
+            fetchAllRecords('jsp_historico_precos').catch(() => ({ data: [] })),            
             fetchAllRecords('jsp_producao_terc').catch(() => ({ data: [] }))
         ]);
 
