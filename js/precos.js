@@ -72,7 +72,11 @@ function renderViewHistoricoPrecos() {
 
     <!-- FILTROS E TABELA -->
     <div class="bg-white p-6 rounded-xl shadow-sm border">
-      <div class="flex flex-wrap gap-4 items-end mb-6">
+        <div class="flex flex-wrap gap-4 items-end mb-6">
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Buscar</label>
+          <input type="text" id="filtro-preco-busca" placeholder="Nome do produto ou fornecedor..." oninput="atualizarVisualizacao()" class="p-2 border rounded-lg text-sm bg-slate-50 w-64">
+        </div>
         <div>
           <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Produto</label>
           <select id="filtro-preco-produto" onchange="atualizarVisualizacao()" class="p-2 border rounded-lg text-sm font-medium bg-slate-50">
@@ -99,7 +103,6 @@ function renderViewHistoricoPrecos() {
           <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Relatório
         </button>
       </div>
-
       <!-- RESUMO RÁPIDO -->
       <div id="resumo-precos" class="mb-4 p-4 bg-slate-50 rounded-lg border border-slate-200 grid grid-cols-2 md:grid-cols-4 gap-4 text-center"></div>
 
@@ -148,35 +151,52 @@ function carregarTabelaHistoricoPrecos() {
   const dataIni = document.getElementById('filtro-preco-inicio')?.value || '';
   const dataFim = document.getElementById('filtro-preco-fim')?.value || '';
   const origem = document.getElementById('filtro-preco-origem')?.value || '';
+  const busca = (document.getElementById('filtro-preco-busca')?.value || '').toLowerCase().trim();
 
   let registros = (STATE.historico_precos || []).filter(r => {
     if (produtoId && (Number(r.produto_id) || 0) !== produtoId) return false;
     if (dataIni && r.data_preco < dataIni) return false;
     if (dataFim && r.data_preco > dataFim) return false;
     if (origem && r.origem !== origem) return false;
+    if (busca) {
+      const prod = STATE.produtos.find(p => Number(p.id) === Number(r.produto_id));
+      const forn = STATE.fornecedores.find(f => Number(f.id) === Number(r.fornecedor_id));
+      const nomeProd = prod ? prod.nome.toLowerCase() : '';
+      const nomeForn = forn ? forn.nome.toLowerCase() : '';
+      if (!nomeProd.includes(busca) && !nomeForn.includes(busca)) return false;
+    }
     return true;
   });
 
   registros.sort((a, b) => new Date(a.data_preco) - new Date(b.data_preco));
 
-  // Calcular variação percentual em relação ao primeiro registro do período
-  let primeiroPreco = null;
+  // Encontrar o primeiro preço de cada produto dentro do período filtrado (base para variação %)
+  const primeiroPrecoPorProduto = {};
+  registros.forEach(r => {
+    const pid = Number(r.produto_id) || 0;
+    if (!(pid in primeiroPrecoPorProduto)) {
+      primeiroPrecoPorProduto[pid] = Number(r.preco_unitario);
+    }
+  });
+
   const linhas = registros.map((r, idx) => {
     const preco = Number(r.preco_unitario);
+    const pid = Number(r.produto_id) || 0;
+    const base = primeiroPrecoPorProduto[pid] || preco;
     let variacaoHtml = '—';
-    if (idx === 0) {
-      primeiroPreco = preco;
-      variacaoHtml = '<span class="text-slate-400">Base</span>';
-    } else if (primeiroPreco && primeiroPreco > 0) {
-      const perc = ((preco - primeiroPreco) / primeiroPreco) * 100;
-      const cor = perc > 0 ? 'text-red-600' : (perc < 0 ? 'text-green-600' : 'text-slate-500');
-      const sinal = perc > 0 ? '+' : '';
-      variacaoHtml = `<span class="${cor} font-bold">${sinal}${perc.toFixed(1)}%</span>`;
+    if (base > 0) {
+      if (idx === 0 || preco === base) {
+        variacaoHtml = '<span class="text-slate-400">Base</span>';
+      } else {
+        const perc = ((preco - base) / base) * 100;
+        const cor = perc > 0 ? 'text-red-600' : (perc < 0 ? 'text-green-600' : 'text-slate-500');
+        const sinal = perc > 0 ? '+' : '';
+        variacaoHtml = `<span class="${cor} font-bold">${sinal}${perc.toFixed(1)}%</span>`;
+      }
     }
 
-    const prodId = Number(r.produto_id);
-    const produto = STATE.produtos.find(p => Number(p.id) === prodId);
-    const nomeProduto = produto ? produto.nome : `Produto #${prodId || '?'}`;
+    const prod = STATE.produtos.find(p => Number(p.id) === pid);
+    const nomeProduto = prod ? prod.nome : `Produto #${pid || '?'}`;
 
     const fornId = Number(r.fornecedor_id);
     const fornecedor = STATE.fornecedores.find(f => Number(f.id) === fornId);
@@ -196,21 +216,21 @@ function carregarTabelaHistoricoPrecos() {
       : '<span class="px-2 py-1 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700">Manual</span>';
 
     const acoes = r.origem === 'manual' 
-  ? `<button onclick="editarPrecoManualHist('${r.id}')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar"><i data-lucide="edit-3" width="14"></i></button>
-     <button onclick="excluirPrecoHist('${r.id}')" class="p-1.5 border border-red-200 text-red-500 hover:bg-red-50 rounded ml-1" title="Excluir"><i data-lucide="trash-2" width="14"></i></button>`
-  : `<button onclick="editarPrecoManualHist('${r.id}')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Corrigir Produto"><i data-lucide="edit-3" width="14"></i></button>`;
+      ? `<button onclick="editarPrecoManualHist('${r.id}')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar"><i data-lucide="edit-3" width="14"></i></button>
+         <button onclick="excluirPrecoHist('${r.id}')" class="p-1.5 border border-red-200 text-red-500 hover:bg-red-50 rounded ml-1" title="Excluir"><i data-lucide="trash-2" width="14"></i></button>`
+      : `<button onclick="editarPrecoManualHist('${r.id}')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Corrigir Produto"><i data-lucide="edit-3" width="14"></i></button>`;
 
     return { ...r, nomeProduto, nomeFornecedor, dataExibicao, variacaoHtml, origemBadge, acoes };
   });
 
-  // Preencher resumo rápido
+  // Resumo rápido – considera todos os registros, mas a variação total é entre o menor e o maior preço geral (útil para uma visão global)
   const resumoDiv = document.getElementById('resumo-precos');
   if (registros.length > 0) {
     const precos = registros.map(r => Number(r.preco_unitario));
     const min = Math.min(...precos);
     const max = Math.max(...precos);
     const avg = precos.reduce((a, b) => a + b, 0) / precos.length;
-    const variacaoTotal = primeiroPreco ? ((precos[precos.length - 1] - primeiroPreco) / primeiroPreco) * 100 : 0;
+    const variacaoTotal = min > 0 ? ((max - min) / min) * 100 : 0;
 
     resumoDiv.innerHTML = `
       <div><div class="text-xs text-slate-500 uppercase">Menor Preço</div><div class="font-bold text-green-700">${formatMoney(min)}</div></div>
