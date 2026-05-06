@@ -1,8 +1,9 @@
 // ============================================================
 // ABA DE CONTROLE DE PREÇOS (Histórico Híbrido)
+// Funções com sufixo "Hist" para evitar conflitos
 // ============================================================
 
-function renderPrecos() {
+function renderViewHistoricoPrecos() {
   const container = document.getElementById('view-precos');
   if (!container) return;
 
@@ -14,38 +15,32 @@ function renderPrecos() {
       <p class="text-sm text-slate-500 mt-2">Acompanhe a evolução dos preços unitários. Registre compras antigas manualmente ou automaticamente pelas Ordens de Compra confirmadas.</p>
     </div>
 
-    <!-- Formulário de Lançamento Manual -->
     <div class="bg-white p-6 rounded-xl shadow-sm border mb-6">
       <h3 class="font-bold text-slate-700 text-lg mb-4 flex items-center gap-2">
         <i data-lucide="pen-tool" class="w-5 h-5 text-indigo-600"></i> Lançar Preço Manual (Externo / Sem O.C.)
       </h3>
-      <form id="form-preco-manual" onsubmit="salvarPrecoManual(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <form id="form-preco-manual" onsubmit="salvarPrecoManualHist(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <input type="hidden" id="preco-edit-id">
-        
         <div>
           <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Produto *</label>
           <select id="preco-produto" required class="w-full p-2 border rounded-lg text-sm bg-slate-50 font-medium focus:border-blue-600 outline-none">
             <option value="">Selecione...</option>
           </select>
         </div>
-        
         <div>
           <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data da Compra/Preço *</label>
           <input type="date" id="preco-data" required class="w-full p-2 border rounded-lg text-sm bg-slate-50 font-medium focus:border-blue-600 outline-none">
         </div>
-        
         <div>
           <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Preço Unitário (R$) *</label>
           <input type="number" step="0.01" id="preco-valor" required placeholder="0.00" class="w-full p-2 border rounded-lg text-sm bg-slate-50 font-bold text-green-700 focus:border-blue-600 outline-none">
         </div>
-
         <div class="flex items-end gap-2">
           <button type="submit" class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-2 rounded-lg font-bold shadow transition flex items-center gap-2">
             <i data-lucide="save" class="w-4 h-4"></i> Salvar
           </button>
-          <button type="button" onclick="limparFormPreco()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-bold transition">Limpar</button>
+          <button type="button" onclick="limparFormPrecoHist()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-bold transition">Limpar</button>
         </div>
-
         <div class="md:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Fornecedor (opcional)</label>
@@ -61,32 +56,31 @@ function renderPrecos() {
       </form>
     </div>
 
-    <!-- Filtros e Tabela de Histórico -->
     <div class="bg-white p-6 rounded-xl shadow-sm border">
       <div class="flex flex-wrap gap-4 items-end mb-6">
         <div>
           <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Produto</label>
-          <select id="filtro-preco-produto" onchange="carregarTabelaPrecos()" class="p-2 border rounded-lg text-sm font-medium bg-slate-50">
+          <select id="filtro-preco-produto" onchange="carregarTabelaHistoricoPrecos()" class="p-2 border rounded-lg text-sm font-medium bg-slate-50">
             <option value="">Todos</option>
           </select>
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Início</label>
-          <input type="date" id="filtro-preco-inicio" onchange="carregarTabelaPrecos()" class="p-2 border rounded-lg text-sm bg-slate-50">
+          <input type="date" id="filtro-preco-inicio" onchange="carregarTabelaHistoricoPrecos()" class="p-2 border rounded-lg text-sm bg-slate-50">
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Fim</label>
-          <input type="date" id="filtro-preco-fim" onchange="carregarTabelaPrecos()" class="p-2 border rounded-lg text-sm bg-slate-50">
+          <input type="date" id="filtro-preco-fim" onchange="carregarTabelaHistoricoPrecos()" class="p-2 border rounded-lg text-sm bg-slate-50">
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Origem</label>
-          <select id="filtro-preco-origem" onchange="carregarTabelaPrecos()" class="p-2 border rounded-lg text-sm font-medium bg-slate-50">
+          <select id="filtro-preco-origem" onchange="carregarTabelaHistoricoPrecos()" class="p-2 border rounded-lg text-sm font-medium bg-slate-50">
             <option value="">Todas</option>
             <option value="manual">Manual</option>
             <option value="automatico">Automática (O.C.)</option>
           </select>
         </div>
-        <button onclick="abrirRelatorioPrecos()" class="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2 rounded-lg font-bold flex items-center gap-2 shadow">
+        <button onclick="imprimirRelatorioHistoricoPrecos()" class="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2 rounded-lg font-bold flex items-center gap-2 shadow">
           <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Relatório
         </button>
       </div>
@@ -109,31 +103,27 @@ function renderPrecos() {
     </div>
   `;
 
-  // Preenche os selects de produto e fornecedor
-  preencherSelectsPrecos();
-  carregarTabelaPrecos();
+  preencherSelectsHistoricoPrecos();
+  carregarTabelaHistoricoPrecos();
   lucide.createIcons();
 }
 
-function preencherSelectsPrecos() {
-  // Produtos
+function preencherSelectsHistoricoPrecos() {
   const optionsProd = STATE.produtos.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
   document.getElementById('preco-produto').innerHTML = '<option value="">Selecione...</option>' + optionsProd;
   document.getElementById('filtro-preco-produto').innerHTML = '<option value="">Todos</option>' + optionsProd;
 
-  // Fornecedores
   const optionsForn = STATE.fornecedores.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
   document.getElementById('preco-fornecedor').innerHTML = '<option value="">-- Nenhum --</option>' + optionsForn;
 }
 
-function carregarTabelaPrecos() {
+function carregarTabelaHistoricoPrecos() {
   const produtoId = parseInt(document.getElementById('filtro-preco-produto')?.value) || null;
   const dataIni = document.getElementById('filtro-preco-inicio')?.value || '';
   const dataFim = document.getElementById('filtro-preco-fim')?.value || '';
   const origem = document.getElementById('filtro-preco-origem')?.value || '';
 
   let registros = STATE.historico_precos.filter(r => {
-    // Garantir que r.produto_id seja número para comparação
     if (produtoId && (Number(r.produto_id) || 0) !== produtoId) return false;
     if (dataIni && r.data_preco < dataIni) return false;
     if (dataFim && r.data_preco > dataFim) return false;
@@ -145,25 +135,20 @@ function carregarTabelaPrecos() {
 
   const tbody = document.getElementById('tabela-historico-precos');
   tbody.innerHTML = registros.map(r => {
-    // Busca produto (convertendo para número)
     const prodId = Number(r.produto_id);
     const produto = STATE.produtos.find(p => Number(p.id) === prodId);
     const nomeProduto = produto ? produto.nome : `Produto #${prodId || '?'}`;
 
-    // Busca fornecedor (convertendo para número)
     const fornId = Number(r.fornecedor_id);
     const fornecedor = STATE.fornecedores.find(f => Number(f.id) === fornId);
     const nomeFornecedor = fornecedor ? fornecedor.nome : '—';
 
-    // Formata data com segurança
     let dataExibicao = '—';
-    const rawData = r.data_preco;
-    if (rawData) {
+    if (r.data_preco) {
       try {
-        // Supabase retorna 'YYYY-MM-DD' como string; adicionamos hora UTC para evitar timezone
-        dataExibicao = new Date(rawData + 'T12:00:00Z').toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+        dataExibicao = new Date(r.data_preco + 'T12:00:00Z').toLocaleDateString('pt-BR', { timeZone: 'UTC' });
       } catch (e) {
-        dataExibicao = rawData;
+        dataExibicao = r.data_preco;
       }
     }
 
@@ -172,8 +157,8 @@ function carregarTabelaPrecos() {
       : '<span class="px-2 py-1 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700">Manual</span>';
 
     const acoes = r.origem === 'manual' 
-      ? `<button onclick="editarPrecoManual('${r.id}')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar"><i data-lucide="edit-3" width="14"></i></button>
-         <button onclick="excluirPreco('${r.id}')" class="p-1.5 border border-red-200 text-red-500 hover:bg-red-50 rounded ml-1" title="Excluir"><i data-lucide="trash-2" width="14"></i></button>`
+      ? `<button onclick="editarPrecoManualHist('${r.id}')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar"><i data-lucide="edit-3" width="14"></i></button>
+         <button onclick="excluirPrecoHist('${r.id}')" class="p-1.5 border border-red-200 text-red-500 hover:bg-red-50 rounded ml-1" title="Excluir"><i data-lucide="trash-2" width="14"></i></button>`
       : `<span class="text-xs text-slate-400 italic">—</span>`;
 
     return `<tr class="border-b hover:bg-slate-50 transition">
@@ -189,10 +174,9 @@ function carregarTabelaPrecos() {
   lucide.createIcons();
 }
 
-async function salvarPrecoManual(e) {
+async function salvarPrecoManualHist(e) {
   e.preventDefault();
   const editId = document.getElementById('preco-edit-id').value;
-  // Converte para números (ou null se vazio)
   const produtoId = parseInt(document.getElementById('preco-produto').value) || null;
   const fornecedorId = parseInt(document.getElementById('preco-fornecedor').value) || null;
 
@@ -207,10 +191,10 @@ async function salvarPrecoManual(e) {
   showLoading(true);
 
   const payload = {
-    produto_id: produtoId,        // número
+    produto_id: produtoId,
     data_preco: dataYMD,
     preco_unitario: valor,
-    fornecedor_id: fornecedorId,  // número ou null
+    fornecedor_id: fornecedorId,
     origem: 'manual',
     observacao: obs || null,
   };
@@ -222,15 +206,14 @@ async function salvarPrecoManual(e) {
       if (error) throw error;
       showToast('Registro atualizado!');
     } else {
-      payload.id = getNextIdNum(STATE.historico_precos);
       const { error } = await sb.from('jsp_historico_precos').insert([payload]);
       if (error) throw error;
       showToast('Preço manual lançado!');
     }
 
-    limparFormPreco();
-    await loadData(); // Recarrega o STATE
-    carregarTabelaPrecos();
+    limparFormPrecoHist();
+    await loadData();
+    carregarTabelaHistoricoPrecos();
   } catch (err) {
     showToast('Erro: ' + err.message, true);
   } finally {
@@ -238,8 +221,8 @@ async function salvarPrecoManual(e) {
   }
 }
 
-function editarPrecoManual(id) {
-  const registro = STATE.historico_precos.find(r => r.id === id);
+function editarPrecoManualHist(id) {
+  const registro = STATE.historico_precos.find(r => r.id == id);
   if (!registro) return;
 
   document.getElementById('preco-edit-id').value = registro.id;
@@ -249,16 +232,15 @@ function editarPrecoManual(id) {
   document.getElementById('preco-fornecedor').value = registro.fornecedor_id || '';
   document.getElementById('preco-obs').value = registro.observacao || '';
 
-  // Scroll suave até o formulário
   document.getElementById('form-preco-manual').scrollIntoView({ behavior: 'smooth' });
 }
 
-function limparFormPreco() {
+function limparFormPrecoHist() {
   document.getElementById('preco-edit-id').value = '';
   document.getElementById('form-preco-manual').reset();
 }
 
-async function excluirPreco(id) {
+async function excluirPrecoHist(id) {
   if (!confirm('Deseja excluir este registro de preço?')) return;
   showLoading(true);
   try {
@@ -266,7 +248,7 @@ async function excluirPreco(id) {
     if (error) throw error;
     showToast('Registro excluído.');
     await loadData();
-    carregarTabelaPrecos();
+    carregarTabelaHistoricoPrecos();
   } catch (err) {
     showToast('Erro: ' + err.message, true);
   } finally {
@@ -274,7 +256,7 @@ async function excluirPreco(id) {
   }
 }
 
-function abrirRelatorioPrecos() {
+function imprimirRelatorioHistoricoPrecos() {
   const produtoId = parseInt(document.getElementById('filtro-preco-produto')?.value) || null;
   const dataIni = document.getElementById('filtro-preco-inicio')?.value || '';
   const dataFim = document.getElementById('filtro-preco-fim')?.value || '';
@@ -354,20 +336,18 @@ function abrirRelatorioPrecos() {
   setTimeout(() => window.print(), 300);
 }
 
-// Integração automática com Ordens de Compra
+// ========== Integração automática (chamada após confirmação de OC) ==========
 async function registrarPrecosAutomaticos(ocId) {
   const itensOC = STATE.logs.filter(l => String(l.id) === String(ocId) && l.tipo === 'compra');
   if (!itensOC.length) return;
 
   const inserts = [];
   const dataOC = itensOC[0]?.data ? new Date(itensOC[0].data).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
-  let nextId = getNextIdNum(STATE.historico_precos);
 
   for (const item of itensOC) {
     const produto = STATE.produtos.find(p => p.nome.trim().toLowerCase() === item.produto_nome.trim().toLowerCase());
     const precoUnitario = parseFloat(item.valor_total) / parseFloat(item.quantidade);
     inserts.push({
-      id: nextId++,
       produto_id: produto ? Number(produto.id) : null,
       data_preco: dataOC,
       preco_unitario: precoUnitario,
