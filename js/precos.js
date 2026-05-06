@@ -530,14 +530,20 @@ async function salvarPrecoManualHist(e) {
 }
 
 function editarPrecoManualHist(id) {
-  const registro = STATE.historico_precos.find(r => r.id == id);
-  if (!registro) return;
+  // Converte para número para garantir compatibilidade
+  const idNumerico = Number(id);
+  const registro = STATE.historico_precos.find(r => Number(r.id) === idNumerico);
+  if (!registro) {
+    showToast('Registro não encontrado.', true);
+    return;
+  }
 
   document.getElementById('preco-edit-id').value = registro.id;
-  document.getElementById('preco-produto').value = registro.produto_id || '';
+  // Garantir que os selects recebam valores numéricos (convertendo para string, pois .value espera string)
+  document.getElementById('preco-produto').value = registro.produto_id ? String(registro.produto_id) : '';
   document.getElementById('preco-data').value = registro.data_preco;
   document.getElementById('preco-valor').value = registro.preco_unitario;
-  document.getElementById('preco-fornecedor').value = registro.fornecedor_id || '';
+  document.getElementById('preco-fornecedor').value = registro.fornecedor_id ? String(registro.fornecedor_id) : '';
   document.getElementById('preco-obs').value = registro.observacao || '';
 
   document.getElementById('form-preco-manual').scrollIntoView({ behavior: 'smooth' });
