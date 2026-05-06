@@ -509,8 +509,7 @@ async function salvarPrecoManualHist(e) {
 
   try {
     if (editId) {
-      payload.id = parseInt(editId);
-      const { error } = await sb.from('jsp_historico_precos').update(payload).eq('id', payload.id);
+    const { error } = await sb.from('jsp_historico_precos').update(payload).eq('id', parseInt(editId));
       if (error) throw error;
       showToast('Registro atualizado!');
     } else {
