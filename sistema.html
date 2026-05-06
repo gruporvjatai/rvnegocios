@@ -16,6 +16,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
     <script>
         if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 800) {
@@ -83,6 +84,7 @@
         <button onclick="navigate('prod')" id="nav-prod" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="package"></i> <span class="font-medium text-sm">Produtos</span></button>
         <button onclick="navigate('fases')" id="nav-fases" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="layers"></i> <span class="font-medium text-sm">Fases de Obra</span></button>
         <button onclick="navigate('reports')" id="nav-reports" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="pie-chart"></i> <span class="font-medium text-sm">Relatórios</span></button>
+        <button onclick="navigate('precos')" id="nav-precos" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="trending-up"></i> <span class="font-medium text-sm">Histórico de Preços</span></button>
         <div class="border-t border-slate-800 my-2 pt-2"></div>
         <button onclick="navigate('users')" id="nav-users" class="nav-btn w-full hidden flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="shield"></i> <span class="font-medium text-sm">Usuários</span></button>
        </nav>
@@ -1406,6 +1408,8 @@
         </div>
     </div>
 </div>
+
+      <div id="view-precos" class="hidden-section"></div>
       
     </main>
 
@@ -1477,6 +1481,7 @@
             if(viewId === 'fases') renderFases();
             if(viewId === 'reports') { updateSelects(); }
             if(viewId === 'users') renderUsers();
+            if (viewId === 'precos') renderViewHistoricoPrecos();
             if(viewId === 'terc') { updateSelects(); renderTerceirizados(); }
             lucide.createIcons();
         }
@@ -1514,17 +1519,22 @@
 
         async function loadData() {
     try {
-        const [resObras, resForn, resProd, resLog, resEqp, resFases, resPonto, resTerc, resPontoDiario, resProdTerc] = await Promise.all([
-            fetchAllRecords('jsp_obras'),
-            fetchAllRecords('jsp_fornecedores'),
-            fetchAllRecords('jsp_produtos'),
-            fetchAllRecords('jsp_logs'),
-            fetchAllRecords('jsp_equipe').catch(() => ({ data: [] })),
-            fetchAllRecords('jsp_fase').catch(() => ({ data: [] })),
-            fetchAllRecords('jsp_ponto').catch(() => ({ data: [] })),
-            fetchAllRecords('jsp_terceirizados').catch(() => ({ data: [] })),
-            fetchAllRecords('jsp_ponto_diario').catch(() => ({ data: [] })),
-            fetchAllRecords('jsp_producao_terc').catch(() => ({ data: [] }))
+        const [
+          resObras, resForn, resProd, resLog,
+          resEqp, resFases, resPonto, resTerc,
+          resPontoDiario, resHistPrecos, resProdTerc
+        ] = await Promise.all([
+          fetchAllRecords('jsp_obras'),
+          fetchAllRecords('jsp_fornecedores'),
+          fetchAllRecords('jsp_produtos'),
+          fetchAllRecords('jsp_logs'),
+          fetchAllRecords('jsp_equipe').catch(() => ({ data: [] })),
+          fetchAllRecords('jsp_fase').catch(() => ({ data: [] })),
+          fetchAllRecords('jsp_ponto').catch(() => ({ data: [] })),
+          fetchAllRecords('jsp_terceirizados').catch(() => ({ data: [] })),
+          fetchAllRecords('jsp_ponto_diario').catch(() => ({ data: [] })),
+          fetchAllRecords('jsp_historico_precos').catch(() => ({ data: [] })),
+          fetchAllRecords('jsp_producao_terc').catch(() => ({ data: [] }))
         ]);
 
         STATE.obras = resObras.data || [];
@@ -1535,8 +1545,21 @@
         STATE.fases = (resFases.data || []).sort((a,b) => a.ordem - b.ordem);
         STATE.ponto = resPonto.data || [];
         STATE.terceirizados = resTerc.data || [];
-        STATE.ponto_diario = resPontoDiario.data || [];   // NOVA LINHA
+        STATE.ponto_diario = resPontoDiario.data || []; 
+        STATE.historico_precos = resHistPrecos.data || [];
         STATE.producao_terc = resProdTerc.data || [];
+        console.log("Histórico de Preços carregado:", STATE.historico_precos);
+        // Garante que data_preco seja string 'yyyy-mm-dd'
+        STATE.historico_precos = STATE.historico_precos.map(r => ({
+          ...r,
+          data_preco: typeof r.data_preco === 'string' ? r.data_preco : r.data_preco instanceof Date ? r.data_preco.toISOString().split('T')[0] : r.data_preco
+        }));
+
+      
+  
+ 
+
+
 
         if (dadosUsuario.nivel === 'admin') {
             const navUsersBtn = document.getElementById('nav-users');
@@ -5120,7 +5143,8 @@ function executarImpressaoFolha() {
             
             document.getElementById('modal-confirm-oc').classList.add('hidden');
             showToast("Compra confirmada e enviada ao Financeiro!");
-            loadData();
+            await loadData();
+            await registrarPrecosAutomaticos(id);
         }
 
         function renderDashboard() {
@@ -7268,5 +7292,6 @@ function getColaboradoresUnificados() {
       
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
+    <script src="js/precos.js"></script>
   </body>
 </html>
