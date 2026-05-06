@@ -1518,18 +1518,22 @@
 
         async function loadData() {
     try {
-        const [resObras, resForn, resProd, resLog, resEqp, resFases, resPonto, resTerc, resPontoDiario, resProdTerc, resHistPrecos] = await Promise.all([
-            fetchAllRecords('jsp_obras'),
-            fetchAllRecords('jsp_fornecedores'),
-            fetchAllRecords('jsp_produtos'),
-            fetchAllRecords('jsp_logs'),
-            fetchAllRecords('jsp_equipe').catch(() => ({ data: [] })),
-            fetchAllRecords('jsp_fase').catch(() => ({ data: [] })),
-            fetchAllRecords('jsp_ponto').catch(() => ({ data: [] })),
-            fetchAllRecords('jsp_terceirizados').catch(() => ({ data: [] })),
-            fetchAllRecords('jsp_ponto_diario').catch(() => ({ data: [] })),
-            fetchAllRecords('jsp_historico_precos').catch(() => ({ data: [] })),            
-            fetchAllRecords('jsp_producao_terc').catch(() => ({ data: [] }))
+        const [
+          resObras, resForn, resProd, resLog,
+          resEqp, resFases, resPonto, resTerc,
+          resPontoDiario, resHistPrecos, resProdTerc
+        ] = await Promise.all([
+          fetchAllRecords('jsp_obras'),
+          fetchAllRecords('jsp_fornecedores'),
+          fetchAllRecords('jsp_produtos'),
+          fetchAllRecords('jsp_logs'),
+          fetchAllRecords('jsp_equipe').catch(() => ({ data: [] })),
+          fetchAllRecords('jsp_fase').catch(() => ({ data: [] })),
+          fetchAllRecords('jsp_ponto').catch(() => ({ data: [] })),
+          fetchAllRecords('jsp_terceirizados').catch(() => ({ data: [] })),
+          fetchAllRecords('jsp_ponto_diario').catch(() => ({ data: [] })),
+          fetchAllRecords('jsp_historico_precos').catch(() => ({ data: [] })),
+          fetchAllRecords('jsp_producao_terc').catch(() => ({ data: [] }))
         ]);
 
         STATE.obras = resObras.data || [];
@@ -1541,8 +1545,8 @@
         STATE.ponto = resPonto.data || [];
         STATE.terceirizados = resTerc.data || [];
         STATE.ponto_diario = resPontoDiario.data || []; 
-        STATE.producao_terc = resProdTerc.data || [];
         STATE.historico_precos = resHistPrecos.data || [];
+        STATE.producao_terc = resProdTerc.data || [];
         console.log("Histórico de Preços carregado:", STATE.historico_precos);
         // Garante que data_preco seja string 'yyyy-mm-dd'
         STATE.historico_precos = STATE.historico_precos.map(r => ({
