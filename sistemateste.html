@@ -1548,7 +1548,7 @@
         STATE.ponto_diario = resPontoDiario.data || []; 
         STATE.historico_precos = resHistPrecos.data || [];
         STATE.producao_terc = resProdTerc.data || [];
-        console.log("Histórico de Preços carregado:", STATE.historico_precos);
+        //console.log("Histórico de Preços carregado:", STATE.historico_precos);
         // Garante que data_preco seja string 'yyyy-mm-dd'
         STATE.historico_precos = STATE.historico_precos.map(r => ({
           ...r,
