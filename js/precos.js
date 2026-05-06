@@ -17,7 +17,7 @@ function renderViewHistoricoPrecos() {
       <p class="text-sm text-slate-500 mt-2">Acompanhe a evolução dos preços unitários. Registre compras antigas manualmente ou automaticamente pelas Ordens de Compra confirmadas.</p>
     </div>
 
-    <!-- GRÁFICO -->
+    <!-- GRÁFICO
     <div class="bg-white p-6 rounded-xl shadow-sm border mb-6">
       <h3 class="font-bold text-slate-700 text-lg mb-4 flex items-center gap-2">
         <i data-lucide="line-chart" class="w-5 h-5 text-blue-600"></i> Evolução do Preço
@@ -26,7 +26,7 @@ function renderViewHistoricoPrecos() {
         <canvas id="grafico-historico-precos"></canvas>
       </div>
       <p id="grafico-sem-dados" class="text-center text-slate-400 mt-4 hidden">Selecione um produto para visualizar o gráfico.</p>
-    </div>
+    </div>-->
 
     <!-- FORMULÁRIO DE LANÇAMENTO MANUAL -->
     <div class="bg-white p-6 rounded-xl shadow-sm border mb-6">
