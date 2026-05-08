@@ -1437,7 +1437,8 @@
             const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
             const anoAtual = hoje.getFullYear();
         
-            const primeiroDia = `${anoAtual}-${mesAtual}-01`;
+            //const primeiroDia = `${anoAtual}-${mesAtual}-01`;
+            const primeiroDia = `${anoAtual}-01-01`;  // fixa 1º de janeiro do ano atual
             const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
             const ultimoDiaStr = `${anoAtual}-${mesAtual}-${String(ultimoDia).padStart(2, '0')}`;
             
@@ -2220,7 +2221,7 @@ function abrirModalSaldo(equipeId) {
     const hoje = new Date();
     const anoAtual = hoje.getFullYear();
     const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
-    const primeiroDia = `${anoAtual}-${mesAtual}-01`;
+    const primeiroDia = `${anoAtual}-01-01`;   // inicia em 1º de janeiro
     const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
     const ultimoDiaStr = `${anoAtual}-${mesAtual}-${String(ultimoDia).padStart(2, '0')}`;
     
@@ -2458,7 +2459,7 @@ function abrirModalSaldoMetros(tercId) {
     const hoje = new Date();
     const anoAtual = hoje.getFullYear();
     const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
-    const primeiroDia = `${anoAtual}-${mesAtual}-01`;
+    const primeiroDia = `${anoAtual}-01-01`;
     const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
     const ultimoDiaStr = `${anoAtual}-${mesAtual}-${String(ultimoDia).padStart(2, '0')}`;
     
