@@ -552,6 +552,24 @@
     }
   }
 
+
+  // Funções básicas de UI (garantia de funcionamento)
+    function showLoading(show) {
+        const el = document.getElementById('loading');
+        if (el) el.style.display = show ? 'flex' : 'none';
+    }
+    function showToast(msg, isError = false) {
+        const t = document.getElementById('toast');
+        if (!t) return;
+        t.textContent = msg;
+        t.className = `fixed top-10 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl text-white font-bold text-sm z-[100] transition-all text-center w-[90%] max-w-sm ${isError ? 'bg-red-600' : 'bg-slate-800'}`;
+        t.style.display = 'block';
+        setTimeout(() => t.style.display = 'none', 3000);
+    }
+    function formatMoney(val) {
+        return parseFloat(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
   // 3. Renderização da equipe (mobile)
   function renderEquipeMobile() {
     const term = document.getElementById('eqp-search')?.value.toLowerCase() || '';
