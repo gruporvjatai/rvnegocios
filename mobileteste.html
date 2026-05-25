@@ -263,13 +263,15 @@
 
       <!-- VIEW EQUIPE (UNIFICADA COM TERCEIRIZADOS) -->
       <div id="view-equipe" class="hidden-section no-print relative min-h-[80vh]">
-         <div class="flex gap-2 mb-4">
-          <input type="date" id="eqp-filter-data-inicio" class="flex-1 p-2 bg-white border rounded-xl text-xs" onchange="renderEquipe()">
-          <input type="date" id="eqp-filter-data-fim" class="flex-1 p-2 bg-white border rounded-xl text-xs" onchange="renderEquipe()">
-          <button onclick="imprimirChecagem()" class="bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow flex items-center gap-1">
-              <i data-lucide="clipboard-check" class="w-4 h-4"></i> Checagem
-          </button>
-      </div>
+          <div class="flex items-center gap-3 mb-4">
+              <button onclick="navigate('menu')" class="p-2 bg-slate-200 rounded-full text-slate-600"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+              <h2 class="text-xl font-bold flex-1">Equipe</h2>
+              <button onclick="openEquipeForm()" class="bg-blue-700 text-white px-3 py-2 rounded-xl text-sm font-bold shadow"><i data-lucide="user-plus" class="w-4 h-4"></i></button>
+              <button onclick="imprimirChecagem()" class="bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow flex items-center gap-1">
+                  <i data-lucide="clipboard-check" class="w-4 h-4"></i> Checagem
+              </button>
+          </div>
+          
           
           <div class="flex gap-2 mb-3">
               <div class="relative flex-1">
@@ -1711,7 +1713,6 @@ function imprimirReciboDoModal() {
     renderEquipe();        // Atualiza a listagem principal
     showToast('Estorno realizado com sucesso! Despesa cancelada e registros liberados.');
 }     
-
 
       function imprimirChecagem() {
     const dataInicio = document.getElementById('eqp-filter-data-inicio').value;
