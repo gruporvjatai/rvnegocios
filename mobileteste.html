@@ -262,14 +262,14 @@
       </div>
 
       <!-- VIEW EQUIPE (UNIFICADA COM TERCEIRIZADOS) -->
-      <div id="view-equipe" class="hidden-section no-print relative min-h-[80vh]">
-        <div class="flex gap-2 mb-4">
-            <input type="date" id="eqp-filter-data-inicio" class="flex-1 p-2 bg-white border rounded-xl text-xs" placeholder="Data início" onchange="renderEquipe()">
-            <input type="date" id="eqp-filter-data-fim" class="flex-1 p-2 bg-white border rounded-xl text-xs" placeholder="Data fim" onchange="renderEquipe()">
-        </div>
+      <div id="view-equipe" class="hidden-section no-print relative min-h-[80vh]">        
           <div class="flex items-center gap-3 mb-4">
               <button onclick="navigate('menu')" class="p-2 bg-slate-200 rounded-full text-slate-600"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
               <h2 class="text-xl font-bold flex-1">Equipe</h2>
+                <div class="flex gap-2 mb-4">
+                    <input type="date" id="eqp-filter-data-inicio" class="flex-1 p-2 bg-white border rounded-xl text-xs" placeholder="Data início" onchange="renderEquipe()">
+                    <input type="date" id="eqp-filter-data-fim" class="flex-1 p-2 bg-white border rounded-xl text-xs" placeholder="Data fim" onchange="renderEquipe()">
+                </div>
               <button onclick="openEquipeForm()" class="bg-blue-700 text-white px-3 py-2 rounded-xl text-sm font-bold shadow"><i data-lucide="user-plus" class="w-4 h-4"></i></button>
               <button onclick="imprimirChecagem()" class="bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow flex items-center gap-1">
                   <i data-lucide="clipboard-check" class="w-4 h-4"></i> Checagem
@@ -1028,59 +1028,93 @@
         }
 
         // ====== RENDER EQUIPE COM SALDO E BOTÕES ======
-        function renderEquipe() {
-            const term = document.getElementById('eqp-search').value.toLowerCase();
-            const filterObra = document.getElementById('eqp-filter-obra').value;
-            const filterStatus = document.getElementById('eqp-filter-status').value;
-            const filterTipo = document.getElementById('eqp-filter-tipo').value;
-            const colaboradores = getColaboradoresUnificados();
-            let fil = colaboradores.filter(c=>(c.nome||'').toLowerCase().includes(term));
-            if(filterObra) fil = fil.filter(c=>String(c.obra_atual_id)===String(filterObra));
-            if(filterStatus) { const isAtivo = filterStatus==='true'; fil = fil.filter(c=>(c.ativo===true||c.ativo==='true')===isAtivo); }
-            if(filterTipo!=='todos') fil = fil.filter(c=>c.tipo===filterTipo);
-            fil.sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
-            document.getElementById('equipe-list').innerHTML = fil.map(c => {
-                const obra = STATE.obras.find(x=>x.id==c.obra_atual_id);
-                const nomeObra = obra ? obra.nome : 'Sem obra alocada';
-                const tipoBadge = c.tipo==='diaria'?'<span class="bg-blue-100 text-blue-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">DIÁRIA</span>':'<span class="bg-purple-100 text-purple-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">METRO</span>';
-                const valorExibicao = c.tipo==='diaria' ? formatMoney(c.valor_base) : `${formatMoney(c.valor_base)}/m`;
-                const isAtivo = c.ativo===true||c.ativo==='true';
-                
-                // Cálculo do saldo pendente para diárias
-                let saldoDiarias = 0, valorPendente = 0, diasTrabalhados = 0;
-                if(c.tipo === 'diaria') {
-                    const dataInicio = document.getElementById('eqp-filter-data-inicio')?.value || (new Date().getFullYear()+'-01-01');
-                    const dataFim = document.getElementById('eqp-filter-data-fim')?.value || new Date().toISOString().split('T')[0];
-                    const saldo = calcularSaldoPendenteFuncionarioPorPeriodo(c.id, dataInicio, dataFim);
-                    diasTrabalhados = saldo.totalDiarias;
-                    valorPendente = diasTrabalhados * c.valor_base;
-                }
-                let zapBtn = '';
-                if(c.telefone){
-                    const numZap = c.telefone.replace(/\D/g,'');
-                    if(numZap.length>=10) zapBtn = `<a href="https://wa.me/55${numZap}" target="_blank" class="p-1.5 bg-green-100 text-green-600 rounded-lg"><i data-lucide="message-circle" class="w-4 h-4"></i></a>`;
-                }
-                 const acoes = `<div class="flex justify-end gap-2 mt-2 pt-2 border-t border-slate-100">
-                      ${c.tipo==='diaria' ? `<button onclick="abrirModalSaldo('${c.id}')" class="p-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-1"><i data-lucide="calculator" class="w-3 h-3"></i> Calcular</button>` : 
-                        c.tipo==='metro' ? `<button onclick="abrirModalSaldoMetros('${c.id}')" class="p-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-1"><i data-lucide="calculator" class="w-3 h-3"></i> Calcular</button>` : ``}
-                      <button onclick="abrirModalDocumentos('${c.id}')" class="p-1.5 bg-slate-800 text-white rounded-lg text-[10px] font-bold flex items-center gap-1"><i data-lucide="file-signature" class="w-3 h-3"></i> Contratos</button>
-                      <button onclick="openEquipeForm('${c.id}')" class="p-1.5 bg-slate-100 text-blue-600 rounded-lg"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                      ${zapBtn}
-                  </div>`;            
-              return `<div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm relative">
-                    <div class="absolute top-2 right-2 flex gap-1"><span class="${isAtivo?'bg-green-100 text-green-700':'bg-red-100 text-red-700'} text-[8px] font-bold px-1.5 py-0.5 rounded">${isAtivo?'ATIVO':'INATIVO'}</span></div>
-                    <div class="flex justify-between items-start mb-1 pr-20">
-                        <div><h4 class="font-bold text-slate-800 text-xs flex items-center">${c.nome||'-'} ${tipoBadge}</h4>
-                        <p class="text-[10px] text-slate-500 font-bold uppercase mt-1">${c.categoria||'-'} ${c.telefone?`| ${c.telefone}`:''}</p>
-                        <p class="text-[9px] text-blue-600 mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${nomeObra}</p>
-                        <div class="flex items-center gap-3 mt-1"><span class="font-black text-sm text-slate-700">${valorExibicao}</span>
-                        ${c.tipo==='diaria' && diasTrabalhados>0?`<span class="text-[9px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">Saldo: ${formatMoney(valorPendente)} (${diasTrabalhados.toFixed(2)} dias)</span>`:``}
-                        </div></div>
-                    </div>
-                    ${acoes}
-                </div>`;
-            }).join(''); lucide.createIcons();
+        // ====== RENDER EQUIPE COM SALDO E BOTÕES (COM SUPORTE A METROS) ======
+function renderEquipe() {
+    const term = document.getElementById('eqp-search').value.toLowerCase();
+    const filterObra = document.getElementById('eqp-filter-obra').value;
+    const filterStatus = document.getElementById('eqp-filter-status').value;
+    const filterTipo = document.getElementById('eqp-filter-tipo').value;
+    const dataInicio = document.getElementById('eqp-filter-data-inicio')?.value || '';
+    const dataFim = document.getElementById('eqp-filter-data-fim')?.value || '';
+    
+    const colaboradores = getColaboradoresUnificados();
+    let fil = colaboradores.filter(c=>(c.nome||'').toLowerCase().includes(term));
+    if(filterObra) fil = fil.filter(c=>String(c.obra_atual_id)===String(filterObra));
+    if(filterStatus !== 'todos') { 
+        const isAtivo = filterStatus === 'true';
+        fil = fil.filter(c=>(c.ativo===true||c.ativo==='true')===isAtivo);
+    }
+    if(filterTipo!=='todos') fil = fil.filter(c=>c.tipo===filterTipo);
+    fil.sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
+    
+    let somaGeral = 0;
+    const listHtml = fil.map(c => {
+        const obra = STATE.obras.find(x=>x.id==c.obra_atual_id);
+        const nomeObra = obra ? obra.nome : 'Sem obra alocada';
+        const tipoBadge = c.tipo==='diaria' ? '<span class="bg-blue-100 text-blue-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">DIÁRIA</span>' : '<span class="bg-purple-100 text-purple-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">METRO</span>';
+        const valorExibicao = c.tipo==='diaria' ? formatMoney(c.valor_base) : `${formatMoney(c.valor_base)}/m`;
+        const isAtivo = (c.ativo===true || c.ativo==='true');
+        
+        // Cálculo do saldo pendente (diárias ou metros) no período dos filtros
+        let quantidadePendente = 0;
+        let valorPendente = 0;
+        let unidade = '';
+        
+        if(c.tipo === 'diaria') {
+            const saldo = calcularSaldoPendenteFuncionarioPorPeriodo(c.id, dataInicio, dataFim);
+            quantidadePendente = saldo.totalDiarias;
+            valorPendente = quantidadePendente * c.valor_base;
+            unidade = quantidadePendente.toFixed(2) + ' dias';
+        } else if(c.tipo === 'metro') {
+            // Filtra produções do terceirizado no período
+            let producoes = STATE.producao_terc.filter(p => p.terceirizado_id === c.id);
+            if(dataInicio) producoes = producoes.filter(p => p.data_registro >= dataInicio);
+            if(dataFim) producoes = producoes.filter(p => p.data_registro <= dataFim);
+            // Soma apenas os metros com status diferente de 'PAGO' (pendentes)
+            const metrosPendentes = producoes.filter(p => p.status !== 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
+            quantidadePendente = metrosPendentes;
+            valorPendente = quantidadePendente * c.valor_base;
+            unidade = quantidadePendente.toFixed(2) + ' m';
         }
+        
+        // Acumula total geral para exibir abaixo da lista
+        somaGeral += valorPendente;
+        
+        let zapBtn = '';
+        if(c.telefone){
+            const numZap = c.telefone.replace(/\D/g,'');
+            if(numZap.length>=10) zapBtn = `<a href="https://wa.me/55${numZap}" target="_blank" class="p-1.5 bg-green-100 text-green-600 rounded-lg"><i data-lucide="message-circle" class="w-4 h-4"></i></a>`;
+        }
+        
+        const acoes = `<div class="flex justify-end gap-2 mt-2 pt-2 border-t border-slate-100">
+            ${c.tipo==='diaria' ? `<button onclick="abrirModalSaldo('${c.id}')" class="p-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-1"><i data-lucide="calculator" class="w-3 h-3"></i> Calcular</button>` : 
+              c.tipo==='metro' ? `<button onclick="abrirModalSaldoMetros('${c.id}')" class="p-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-1"><i data-lucide="calculator" class="w-3 h-3"></i> Calcular</button>` : ``}
+            <button onclick="abrirModalDocumentos('${c.id}')" class="p-1.5 bg-slate-800 text-white rounded-lg text-[10px] font-bold flex items-center gap-1"><i data-lucide="file-signature" class="w-3 h-3"></i> Contratos</button>
+            <button onclick="openEquipeForm('${c.id}')" class="p-1.5 bg-slate-100 text-blue-600 rounded-lg"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+            ${zapBtn}
+        </div>`;
+        
+        return `<div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm relative">
+            <div class="absolute top-2 right-2 flex gap-1"><span class="${isAtivo?'bg-green-100 text-green-700':'bg-red-100 text-red-700'} text-[8px] font-bold px-1.5 py-0.5 rounded">${isAtivo?'ATIVO':'INATIVO'}</span></div>
+            <div class="flex justify-between items-start mb-1 pr-20">
+                <div>
+                    <h4 class="font-bold text-slate-800 text-xs flex items-center">${c.nome||'-'} ${tipoBadge}</h4>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase mt-1">${c.categoria||'-'} ${c.telefone?`| ${c.telefone}`:''}</p>
+                    <p class="text-[9px] text-blue-600 mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${nomeObra}</p>
+                    <div class="flex items-center gap-3 mt-1">
+                        <span class="font-black text-sm text-slate-700">${valorExibicao}</span>
+                        ${quantidadePendente > 0 ? `<span class="text-[9px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">Saldo: ${formatMoney(valorPendente)} (${unidade})</span>` : ''}
+                    </div>
+                </div>
+            </div>
+            ${acoes}
+        </div>`;
+    }).join('');
+    
+    document.getElementById('equipe-list').innerHTML = listHtml;
+    document.getElementById('equipe-total-geral').innerHTML = `Total geral (filtro): <span class="font-bold text-slate-700">${formatMoney(somaGeral)}</span>`;
+    lucide.createIcons();
+}
 
         // ====== MODAL DE SALDO PONTO ======
         function abrirModalSaldo(equipeId){
@@ -1329,7 +1363,7 @@
             closeOverlayForm('equipe-form-container'); showToast("✅ Salvo!"); await loadData(); navigate('equipe');
         }
 
-      // ========== FUNÇÕES PARA SALDO DE METROS (TERCEIRIZADOS) ==========
+      
 
 // ========== FUNÇÕES PARA SALDO DE METROS (TERCEIRIZADOS) ==========
 
