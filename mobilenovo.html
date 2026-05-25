@@ -262,14 +262,9 @@
     <div id="produto-form-container" class="hidden fixed inset-0 z-50 bg-slate-900/60 p-4 flex justify-center items-center">
         <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-4"><h3 class="font-bold text-lg mb-4">Produto</h3><form onsubmit="typeof saveProduto === 'function' ? saveProduto(event) : false"><input type="hidden" id="prod-id"><input type="text" id="prod-nome" class="w-full mb-2 p-2 border rounded" placeholder="Nome do Produto"><input type="text" id="prod-cat" class="w-full mb-4 p-2 border rounded" placeholder="Categoria"><div class="flex gap-2"><button type="submit" class="flex-1 bg-indigo-600 text-white p-2 rounded font-bold">Salvar</button><button type="button" onclick="document.getElementById('produto-form-container').classList.add('hidden')" class="flex-1 bg-slate-300 p-2 rounded font-bold">Cancelar</button></div></form></div>
     </div>
-
+    <script src="js/shared.js"></script>
     <script>
-        // 1. Variáveis Globais que o shared.js não recria (vitais para renderizações do dashboard)
-        let STATE = {
-            obras: [], fornecedores: [], produtos: [], equipe: [],
-            fases: [], oc: [], financeiro: [], ponto_diario: [], producao_terc: []
-        };
-
+        
         // 2. Funções Essenciais ausentes do shared.js
         function formatMoney(value) {
             return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
