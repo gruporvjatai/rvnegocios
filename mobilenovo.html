@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RV Negócios - Mobile</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a"> 
+
+    <style>
+        body { background-color: #f1f5f9; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .hidden-section { display: none !important; }
+        .active-section { display: block !important; animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .loader { border: 3px solid #e2e8f0; border-top: 3px solid #1d4ed8; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .nav-active { background-color: #eff6ff; color: #1d4ed8 !important; border-radius: 12px; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 0.5rem; background: white; }
+        
+        /* Botão Flutuante (FAB) */
+        .fab { position: fixed; bottom: 5.5rem; right: 1rem; width: 3.5rem; height: 3.5rem; background-color: #1d4ed8; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); z-index: 40; transition: transform 0.2s; }
+        .fab:active { transform: scale(0.95); }
+
+        @media print {
+            @page { size: A4; margin: 10mm; }
+            body { background: white; margin: 0; padding: 0; font-family: 'Helvetica', 'Arial', sans-serif; color: #1e293b; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+        }
+        .print-only { display: none; }
+    </style>
+</head>
+<body class="pb-20 text-slate-800 no-print">
+
+    <header class="bg-slate-900 text-white p-4 sticky top-0 z-30 shadow-md flex justify-between items-center no-print">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-white p-0.5 overflow-hidden">
+                <img src="logo.png" class="w-full h-full object-contain" onerror="this.src='https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png'" />
+            </div>
+            <h1 class="font-bold tracking-wide text-blue-400">RV NEGÓCIOS</h1>
+        </div>
+        <div class="flex gap-4 items-center">
+            <button onclick="window.location.reload()" class="text-slate-400 hover:text-blue-400"><i data-lucide="refresh-cw"></i></button>
+            <button onclick="fazerLogout()" class="text-slate-400 hover:text-red-400"><i data-lucide="log-out"></i></button>
+        </div>
+    </header>
+
+    <div id="loading" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center no-print">
+       <div class="bg-white p-6 rounded-2xl flex flex-col items-center shadow-2xl"><div class="loader mb-3"></div><span class="font-bold text-slate-700 text-sm">Aguarde...</span></div>
+    </div>
+    <div id="toast" class="hidden fixed top-20 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl text-white font-bold text-sm z-[100] transition-all text-center w-[90%] max-w-sm no-print"></div>
+
+    <main class="p-4" id="main-content">
+        
+        <div id="view-dash" class="active-section">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Visão Geral</h2>
+                <button onclick="openObraForm()" class="bg-blue-700 text-white px-3 py-2 rounded-xl text-sm font-bold shadow flex items-center gap-1"><i data-lucide="plus" class="w-4 h-4"></i> Obra</button>
+            </div>
+            <div id="dash-grid" class="flex flex-col gap-4 pb-4"></div>
+        </div>
+
+        <div id="view-oc" class="hidden-section relative min-h-[80vh]">
+            <h2 class="text-xl font-bold mb-3 flex items-center gap-2"><i data-lucide="folder-open" class="text-blue-700"></i> Ordens de Compra</h2>
+            <div class="relative w-full mb-4">
+                <i data-lucide="search" class="absolute left-3 top-3 text-slate-400 w-4 h-4"></i>
+                <input type="text" id="oc-search" placeholder="Buscar fornecedor/obra..." class="w-full pl-9 p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-blue-600 outline-none shadow-sm" onkeyup="renderOCList()">
+            </div>
+            
+            <div class="table-container shadow-sm border mb-4">
+                <table class="w-full text-xs text-left">
+                    <thead class="bg-slate-100 text-slate-700">
+                        <tr>
+                            <th class="p-3 w-16">O.C.</th>
+                            <th class="p-3">Forn / Obra</th>
+                            <th class="p-3 text-center">Status</th>
+                            <th class="p-3 text-right">Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody id="oc-list" class="divide-y"></tbody>
+                </table>
+            </div>
+            
+            <button onclick="navigate('pos')" class="fab" title="Nova Ordem de Compra">
+                <i data-lucide="plus" class="w-6 h-6"></i>
+            </button>
+        </div>
+
+        <div id="view-pos" class="hidden-section">
+            <h2 class="text-xl font-bold mb-3 flex items-center gap-2"><i data-lucide="shopping-cart" class="text-blue-700"></i> Nova O.C.</h2>
+            <div class="bg-white rounded-xl shadow-sm border p-3 flex flex-col gap-3 mb-4 border-t-4 border-t-blue-800">
+                <div class="flex justify-between gap-2">
+                    <button onclick="openPosProductModal()" class="flex-1 bg-slate-800 text-white p-2.5 rounded-lg text-sm font-bold flex justify-center items-center gap-2"><i data-lucide="search" class="w-4 h-4"></i> Buscar Materiais</button>
+                    <button onclick="clearCart()" class="text-xs text-red-500 font-bold border border-red-200 px-3 py-2 rounded-lg bg-red-50 hover:bg-red-100">Limpar</button>
+                </div>
+                
+                <div id="pos-cart-items" class="min-h-[150px] max-h-[300px] overflow-y-auto space-y-2 bg-slate-50 p-2 rounded-lg border border-slate-100"></div>
+                
+                <div class="grid grid-cols-1 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Destino (Obra)</label>
+                        <select id="pos-obra" class="w-full p-2 border rounded-lg text-sm bg-slate-50 font-bold outline-none text-slate-700"></select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fase da Obra</label>
+                        <select id="pos-fase" class="w-full p-2 border rounded-lg text-sm bg-slate-50 font-bold outline-none text-slate-700"><option value="">-- Não especificada --</option></select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fornecedor</label>
+                        <div class="flex gap-2">
+                            <input type="hidden" id="pos-fornecedor" value="">
+                            <button id="pos-fornecedor-btn" onclick="openPosFornecedorModal()" class="flex-1 p-2 border rounded-lg text-sm bg-slate-50 text-left flex justify-between items-center text-slate-600 font-bold"><span class="truncate">Selecionar...</span><i data-lucide="search" class="w-4 h-4"></i></button>
+                            <button onclick="navigate('fornecedores')" class="p-2 bg-slate-200 rounded-lg"><i data-lucide="user-plus" class="w-4 h-4 text-slate-700"></i></button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Solicitante</label>
+                        <input type="text" id="pos-solicitante" placeholder="Nome de quem solicitou..." class="w-full p-2 border rounded-lg text-sm bg-slate-50 font-medium outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Observações</label>
+                        <textarea id="pos-custom-obs" rows="1" placeholder="Recados..." class="w-full p-2 border rounded-lg text-sm bg-slate-50 outline-none resize-none"></textarea>
+                    </div>
+                </div>
+                
+                <div class="mt-2 pt-3 border-t flex justify-between items-center">
+                    <div class="text-xs font-bold text-slate-500">Total: <span id="cart-count" class="text-blue-700">0</span> itens</div>
+                    <div class="text-right">
+                        <div class="text-[10px] text-slate-500 font-bold uppercase">Valor Estimado</div>
+                        <div id="pos-total-display" class="text-xl font-black text-slate-800">R$ 0,00</div>
+                    </div>
+                </div>
+                <button onclick="saveOC()" class="w-full bg-blue-700 text-white font-bold py-3 rounded-xl mt-2 flex justify-center items-center gap-2 active:scale-95 transition-transform"><i data-lucide="save"></i> SALVAR O.C</button>
+            </div>
+        </div>
+
+        <div id="view-fin" class="hidden-section">
+            <h2 class="text-xl font-bold mb-3 flex items-center gap-2"><i data-lucide="bar-chart-3" class="text-blue-700"></i> Financeiro</h2>
+            
+            <select id="fin-obra-filter" onchange="renderFinance()" class="w-full p-2.5 mb-4 border border-slate-300 rounded-xl text-sm bg-white font-bold text-blue-700 shadow-sm outline-none">
+                <option value="">Todas as Obras / Geral</option>
+            </select>
+            
+            <div id="fin-cards-container" class="grid grid-cols-2 gap-3 mb-4"></div>
+            
+            <div class="flex p-1 bg-slate-200 rounded-xl mb-4">
+                <button onclick="toggleFinTab('despesas')" id="tab-despesas" class="flex-1 py-2 text-xs font-bold bg-white text-slate-800 rounded-lg shadow-sm transition-all">Custos</button>
+                <button onclick="toggleFinTab('receitas')" id="tab-receitas" class="flex-1 py-2 text-xs font-bold text-slate-500 rounded-lg transition-all">Medições</button>
+            </div>
+            
+            <div id="fin-section-despesas" class="bg-white rounded-xl shadow-sm border overflow-hidden">
+                <div class="p-3 bg-slate-50 border-b flex justify-between items-center">
+                    <h3 class="font-bold text-slate-700 text-sm">Custos</h3>
+                    <button onclick="openExpenseModal()" class="bg-slate-800 text-white px-2 py-1 rounded text-xs font-bold flex items-center gap-1 active:scale-95"><i data-lucide="plus" class="w-3 h-3"></i> Lançar</button>
+                </div>
+                <div class="table-container">
+                    <table class="w-full text-xs text-left">
+                        <thead class="bg-slate-100 text-slate-500"><tr><th class="p-2">Data/Desc</th><th class="p-2 text-right">Valor</th></tr></thead>
+                        <tbody id="fin-expense-history-list" class="divide-y"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div id="fin-section-receitas" class="bg-white rounded-xl shadow-sm border overflow-hidden hidden">
+                <div class="p-3 bg-slate-50 border-b flex justify-between items-center">
+                    <h3 class="font-bold text-slate-700 text-sm">Medições</h3>
+                    <button onclick="openRevenueModal()" class="bg-blue-700 text-white px-2 py-1 rounded text-xs font-bold flex items-center gap-1 active:scale-95"><i data-lucide="plus" class="w-3 h-3"></i> Lançar</button>
+                </div>
+                <div class="table-container">
+                    <table class="w-full text-xs text-left">
+                        <thead class="bg-slate-100 text-slate-500"><tr><th class="p-2">Data/Desc</th><th class="p-2 text-right">Valor</th></tr></thead>
+                        <tbody id="fin-revenue-list" class="divide-y"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-menu" class="hidden-section">
+            <h2 class="text-xl font-bold mb-4">Menu Adicional</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="navigate('fornecedores')" class="bg-white p-5 rounded-2xl shadow-sm border flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform text-slate-700 hover:text-blue-600">
+                    <i data-lucide="truck" class="w-8 h-8 text-blue-600"></i>
+                    <span class="font-bold text-sm">Fornecedores</span>
+                </button>
+                <button onclick="navigate('prod')" class="bg-white p-5 rounded-2xl shadow-sm border flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform text-slate-700 hover:text-blue-600">
+                    <i data-lucide="package" class="w-8 h-8 text-indigo-600"></i>
+                    <span class="font-bold text-sm">Produtos</span>
+                </button>
+                <button onclick="navigate('equipe')" class="bg-white p-5 rounded-2xl shadow-sm border flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform text-slate-700 hover:text-blue-600">
+                    <i data-lucide="users" class="w-8 h-8 text-emerald-600"></i>
+                    <span class="font-bold text-sm">Equipe</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="view-fornecedores" class="hidden-section">
+            <h2 class="text-xl font-bold mb-3 flex items-center gap-2"><i data-lucide="truck" class="text-blue-700"></i> Fornecedores</h2>
+            <div class="flex gap-2 mb-4">
+                <div class="relative flex-1">
+                    <i data-lucide="search" class="absolute left-3 top-3 text-slate-400 w-4 h-4"></i>
+                    <input type="text" id="forn-search" placeholder="Buscar..." class="w-full pl-9 p-2.5 border rounded-xl text-sm outline-none" onkeyup="renderFornecedores()">
+                </div>
+                <button onclick="openFornecedorForm()" class="bg-blue-700 text-white px-3 py-2 rounded-xl text-sm font-bold shadow active:scale-95"><i data-lucide="plus"></i></button>
+            </div>
+            <div class="table-container shadow-sm border">
+                <table class="w-full text-xs text-left">
+                    <thead class="bg-slate-100"><tr><th class="p-3">Nome/Contato</th><th class="p-3 text-right">Ações</th></tr></thead>
+                    <tbody id="fornecedor-list" class="divide-y"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="view-prod" class="hidden-section">
+            <h2 class="text-xl font-bold mb-3 flex items-center gap-2"><i data-lucide="package" class="text-indigo-700"></i> Produtos</h2>
+            <div class="flex gap-2 mb-4">
+                <div class="relative flex-1">
+                    <i data-lucide="search" class="absolute left-3 top-3 text-slate-400 w-4 h-4"></i>
+                    <input type="text" id="prod-search" placeholder="Buscar..." class="w-full pl-9 p-2.5 border rounded-xl text-sm outline-none" onkeyup="renderProdutos()">
+                </div>
+                <button onclick="openProdutoForm()" class="bg-indigo-600 text-white px-3 py-2 rounded-xl text-sm font-bold shadow active:scale-95"><i data-lucide="plus"></i></button>
+            </div>
+            <div class="table-container shadow-sm border">
+                <table class="w-full text-xs text-left">
+                    <thead class="bg-slate-100"><tr><th class="p-3">Produto/Cat</th><th class="p-3 text-right">Ações</th></tr></thead>
+                    <tbody id="prod-list" class="divide-y"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="view-equipe" class="hidden-section">
+            <h2 class="text-xl font-bold mb-3 flex items-center gap-2"><i data-lucide="users" class="text-emerald-700"></i> Equipe</h2>
+            <div class="grid grid-cols-2 gap-2 mb-3">
+                <input type="text" id="eqp-search" placeholder="Buscar..." class="p-2 border rounded-lg text-xs outline-none" onkeyup="renderEquipe()">
+                <select id="eqp-obra-filter" class="p-2 border rounded-lg text-xs outline-none" onchange="renderEquipe()"><option value="">Todas Obras</option></select>
+                <select id="eqp-filter-status" class="p-2 border rounded-lg text-xs outline-none" onchange="renderEquipe()">
+                    <option value="true" selected>Ativos</option>
+                    <option value="">Todos</option>
+                    <option value="false">Inativos</option>
+                </select>
+                <select id="eqp-filter-tipo" class="p-2 border rounded-lg text-xs outline-none" onchange="renderEquipe()">
+                    <option value="todos">Todos</option>
+                    <option value="diaria">Diária / Mensal</option>
+                    <option value="metro">Por Metro</option>
+                </select>
+            </div>
+            <button onclick="openEquipeForm()" class="w-full mb-4 bg-emerald-600 text-white p-2.5 rounded-lg text-sm font-bold shadow flex justify-center items-center gap-2 active:scale-95"><i data-lucide="user-plus" class="w-4 h-4"></i> Novo Colaborador</button>
+            
+            <div class="table-container shadow-sm border">
+                <table class="w-full text-xs text-left">
+                    <thead class="bg-slate-100"><tr><th class="p-2">Colaborador</th><th class="p-2 text-center">Status</th><th class="p-2 text-right">Ações</th></tr></thead>
+                    <tbody id="equipe-list" class="divide-y"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <nav class="fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 flex justify-around p-1 z-40 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] pb-safe no-print">
+        <button onclick="navigateMobile('dash', this)" class="nav-btn-mobile nav-active flex flex-col items-center p-2 text-slate-400 w-16 transition-colors">
+            <i data-lucide="layout-dashboard" class="w-5 h-5 mb-1"></i>
+            <span class="text-[9px] font-bold">Visão</span>
+        </button>
+        <button onclick="navigateMobile('oc', this)" class="nav-btn-mobile flex flex-col items-center p-2 text-slate-400 w-16 transition-colors">
+            <i data-lucide="folder-open" class="w-5 h-5 mb-1"></i>
+            <span class="text-[9px] font-bold">O.C</span>
+        </button>
+        <button onclick="navigateMobile('fin', this)" class="nav-btn-mobile flex flex-col items-center p-2 text-slate-400 w-16 transition-colors">
+            <i data-lucide="bar-chart-3" class="w-5 h-5 mb-1"></i>
+            <span class="text-[9px] font-bold">Financeiro</span>
+        </button>
+        <button onclick="navigateMobile('menu', this)" class="nav-btn-mobile flex flex-col items-center p-2 text-slate-400 w-16 transition-colors">
+            <i data-lucide="menu" class="w-5 h-5 mb-1"></i>
+            <span class="text-[9px] font-bold">Menu</span>
+        </button>
+    </nav>
+    
+    <div id="print-area" class="print-only"></div>
+
+    <script src="js/shared.js"></script>
+    <script>
+        // Inicializar os Ícones
+        lucide.createIcons();
+
+        // Lógica de Navegação específica para a versão Mobile
+        function navigateMobile(viewId, element) {
+            document.querySelectorAll('#main-content > div').forEach(el => {
+                el.classList.add('hidden-section');
+                el.classList.remove('active-section');
+            });
+            
+            const target = document.getElementById('view-' + viewId);
+            if (target) {
+                target.classList.remove('hidden-section');
+                target.classList.add('active-section');
+            }
+            
+            // Tratamento das cores e preenchimentos dos botões da barra
+            if (element) {
+                document.querySelectorAll('.nav-btn-mobile').forEach(btn => {
+                    btn.classList.remove('nav-active', 'text-blue-600');
+                    btn.classList.add('text-slate-400');
+                });
+                element.classList.add('nav-active', 'text-blue-600');
+                element.classList.remove('text-slate-400');
+            } else {
+                document.querySelectorAll('.nav-btn-mobile').forEach(btn => {
+                    btn.classList.remove('nav-active', 'text-blue-600');
+                    btn.classList.add('text-slate-400');
+                });
+                // Manter o botão "Menu" aceso se o ecrã interior (equipe/fornecedores/produtos) for chamado
+                if(['fornecedores', 'prod', 'equipe'].includes(viewId)) {
+                    const menuBtn = document.querySelectorAll('.nav-btn-mobile')[3];
+                    menuBtn.classList.add('nav-active', 'text-blue-600');
+                    menuBtn.classList.remove('text-slate-400');
+                }
+            }
+
+            // Chamar renderizações respetivas vindas do shared.js
+            if (viewId === 'dash' && typeof loadDash === 'function') loadDash();
+            if (viewId === 'oc' && typeof renderOCList === 'function') renderOCList();
+            if (viewId === 'pos' && typeof renderPosProducts === 'function') renderPosProducts();
+            if (viewId === 'fin' && typeof renderFinance === 'function') renderFinance();
+            if (viewId === 'equipe' && typeof renderEquipe === 'function') renderEquipe();
+            if (viewId === 'fornecedores' && typeof renderFornecedores === 'function') renderFornecedores();
+            if (viewId === 'prod' && typeof renderProdutos === 'function') renderProdutos();
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Intercetar a função navigate() nativa do shared.js para não desconfigurar o layout Mobile
+        window.navigate = function(viewId) {
+            let navBtn = null;
+            if(['dash', 'oc', 'fin', 'menu'].includes(viewId)){
+                navBtn = document.querySelector(`.nav-btn-mobile[onclick*="${viewId}"]`);
+            }
+            navigateMobile(viewId, navBtn);
+        };
+
+        // Comportamento das Tabs no ecrã Financeiro
+        function toggleFinTab(tab) {
+            const secDesp = document.getElementById('fin-section-despesas');
+            const secRec = document.getElementById('fin-section-receitas');
+            const btnDesp = document.getElementById('tab-despesas');
+            const btnRec = document.getElementById('tab-receitas');
+            
+            if(tab === 'despesas') {
+                secDesp.classList.remove('hidden');
+                secRec.classList.add('hidden');
+                btnDesp.classList.replace('text-slate-500', 'text-slate-800');
+                btnDesp.classList.replace('bg-transparent', 'bg-white');
+                btnDesp.classList.add('shadow-sm');
+                btnRec.classList.replace('text-slate-800', 'text-slate-500');
+                btnRec.classList.replace('bg-white', 'bg-transparent');
+                btnRec.classList.remove('shadow-sm');
+            } else {
+                secRec.classList.remove('hidden');
+                secDesp.classList.add('hidden');
+                btnRec.classList.replace('text-slate-500', 'text-slate-800');
+                btnRec.classList.replace('bg-transparent', 'bg-white');
+                btnRec.classList.add('shadow-sm');
+                btnDesp.classList.replace('text-slate-800', 'text-slate-500');
+                btnDesp.classList.replace('bg-white', 'bg-transparent');
+                btnDesp.classList.remove('shadow-sm');
+            }
+        }
+    </script>
+</body>
+</html>
