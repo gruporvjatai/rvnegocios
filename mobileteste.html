@@ -270,6 +270,9 @@
               <button onclick="imprimirChecagem()" class="bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow flex items-center gap-1">
                   <i data-lucide="clipboard-check" class="w-4 h-4"></i> Checagem
               </button>
+              <button onclick="abrirModalFolhaPagamento()" class="bg-slate-800 text-white px-3 py-2 rounded-xl text-xs font-bold shadow flex items-center gap-1">
+                  <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Folha
+              </button>
           </div>
           
           
@@ -745,6 +748,77 @@
       
       
 <!-- FECHAENTO DE MODAL DE METRO============================================================================= -->
+
+
+    <!-- MODAL FOLHA DE PAGAMENTO (MOBILE) -->
+<div id="modal-folha-pagamento" class="hidden fixed inset-0 bg-black/70 z-50 flex items-end justify-center">
+  <div class="bg-white rounded-t-3xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl animate-slide-up">
+    
+    <!-- Cabeçalho -->
+    <div class="bg-indigo-700 p-4 text-white flex justify-between items-center shrink-0">
+      <div class="flex items-center gap-2">
+        <i data-lucide="printer" class="w-5 h-5"></i>
+        <h3 class="font-bold text-base">Imprimir Folha de Pagamentos</h3>
+      </div>
+      <button onclick="fecharModalFolhaPagamento()" class="p-1 rounded-full bg-indigo-800/50 active:bg-indigo-900">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- Conteúdo rolável -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status Financeiro</label>
+          <select id="folha-status" class="w-full p-3 border rounded-lg text-sm font-bold bg-white">
+            <option value="PENDENTE" selected>Apenas Pendentes (Não Baixados)</option>
+            <option value="PAGO">Apenas Pagos</option>
+            <option value="TODOS">Todos</option>
+          </select>
+          <p class="text-[10px] text-slate-400 mt-1">"Pendentes" são os que ainda não tiveram baixa no financeiro.</p>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Obra</label>
+          <select id="folha-obra" class="w-full p-3 border rounded-lg text-sm font-bold bg-white">
+            <option value="">Todas as Obras</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status do Funcionário</label>
+          <select id="folha-status-func" class="w-full p-3 border rounded-lg text-sm font-bold bg-white">
+            <option value="true" selected>Ativos</option>
+            <option value="false">Desativados</option>
+            <option value="todos">Todos</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Início</label>
+            <input type="date" id="folha-data-inicio" class="w-full p-3 border rounded-lg text-sm font-bold bg-white">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Fim</label>
+            <input type="date" id="folha-data-fim" class="w-full p-3 border rounded-lg text-sm font-bold bg-white">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rodapé com botões -->
+    <div class="bg-white border-t p-4 shrink-0 space-y-3">
+      <div class="flex gap-2">
+        <button onclick="fecharModalFolhaPagamento()" class="flex-1 bg-slate-200 text-slate-700 py-2.5 rounded-xl font-bold text-sm active:scale-95">
+          Cancelar
+        </button>
+        <button onclick="executarImpressaoFolha()" class="flex-1 bg-blue-700 text-white py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-1 active:scale-95">
+          <i data-lucide="printer" class="w-4 h-4"></i> Imprimir
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
 
     <div id="print-area" class="print-only"></div>
 
@@ -1810,6 +1884,202 @@ function imprimirReciboDoModal() {
     setTimeout(() => window.print(), 300);
 }
 
+
+      // Funções para o modal de folha de pagamento
+function abrirModalFolhaPagamento() {
+    // Preenche o select de obras
+    const selectObra = document.getElementById('folha-obra');
+    selectObra.innerHTML = '<option value="">Todas as Obras</option>' + 
+        STATE.obras.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
+    
+    // Define datas padrão: 1º de janeiro do ano atual até o último dia do mês corrente
+    const hoje = new Date();
+    const anoAtual = hoje.getFullYear();
+    const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
+    const primeiroDia = `${anoAtual}-01-01`;
+    const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
+    const ultimoDiaStr = `${anoAtual}-${mesAtual}-${String(ultimoDia).padStart(2, '0')}`;
+    
+    document.getElementById('folha-data-inicio').value = primeiroDia;
+    document.getElementById('folha-data-fim').value = ultimoDiaStr;
+    
+    document.getElementById('modal-folha-pagamento').classList.remove('hidden');
+    lucide.createIcons();
+}
+
+function fecharModalFolhaPagamento() {
+    document.getElementById('modal-folha-pagamento').classList.add('hidden');
+}
+
+function executarImpressaoFolha() {
+    const statusFinanceiro = document.getElementById('folha-status').value;
+    const obraFiltro = document.getElementById('folha-obra').value;
+    const statusFunc = document.getElementById('folha-status-func').value;
+    const dataInicio = document.getElementById('folha-data-inicio').value;
+    const dataFim = document.getElementById('folha-data-fim').value;
+    
+    const colaboradores = getColaboradoresUnificados();
+    
+    let filtrados = colaboradores.filter(c => {
+        if (statusFunc === 'true' && c.ativo === false) return false;
+        if (statusFunc === 'false' && c.ativo !== false) return false;
+        if (obraFiltro && c.obra_atual_id != obraFiltro) return false;
+        return true;
+    });
+    
+    const dadosFolha = [];
+    
+    filtrados.forEach(c => {
+        let valorTotal = 0;
+        let quantidade = 0;
+        
+        if (c.tipo === 'diaria') {
+            // Busca despesas de ponto no período
+            let despesas = STATE.logs.filter(l => 
+                l.tipo === 'despesa' &&
+                l.produto_nome && l.produto_nome.includes(`Pagamento de ponto - ${c.nome}`)
+            );
+            
+            // Filtra por data de vencimento (usa a data do log)
+            if (dataInicio || dataFim) {
+                despesas = despesas.filter(d => {
+                    const dataDesp = d.data ? d.data.split('T')[0] : '';
+                    if (dataInicio && dataDesp < dataInicio) return false;
+                    if (dataFim && dataDesp > dataFim) return false;
+                    return true;
+                });
+            }
+            
+            if (statusFinanceiro !== 'TODOS') {
+                despesas = despesas.filter(d => d.status_financeiro === statusFinanceiro);
+            }
+            
+            if (despesas.length === 0) return;
+            
+            let totalValor = 0;
+            let totalDiarias = 0;
+            despesas.forEach(d => {
+                totalValor += parseFloat(d.valor_total);
+                const diariasMatch = d.observacao?.match(/Total diárias: ([\d.]+)/);
+                if (diariasMatch) totalDiarias += parseFloat(diariasMatch[1]);
+            });
+            
+            if (totalValor > 0) {
+                dadosFolha.push({
+                    nome: c.nome,
+                    pix: c.chave_pix || 'Não informado',
+                    tipo: 'Diária',
+                    unidade: 'dias',
+                    quantidade: totalDiarias,
+                    valor_unitario: c.valor_base,
+                    valor_total: totalValor
+                });
+            }
+        } else if (c.tipo === 'metro') {
+            // Busca produção do terceirizado no período
+            let producoes = STATE.producao_terc.filter(p => p.terceirizado_id === c.id);
+            if (dataInicio) producoes = producoes.filter(p => p.data_registro >= dataInicio);
+            if (dataFim) producoes = producoes.filter(p => p.data_registro <= dataFim);
+            
+            const metros = (statusFinanceiro === 'PAGO') 
+                ? producoes.filter(p => p.status === 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros), 0)
+                : (statusFinanceiro === 'PENDENTE')
+                    ? producoes.filter(p => p.status !== 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros), 0)
+                    : producoes.reduce((acc, p) => acc + parseFloat(p.metros), 0);
+            
+            if (metros === 0) return;
+            
+            const valorTotalMetro = metros * c.valor_base;
+            dadosFolha.push({
+                nome: c.nome,
+                pix: c.chave_pix || 'Não informado',
+                tipo: 'Metro',
+                unidade: 'm',
+                quantidade: metros,
+                valor_unitario: c.valor_base,
+                valor_total: valorTotalMetro
+            });
+        }
+    });
+    
+    if (dadosFolha.length === 0) {
+        fecharModalFolhaPagamento();
+        return showToast('Nenhum registro encontrado com os filtros selecionados.', true);
+    }
+    
+    dadosFolha.sort((a, b) => a.nome.localeCompare(b.nome));
+    
+    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : 'Início';
+    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'Fim';
+    const periodoExibicao = (dataInicio || dataFim) ? `${dataIniFormatada} a ${dataFimFormatada}` : 'Todos os períodos';
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    
+    let html = `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; padding: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 15px; margin-bottom: 25px;">
+                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 70px;" />
+                <div style="text-align: right;">
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 900;">FOLHA DE PAGAMENTOS</h1>
+                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #1d4ed8; font-weight: bold;">Status: ${statusFinanceiro === 'PENDENTE' ? 'PENDENTES (NÃO BAIXADOS)' : statusFinanceiro}</p>
+                    <p style="margin: 2px 0 0 0; font-size: 12px;">Período: ${periodoExibicao}</p>
+                </div>
+            </div>
+            
+            <table width="100%" style="border-collapse: collapse; margin-bottom: 30px; font-size: 12px;">
+                <thead>
+                    <tr style="background-color: #f1f5f9;">
+                        <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: left;">Funcionário / PIX</th>
+                        <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Tipo</th>
+                        <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Quantidade</th>
+                        <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Valor Unit.</th>
+                        <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: right;">Valor Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    let somaGeral = 0;
+    dadosFolha.forEach(d => {
+        somaGeral += d.valor_total;
+        html += `
+            <tr>
+                <td style="padding: 10px; border: 1px solid #cbd5e1;">
+                    <div style="font-weight: 800;">${d.nome.toUpperCase()}</div>
+                    <div style="font-size: 11px; color: #1d4ed8; margin-top: 4px;">
+                        <span style="color: #64748b;">PIX:</span> ${d.pix}
+                    </div>
+                </td>
+                <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center;">${d.tipo}</td>
+                <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold;">${d.quantidade.toFixed(2)} ${d.unidade}</td>
+                <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center;">${formatMoney(d.valor_unitario)}</td>
+                <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: right; font-weight: 900; color: #1d4ed8;">${formatMoney(d.valor_total)}</td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+            
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 40px;">
+                <div style="width: 300px; background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="font-weight: bold;">TOTAL GERAL:</span>
+                        <span style="font-weight: 900; color: #b91c1c; font-size: 18px;">${formatMoney(somaGeral)}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; font-size: 10px; color: #94a3b8; margin-top: 40px; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
+                Emitido em ${hoje} - RV Negócios
+            </div>
+        </div>
+    `;
+    
+    fecharModalFolhaPagamento();
+    document.getElementById('print-area').innerHTML = html;
+    setTimeout(() => window.print(), 300);
+}
 
       
       
