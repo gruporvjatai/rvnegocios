@@ -10,7 +10,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 
-  <!-- Arquivo com todas as funções compartilhadas (lógica de negócio, cálculos, Supabase) -->
+  <!-- ARQUIVO COMPARTILHADO (TODAS AS FUNÇÕES DE NEGÓCIO) -->
   <script src="js/shared.js"></script>
 
   <link rel="icon" type="image/png" href="logo.png">
@@ -19,7 +19,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="application-name" content="RV Portal">
-  <meta name="theme-color" content="#0f172a"> 
+  <meta name="theme-color" content="#0f172a">
   
   <style>
     body { background-color: #f1f5f9; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
@@ -65,7 +65,8 @@
 <div id="toast" class="hidden fixed top-20 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl text-white font-bold text-sm z-[100] transition-all text-center w-[90%] max-w-sm"></div>
 
 <main class="p-4" id="main-content">
-
+  
+  <!-- DASHBOARD -->
   <div id="view-dash" class="active-section no-print">
     <div class="flex justify-between items-center mb-4">
       <h2 class="text-xl font-bold">Visão Geral</h2>
@@ -74,6 +75,7 @@
     <div id="dash-grid" class="flex flex-col gap-4 pb-4"></div>
   </div>
 
+  <!-- ORDENS DE COMPRA -->
   <div id="view-oc" class="hidden-section no-print relative min-h-[80vh]">
     <h2 class="text-xl font-bold mb-3 flex items-center gap-2"><i data-lucide="file-text" class="text-blue-700"></i> Ordens de Compra</h2>
     <div class="flex gap-2 mb-4">
@@ -84,6 +86,7 @@
     <button onclick="openNovaOC()" class="fixed bottom-20 right-4 w-14 h-14 bg-blue-700 text-white rounded-full shadow-2xl flex items-center justify-center z-40 active:scale-95 transition-transform border-4 border-white"><i data-lucide="plus" class="w-6 h-6"></i></button>
   </div>
 
+  <!-- CRIAR NOVA O.C. -->
   <div id="view-pos" class="hidden-section no-print">
     <div class="flex items-center gap-3 mb-4">
       <button onclick="closeNovaOC()" class="p-2 bg-slate-200 rounded-full text-slate-600 active:bg-slate-300"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
@@ -105,6 +108,7 @@
     <button onclick="saveOC()" class="w-full bg-green-600 text-white p-3 rounded-xl font-black shadow-lg active:scale-95 transition-transform flex justify-center items-center gap-2 mb-6"><i data-lucide="check-circle" class="w-5 h-5"></i> SALVAR O.C.</button>
   </div>
 
+  <!-- FINANCEIRO -->
   <div id="view-fin" class="hidden-section no-print">
     <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold flex items-center gap-2"><i data-lucide="bar-chart-3" class="text-blue-700"></i> Financeiro Obras</h2><button onclick="imprimirFinanceiro()" class="bg-slate-800 text-white p-2 rounded-xl text-sm font-bold shadow flex items-center gap-2"><i data-lucide="printer" class="w-4 h-4"></i></button></div>
     <div class="grid grid-cols-2 gap-2 mb-4 bg-slate-50 p-3 rounded-xl border border-slate-200">
@@ -120,6 +124,7 @@
     <div id="fin-section-receitas" class="hidden"><div id="fin-receivables-list" class="flex flex-col gap-2 pb-4"></div></div>
   </div>
 
+  <!-- MENU -->
   <div id="view-menu" class="hidden-section no-print">
     <h2 class="text-xl font-bold mb-4">Menu</h2>
     <div class="flex flex-col gap-3">
@@ -129,19 +134,21 @@
     </div>
   </div>
 
+  <!-- FORNECEDORES -->
   <div id="view-fornecedores" class="hidden-section no-print">
     <div class="flex items-center gap-3 mb-4"><button onclick="navigate('menu')" class="p-2 bg-slate-200 rounded-full text-slate-600"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h2 class="text-xl font-bold flex-1">Fornecedores</h2><button onclick="openFornecedorForm()" class="bg-blue-700 text-white px-3 py-2 rounded-xl text-sm font-bold shadow"><i data-lucide="plus" class="w-4 h-4"></i></button></div>
     <input type="text" id="forn-search" placeholder="Buscar..." class="w-full p-3 mb-4 bg-white border border-slate-200 rounded-xl text-sm outline-none shadow-sm" onkeyup="renderFornecedores()">
     <div id="fornecedores-list" class="flex flex-col gap-2 pb-4"></div>
   </div>
   
+  <!-- PRODUTOS -->
   <div id="view-prod" class="hidden-section no-print">
     <div class="flex items-center gap-3 mb-4"><button onclick="navigate('menu')" class="p-2 bg-slate-200 rounded-full text-slate-600"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h2 class="text-xl font-bold flex-1">Insumos</h2><button onclick="openProductForm()" class="bg-blue-700 text-white px-3 py-2 rounded-xl text-sm font-bold shadow"><i data-lucide="plus" class="w-4 h-4"></i></button></div>
     <input type="text" id="prod-search" placeholder="Buscar material..." class="w-full p-3 mb-4 bg-white border border-slate-200 rounded-xl text-sm outline-none shadow-sm" onkeyup="renderProducts()">
     <div id="prod-list" class="flex flex-col gap-2 pb-4"></div>
   </div>
 
-  <!-- VIEW EQUIPE (UNIFICADA COM TERCEIRIZADOS) - Agora usa renderEquipeMobile() definida abaixo -->
+  <!-- EQUIPE (UNIFICADA COM TERCEIRIZADOS) -->
   <div id="view-equipe" class="hidden-section no-print relative min-h-[80vh]">
     <div class="flex items-center gap-3 mb-4">
       <button onclick="navigate('menu')" class="p-2 bg-slate-200 rounded-full text-slate-600"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
@@ -164,7 +171,6 @@
     </div>
     <div id="equipe-list" class="flex flex-col gap-2 pb-16"></div>
   </div>
-
 </main>
 
 <nav class="fixed bottom-0 w-full bg-white border-t border-slate-200 flex justify-around items-center pb-safe pt-1 pb-1 z-40 no-print shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)] px-2">
@@ -174,7 +180,7 @@
   <button onclick="navigate('menu')" id="btn-menu" class="flex flex-col items-center p-2 text-slate-400 nav-bottom-btn w-1/4 transition-colors"><i data-lucide="menu" class="w-5 h-5 mb-1"></i><span class="text-[10px] font-bold">Menu</span></button>
 </nav>
 
-<!-- MODAIS GERAIS (reutilizados) -->
+<!-- ====================== MODAIS GERAIS ====================== -->
 <div id="pos-product-modal" class="fixed inset-0 bg-white z-50 flex flex-col mobile-modal modal-hidden no-print">
   <div class="p-3 border-b flex justify-between items-center bg-slate-50 pt-safe"><h3 class="font-bold text-base">Buscar Material</h3><button onclick="closeModal('pos-product-modal')" class="p-1.5 text-slate-500 bg-slate-200 rounded-full"><i data-lucide="x" class="w-4 h-4"></i></button></div>
   <div class="p-3 border-b shadow-sm"><input type="text" id="pos-modal-search" placeholder="Digite o nome..." class="w-full p-3 bg-slate-100 border-none rounded-xl font-bold outline-none text-sm" onkeyup="renderPosProductModal()" autofocus></div>
@@ -230,7 +236,7 @@
     <div class="bg-indigo-600 p-4 text-white flex justify-between items-center shrink-0"><div><h3 class="font-black text-lg flex items-center gap-2"><i data-lucide="calculator" class="w-5 h-5"></i> Saldo de Ponto</h3><p id="saldo-modal-subtitle" class="text-xs font-medium opacity-90 mt-0.5"></p></div><button onclick="fecharModalSaldo()" class="text-white hover:bg-white/20 p-2 rounded-lg transition"><i data-lucide="x" class="w-5 h-5"></i></button></div>
     <div class="p-5 overflow-y-auto flex-1 bg-slate-50"><input type="hidden" id="saldo-equipe-id">
       <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-4 flex flex-wrap gap-3 items-end"><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Início</label><input type="date" id="saldo-filtro-data-inicio" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="carregarTabelaSaldo()"></div><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Fim</label><input type="date" id="saldo-filtro-data-fim" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="carregarTabelaSaldo()"></div><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label><select id="saldo-filtro-status" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-36" onchange="carregarTabelaSaldo()"><option value="PENDENTE" selected>Pendentes</option><option value="PAGO">Já Pagos</option><option value="TODOS">Todos</option></select></div><div class="flex-1"></div><button onclick="imprimirExtratoSaldo()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow"><i data-lucide="printer" class="w-4 h-4"></i> Imprimir Extrato</button></div>
-      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm"><table class="w-full text-sm"><thead class="bg-slate-100 text-slate-600 border-b"><tr><th class="p-3 text-left text-xs font-bold uppercase">Data</th><th class="p-3 text-left text-xs font-bold uppercase">Horários</th><th class="p-3 text-center text-xs font-bold uppercase">Diária (Fração)</th><th class="p-3 text-center text-xs font-bold uppercase">Status</th></tr></thead><tbody id="saldo-tabela-body" class="divide-y"></tbody></table><div id="saldo-sem-registros" class="p-8 text-center text-slate-400 font-medium hidden">Nenhum registro encontrado para os filtros.</div></div>
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm"><table class="w-full text-sm"><thead class="bg-slate-100 text-slate-600 border-b"><tr><th class="p-3 text-left text-xs font-bold uppercase">Data</th><th class="p-3 text-left text-xs font-bold uppercase">Horários</th><th class="p-3 text-center text-xs font-bold uppercase">Diária (Fração)</th><th class="p-3 text-center text-xs font-bold uppercase">Status</th></tr></thead><tbody id="saldo-tabela-body" class="divide-y"></tbody><td><div id="saldo-sem-registros" class="p-8 text-center text-slate-400 font-medium hidden">Nenhum registro encontrado para os filtros.</div></div>
       <div class="mt-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><h4 class="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2"><i data-lucide="plus-circle" class="w-4 h-4 text-indigo-600"></i> Lançar Ajuste Manual (Meia Diária)</h4><div class="grid grid-cols-1 md:grid-cols-4 gap-3"><div><label class="block text-xs font-bold text-slate-500 mb-1">Data</label><input type="date" id="ajuste-data" class="w-full p-2 border rounded-lg text-sm"></div><div><label class="block text-xs font-bold text-slate-500 mb-1">Fração (ex: 0.5)</label><input type="number" step="0.01" min="0" id="ajuste-fracao" class="w-full p-2 border rounded-lg text-sm font-bold"></div><div><label class="block text-xs font-bold text-slate-500 mb-1">Justificativa</label><input type="text" id="ajuste-justificativa" placeholder="Ex: Esqueceu bater ponto" class="w-full p-2 border rounded-lg text-sm"></div><div class="flex items-end"><button onclick="lancarAjusteManual()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold flex items-center justify-center gap-1"><i data-lucide="save" class="w-4 h-4"></i> Lançar</button></div></div></div>
     </div>
     <div class="p-4 bg-white border-t flex justify-between items-center shrink-0"><div><span class="text-sm font-bold text-slate-500">Total de Diárias Pendentes:</span><span id="saldo-total-diarias" class="text-2xl font-black text-indigo-700 ml-2">0.00</span></div><div class="flex items-center gap-4"><div class="text-right"><div class="text-xs text-slate-500 font-bold uppercase">Valor a Pagar</div><div id="saldo-total-valor" class="text-2xl font-black text-green-600">R$ 0,00</div></div><div class="flex gap-2"><button onclick="imprimirReciboDoModal()" class="bg-slate-700 hover:bg-slate-800 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2"><i data-lucide="receipt" class="w-5 h-5"></i> Recibo</button><button onclick="estornarUltimoFechamento()" class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2"><i data-lucide="rotate-ccw" class="w-5 h-5"></i> Estornar Último</button><button onclick="fecharPagamentoSaldo()" class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2"><i data-lucide="check-circle" class="w-5 h-5"></i> Conferido</button></div></div></div>
@@ -241,7 +247,7 @@
     <div class="bg-indigo-600 p-4 text-white flex justify-between items-center shrink-0"><div><h3 class="font-black text-lg flex items-center gap-2"><i data-lucide="ruler" class="w-5 h-5"></i> Saldo de Metros</h3><p id="saldo-metros-subtitle" class="text-xs font-medium opacity-90 mt-0.5"></p></div><button onclick="fecharModalSaldoMetros()" class="text-white hover:bg-white/20 p-2 rounded-lg transition"><i data-lucide="x" class="w-5 h-5"></i></button></div>
     <div class="p-5 overflow-y-auto flex-1 bg-slate-50"><input type="hidden" id="saldo-terc-id">
       <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-4 flex flex-wrap gap-3 items-end"><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Início</label><input type="date" id="saldo-metros-data-inicio" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="carregarTabelaSaldoMetros()"></div><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Fim</label><input type="date" id="saldo-metros-data-fim" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="carregarTabelaSaldoMetros()"></div><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label><select id="saldo-metros-filtro-status" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-36" onchange="carregarTabelaSaldoMetros()"><option value="PENDENTE" selected>Pendentes</option><option value="PAGO">Já Pagos</option><option value="TODOS">Todos</option></select></div><div class="flex-1"></div><button onclick="imprimirExtratoSaldoMetros()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow"><i data-lucide="printer" class="w-4 h-4"></i> Imprimir Extrato</button></div>
-      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm"><table class="w-full text-sm"><thead class="bg-slate-100 text-slate-600 border-b"><tr><th class="p-3 text-left text-xs font-bold uppercase">Data</th><th class="p-3 text-center text-xs font-bold uppercase">Metros</th><th class="p-3 text-center text-xs font-bold uppercase">Status</th></tr></thead><tbody id="saldo-metros-tabela-body" class="divide-y"></tbody><table><div id="saldo-metros-sem-registros" class="p-8 text-center text-slate-400 font-medium hidden">Nenhum registro encontrado para os filtros.</div></div>
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm"><table class="w-full text-sm"><thead class="bg-slate-100 text-slate-600 border-b"><tr><th class="p-3 text-left text-xs font-bold uppercase">Data</th><th class="p-3 text-center text-xs font-bold uppercase">Metros</th><th class="p-3 text-center text-xs font-bold uppercase">Status</th></td></thead><tbody id="saldo-metros-tabela-body" class="divide-y"></tbody>追赶<div id="saldo-metros-sem-registros" class="p-8 text-center text-slate-400 font-medium hidden">Nenhum registro encontrado para os filtros.</div></div>
       <div class="mt-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><h4 class="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2"><i data-lucide="plus-circle" class="w-4 h-4 text-indigo-600"></i> Lançar Ajuste Manual (Metros)</h4><div class="grid grid-cols-1 md:grid-cols-4 gap-3"><div><label class="block text-xs font-bold text-slate-500 mb-1">Data</label><input type="date" id="ajuste-metros-data" class="w-full p-2 border rounded-lg text-sm"></div><div><label class="block text-xs font-bold text-slate-500 mb-1">Metros</label><input type="number" step="0.01" min="0" id="ajuste-metros-valor" class="w-full p-2 border rounded-lg text-sm font-bold"></div><div><label class="block text-xs font-bold text-slate-500 mb-1">Justificativa</label><input type="text" id="ajuste-metros-justificativa" placeholder="Ex: Ajuste manual" class="w-full p-2 border rounded-lg text-sm"></div><div class="flex items-end"><button onclick="lancarAjusteManualMetros()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold flex items-center justify-center gap-1"><i data-lucide="save" class="w-4 h-4"></i> Lançar</button></div></div></div>
     </div>
     <div class="p-4 bg-white border-t flex justify-between items-center shrink-0"><div><span class="text-sm font-bold text-slate-500">Total de Metros Pendentes:</span><span id="saldo-metros-total-metros" class="text-2xl font-black text-indigo-700 ml-2">0.00</span></div><div class="flex items-center gap-4"><div class="text-right"><div class="text-xs text-slate-500 font-bold uppercase">Valor a Pagar</div><div id="saldo-metros-total-valor" class="text-2xl font-black text-green-600">R$ 0,00</div></div><div class="flex gap-2"><button onclick="imprimirReciboMetrosDoModal()" class="bg-slate-700 hover:bg-slate-800 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2"><i data-lucide="receipt" class="w-5 h-5"></i> Recibo</button><button onclick="estornarUltimoFechamentoMetros()" class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2"><i data-lucide="rotate-ccw" class="w-5 h-5"></i> Estornar Último</button><button onclick="fecharPagamentoSaldoMetros()" class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2"><i data-lucide="check-circle" class="w-5 h-5"></i> Conferido</button></div></div></div>
@@ -278,71 +284,56 @@
 <div id="print-area" class="print-only"></div>
 
 <script>
-  // ====== CÓDIGO ESPECÍFICO DO MOBILE ======
-  // Todas as funções de renderização que dependem da interface mobile (cards, listas) são definidas aqui.
-  // As funções de lógica de negócio (cálculos, Supabase, modais de ponto/metros/documentos) estão em shared.js
+  // ==================== CÓDIGO ESPECÍFICO DO MOBILE ====================
+  // Este script usa as funções do shared.js (loadData, formatMoney, getColaboradoresUnificados, etc.)
+  // As funções de negócio já estão em shared.js. Aqui definimos apenas navegação e renderização mobile.
 
-  // Variáveis globais do mobile
+  // 1. Verificar login
   let dadosUsuario = null;
   const userSessao = localStorage.getItem('rv_user');
-  if (!userSessao) window.location.replace('index.html');
-  else dadosUsuario = JSON.parse(userSessao);
+  if (!userSessao) {
+    window.location.replace('index.html');
+  } else {
+    dadosUsuario = JSON.parse(userSessao);
+  }
 
-  // As funções showLoading, showToast, formatMoney, etc. já estão em shared.js
-
-  // Inicialização
-  window.onload = function() {
-    if (dadosUsuario) {
-      showLoading(true);
-      // As funções loadData, updateSelects, renderDashboard, etc. estão em shared.js
-      loadData().then(() => {
-        // Após carregar os dados, configuramos os filtros de data da equipe
-        const hoje = new Date();
-        const anoAtual = hoje.getFullYear();
-        const primeiroDia = `${anoAtual}-01-01`;
-        const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
-        const ultimoDiaStr = `${anoAtual}-${String(hoje.getMonth()+1).padStart(2,'0')}-${String(ultimoDia).padStart(2,'0')}`;
-        const eqpDataInicio = document.getElementById('eqp-filter-data-inicio');
-        const eqpDataFim = document.getElementById('eqp-filter-data-fim');
-        if (eqpDataInicio) eqpDataInicio.value = primeiroDia;
-        if (eqpDataFim) eqpDataFim.value = ultimoDiaStr;
-        
-        renderEquipeMobile(); // renderização específica mobile
-        showLoading(false);
-      });
-    }
-    lucide.createIcons();
-  };
-
-  // Função de navegação mobile
+  // 2. Funções de navegação mobile (específicas)
   function navigate(viewId) {
-    document.querySelectorAll('main > div[id^="view-"]').forEach(el => { el.classList.add('hidden-section'); el.classList.remove('active-section'); });
+    document.querySelectorAll('main > div[id^="view-"]').forEach(el => {
+      el.classList.add('hidden-section');
+      el.classList.remove('active-section');
+    });
     const target = document.getElementById('view-' + viewId);
-    if (target) { target.classList.remove('hidden-section'); target.classList.add('active-section'); }
+    if (target) {
+      target.classList.remove('hidden-section');
+      target.classList.add('active-section');
+    }
     document.querySelectorAll('.nav-bottom-btn').forEach(btn => btn.classList.remove('nav-active', 'text-blue-700'));
     const activeBtn = document.getElementById('btn-' + viewId);
     if (activeBtn && viewId !== 'pos') activeBtn.classList.add('nav-active');
+    
+    // Chama as funções de renderização (definidas em shared.js)
     if (viewId === 'dash') renderDashboard();
     if (viewId === 'oc') { updateSelects(); renderOCList(); }
     if (viewId === 'fin') { updateSelects(); renderFinance(); }
     if (viewId === 'fornecedores') renderFornecedores();
     if (viewId === 'prod') renderProducts();
     if (viewId === 'equipe') { updateSelects(); renderEquipeMobile(); }
+    
     lucide.createIcons();
-    window.scrollTo(0,0);
+    window.scrollTo(0, 0);
   }
 
-  // Abrir/fechar formulários específicos do mobile
   function openNovaOC() {
     document.getElementById('view-oc').classList.replace('active-section', 'hidden-section');
     document.getElementById('view-pos').classList.replace('hidden-section', 'active-section');
     updateSelects();
-    window.scrollTo(0,0);
+    window.scrollTo(0, 0);
   }
   function closeNovaOC() {
     document.getElementById('view-pos').classList.replace('active-section', 'hidden-section');
     document.getElementById('view-oc').classList.replace('hidden-section', 'active-section');
-    clearCart();
+    clearCart();       // definida em shared.js
     renderOCList();
   }
   function toggleFinTab(tab) {
@@ -350,13 +341,15 @@
     const secRec = document.getElementById('fin-section-receitas');
     if (secDesp && secRec) {
       if (tab === 'despesas') {
-        secDesp.classList.remove('hidden'); secRec.classList.add('hidden');
+        secDesp.classList.remove('hidden');
+        secRec.classList.add('hidden');
         document.getElementById('tab-despesas').classList.replace('text-slate-500', 'text-slate-800');
         document.getElementById('tab-despesas').classList.add('bg-white', 'shadow-sm');
         document.getElementById('tab-receitas').classList.replace('text-slate-800', 'text-slate-500');
         document.getElementById('tab-receitas').classList.remove('bg-white', 'shadow-sm');
       } else {
-        secDesp.classList.add('hidden'); secRec.classList.remove('hidden');
+        secDesp.classList.add('hidden');
+        secRec.classList.remove('hidden');
         document.getElementById('tab-receitas').classList.replace('text-slate-500', 'text-slate-800');
         document.getElementById('tab-receitas').classList.add('bg-white', 'shadow-sm');
         document.getElementById('tab-despesas').classList.replace('text-slate-800', 'text-slate-500');
@@ -365,48 +358,74 @@
     }
   }
 
-  // Funções auxiliares de modal
+  // 3. Funções auxiliares de modal (caso não estejam em shared.js)
   function openModal(id) { const m = document.getElementById(id); if(m) { m.classList.remove('modal-hidden'); m.classList.add('modal-visible'); } }
   function closeModal(id) { const m = document.getElementById(id); if(m) { m.classList.remove('modal-visible'); m.classList.add('modal-hidden'); } }
   function openOverlayForm(id) { document.getElementById('overlay-forms').classList.remove('hidden'); document.querySelectorAll('#overlay-forms > div').forEach(d => d.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
   function closeOverlayForm(id) { document.getElementById(id).classList.add('hidden'); document.getElementById('overlay-forms').classList.add('hidden'); }
   function maskCPF(input) { let v = input.value.replace(/\D/g, ""); if (v.length > 11) v = v.slice(0, 11); v = v.replace(/(\d{3})(\d)/, "$1.$2"); v = v.replace(/(\d{3})(\d)/, "$1.$2"); v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2"); input.value = v; }
 
-  // Renderização específica da equipe para mobile (cards com botões e pendências)
+  // 4. Renderização específica da equipe para mobile (cards com botões e pendências)
   function renderEquipeMobile() {
-    const term = document.getElementById('eqp-search').value.toLowerCase();
-    const filterObra = document.getElementById('eqp-filter-obra').value;
-    const filterStatus = document.getElementById('eqp-filter-status').value;
-    const filterTipo = document.getElementById('eqp-filter-tipo').value;
-    const dataInicio = document.getElementById('eqp-filter-data-inicio').value;
-    const dataFim = document.getElementById('eqp-filter-data-fim').value;
-    const colaboradores = getColaboradoresUnificados(); // função de shared.js
+    const term = document.getElementById('eqp-search')?.value.toLowerCase() || '';
+    const filterObra = document.getElementById('eqp-filter-obra')?.value || '';
+    const filterStatus = document.getElementById('eqp-filter-status')?.value || 'true';
+    const filterTipo = document.getElementById('eqp-filter-tipo')?.value || 'todos';
+    const dataInicio = document.getElementById('eqp-filter-data-inicio')?.value || '';
+    const dataFim = document.getElementById('eqp-filter-data-fim')?.value || '';
     
-    let fil = colaboradores.filter(c => (c.nome||'').toLowerCase().includes(term) || (c.categoria||'').toLowerCase().includes(term));
+    // Verificar se a função do shared.js existe
+    if (typeof getColaboradoresUnificados !== 'function') {
+      console.error('getColaboradoresUnificados não está definida. Verifique shared.js');
+      return;
+    }
+    const colaboradores = getColaboradoresUnificados();
+    
+    let fil = colaboradores.filter(c => 
+      (c.nome || '').toLowerCase().includes(term) || 
+      (c.categoria || '').toLowerCase().includes(term)
+    );
     if (filterObra) fil = fil.filter(c => String(c.obra_atual_id) === String(filterObra));
-    if (filterStatus !== "todos") { const isAtivo = filterStatus === "true"; fil = fil.filter(c => (c.ativo === true || c.ativo === 'true') === isAtivo); }
+    if (filterStatus !== 'todos') {
+      const isAtivo = filterStatus === 'true';
+      fil = fil.filter(c => (c.ativo === true || c.ativo === 'true') === isAtivo);
+    }
     if (filterTipo !== 'todos') fil = fil.filter(c => c.tipo === filterTipo);
-    fil.sort((a,b) => (a.nome||'').localeCompare(b.nome||''));
-
-    document.getElementById('equipe-list').innerHTML = fil.map(c => {
+    fil.sort((a,b) => (a.nome || '').localeCompare(b.nome || ''));
+    
+    const container = document.getElementById('equipe-list');
+    if (!container) return;
+    
+    container.innerHTML = fil.map(c => {
       const obra = STATE.obras.find(x => x.id == c.obra_atual_id);
       const nomeObra = obra ? obra.nome : 'Sem obra alocada';
       const isAtivo = c.ativo === true || c.ativo === 'true';
-      const tipoBadge = c.tipo === 'diaria' ? '<span class="bg-blue-100 text-blue-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">DIÁRIA</span>' : '<span class="bg-purple-100 text-purple-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">METRO</span>';
+      const tipoBadge = c.tipo === 'diaria' 
+        ? '<span class="bg-blue-100 text-blue-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">DIÁRIA</span>'
+        : '<span class="bg-purple-100 text-purple-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">METRO</span>';
       const valorExibicao = c.tipo === 'diaria' ? formatMoney(c.valor_base) : `${formatMoney(c.valor_base)}/m`;
       
-      // Calcular pendentes
       let quantidadePendente = 0;
       let valorPendente = 0;
       if (c.tipo === 'diaria') {
-        quantidadePendente = calcularSaldoPendenteFuncionarioPorPeriodo(c.id, dataInicio, dataFim);
-        valorPendente = quantidadePendente * c.valor_base;
+        if (typeof calcularSaldoPendenteFuncionarioPorPeriodo === 'function') {
+          quantidadePendente = calcularSaldoPendenteFuncionarioPorPeriodo(c.id, dataInicio, dataFim);
+          valorPendente = quantidadePendente * c.valor_base;
+        }
       } else {
-        quantidadePendente = calcularMetrosPendentesPorPeriodo(c.id, dataInicio, dataFim);
-        valorPendente = quantidadePendente * c.valor_base;
+        if (typeof calcularMetrosPendentesPorPeriodo === 'function') {
+          quantidadePendente = calcularMetrosPendentesPorPeriodo(c.id, dataInicio, dataFim);
+          valorPendente = quantidadePendente * c.valor_base;
+        }
       }
       
-      let zapBtn = ''; if(c.telefone) { const numZap = c.telefone.replace(/\D/g, ''); if(numZap.length >= 10) zapBtn = `<a href="https://wa.me/55${numZap}" target="_blank" class="p-1.5 bg-green-100 text-green-600 rounded-lg shrink-0 flex items-center justify-center"><i data-lucide="message-circle" class="w-4 h-4"></i></a>`; }
+      let zapBtn = '';
+      if (c.telefone) {
+        const numZap = c.telefone.replace(/\D/g, '');
+        if (numZap.length >= 10) {
+          zapBtn = `<a href="https://wa.me/55${numZap}" target="_blank" class="p-1.5 bg-green-100 text-green-600 rounded-lg shrink-0 flex items-center justify-center"><i data-lucide="message-circle" class="w-4 h-4"></i></a>`;
+        }
+      }
       
       let botoesAcao = '';
       if (c.tipo === 'diaria') {
@@ -424,12 +443,12 @@
           ${zapBtn}
         `;
       }
-
+      
       return `
       <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm relative">
         <div class="absolute top-2 right-2 flex gap-1 items-center">
           ${c.tipo === 'diaria' ? `<span class="bg-slate-100 text-slate-500 border border-slate-200 text-[8px] font-bold px-1.5 py-0.5 rounded">Mat: ${c.matricula || '-'}</span>` : ''}
-          <span class="${isAtivo?'bg-green-100 text-green-700':'bg-red-100 text-red-700'} text-[8px] font-bold px-1.5 py-0.5 rounded">${isAtivo?'ATIVO':'INATIVO'}</span>
+          <span class="${isAtivo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} text-[8px] font-bold px-1.5 py-0.5 rounded">${isAtivo ? 'ATIVO' : 'INATIVO'}</span>
         </div>
         <div class="flex justify-between items-start mb-1 pr-24">
           <div>
@@ -438,7 +457,7 @@
             <p class="text-[9px] text-blue-600 mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${nomeObra}</p>
             <div class="flex flex-wrap items-baseline gap-2 mt-1">
               <span class="text-[10px] font-bold text-slate-700">${valorExibicao}</span>
-              <span class="text-[9px] text-orange-600 font-bold">${quantidadePendente.toFixed(2)} ${c.tipo==='diaria'?'dias pend.':'m pend.'}</span>
+              <span class="text-[9px] text-orange-600 font-bold">${quantidadePendente.toFixed(2)} ${c.tipo === 'diaria' ? 'dias pend.' : 'm pend.'}</span>
               <span class="text-[11px] font-black text-green-600">${formatMoney(valorPendente)}</span>
             </div>
           </div>
@@ -448,82 +467,60 @@
         </div>
       </div>`;
     }).join('');
+    
     lucide.createIcons();
   }
 
-  // As funções openEquipeForm, saveEquipe, gerarIdSeguro, onCategoriaChange, etc. estão em shared.js
-  // As funções de ponto, metros, documentos, folha, checagem também estão em shared.js
-  // Portanto, não precisam ser redefinidas aqui.
+  // 5. Inicialização (sem conflito com o shared.js)
+  window.onload = function() {
+    if (!dadosUsuario) return;
+    showLoading(true);
+    if (typeof loadData === 'function') {
+      loadData().then(() => {
+        // Definir datas padrão para os filtros da equipe
+        const hoje = new Date();
+        const anoAtual = hoje.getFullYear();
+        const primeiroDia = `${anoAtual}-01-01`;
+        const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
+        const ultimoDiaStr = `${anoAtual}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
+        const inputInicio = document.getElementById('eqp-filter-data-inicio');
+        const inputFim = document.getElementById('eqp-filter-data-fim');
+        if (inputInicio) inputInicio.value = primeiroDia;
+        if (inputFim) inputFim.value = ultimoDiaStr;
+        
+        renderEquipeMobile();
+        showLoading(false);
+      }).catch(err => {
+        showLoading(false);
+        showToast("Erro ao carregar dados: " + err.message, true);
+      });
+    } else {
+      console.error('loadData não definida. Verifique shared.js');
+      showLoading(false);
+    }
+    lucide.createIcons();
+  };
 
-  // Função de logout
-  function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
+  // 6. Logout
+  function fazerLogout() {
+    localStorage.removeItem('rv_user');
+    window.location.replace('index.html');
+  }
 
-  // Expor funções para o escopo global (necessário para os botões onclick)
+  // 7. Expor funções globais (para os botões)
   window.navigate = navigate;
   window.openNovaOC = openNovaOC;
   window.closeNovaOC = closeNovaOC;
   window.toggleFinTab = toggleFinTab;
+  window.renderEquipeMobile = renderEquipeMobile;
+  window.fazerLogout = fazerLogout;
   window.openModal = openModal;
   window.closeModal = closeModal;
   window.openOverlayForm = openOverlayForm;
   window.closeOverlayForm = closeOverlayForm;
   window.maskCPF = maskCPF;
-  window.renderEquipeMobile = renderEquipeMobile;
-  window.fazerLogout = fazerLogout;
-  window.renderDashboard = renderDashboard;
-  window.renderOCList = renderOCList;
-  window.renderFinance = renderFinance;
-  window.renderFornecedores = renderFornecedores;
-  window.renderProducts = renderProducts;
-  window.updateCart = updateCart;
-  window.clearCart = clearCart;
-  window.openPosProductModal = openPosProductModal;
-  window.renderPosProductModal = renderPosProductModal;
-  window.addCartModal = addCartModal;
-  window.openPosFornecedorModal = openPosFornecedorModal;
-  window.renderPosFornecedorModal = renderPosFornecedorModal;
-  window.selectPosFornecedor = selectPosFornecedor;
-  window.saveOC = saveOC;
-  window.loadOCToCart = loadOCToCart;
-  window.estornarOC = estornarOC;
-  window.deleteOC = deleteOC;
-  window.openConfirmOC = openConfirmOC;
-  window.executeConfirmOC = executeConfirmOC;
-  window.verOC = verOC;
-  window.compartilharNative = compartilharNative;
-  window.imprimirFinanceiro = imprimirFinanceiro;
-  window.openObraForm = openObraForm;
-  window.saveObra = saveObra;
-  window.openFornecedorForm = openFornecedorForm;
-  window.saveFornecedor = saveFornecedor;
-  window.openProductForm = openProductForm;
-  window.saveProduct = saveProduct;
-  window.buildHTMLOC = buildHTMLOC;
-  window.abrirModalSaldo = abrirModalSaldo;
-  window.fecharModalSaldo = fecharModalSaldo;
-  window.carregarTabelaSaldo = carregarTabelaSaldo;
-  window.lancarAjusteManual = lancarAjusteManual;
-  window.fecharPagamentoSaldo = fecharPagamentoSaldo;
-  window.estornarUltimoFechamento = estornarUltimoFechamento;
-  window.imprimirExtratoSaldo = imprimirExtratoSaldo;
-  window.imprimirReciboDoModal = imprimirReciboDoModal;
-  window.abrirModalSaldoMetros = abrirModalSaldoMetros;
-  window.fecharModalSaldoMetros = fecharModalSaldoMetros;
-  window.carregarTabelaSaldoMetros = carregarTabelaSaldoMetros;
-  window.lancarAjusteManualMetros = lancarAjusteManualMetros;
-  window.fecharPagamentoSaldoMetros = fecharPagamentoSaldoMetros;
-  window.estornarUltimoFechamentoMetros = estornarUltimoFechamentoMetros;
-  window.imprimirExtratoSaldoMetros = imprimirExtratoSaldoMetros;
-  window.imprimirReciboMetrosDoModal = imprimirReciboMetrosDoModal;
-  window.abrirModalDocumentos = abrirModalDocumentos;
-  window.marcarContratoAssinado = marcarContratoAssinado;
-  window.imprimirDocumento = imprimirDocumento;
-  window.abrirModalFolhaPagamento = abrirModalFolhaPagamento;
-  window.executarImpressaoFolha = executarImpressaoFolha;
-  window.imprimirChecagem = imprimirChecagem;
-  window.openEquipeForm = openEquipeForm;
-  window.saveEquipe = saveEquipe;
-  window.onCategoriaChange = onCategoriaChange;
+  // As demais funções (abrirModalSaldo, abrirModalDocumentos, openEquipeForm, saveEquipe, etc.)
+  // já estão no escopo global via shared.js
 </script>
 
 </body>
