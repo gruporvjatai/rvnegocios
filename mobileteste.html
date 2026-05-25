@@ -1075,6 +1075,83 @@
           lucide.createIcons();
       }
 
+      function carregarTabelaSaldoMetros() {
+    const tercId = document.getElementById('saldo-terc-id').value;
+    const dataInicio = document.getElementById('saldo-metros-data-inicio').value;
+    const dataFim = document.getElementById('saldo-metros-data-fim').value;
+    const statusFiltro = document.getElementById('saldo-metros-filtro-status').value;
+    
+    const terc = STATE.terceirizados.find(t => t.id === tercId);
+    if (!terc) return;
+    
+    let registros = STATE.producao_terc.filter(p => p.terceirizado_id === tercId);
+    
+    if (dataInicio) {
+        registros = registros.filter(p => p.data_registro >= dataInicio);
+    }
+    if (dataFim) {
+        registros = registros.filter(p => p.data_registro <= dataFim);
+    }
+    
+    if (statusFiltro === 'PENDENTE') {
+        registros = registros.filter(p => p.status !== 'PAGO');
+    } else if (statusFiltro === 'PAGO') {
+        registros = registros.filter(p => p.status === 'PAGO');
+    }
+    
+    const tbody = document.getElementById('saldo-metros-tabela-body');
+    tbody.innerHTML = '';
+    let totalMetros = 0;
+    
+    const registrosOrdenados = registros.sort((a,b) => new Date(a.data_registro) - new Date(b.data_registro));
+    
+    if (registrosOrdenados.length === 0) {
+        document.getElementById('saldo-metros-sem-registros').classList.remove('hidden');
+        document.getElementById('saldo-metros-total-metros').innerText = '0.00';
+        document.getElementById('saldo-metros-total-valor').innerText = formatMoney(0);
+        return;
+    }
+    document.getElementById('saldo-metros-sem-registros').classList.add('hidden');
+    
+    registrosOrdenados.forEach(prod => {
+        const metros = parseFloat(prod.metros) || 0;
+        totalMetros += metros;
+        const dataStr = new Date(prod.data_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+        const status = prod.status === 'PAGO' ? 'PAGO' : 'PENDENTE';
+        
+        const tr = document.createElement('tr');
+        tr.className = 'border-b hover:bg-slate-50';
+        tr.innerHTML = `
+          <td class="p-3 font-bold text-slate-700">${dataStr}</td>
+          <td class="p-3 text-center font-black text-indigo-600">${metros.toFixed(2)} m</td>
+          <td class="p-3 text-center">
+              <div class="flex items-center justify-center gap-2">
+                  <span class="px-2 py-1 rounded text-[9px] font-bold ${status === 'PAGO' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">${status}</span>
+                  <button onclick="abrirModalAdminRegistrosMetros('${tercId}')" class="text-slate-400 hover:text-indigo-600 p-1 rounded transition" title="Acesso Restrito (Senha)">
+                      <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                  </button>
+              </div>
+          </td>
+      `;
+        tbody.appendChild(tr);
+    });
+    
+    document.getElementById('saldo-metros-total-metros').innerText = totalMetros.toFixed(2);
+    const valorTotal = totalMetros * parseFloat(terc.valor_metro || 0);
+    document.getElementById('saldo-metros-total-valor').innerText = formatMoney(valorTotal);
+    
+    lucide.createIcons();
+}
+
+
+      function fecharModalSaldoMetros() {
+    document.getElementById('modal-saldo-metros').classList.add('hidden');
+}
+
+      
+
+      
+
         function openEquipeForm(id, tipoOrigem='equipe'){
             document.getElementById('equipe-form-container').classList.remove('hidden');
             const catSelect=document.getElementById('eqp-categoria'); const tipoHidden=document.getElementById('eqp-tipo-origem');
