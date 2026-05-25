@@ -491,49 +491,115 @@
     </div>
 
     <!-- ================= NOVOS MODAIS: SALDO PONTO E CONTRATOS ================= -->
-    <!-- MODAL SALDO DE PONTO (DIÁRIAS) -->
-    <div id="modal-saldo-ponto" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-[70] flex flex-col mobile-modal modal-hidden no-print">
-        <div class="bg-white w-full rounded-t-3xl flex flex-col max-h-[90vh] overflow-hidden">
-            <div class="bg-indigo-600 p-4 text-white flex justify-between items-center">
-                <div>
-                    <h3 class="font-black text-lg flex items-center gap-2"><i data-lucide="calculator" class="w-5 h-5"></i> Saldo de Ponto</h3>
-                    <p id="saldo-modal-subtitle" class="text-xs font-medium opacity-90 mt-0.5"></p>
-                </div>
-                <button onclick="fecharModalSaldo()" class="text-white hover:bg-white/20 p-2 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-            <div class="p-5 overflow-y-auto flex-1 bg-slate-50">
-                <input type="hidden" id="saldo-equipe-id">
-                <div class="bg-white p-4 rounded-xl border mb-4 flex flex-wrap gap-3 items-end">
-                    <div><label class="text-[9px] font-bold text-slate-500 uppercase">Data Início</label><input type="date" id="saldo-filtro-data-inicio" class="p-2 border rounded text-sm font-bold bg-slate-50 w-36" onchange="carregarTabelaSaldo()"></div>
-                    <div><label class="text-[9px] font-bold text-slate-500 uppercase">Data Fim</label><input type="date" id="saldo-filtro-data-fim" class="p-2 border rounded text-sm font-bold bg-slate-50 w-36" onchange="carregarTabelaSaldo()"></div>
-                    <div><label class="text-[9px] font-bold text-slate-500 uppercase">Status</label><select id="saldo-filtro-status" class="p-2 border rounded text-sm font-bold bg-slate-50 w-28" onchange="carregarTabelaSaldo()"><option value="PENDENTE" selected>Pendentes</option><option value="PAGO">Já Pagos</option><option value="TODOS">Todos</option></select></div>
-                    <button onclick="imprimirExtratoSaldo()" class="bg-slate-800 text-white px-3 py-2 rounded text-xs font-bold flex items-center gap-1"><i data-lucide="printer" class="w-3 h-3"></i> Extrato</button>
-                </div>
-                <div class="bg-white rounded-xl border overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-xs">
-                            <thead class="bg-slate-100"><tr><th class="p-2 text-left">Data</th><th class="p-2 text-left">Horários</th><th class="p-2 text-center">Diária</th><th class="p-2 text-center">Status</th></tr></thead>
-                            <tbody id="saldo-tabela-body"></tbody>
-                        </table>
-                    </div>
-                    <div id="saldo-sem-registros" class="p-6 text-center text-slate-400 hidden">Nenhum registro encontrado.</div>
-                </div>
-                <div class="mt-4 bg-white p-4 rounded-xl border">
-                    <h4 class="font-bold text-sm mb-2">Lançar Ajuste Manual</h4>
-                    <div class="grid grid-cols-2 gap-2">
-                        <input type="date" id="ajuste-data" class="p-2 border rounded text-xs"><input type="number" step="0.01" id="ajuste-fracao" placeholder="Fração (0.5)" class="p-2 border rounded text-xs"><input type="text" id="ajuste-justificativa" placeholder="Justificativa" class="col-span-2 p-2 border rounded text-xs"><button onclick="lancarAjusteManual()" class="col-span-2 bg-indigo-600 text-white p-2 rounded font-bold text-xs">Lançar</button>
-                    </div>
-                </div>
-            </div>
-            <div class="p-4 bg-white border-t flex justify-between items-center">
-                <span class="text-sm font-bold">Total Diárias Pendentes: <span id="saldo-total-diarias" class="text-xl font-black text-indigo-700">0.00</span></span>
-                <div class="flex items-center gap-2">
-                    <span class="text-right"><div class="text-[9px] font-bold">Valor a Pagar</div><div id="saldo-total-valor" class="text-lg font-black text-green-600">R$ 0,00</div></span>
-                    <button onclick="fecharPagamentoSaldo()" class="bg-blue-700 text-white px-4 py-2 rounded-xl font-bold shadow text-xs">Conferido</button>
-                </div>
-            </div>
-        </div>
+<!-- MODAL SALDO DE PONTO (DIÁRIAS) - VERSÃO MOBILE OTIMIZADA -->
+<div id="modal-saldo-ponto" class="hidden fixed inset-0 bg-black/70 z-50 flex items-end justify-center">
+  <div class="bg-white rounded-t-3xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl animate-slide-up">
+    
+    <!-- Cabeçalho -->
+    <div class="bg-indigo-700 p-4 text-white flex justify-between items-center shrink-0">
+      <div class="flex items-center gap-2">
+        <i data-lucide="calculator" class="w-5 h-5"></i>
+        <h3 class="font-bold text-base">Saldo de Ponto</h3>
+      </div>
+      <button onclick="fecharModalSaldo()" class="p-1 rounded-full bg-indigo-800/50 active:bg-indigo-900">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
     </div>
+    <p id="saldo-modal-subtitle" class="px-4 pb-2 text-xs font-medium text-slate-600 bg-indigo-50 border-b"></p>
+
+    <!-- Conteúdo rolável -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+      <input type="hidden" id="saldo-equipe-id">
+
+      <!-- Filtros -->
+      <div class="bg-white rounded-xl p-3 shadow-sm border space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Data início</label>
+            <input type="date" id="saldo-filtro-data-inicio" class="w-full p-2 border rounded-lg text-sm bg-white" onchange="carregarTabelaSaldo()">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Data fim</label>
+            <input type="date" id="saldo-filtro-data-fim" class="w-full p-2 border rounded-lg text-sm bg-white" onchange="carregarTabelaSaldo()">
+          </div>
+        </div>
+        <div class="flex gap-2 items-end">
+          <div class="flex-1">
+            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Status</label>
+            <select id="saldo-filtro-status" class="w-full p-2 border rounded-lg text-sm bg-white" onchange="carregarTabelaSaldo()">
+              <option value="PENDENTE">Pendentes</option>
+              <option value="PAGO">Já pagos</option>
+              <option value="TODOS">Todos</option>
+            </select>
+          </div>
+          <button onclick="imprimirExtratoSaldo()" class="bg-slate-800 text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1 whitespace-nowrap">
+            <i data-lucide="printer" class="w-4 h-4"></i> Extrato
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabela de registros -->
+      <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-100 text-slate-600">
+              <tr>
+                <th class="p-3 text-left text-xs font-bold">Data</th>
+                <th class="p-3 text-left text-xs font-bold">Horários</th>
+                <th class="p-3 text-center text-xs font-bold">Diária (Fração)</th>
+                <th class="p-3 text-center text-xs font-bold">Status</th>
+              </tr>
+            </thead>
+            <tbody id="saldo-tabela-body" class="divide-y"></tbody>
+          </table>
+        </div>
+        <div id="saldo-sem-registros" class="p-6 text-center text-slate-400 text-xs hidden">
+          Nenhum registro encontrado.
+        </div>
+      </div>
+
+      <!-- Ajuste manual -->
+      <div class="bg-white rounded-xl p-3 shadow-sm border space-y-3">
+        <h4 class="font-bold text-slate-700 text-sm flex items-center gap-2">
+          <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-600"></i> Lançar ajuste manual (meia diária)
+        </h4>
+        <div class="grid grid-cols-2 gap-3">
+          <input type="date" id="ajuste-data" class="p-2 border rounded-lg text-sm">
+          <input type="number" step="0.01" id="ajuste-fracao" placeholder="Fração (ex: 0.5)" class="p-2 border rounded-lg text-sm">
+          <input type="text" id="ajuste-justificativa" placeholder="Justificativa" class="col-span-2 p-2 border rounded-lg text-sm">
+        </div>
+        <button onclick="lancarAjusteManual()" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-bold text-sm active:scale-95 transition">
+          Lançar ajuste
+        </button>
+      </div>
+    </div>
+
+    <!-- Rodapé com totais e botões -->
+    <div class="bg-white border-t p-4 shrink-0 space-y-3">
+      <div class="flex justify-between items-center">
+        <div>
+          <div class="text-xs text-slate-500 font-bold uppercase">Total de diárias</div>
+          <div id="saldo-total-diarias" class="text-2xl font-black text-indigo-700">0.00</div>
+        </div>
+        <div class="text-right">
+          <div class="text-xs text-slate-500 font-bold uppercase">Valor a pagar</div>
+          <div id="saldo-total-valor" class="text-2xl font-black text-green-700">R$ 0,00</div>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="imprimirReciboDoModal()" class="flex-1 bg-slate-700 text-white py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-1 active:scale-95">
+          <i data-lucide="receipt" class="w-4 h-4"></i> Recibo
+        </button>
+        <button onclick="estornarUltimoFechamento()" class="flex-1 bg-amber-600 text-white py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-1 active:scale-95">
+          <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Estornar
+        </button>
+        <button onclick="fecharPagamentoSaldo()" class="flex-1 bg-blue-700 text-white py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-1 active:scale-95">
+          <i data-lucide="check-circle" class="w-4 h-4"></i> Conferido
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
     <!-- MODAL DOCUMENTOS/CONTRATOS -->
     <div id="modal-docs-equipe" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-[70] flex flex-col mobile-modal modal-hidden no-print">
