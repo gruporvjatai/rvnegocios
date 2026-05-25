@@ -325,6 +325,12 @@
         lucide.createIcons();
 
         function navigateMobile(viewId, element) {
+            // 1. Verificação de Segurança: Garante que STATE existe
+            if (typeof STATE === 'undefined') {
+                showToast("Carregando dados, aguarde...", false);
+                return;
+            }
+
             document.querySelectorAll('#main-content > div').forEach(el => {
                 el.classList.add('hidden-section');
                 el.classList.remove('active-section');
@@ -333,6 +339,7 @@
             const target = document.getElementById('view-' + viewId);
             if (target) { target.classList.remove('hidden-section'); target.classList.add('active-section'); }
             
+            // ... (resto da tua lógica de botões da nav bar igual) ...
             if (element) {
                 document.querySelectorAll('.nav-btn-mobile').forEach(btn => {
                     btn.classList.remove('nav-active', 'text-blue-600');
@@ -340,32 +347,25 @@
                 });
                 element.classList.add('nav-active', 'text-blue-600');
                 element.classList.remove('text-slate-400');
-            } else {
-                document.querySelectorAll('.nav-btn-mobile').forEach(btn => {
-                    btn.classList.remove('nav-active', 'text-blue-600'); btn.classList.add('text-slate-400');
-                });
-                if(['fornecedores', 'prod', 'equipe'].includes(viewId)) {
-                    const menuBtn = document.querySelectorAll('.nav-btn-mobile')[3];
-                    menuBtn.classList.add('nav-active', 'text-blue-600'); menuBtn.classList.remove('text-slate-400');
-                }
             }
 
+            // 2. Chamadas protegidas: Só chama se o STATE tiver a propriedade esperada
             if (viewId === 'dash' && typeof loadDash === 'function') loadDash();
-            if (viewId === 'oc' && typeof renderOCList === 'function') renderOCList();
-            if (viewId === 'pos' && typeof renderPosProducts === 'function') renderPosProducts();
-            if (viewId === 'fin' && typeof renderFinance === 'function') renderFinance();
+            
+            if (viewId === 'oc' && typeof renderOCList === 'function') {
+                if (STATE.oc) { renderOCList(); } else { showToast("Dados de O.C. ainda carregando...", true); }
+            }
+            
+            if (viewId === 'fin' && typeof renderFinance === 'function') {
+                if (STATE.financeiro) { renderFinance(); } else { showToast("Dados financeiros carregando...", true); }
+            }
+            
             if (viewId === 'equipe' && typeof renderEquipe === 'function') renderEquipe();
             if (viewId === 'fornecedores' && typeof renderFornecedores === 'function') renderFornecedores();
             if (viewId === 'prod' && typeof renderProdutos === 'function') renderProdutos();
             
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
-
-        window.navigate = function(viewId) {
-            let navBtn = null;
-            if(['dash', 'oc', 'fin', 'menu'].includes(viewId)){ navBtn = document.querySelector(`.nav-btn-mobile[onclick*="${viewId}"]`); }
-            navigateMobile(viewId, navBtn);
-        };
 
         function toggleFinTab(tab) {
             const secDesp = document.getElementById('fin-section-despesas');
