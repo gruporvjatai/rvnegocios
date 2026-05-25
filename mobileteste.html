@@ -549,6 +549,128 @@
         </div>
     </div>
 
+
+     <!-- MODAL DE SALDO DE METROS (TERCEIRIZADOS) -->
+<div id="modal-saldo-metros" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[95vh] overflow-hidden">
+        <div class="bg-indigo-600 p-4 text-white flex justify-between items-center shrink-0">
+            <div>
+                <h3 class="font-black text-lg flex items-center gap-2">
+                    <i data-lucide="ruler" class="w-5 h-5"></i> Saldo de Metros
+                </h3>
+                <p id="saldo-metros-subtitle" class="text-xs font-medium opacity-90 mt-0.5"></p>
+            </div>
+            <button onclick="fecharModalSaldoMetros()" class="text-white hover:bg-white/20 p-2 rounded-lg transition">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <div class="p-5 overflow-y-auto flex-1 bg-slate-50">
+            <input type="hidden" id="saldo-terc-id">
+            
+            <!-- Filtros -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-4 flex flex-wrap gap-3 items-end">
+              <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Início</label>
+                  <input type="date" id="saldo-metros-data-inicio" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="carregarTabelaSaldoMetros()">
+              </div>
+              <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Fim</label>
+                  <input type="date" id="saldo-metros-data-fim" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="carregarTabelaSaldoMetros()">
+              </div>
+              <div>
+                  <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
+                  <select id="saldo-metros-filtro-status" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-36" onchange="carregarTabelaSaldoMetros()">
+                      <option value="PENDENTE" selected>Pendentes</option>
+                      <option value="PAGO">Já Pagos</option>
+                      <option value="TODOS">Todos</option>
+                  </select>
+              </div>
+              <div class="flex-1"></div>
+              <button onclick="imprimirExtratoSaldoMetros()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow">
+                  <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Extrato
+              </button>
+          </div>
+
+            <!-- Tabela de registros -->
+            <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-100 text-slate-600 border-b">
+                        <tr>
+                            <th class="p-3 text-left text-xs font-bold uppercase">Data</th>
+                            <th class="p-3 text-center text-xs font-bold uppercase">Metros</th>
+                            <th class="p-3 text-center text-xs font-bold uppercase">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="saldo-metros-tabela-body" class="divide-y"></tbody>
+                </table>
+                <div id="saldo-metros-sem-registros" class="p-8 text-center text-slate-400 font-medium hidden">
+                    Nenhum registro encontrado para os filtros.
+                </div>
+            </div>
+
+            <!-- Lançamento de ajuste manual (metros) -->
+            <div class="mt-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <h4 class="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-600"></i> Lançar Ajuste Manual (Metros)
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Data</label>
+                        <input type="date" id="ajuste-metros-data" class="w-full p-2 border rounded-lg text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Metros</label>
+                        <input type="number" step="0.01" min="0" id="ajuste-metros-valor" class="w-full p-2 border rounded-lg text-sm font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Justificativa</label>
+                        <input type="text" id="ajuste-metros-justificativa" placeholder="Ex: Ajuste manual" class="w-full p-2 border rounded-lg text-sm">
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="lancarAjusteManualMetros()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold flex items-center justify-center gap-1">
+                            <i data-lucide="save" class="w-4 h-4"></i> Lançar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rodapé com totais e ações -->
+        <div class="p-4 bg-white border-t flex justify-between items-center shrink-0">
+            <div>
+                <span class="text-sm font-bold text-slate-500">Total de Metros Pendentes:</span>
+                <span id="saldo-metros-total-metros" class="text-2xl font-black text-indigo-700 ml-2">0.00</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-right">
+                    <div class="text-xs text-slate-500 font-bold uppercase">Valor a Pagar</div>
+                    <div id="saldo-metros-total-valor" class="text-2xl font-black text-green-600">R$ 0,00</div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="imprimirReciboMetrosDoModal()" class="bg-slate-700 hover:bg-slate-800 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2" title="Imprimir recibo com os dados filtrados">
+                        <i data-lucide="receipt" class="w-5 h-5"></i> Recibo
+                    </button>
+                    <button onclick="estornarUltimoFechamentoMetros()" class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2" title="Estornar o último fechamento de metros">
+                        <i data-lucide="rotate-ccw" class="w-5 h-5"></i> Estornar Último
+                    </button>
+                    <button onclick="fecharPagamentoSaldoMetros()" class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2">
+                        <i data-lucide="check-circle" class="w-5 h-5"></i> Conferido
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+      
+      
+
+
+      
+      
+<!-- FECHAENTO DE MODAL DE METRO============================================================================= -->
+
     <div id="print-area" class="print-only"></div>
 
     <script>
