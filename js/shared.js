@@ -1,9 +1,4 @@
  // ====== CONEXÃO ======
-        let dadosUsuario = null;
-        const userSessao = localStorage.getItem('rv_user');
-        if (!userSessao) window.location.replace('index.html');
-        else dadosUsuario = JSON.parse(userSessao);
-
         const supabaseUrl = 'https://lyieiqhkspbowsrlngvn.supabase.co'; 
         const supabaseKey = 'sb_publishable_B2a4vA22qf4XGcrxPDRAaw_13rW51uI';
         const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -46,29 +41,6 @@
         };
 
       
-        function navigate(viewId) {
-            document.querySelectorAll('div[id^="view-"]').forEach(el => { el.classList.add('hidden-section'); el.classList.remove('active-section'); });
-            const target = document.getElementById('view-' + viewId);
-            if(target) { target.classList.remove('hidden-section'); target.classList.add('active-section'); }
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('bg-blue-800', 'text-white', 'shadow-lg'));
-            const activeBtn = document.getElementById('nav-' + viewId);
-            if(activeBtn) activeBtn.classList.add('bg-blue-800', 'text-white', 'shadow-lg');
-            
-            if(viewId === 'dash') renderDashboard();
-            if(viewId === 'pos') { updateSelects(); }
-            if(viewId === 'oc') renderOCList();
-            if(viewId === 'fin') { updateSelects(); renderFinance(); }
-            if(viewId === 'equipe') renderEquipe();
-            if(viewId === 'fornecedores') renderFornecedores();
-            if(viewId === 'prod') renderProducts();
-            if(viewId === 'fases') renderFases();
-            if(viewId === 'reports') { updateSelects(); }
-            if(viewId === 'users') renderUsers();
-            if (viewId === 'precos') renderViewHistoricoPrecos();
-            if(viewId === 'terc') { updateSelects(); renderTerceirizados(); }
-            lucide.createIcons();
-        }
-
         function formatMoney(val) { return parseFloat(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
         function formatDate(d) { try { return d ? new Date(d).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : '-'; } catch(e) { return '-'; } }
         function showLoading(show) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
@@ -136,9 +108,7 @@
         STATE.historico_precos = STATE.historico_precos.map(r => ({
           ...r,
           data_preco: typeof r.data_preco === 'string' ? r.data_preco : r.data_preco instanceof Date ? r.data_preco.toISOString().split('T')[0] : r.data_preco
-        }));
-
-      
+        }));    
   
  
 
