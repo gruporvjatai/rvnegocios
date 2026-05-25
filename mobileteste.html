@@ -10,6 +10,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 
+  <!-- Arquivo com todas as funções compartilhadas (lógica de negócio, cálculos, Supabase) -->
+  <script src="js/shared.js"></script>
+
   <link rel="icon" type="image/png" href="logo.png">
   <link rel="shortcut icon" type="image/png" href="logo.png">
   <link rel="apple-touch-icon" href="logo.png">
@@ -81,13 +84,64 @@
     <button onclick="openNovaOC()" class="fixed bottom-20 right-4 w-14 h-14 bg-blue-700 text-white rounded-full shadow-2xl flex items-center justify-center z-40 active:scale-95 transition-transform border-4 border-white"><i data-lucide="plus" class="w-6 h-6"></i></button>
   </div>
 
-  <div id="view-pos" class="hidden-section no-print">...</div> <!-- mantido igual -->
-  <div id="view-fin" class="hidden-section no-print">...</div> <!-- mantido igual -->
-  <div id="view-menu" class="hidden-section no-print">...</div> <!-- mantido igual -->
-  <div id="view-fornecedores" class="hidden-section no-print">...</div> <!-- mantido igual -->
-  <div id="view-prod" class="hidden-section no-print">...</div> <!-- mantido igual -->
+  <div id="view-pos" class="hidden-section no-print">
+    <div class="flex items-center gap-3 mb-4">
+      <button onclick="closeNovaOC()" class="p-2 bg-slate-200 rounded-full text-slate-600 active:bg-slate-300"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+      <h2 class="text-xl font-bold flex items-center gap-2 text-blue-800">Criar Nova O.C.</h2>
+    </div>
+    <button onclick="openPosProductModal()" class="w-full bg-blue-700 text-white p-3 rounded-xl font-bold flex justify-center items-center gap-2 shadow-lg mb-4 active:scale-95 transition-transform text-sm"><i data-lucide="search" class="w-4 h-4"></i> Buscar Material</button>
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col mb-4">
+      <div class="p-2 border-b flex justify-between items-center bg-slate-50 rounded-t-xl"><span class="font-bold text-slate-700 text-xs">CARRINHO (<span id="cart-count">0</span>)</span><button onclick="clearCart()" class="text-[9px] text-red-500 font-bold px-2 py-1 rounded border border-red-200 bg-white">LIMPAR</button></div>
+      <div id="pos-cart-items" class="p-2 flex flex-col gap-2 max-h-48 overflow-y-auto no-scrollbar"></div>
+      <div class="p-3 bg-slate-50 rounded-b-xl border-t flex justify-between items-center"><span class="text-[10px] font-bold text-slate-500">TOTAL EST.</span><span id="pos-total-display" class="text-lg font-black text-slate-800">R$ 0,00</span></div>
+    </div>
+    <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 space-y-3 mb-4">
+      <div><label class="text-[9px] font-bold text-slate-500 uppercase">Obra (Destino)</label><select id="pos-obra" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none"></select></div>
+      <div class="flex gap-2"><div class="w-1/2"><label class="text-[9px] font-bold text-slate-500 uppercase">Fase da Obra</label><select id="pos-fase" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none"></select></div><div class="w-1/2"><label class="text-[9px] font-bold text-slate-500 uppercase">Solicitante</label><input type="text" id="pos-solicitante" placeholder="Nome..." class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none"></div></div>
+      <div><label class="text-[9px] font-bold text-slate-500 uppercase">Fornecedor</label><div class="flex gap-2"><input type="hidden" id="pos-fornecedor" value=""><button id="pos-fornecedor-btn" onclick="openPosFornecedorModal()" class="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-left flex justify-between items-center text-slate-600 font-bold"><span class="truncate">Selecionar...</span><i data-lucide="chevron-right" class="w-3 h-3 text-slate-400"></i></button><button onclick="openFornecedorForm()" class="p-2 bg-slate-200 rounded-lg active:bg-slate-300"><i data-lucide="user-plus" class="w-4 h-4 text-slate-700"></i></button></div></div>
+      <div><label class="text-[9px] font-bold text-slate-500 uppercase mb-1 block">Condição de Pagamento</label><select id="pos-cond-pagamento" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none mb-2 font-bold text-slate-700"><option value="">A Definir / Padrão</option><option value="A Vista (PIX)">A Vista (PIX)</option><option value="A Vista (Boleto)">A Vista (Boleto)</option><option value="Boleto 15 Dias">Boleto 15 Dias</option><option value="Boleto 30 Dias">Boleto 30 Dias</option><option value="Boleto 30/60 Dias">Boleto 30/60 Dias</option><option value="Boleto 30/60/90 Dias">Boleto 30/60/90 Dias</option><option value="Cartão de Crédito">Cartão de Crédito</option><option value="Cartão de Débito">Cartão de Débito</option><option value="Carteira">Carteira</option></select>
+      <label class="text-[9px] font-bold text-slate-500 uppercase mb-1 block">Observações Gerais</label><textarea id="pos-obs-geral" rows="2" placeholder="Ex: Entregar pela manhã..." class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none resize-none"></textarea></div>
+    </div>
+    <button onclick="saveOC()" class="w-full bg-green-600 text-white p-3 rounded-xl font-black shadow-lg active:scale-95 transition-transform flex justify-center items-center gap-2 mb-6"><i data-lucide="check-circle" class="w-5 h-5"></i> SALVAR O.C.</button>
+  </div>
 
-  <!-- ================= ABA EQUIPE COMPLETA (COM NOVOS BOTÕES E PENDÊNCIAS) ================= -->
+  <div id="view-fin" class="hidden-section no-print">
+    <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold flex items-center gap-2"><i data-lucide="bar-chart-3" class="text-blue-700"></i> Financeiro Obras</h2><button onclick="imprimirFinanceiro()" class="bg-slate-800 text-white p-2 rounded-xl text-sm font-bold shadow flex items-center gap-2"><i data-lucide="printer" class="w-4 h-4"></i></button></div>
+    <div class="grid grid-cols-2 gap-2 mb-4 bg-slate-50 p-3 rounded-xl border border-slate-200">
+      <div class="col-span-2"><select id="fin-obra-filter" onchange="renderFinance()" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-blue-700 shadow-sm outline-none"><option value="">Todas as Obras / Geral</option></select></div>
+      <select id="fin-fase-filter" onchange="renderFinance()" class="w-full p-2 bg-white border rounded-lg text-xs outline-none text-slate-600"><option value="">Todas as Fases</option></select>
+      <select id="fin-cat-filter" onchange="renderFinance()" class="w-full p-2 bg-white border rounded-lg text-xs outline-none text-slate-600"><option value="">Todas Categorias</option></select>
+      <input type="text" id="fin-search" placeholder="Busca nome/prod..." class="col-span-2 w-full p-2 bg-white border rounded-lg text-xs outline-none" onkeyup="renderFinance()">
+      <div class="col-span-2 flex gap-2 mt-1"><div class="w-1/2 flex flex-col"><label class="text-[9px] font-bold text-slate-400">INÍCIO</label><input type="date" id="fin-start" class="w-full p-2 bg-white border rounded-lg text-xs" onchange="renderFinance()"></div><div class="w-1/2 flex flex-col"><label class="text-[9px] font-bold text-slate-400">FIM</label><input type="date" id="fin-end" class="w-full p-2 bg-white border rounded-lg text-xs" onchange="renderFinance()"></div></div>
+    </div>
+    <div class="grid grid-cols-2 gap-3 mb-4"><div class="bg-white p-3 rounded-xl border-b-4 border-red-500 shadow-sm text-center"><p class="text-[9px] text-slate-500 font-bold uppercase">Custos Pagos</p><h3 id="fin-expenses" class="text-sm font-black text-slate-800 mt-1 truncate">R$ 0,00</h3></div><div class="bg-white p-3 rounded-xl border-b-4 border-green-500 shadow-sm text-center"><p class="text-[9px] text-slate-500 font-bold uppercase">Medições Rec.</p><h3 id="fin-income" class="text-sm font-black text-slate-800 mt-1 truncate">R$ 0,00</h3></div></div>
+    <div class="flex gap-2 mb-4 bg-slate-200 p-1 rounded-xl"><button onclick="toggleFinTab('despesas')" id="tab-despesas" class="flex-1 py-1.5 text-xs font-bold bg-white text-slate-800 rounded-lg shadow-sm transition-colors">Custos</button><button onclick="toggleFinTab('receitas')" id="tab-receitas" class="flex-1 py-1.5 text-xs font-bold text-slate-500 rounded-lg transition-colors">Medições</button></div>
+    <div id="fin-section-despesas"><div id="fin-expense-history-list" class="flex flex-col gap-2 pb-4"></div></div>
+    <div id="fin-section-receitas" class="hidden"><div id="fin-receivables-list" class="flex flex-col gap-2 pb-4"></div></div>
+  </div>
+
+  <div id="view-menu" class="hidden-section no-print">
+    <h2 class="text-xl font-bold mb-4">Menu</h2>
+    <div class="flex flex-col gap-3">
+      <button onclick="navigate('fornecedores')" class="bg-white p-4 rounded-xl shadow-sm border flex items-center gap-4 active:bg-slate-50"><div class="bg-blue-100 p-3 rounded-lg text-blue-700"><i data-lucide="truck"></i></div><div class="text-left font-bold text-slate-700 flex-1">Fornecedores</div><i data-lucide="chevron-right" class="text-slate-300"></i></button>
+      <button onclick="navigate('prod')" class="bg-white p-4 rounded-xl shadow-sm border flex items-center gap-4 active:bg-slate-50"><div class="bg-indigo-100 p-3 rounded-lg text-indigo-700"><i data-lucide="package"></i></div><div class="text-left font-bold text-slate-700 flex-1">Produtos</div><i data-lucide="chevron-right" class="text-slate-300"></i></button>
+      <button onclick="navigate('equipe')" class="bg-white p-4 rounded-xl shadow-sm border flex items-center gap-4 active:bg-slate-50"><div class="bg-orange-100 p-3 rounded-lg text-orange-700"><i data-lucide="users"></i></div><div class="text-left font-bold text-slate-700 flex-1">Equipe</div><i data-lucide="chevron-right" class="text-slate-300"></i></button>
+    </div>
+  </div>
+
+  <div id="view-fornecedores" class="hidden-section no-print">
+    <div class="flex items-center gap-3 mb-4"><button onclick="navigate('menu')" class="p-2 bg-slate-200 rounded-full text-slate-600"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h2 class="text-xl font-bold flex-1">Fornecedores</h2><button onclick="openFornecedorForm()" class="bg-blue-700 text-white px-3 py-2 rounded-xl text-sm font-bold shadow"><i data-lucide="plus" class="w-4 h-4"></i></button></div>
+    <input type="text" id="forn-search" placeholder="Buscar..." class="w-full p-3 mb-4 bg-white border border-slate-200 rounded-xl text-sm outline-none shadow-sm" onkeyup="renderFornecedores()">
+    <div id="fornecedores-list" class="flex flex-col gap-2 pb-4"></div>
+  </div>
+  
+  <div id="view-prod" class="hidden-section no-print">
+    <div class="flex items-center gap-3 mb-4"><button onclick="navigate('menu')" class="p-2 bg-slate-200 rounded-full text-slate-600"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h2 class="text-xl font-bold flex-1">Insumos</h2><button onclick="openProductForm()" class="bg-blue-700 text-white px-3 py-2 rounded-xl text-sm font-bold shadow"><i data-lucide="plus" class="w-4 h-4"></i></button></div>
+    <input type="text" id="prod-search" placeholder="Buscar material..." class="w-full p-3 mb-4 bg-white border border-slate-200 rounded-xl text-sm outline-none shadow-sm" onkeyup="renderProducts()">
+    <div id="prod-list" class="flex flex-col gap-2 pb-4"></div>
+  </div>
+
+  <!-- VIEW EQUIPE (UNIFICADA COM TERCEIRIZADOS) - Agora usa renderEquipeMobile() definida abaixo -->
   <div id="view-equipe" class="hidden-section no-print relative min-h-[80vh]">
     <div class="flex items-center gap-3 mb-4">
       <button onclick="navigate('menu')" class="p-2 bg-slate-200 rounded-full text-slate-600"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
@@ -95,18 +149,18 @@
       <button onclick="openEquipeForm()" class="bg-blue-700 text-white px-3 py-2 rounded-xl text-sm font-bold shadow"><i data-lucide="user-plus" class="w-4 h-4"></i></button>
     </div>
     <div class="flex gap-2 mb-3">
-      <div class="relative flex-1"><i data-lucide="search" class="absolute left-3 top-3 text-slate-400 w-4 h-4"></i><input type="text" id="eqp-search" placeholder="Buscar nome..." class="w-full pl-9 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 shadow-sm" onkeyup="renderEquipe()"></div>
+      <div class="relative flex-1"><i data-lucide="search" class="absolute left-3 top-3 text-slate-400 w-4 h-4"></i><input type="text" id="eqp-search" placeholder="Buscar nome..." class="w-full pl-9 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 shadow-sm" onkeyup="renderEquipeMobile()"></div>
       <button onclick="imprimirChecagem()" class="bg-emerald-700 text-white px-3 py-2 rounded-xl text-[11px] font-bold shadow flex items-center gap-1"><i data-lucide="clipboard-check" class="w-3 h-3"></i> Checagem</button>
       <button onclick="abrirModalFolhaPagamento()" class="bg-slate-800 text-white px-3 py-2 rounded-xl text-[11px] font-bold shadow flex items-center gap-1"><i data-lucide="printer" class="w-3 h-3"></i> Folha</button>
     </div>
     <div class="flex gap-2 mb-4">
-      <select id="eqp-filter-obra" onchange="renderEquipe()" class="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 shadow-sm"><option value="">Todas as Obras</option></select>
-      <select id="eqp-filter-status" onchange="renderEquipe()" class="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 shadow-sm"><option value="true" selected>Ativos</option><option value="false">Inativos</option><option value="todos">Todos</option></select>
-      <select id="eqp-filter-tipo" onchange="renderEquipe()" class="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 shadow-sm"><option value="todos">Todos</option><option value="diaria">Diária</option><option value="metro">Metro</option></select>
+      <select id="eqp-filter-obra" onchange="renderEquipeMobile()" class="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 shadow-sm"><option value="">Todas as Obras</option></select>
+      <select id="eqp-filter-status" onchange="renderEquipeMobile()" class="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 shadow-sm"><option value="true" selected>Ativos</option><option value="false">Inativos</option><option value="todos">Todos</option></select>
+      <select id="eqp-filter-tipo" onchange="renderEquipeMobile()" class="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 shadow-sm"><option value="todos">Todos</option><option value="diaria">Diária</option><option value="metro">Metro</option></select>
     </div>
     <div class="flex gap-2 mb-4 bg-slate-50 p-2 rounded-xl">
-      <div class="flex-1"><label class="text-[9px] font-bold text-slate-500 uppercase">Início</label><input type="date" id="eqp-filter-data-inicio" class="w-full p-1.5 border rounded text-xs bg-white" onchange="renderEquipe()"></div>
-      <div class="flex-1"><label class="text-[9px] font-bold text-slate-500 uppercase">Fim</label><input type="date" id="eqp-filter-data-fim" class="w-full p-1.5 border rounded text-xs bg-white" onchange="renderEquipe()"></div>
+      <div class="flex-1"><label class="text-[9px] font-bold text-slate-500 uppercase">Início</label><input type="date" id="eqp-filter-data-inicio" class="w-full p-1.5 border rounded text-xs bg-white" onchange="renderEquipeMobile()"></div>
+      <div class="flex-1"><label class="text-[9px] font-bold text-slate-500 uppercase">Fim</label><input type="date" id="eqp-filter-data-fim" class="w-full p-1.5 border rounded text-xs bg-white" onchange="renderEquipeMobile()"></div>
     </div>
     <div id="equipe-list" class="flex flex-col gap-2 pb-16"></div>
   </div>
@@ -120,16 +174,45 @@
   <button onclick="navigate('menu')" id="btn-menu" class="flex flex-col items-center p-2 text-slate-400 nav-bottom-btn w-1/4 transition-colors"><i data-lucide="menu" class="w-5 h-5 mb-1"></i><span class="text-[10px] font-bold">Menu</span></button>
 </nav>
 
-<!-- MODAIS GERAIS (já existentes) -->
-<div id="pos-product-modal" class="fixed inset-0 bg-white z-50 flex flex-col mobile-modal modal-hidden no-print">...</div>
-<div id="pos-fornecedor-modal" class="fixed inset-0 bg-white z-50 flex flex-col mobile-modal modal-hidden no-print">...</div>
-<div id="modal-view-oc" class="fixed inset-0 bg-white z-[80] flex flex-col mobile-modal modal-hidden no-print">...</div>
+<!-- MODAIS GERAIS (reutilizados) -->
+<div id="pos-product-modal" class="fixed inset-0 bg-white z-50 flex flex-col mobile-modal modal-hidden no-print">
+  <div class="p-3 border-b flex justify-between items-center bg-slate-50 pt-safe"><h3 class="font-bold text-base">Buscar Material</h3><button onclick="closeModal('pos-product-modal')" class="p-1.5 text-slate-500 bg-slate-200 rounded-full"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+  <div class="p-3 border-b shadow-sm"><input type="text" id="pos-modal-search" placeholder="Digite o nome..." class="w-full p-3 bg-slate-100 border-none rounded-xl font-bold outline-none text-sm" onkeyup="renderPosProductModal()" autofocus></div>
+  <div class="flex-1 overflow-y-auto p-3 bg-slate-50 no-scrollbar" id="pos-modal-grid"></div>
+</div>
+
+<div id="pos-fornecedor-modal" class="fixed inset-0 bg-white z-50 flex flex-col mobile-modal modal-hidden no-print">
+  <div class="p-3 border-b flex justify-between items-center bg-slate-50 pt-safe"><h3 class="font-bold text-base">Fornecedor</h3><button onclick="closeModal('pos-fornecedor-modal')" class="p-1.5 text-slate-500 bg-slate-200 rounded-full"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+  <div class="p-3 border-b shadow-sm"><input type="text" id="pos-fornecedor-modal-search" placeholder="Buscar fornecedor..." class="w-full p-3 bg-slate-100 border-none rounded-xl font-bold outline-none text-sm" onkeyup="renderPosFornecedorModal()"></div>
+  <div class="flex-1 overflow-y-auto p-3 bg-slate-50 no-scrollbar" id="pos-fornecedor-modal-grid"></div>
+  <div class="p-3 border-t pb-safe bg-white"><button onclick="selectPosFornecedor('', 'A Definir')" class="w-full p-3 bg-slate-200 text-slate-700 font-bold rounded-xl text-sm">Limpar</button></div>
+</div>
+
+<div id="modal-view-oc" class="fixed inset-0 bg-white z-[80] flex flex-col mobile-modal modal-hidden no-print">
+  <div class="p-3 border-b flex justify-between items-center bg-slate-900 text-white pt-safe"><h3 class="font-bold text-sm">Visualizar O.C.</h3><button onclick="closeModal('modal-view-oc')" class="p-1.5 bg-slate-700 rounded-full"><i data-lucide="x" class="w-4 h-4 text-white"></i></button></div>
+  <div class="flex-1 overflow-y-auto p-2 bg-slate-100 no-scrollbar relative" id="modal-view-oc-content"></div>
+</div>
 
 <!-- OVERLAY DE FORMULÁRIOS E MODAIS AVANÇADOS -->
 <div id="overlay-forms" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end justify-center no-print">
 
   <!-- FORMULÁRIO UNIFICADO EQUIPE / TERCEIRIZADO -->
-  <div id="equipe-form-container" class="hidden w-full bg-white rounded-t-3xl p-5 pb-10 shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar">...</div>
+  <div id="equipe-form-container" class="hidden w-full bg-white rounded-t-3xl p-5 pb-10 shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar">
+    <h3 class="font-bold text-lg mb-4 flex justify-between">Cadastro de Colaborador <button type="button" onclick="closeOverlayForm('equipe-form-container')" class="text-slate-400"><i data-lucide="x"></i></button></h3>
+    <form onsubmit="saveEquipe(event)" class="space-y-3">
+      <input type="hidden" id="eqp-id"><input type="hidden" id="eqp-tipo-origem" value="equipe">
+      <div><label class="text-[10px] font-bold text-slate-500 uppercase">Nome Completo</label><input type="text" id="eqp-nome" required class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm"></div>
+      <div><label class="text-[10px] font-bold text-slate-500 uppercase">Categoria / Função</label><select id="eqp-categoria" required class="w-full p-2.5 bg-slate-50 border rounded-xl text-sm font-bold text-slate-700 outline-none" onchange="onCategoriaChange()"><option value="" disabled selected>-- Selecione --</option><option value="Pedreiro">Pedreiro (Diária)</option><option value="Servente">Servente (Diária)</option><option value="Terceirizado">Terceirizado (Metro)</option></select></div>
+      <div class="flex gap-2"><div class="w-1/2"><label class="text-[10px] font-bold text-slate-500 uppercase">CPF</label><input type="text" id="eqp-cpf" placeholder="000.000.000-00" oninput="maskCPF(this)" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm"></div><div class="w-1/2"><label class="text-[10px] font-bold text-slate-500 uppercase">RG</label><input type="text" id="eqp-rg" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm"></div></div>
+      <div><label class="text-[10px] font-bold text-slate-500 uppercase">Telefone</label><input type="tel" id="eqp-telefone" placeholder="(00) 00000-0000" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm"></div>
+      <div><label class="text-[10px] font-bold text-slate-500 uppercase">Endereço</label><input type="text" id="eqp-endereco" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm"></div>
+      <div><label class="text-[10px] font-bold text-slate-500 uppercase">Chave PIX</label><input type="text" id="eqp-chave_pix" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm font-bold text-slate-700"></div>
+      <div class="flex gap-2"><div class="w-1/2"><label class="text-[10px] font-bold text-slate-500 uppercase">Status</label><select id="eqp-ativo" class="w-full p-2.5 bg-slate-50 border rounded-xl text-sm font-bold text-slate-700 outline-none"><option value="true">Ativo</option><option value="false">Inativo</option></select></div><div class="w-1/2"><label class="text-[10px] font-bold text-slate-500 uppercase">Data de Contrato</label><input type="date" id="eqp-data_contrato" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm"></div></div>
+      <div><label class="text-[10px] font-bold text-slate-500 uppercase" id="label-valor-base">Valor da Diária (R$)</label><input type="number" step="0.01" id="eqp-valor_diaria" placeholder="0.00" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm"></div>
+      <div><label class="text-[10px] font-bold text-slate-500 uppercase">Obra Alocada (Opcional)</label><select id="eqp-obra_atual_id" class="w-full p-2.5 bg-slate-50 border rounded-xl text-sm font-bold text-slate-700 outline-none"></select></div>
+      <button type="submit" class="w-full p-3 bg-blue-700 text-white rounded-xl font-bold mt-2 shadow-lg">Salvar</button>
+    </form>
+  </div>
 
   <!-- MODAL DE DOCUMENTOS -->
   <div id="modal-docs-equipe" class="hidden w-full bg-white rounded-t-3xl p-5 pb-8 shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar">
@@ -158,7 +241,7 @@
     <div class="bg-indigo-600 p-4 text-white flex justify-between items-center shrink-0"><div><h3 class="font-black text-lg flex items-center gap-2"><i data-lucide="ruler" class="w-5 h-5"></i> Saldo de Metros</h3><p id="saldo-metros-subtitle" class="text-xs font-medium opacity-90 mt-0.5"></p></div><button onclick="fecharModalSaldoMetros()" class="text-white hover:bg-white/20 p-2 rounded-lg transition"><i data-lucide="x" class="w-5 h-5"></i></button></div>
     <div class="p-5 overflow-y-auto flex-1 bg-slate-50"><input type="hidden" id="saldo-terc-id">
       <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-4 flex flex-wrap gap-3 items-end"><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Início</label><input type="date" id="saldo-metros-data-inicio" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="carregarTabelaSaldoMetros()"></div><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Fim</label><input type="date" id="saldo-metros-data-fim" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="carregarTabelaSaldoMetros()"></div><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label><select id="saldo-metros-filtro-status" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-36" onchange="carregarTabelaSaldoMetros()"><option value="PENDENTE" selected>Pendentes</option><option value="PAGO">Já Pagos</option><option value="TODOS">Todos</option></select></div><div class="flex-1"></div><button onclick="imprimirExtratoSaldoMetros()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow"><i data-lucide="printer" class="w-4 h-4"></i> Imprimir Extrato</button></div>
-      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm"><table class="w-full text-sm"><thead class="bg-slate-100 text-slate-600 border-b"><tr><th class="p-3 text-left text-xs font-bold uppercase">Data</th><th class="p-3 text-center text-xs font-bold uppercase">Metros</th><th class="p-3 text-center text-xs font-bold uppercase">Status</th></tr></thead><tbody id="saldo-metros-tabela-body" class="divide-y"></tbody></table><div id="saldo-metros-sem-registros" class="p-8 text-center text-slate-400 font-medium hidden">Nenhum registro encontrado para os filtros.</div></div>
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm"><table class="w-full text-sm"><thead class="bg-slate-100 text-slate-600 border-b"><tr><th class="p-3 text-left text-xs font-bold uppercase">Data</th><th class="p-3 text-center text-xs font-bold uppercase">Metros</th><th class="p-3 text-center text-xs font-bold uppercase">Status</th></tr></thead><tbody id="saldo-metros-tabela-body" class="divide-y"></tbody><table><div id="saldo-metros-sem-registros" class="p-8 text-center text-slate-400 font-medium hidden">Nenhum registro encontrado para os filtros.</div></div>
       <div class="mt-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><h4 class="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2"><i data-lucide="plus-circle" class="w-4 h-4 text-indigo-600"></i> Lançar Ajuste Manual (Metros)</h4><div class="grid grid-cols-1 md:grid-cols-4 gap-3"><div><label class="block text-xs font-bold text-slate-500 mb-1">Data</label><input type="date" id="ajuste-metros-data" class="w-full p-2 border rounded-lg text-sm"></div><div><label class="block text-xs font-bold text-slate-500 mb-1">Metros</label><input type="number" step="0.01" min="0" id="ajuste-metros-valor" class="w-full p-2 border rounded-lg text-sm font-bold"></div><div><label class="block text-xs font-bold text-slate-500 mb-1">Justificativa</label><input type="text" id="ajuste-metros-justificativa" placeholder="Ex: Ajuste manual" class="w-full p-2 border rounded-lg text-sm"></div><div class="flex items-end"><button onclick="lancarAjusteManualMetros()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold flex items-center justify-center gap-1"><i data-lucide="save" class="w-4 h-4"></i> Lançar</button></div></div></div>
     </div>
     <div class="p-4 bg-white border-t flex justify-between items-center shrink-0"><div><span class="text-sm font-bold text-slate-500">Total de Metros Pendentes:</span><span id="saldo-metros-total-metros" class="text-2xl font-black text-indigo-700 ml-2">0.00</span></div><div class="flex items-center gap-4"><div class="text-right"><div class="text-xs text-slate-500 font-bold uppercase">Valor a Pagar</div><div id="saldo-metros-total-valor" class="text-2xl font-black text-green-600">R$ 0,00</div></div><div class="flex gap-2"><button onclick="imprimirReciboMetrosDoModal()" class="bg-slate-700 hover:bg-slate-800 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2"><i data-lucide="receipt" class="w-5 h-5"></i> Recibo</button><button onclick="estornarUltimoFechamentoMetros()" class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2"><i data-lucide="rotate-ccw" class="w-5 h-5"></i> Estornar Último</button><button onclick="fecharPagamentoSaldoMetros()" class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2"><i data-lucide="check-circle" class="w-5 h-5"></i> Conferido</button></div></div></div>
@@ -176,1059 +259,133 @@
     <div class="flex gap-3 mt-6"><button onclick="closeOverlayForm('modal-folha-pagamento')" class="flex-1 p-3 bg-slate-200 text-slate-700 rounded-xl font-bold">Cancelar</button><button onclick="executarImpressaoFolha()" class="flex-1 p-3 bg-blue-700 text-white rounded-xl font-bold shadow-lg flex items-center justify-center gap-2"><i data-lucide="printer" class="w-5 h-5"></i> Imprimir</button></div>
   </div>
 
-  <!-- MODAL CONFIRMAÇÃO OC (já existente) -->
-  <div id="modal-confirm-oc" class="hidden w-full bg-white rounded-t-3xl p-5 pb-10 shadow-2xl">...</div>
-
+  <!-- MODAL CONFIRMAÇÃO OC -->
+  <div id="modal-confirm-oc" class="hidden w-full bg-white rounded-t-3xl p-5 pb-10 shadow-2xl">
+    <h3 class="font-bold text-lg mb-2 text-slate-800">Confirmar Compra</h3><p class="text-xs text-slate-500 mb-4">Escolha o pagamento. PIX já entra como pago.</p><input type="hidden" id="confirm-oc-id"><select id="confirm-oc-payment" class="w-full p-3 border rounded-xl font-bold text-slate-700 bg-slate-50 mb-4 text-sm"><option value="PIX">PIX</option><option value="Boleto">Boleto</option><option value="Cartão de Crédito">Cartão de Crédito</option><option value="Cartão de Débito">Cartão de Débito</option><option value="Transferência">Transferência</option></select><div class="flex gap-2"><button type="button" onclick="closeOverlayForm('modal-confirm-oc')" class="w-1/3 p-3 bg-slate-200 rounded-xl font-bold text-sm">Voltar</button><button onclick="executeConfirmOC()" class="w-2/3 p-3 bg-green-600 text-white rounded-xl font-bold shadow text-sm">Efetivar</button></div>
+  </div>
 </div>
 
-<div id="modal-sucesso-matricula" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4 no-print">...</div>
+<div id="modal-sucesso-matricula" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4 no-print">
+  <div class="bg-white rounded-3xl p-6 w-full max-w-xs text-center shadow-2xl">
+    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"><i data-lucide="check-circle" class="w-8 h-8 text-green-600"></i></div>
+    <h3 class="text-xl font-black text-slate-800 mb-1">Cadastrado!</h3>
+    <p class="text-xs text-slate-500 mb-5 font-bold truncate" id="sucesso-nome">Nome do Funcionario</p>
+    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6 shadow-inner"><p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Matrícula (Ponto)</p><p class="text-5xl font-black text-blue-700" id="sucesso-num-matricula">000</p></div>
+    <button onclick="document.getElementById('modal-sucesso-matricula').classList.add('hidden')" class="w-full bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-transform">OK, Anotado</button>
+  </div>
+</div>
+
 <div id="print-area" class="print-only"></div>
 
 <script>
-  // ====== CONEXÃO E ESTADO ======
+  // ====== CÓDIGO ESPECÍFICO DO MOBILE ======
+  // Todas as funções de renderização que dependem da interface mobile (cards, listas) são definidas aqui.
+  // As funções de lógica de negócio (cálculos, Supabase, modais de ponto/metros/documentos) estão em shared.js
+
+  // Variáveis globais do mobile
   let dadosUsuario = null;
   const userSessao = localStorage.getItem('rv_user');
   if (!userSessao) window.location.replace('index.html');
   else dadosUsuario = JSON.parse(userSessao);
 
-  const supabaseUrl = 'https://lyieiqhkspbowsrlngvn.supabase.co'; 
-  const supabaseKey = 'sb_publishable_B2a4vA22qf4XGcrxPDRAaw_13rW51uI';
-  const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
+  // As funções showLoading, showToast, formatMoney, etc. já estão em shared.js
 
-  let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], fases: [], equipe: [], terceirizados: [], ponto_diario: [], producao_terc: [] };
-  let CART = [];
-  let CURRENT_OC_ID = null; 
-
-  window.onload = function() { 
-    if (dadosUsuario) { showLoading(true); loadData(); }
-    lucide.createIcons();          
+  // Inicialização
+  window.onload = function() {
+    if (dadosUsuario) {
+      showLoading(true);
+      // As funções loadData, updateSelects, renderDashboard, etc. estão em shared.js
+      loadData().then(() => {
+        // Após carregar os dados, configuramos os filtros de data da equipe
+        const hoje = new Date();
+        const anoAtual = hoje.getFullYear();
+        const primeiroDia = `${anoAtual}-01-01`;
+        const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
+        const ultimoDiaStr = `${anoAtual}-${String(hoje.getMonth()+1).padStart(2,'0')}-${String(ultimoDia).padStart(2,'0')}`;
+        const eqpDataInicio = document.getElementById('eqp-filter-data-inicio');
+        const eqpDataFim = document.getElementById('eqp-filter-data-fim');
+        if (eqpDataInicio) eqpDataInicio.value = primeiroDia;
+        if (eqpDataFim) eqpDataFim.value = ultimoDiaStr;
+        
+        renderEquipeMobile(); // renderização específica mobile
+        showLoading(false);
+      });
+    }
+    lucide.createIcons();
   };
 
-  // ====== UTILITÁRIOS ======
-  function formatMoney(val) { return parseFloat(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
-  function formatDate(d) { try { return d ? new Date(d).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : '-'; } catch(e) { return '-'; } }
-  function showLoading(show) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
-  function showToast(msg, isError=false) { 
-    const t=document.getElementById('toast'); 
-    t.textContent=msg; t.className=`fixed top-10 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl text-white font-bold text-sm z-[100] transition-all text-center w-[90%] max-w-sm ${isError?'bg-red-600':'bg-slate-800'}`; 
-    t.style.display='block'; setTimeout(()=>t.style.display='none',3000); 
-  }
-
-  function maskCPF(input) { let v = input.value.replace(/\D/g, ""); if (v.length > 11) v = v.slice(0, 11); v = v.replace(/(\d{3})(\d)/, "$1.$2"); v = v.replace(/(\d{3})(\d)/, "$1.$2"); v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2"); input.value = v; }
-
-  function openModal(id) { const m = document.getElementById(id); if(m) { m.classList.remove('modal-hidden'); m.classList.add('modal-visible'); } }
-  function closeModal(id) { const m = document.getElementById(id); if(m) { m.classList.remove('modal-visible'); m.classList.add('modal-hidden'); } }
-  function openOverlayForm(id) { document.getElementById('overlay-forms').classList.remove('hidden'); document.querySelectorAll('#overlay-forms > div').forEach(d => d.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
-  function closeOverlayForm(id) { document.getElementById(id).classList.add('hidden'); document.getElementById('overlay-forms').classList.add('hidden'); }
-
-  // ====== NAVEGAÇÃO MOBILE ======
+  // Função de navegação mobile
   function navigate(viewId) {
     document.querySelectorAll('main > div[id^="view-"]').forEach(el => { el.classList.add('hidden-section'); el.classList.remove('active-section'); });
     const target = document.getElementById('view-' + viewId);
-    if(target) { target.classList.remove('hidden-section'); target.classList.add('active-section'); }
+    if (target) { target.classList.remove('hidden-section'); target.classList.add('active-section'); }
     document.querySelectorAll('.nav-bottom-btn').forEach(btn => btn.classList.remove('nav-active', 'text-blue-700'));
     const activeBtn = document.getElementById('btn-' + viewId);
-    if(activeBtn && viewId !== 'pos') activeBtn.classList.add('nav-active');
-    if(viewId === 'dash') renderDashboard();
-    if(viewId === 'oc') { updateSelects(); renderOCList(); }
-    if(viewId === 'fin') { updateSelects(); renderFinance(); }
-    if(viewId === 'fornecedores') renderFornecedores();
-    if(viewId === 'prod') renderProducts();
-    if(viewId === 'equipe') { updateSelects(); renderEquipe(); }
+    if (activeBtn && viewId !== 'pos') activeBtn.classList.add('nav-active');
+    if (viewId === 'dash') renderDashboard();
+    if (viewId === 'oc') { updateSelects(); renderOCList(); }
+    if (viewId === 'fin') { updateSelects(); renderFinance(); }
+    if (viewId === 'fornecedores') renderFornecedores();
+    if (viewId === 'prod') renderProducts();
+    if (viewId === 'equipe') { updateSelects(); renderEquipeMobile(); }
     lucide.createIcons();
     window.scrollTo(0,0);
   }
 
-  function openNovaOC() { /* mantido */ }
-  function closeNovaOC() { /* mantido */ }
-  function toggleFinTab(tab) { /* mantido */ }
-
-  // ====== DADOS ======
-  async function fetchAllRecords(table) { /* mesmo código anterior */ }
-  async function loadData() { 
-    try {
-      const [resObras, resForn, resProd, resLog, resFases, resEquipe, resTerceirizados, resPontoDiario, resProducaoTerc] = await Promise.all([
-        fetchAllRecords('jsp_obras'), fetchAllRecords('jsp_fornecedores'), fetchAllRecords('jsp_produtos'), fetchAllRecords('jsp_logs'),
-        fetchAllRecords('jsp_fase'), fetchAllRecords('jsp_equipe'), fetchAllRecords('jsp_terceirizados'),
-        fetchAllRecords('jsp_ponto_diario').catch(()=>({data:[]})), fetchAllRecords('jsp_producao_terc').catch(()=>({data:[]}))
-      ]);
-      STATE.obras = resObras.data || []; STATE.fornecedores = resForn.data || []; STATE.produtos = resProd.data || []; STATE.logs = resLog.data || [];
-      STATE.fases = resFases.data || []; STATE.fases.sort((a,b)=>(parseInt(a.ordem)||0)-(parseInt(b.ordem)||0));
-      STATE.equipe = resEquipe.data || []; STATE.terceirizados = resTerceirizados.data || [];
-      STATE.ponto_diario = resPontoDiario.data || []; STATE.producao_terc = resProducaoTerc.data || [];
-      updateSelects();
-      if(!document.querySelector('main > .active-section')) navigate('dash');
-      else navigate(document.querySelector('main > .active-section').id.replace('view-',''));
-      showLoading(false);
-    } catch(err) { showLoading(false); showToast("Erro banco: "+err.message,true); }
+  // Abrir/fechar formulários específicos do mobile
+  function openNovaOC() {
+    document.getElementById('view-oc').classList.replace('active-section', 'hidden-section');
+    document.getElementById('view-pos').classList.replace('hidden-section', 'active-section');
+    updateSelects();
+    window.scrollTo(0,0);
   }
-
-  function getNextIdNum(array) { let max=0; array.forEach(item=>{ let v=parseInt(item.id); if(!isNaN(v)&&v>max) max=v; }); return max+1; }
-  function updateSelects() { /* mantido, inclusive para os novos selects */ }
-
- // ====== RENDERERS (DASH, OC, FIN, FORN, PROD) mantidos ======
-
-function renderDashboard() {
-    const grid = document.getElementById('dash-grid');
-    const saldosObras = {};
-    
-    STATE.obras.forEach(o => {
-        saldosObras[o.id] = { 
-            custos: 0, 
-            medicoes: 0,
-            valor_contrato: parseFloat(o.valor_contrato) || 0
-        };
-    });
-
-    STATE.logs.forEach(l => {
-        if (l.status_financeiro === 'CANCELADO') return;
-        if (!saldosObras[l.obra_id]) return;
-        
-        if (l.tipo === 'receita' && l.status_financeiro === 'PAGO') {
-            saldosObras[l.obra_id].medicoes += parseFloat(l.valor_total || 0);
-        }
-        if ((l.tipo === 'compra' || l.tipo === 'despesa') && l.status_financeiro === 'PAGO') {
-            saldosObras[l.obra_id].custos += parseFloat(l.valor_total || 0);
-        }
-    });
-
-    grid.innerHTML = STATE.obras.map(o => {
-        const s = saldosObras[o.id] || { custos: 0, medicoes: 0, valor_contrato: 0 };
-        const valorContrato = s.valor_contrato;
-        const recebido = s.medicoes;
-        const gasto = s.custos;
-        const aReceber = valorContrato - recebido;
-        const caixaAtual = recebido - gasto;
-        const pctRecebido = valorContrato > 0 ? Math.min((recebido / valorContrato) * 100, 100) : 0;
-        
-        return `
-        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm relative">
-            <div class="pr-6 mb-2">
-                <h4 class="font-black text-base text-slate-800 leading-tight">${o.nome}</h4>
-                <p class="text-[10px] text-slate-500 font-bold uppercase truncate">
-                    <i data-lucide="map-pin" class="inline w-3 h-3"></i> ${o.endereco || 'Endereço n. inf.'}
-                </p>
-            </div>
-            <div class="w-full bg-slate-100 rounded-full h-1.5 mb-1 mt-2">
-                <div class="bg-blue-600 h-1.5 rounded-full" style="width: ${pctRecebido}%"></div>
-            </div>
-            <div class="text-[9px] font-bold text-slate-400 text-right mb-3">${pctRecebido.toFixed(1)}% recebido</div>
-            <div class="grid grid-cols-2 gap-2 text-[10px]">
-                <div class="bg-slate-50 p-2 rounded-lg border border-slate-100">
-                    <div class="text-slate-400 uppercase font-bold">Contrato</div>
-                    <div class="font-black text-slate-700 text-xs">${formatMoney(valorContrato)}</div>
-                </div>
-                <div class="bg-green-50 p-2 rounded-lg border border-green-100">
-                    <div class="text-green-600 uppercase font-bold">Medições</div>
-                    <div class="font-black text-green-700 text-xs">${formatMoney(recebido)}</div>
-                </div>
-                <div class="bg-orange-50 p-2 rounded-lg border border-orange-100">
-                    <div class="text-orange-600 uppercase font-bold">A Receber</div>
-                    <div class="font-black text-orange-700 text-xs">${formatMoney(aReceber)}</div>
-                </div>
-                <div class="bg-red-50 p-2 rounded-lg border border-red-100">
-                    <div class="text-red-600 uppercase font-bold">Custos</div>
-                    <div class="font-black text-red-700 text-xs">${formatMoney(gasto)}</div>
-                </div>
-            </div>
-            <div class="mt-3 pt-3 border-t border-slate-200 flex justify-between items-end">
-                <div>
-                    <span class="text-[10px] font-bold text-slate-500 uppercase">Custos Pagos</span>
-                    <div class="font-black text-xl text-red-600 leading-5">${formatMoney(gasto)}</div>
-                </div>
-                <div class="text-right">
-                    <span class="text-[10px] font-bold text-slate-500 uppercase">Caixa Atual</span>
-                    <div class="font-black text-xl ${caixaAtual >= 0 ? 'text-blue-700' : 'text-red-600'} leading-5">
-                        ${formatMoney(caixaAtual)}
-                    </div>
-                </div>
-            </div>
-        </div>`;
-    }).join('');
-    
-    lucide.createIcons();
-}
-
-function openObraForm(id) {
-    if (id) {
-        const o = STATE.obras.find(x => x.id == id);
-        if (o) {
-            document.getElementById('obra-id').value = o.id;
-            document.getElementById('obra-name').value = o.nome;
-            document.getElementById('obra-addr').value = o.endereco;
-            document.getElementById('obra-solic').value = o.solicitante || '';
-            document.getElementById('obra-contrato').value = o.valor_contrato || '';
-        }
-    } else {
-        document.getElementById('obra-form-container').querySelector('form').reset();
-        document.getElementById('obra-id').value = '';
-    }
-    openOverlayForm('obra-form-container');
-}
-
-async function saveObra(e) {
-    e.preventDefault();
-    showLoading(true);
-    const isNew = !document.getElementById('obra-id').value;
-    const payload = {
-        nome: document.getElementById('obra-name').value,
-        endereco: document.getElementById('obra-addr').value,
-        solicitante: document.getElementById('obra-solic').value,
-        valor_contrato: parseFloat(document.getElementById('obra-contrato').value) || 0
-    };
-    if (!isNew) payload.id = document.getElementById('obra-id').value;
-    const { error } = await sb.from('jsp_obras').upsert(payload);
-    if (error) {
-        showLoading(false);
-        return showToast("Erro: " + error.message, true);
-    }
-    closeOverlayForm('obra-form-container');
-    showToast("Obra Salva!");
-    loadData();
-}
-
-function renderCart() {
-    const box = document.getElementById('pos-cart-items');
-    if (!CART.length) {
-        box.innerHTML = '<p class="text-center text-slate-400 mt-4 text-[10px] font-bold">Nenhum item.</p>';
-        document.getElementById('pos-total-display').innerText = formatMoney(0);
-        document.getElementById('cart-count').innerText = '0';
-        return;
-    }
-    let sub = 0;
-    box.innerHTML = CART.map((i, idx) => {
-        const totalItem = i.qty * i.price;
-        sub += totalItem;
-        return `
-        <div class="bg-white p-2 border border-slate-100 rounded-lg shadow-sm flex flex-col gap-1 relative">
-            <div class="pr-6"><div class="text-[11px] font-bold text-slate-800 leading-tight">${i.name}</div></div>
-            <button onclick="CART.splice(${idx},1);renderCart()" class="absolute top-1 right-1 text-slate-300 active:text-red-500 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-            <div class="flex items-center justify-between border-t border-slate-50 pt-1 mt-1">
-                <div class="flex items-center gap-1 bg-slate-50 p-1 rounded">
-                    <input type="number" value="${i.qty}" onchange="updateCart(${idx}, 'qty', this.value)" class="w-10 bg-transparent text-center text-xs font-bold outline-none border-b border-slate-300">
-                    <span class="text-slate-400 text-[9px] font-bold">UN x</span>
-                    <input type="number" step="0.01" value="${i.price}" onchange="updateCart(${idx}, 'price', this.value)" class="w-14 bg-transparent text-center text-xs font-bold outline-none border-b border-slate-300 text-blue-700">
-                </div>
-                <div class="font-black text-slate-800 text-xs">${formatMoney(totalItem)}</div>
-            </div>
-        </div>`;
-    }).join('');
-    document.getElementById('pos-total-display').innerText = formatMoney(sub);
-    document.getElementById('cart-count').innerText = CART.length;
-    lucide.createIcons();
-}
-
-function clearCart() {
-    CART = [];
-    CURRENT_OC_ID = null;
-    document.getElementById('pos-cond-pagamento').value = '';
-    document.getElementById('pos-obs-geral').value = '';
-    document.getElementById('pos-fornecedor').value = '';
-    document.getElementById('pos-fase').value = '';
-    document.getElementById('pos-solicitante').value = '';
-    const btn = document.getElementById('pos-fornecedor-btn');
-    if (btn) btn.querySelector('span').innerText = 'Selecionar...';
-    renderCart();
-}
-
-function openPosProductModal() {
-    openModal('pos-product-modal');
-    renderPosProductModal();
-}
-
-function renderPosProductModal() {
-    const term = document.getElementById('pos-modal-search').value.toLowerCase();
-    const grid = document.getElementById('pos-modal-grid');
-    const fil = STATE.produtos.filter(p => p.nome.toLowerCase().includes(term)).slice(0, 50);
-    grid.innerHTML = fil.map(p => `
-        <div class="p-2 bg-white border border-slate-200 rounded-lg mb-2 flex items-center justify-between shadow-sm" onclick="addCartModal('${p.id}', '${p.nome.replace(/'/g, "\\'")}', ${p.preco})">
-            <div class="flex-1 pr-2"><h4 class="font-bold text-xs text-slate-800 leading-tight">${p.nome}</h4><span class="text-[9px] text-slate-400 font-bold">${formatMoney(p.preco)}</span></div>
-            <button class="bg-blue-100 text-blue-700 p-1.5 rounded-full shrink-0"><i data-lucide="plus" class="w-4 h-4"></i></button>
-        </div>`).join('');
-    lucide.createIcons();
-}
-
-function addCartModal(id, name, price) {
-    const exist = CART.find(x => x.id == id);
-    if (exist) exist.qty += 1;
-    else CART.push({ id, name, price, qty: 1 });
-    showToast("Item adicionado!");
-    renderCart();
-}
-
-function openPosFornecedorModal() {
-    openModal('pos-fornecedor-modal');
-    renderPosFornecedorModal();
-}
-
-function renderPosFornecedorModal() {
-    const term = document.getElementById('pos-fornecedor-modal-search').value.toLowerCase();
-    const fil = STATE.fornecedores.filter(f => f.nome.toLowerCase().includes(term));
-    document.getElementById('pos-fornecedor-modal-grid').innerHTML = fil.map(f => `
-        <div class="p-3 bg-white border border-slate-200 rounded-lg mb-2 flex items-center justify-between shadow-sm" onclick="selectPosFornecedor('${f.id}', '${f.nome.replace(/'/g, "\\'")}')">
-            <div><h4 class="font-bold text-xs text-slate-800">${f.nome}</h4><span class="text-[9px] text-slate-500">Doc: ${f.documento || '-'}</span></div>
-            <div class="text-slate-300"><i data-lucide="chevron-right" class="w-4 h-4"></i></div>
-        </div>`).join('');
-    lucide.createIcons();
-}
-
-function selectPosFornecedor(id, name) {
-    document.getElementById('pos-fornecedor').value = id;
-    const btn = document.getElementById('pos-fornecedor-btn');
-    if (btn) btn.querySelector('span').innerText = name;
-    closeModal('pos-fornecedor-modal');
-}
-
-async function saveOC() {
-    if (!CART.length) return showToast("Adicione itens à O.C.", true);
-    const obraId = document.getElementById('pos-obra').value;
-    if (!obraId) return showToast("Selecione a Obra!", true);
-    showLoading(true);
-    const fornId = document.getElementById('pos-fornecedor').value || null;
-    const fase = document.getElementById('pos-fase').value;
-    const solic = document.getElementById('pos-solicitante').value;
-    const obsPag = document.getElementById('pos-cond-pagamento').value.trim();
-    const obsGeral = document.getElementById('pos-obs-geral').value.trim();
-    let observacaoFinal = "";
-    if (obsPag) observacaoFinal += "Condições de Pagamento:\n" + obsPag + "\n\n";
-    if (obsGeral) observacaoFinal += "Observações Gerais:\n" + obsGeral;
-
-    const newId = CURRENT_OC_ID || getNextIdNum(STATE.logs);
-    const dt = new Date().toISOString();
-
-    if (CURRENT_OC_ID) await sb.from('jsp_logs').delete().eq('id', CURRENT_OC_ID);
-
-    const inserts = CART.map(i => ({
-        id: newId.toString(),
-        obra_id: parseInt(obraId),
-        fornecedor_id: fornId ? parseInt(fornId) : null,
-        tipo: 'oc_pendente',
-        produto_nome: i.name,
-        quantidade: i.qty,
-        valor_total: (i.qty * i.price),
-        data: dt,
-        vencimento: dt,
-        status_financeiro: 'PENDENTE',
-        observacao: observacaoFinal.trim(),
-        fase_obra: fase,
-        solicitante: solic
-    }));
-
-    const { error } = await sb.from('jsp_logs').insert(inserts);
-    if (error) {
-        showLoading(false);
-        return showToast("Erro: " + error.message, true);
-    }
+  function closeNovaOC() {
+    document.getElementById('view-pos').classList.replace('active-section', 'hidden-section');
+    document.getElementById('view-oc').classList.replace('hidden-section', 'active-section');
     clearCart();
-    showToast("O.C. Salva!");
-    await loadData();
-    closeNovaOC();
-}
-
-function renderOCList() {
-    const list = document.getElementById('oc-list');
-    const term = document.getElementById('oc-search').value.toLowerCase();
-    const obraFilt = document.getElementById('oc-obra-filter').value;
-    const ocs = {};
-    
-    STATE.logs.filter(l => (l.tipo === 'oc_pendente' || l.tipo === 'compra') && l.status_financeiro !== 'CANCELADO').forEach(l => {
-        if (obraFilt && String(l.obra_id) !== String(obraFilt)) return;
-        if (!ocs[l.id]) ocs[l.id] = {
-            id: l.id,
-            data: l.data,
-            itemsText: [],
-            total: 0,
-            obra_id: l.obra_id,
-            forn_id: l.fornecedor_id,
-            status: l.tipo === 'compra' ? 'CONFIRMADA' : 'PENDENTE'
-        };
-        ocs[l.id].itemsText.push(l.produto_nome);
-        ocs[l.id].total += parseFloat(l.valor_total);
-        if (l.tipo === 'compra') ocs[l.id].status = 'CONFIRMADA';
-    });
-
-    let arr = Object.values(ocs).sort((a, b) => Number(b.id) - Number(a.id));
-    
-    if (arr.length === 0) {
-        list.innerHTML = `<p class="text-center text-slate-400 mt-10 text-xs">Nenhuma O.C. encontrada.</p>`;
-        return;
+    renderOCList();
+  }
+  function toggleFinTab(tab) {
+    const secDesp = document.getElementById('fin-section-despesas');
+    const secRec = document.getElementById('fin-section-receitas');
+    if (secDesp && secRec) {
+      if (tab === 'despesas') {
+        secDesp.classList.remove('hidden'); secRec.classList.add('hidden');
+        document.getElementById('tab-despesas').classList.replace('text-slate-500', 'text-slate-800');
+        document.getElementById('tab-despesas').classList.add('bg-white', 'shadow-sm');
+        document.getElementById('tab-receitas').classList.replace('text-slate-800', 'text-slate-500');
+        document.getElementById('tab-receitas').classList.remove('bg-white', 'shadow-sm');
+      } else {
+        secDesp.classList.add('hidden'); secRec.classList.remove('hidden');
+        document.getElementById('tab-receitas').classList.replace('text-slate-500', 'text-slate-800');
+        document.getElementById('tab-receitas').classList.add('bg-white', 'shadow-sm');
+        document.getElementById('tab-despesas').classList.replace('text-slate-800', 'text-slate-500');
+        document.getElementById('tab-despesas').classList.remove('bg-white', 'shadow-sm');
+      }
     }
-
-    list.innerHTML = arr.map(o => {
-        const obra = STATE.obras.find(x => x.id == o.obra_id);
-        const forn = STATE.fornecedores.find(x => x.id == o.forn_id);
-        const txt = (obra?.nome || '') + ' ' + (forn?.nome || '') + ' ' + o.id;
-        if (term && !txt.toLowerCase().includes(term)) return '';
-        const isConfirmada = o.status === 'CONFIRMADA';
-
-        return `
-        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm relative">
-            <div class="absolute top-2 right-2 text-[8px] font-bold px-1.5 py-0.5 rounded ${isConfirmada ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">${isConfirmada ? 'EFETIVADA' : 'PENDENTE'}</div>
-            <div class="flex justify-between items-start mb-1 pr-14">
-                <div>
-                    <span class="bg-blue-100 text-blue-800 text-[9px] font-bold px-1.5 py-0.5 rounded">#${o.id}</span>
-                    <h4 class="font-bold text-slate-800 mt-1 leading-tight text-xs">${forn?.nome || 'Forn. A Definir'}</h4>
-                    <div class="text-[9px] text-blue-600 font-bold uppercase truncate mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome || 'Sem Obra'}</div>
-                </div>
-            </div>
-            <div class="font-black text-sm text-slate-800 mb-1">${formatMoney(o.total)}</div>
-            <p class="text-[9px] text-slate-500 truncate mb-2 bg-slate-50 p-1 rounded">${o.itemsText.join(', ')}</p>
-            <div class="flex justify-between gap-1 border-t border-slate-100 pt-2 items-center">
-                ${!isConfirmada ? `<button onclick="openConfirmOC('${o.id}')" class="flex-1 bg-green-600 active:bg-green-700 text-white py-1.5 rounded-lg text-[10px] font-bold shadow-sm">Comprar</button>` : `<span class="flex-1 text-slate-400 text-[10px] font-bold">Lançado Caixa</span>`}
-                <div class="flex gap-1 shrink-0">
-                    <button onclick="verOC('${o.id}')" class="p-1.5 border border-slate-200 text-slate-500 rounded-lg active:bg-slate-100" title="Ver OC"><i data-lucide="eye" class="w-4 h-4"></i></button>
-                    ${!isConfirmada ? `<button onclick="loadOCToCart('${o.id}')" class="p-1.5 border border-slate-200 text-slate-500 rounded-lg active:bg-slate-100"><i data-lucide="edit-3" class="w-4 h-4"></i></button>` : ''}
-                    ${isConfirmada ? `<button onclick="estornarOC('${o.id}')" class="p-1.5 border border-orange-200 text-orange-500 rounded-lg active:bg-orange-50" title="Estornar"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>` : ''}
-                    <button onclick="compartilharNative('${o.id}', false)" class="p-1.5 border border-blue-200 text-blue-600 rounded-lg active:bg-blue-50" title="Compartilhar O.C."><i data-lucide="share-2" class="w-4 h-4"></i></button>
-                    <button onclick="compartilharNative('${o.id}', true)" class="p-1.5 border border-indigo-200 text-indigo-600 rounded-lg active:bg-indigo-50" title="Romaneio"><i data-lucide="truck" class="w-4 h-4"></i></button>
-                    ${!isConfirmada ? `<button onclick="deleteOC('${o.id}')" class="p-1.5 border border-red-200 text-red-500 rounded-lg active:bg-red-50"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
-                </div>
-            </div>
-        </div>`;
-    }).join('');
-    lucide.createIcons();
-}
-
-function loadOCToCart(id) {
-    const itemsLog = STATE.logs.filter(l => String(l.id) === String(id) && l.tipo === 'oc_pendente');
-    if (!itemsLog.length) return;
-    CART = itemsLog.map(i => ({
-        name: i.produto_nome,
-        qty: parseFloat(i.quantidade),
-        price: (parseFloat(i.valor_total) / parseFloat(i.quantidade)),
-        total: parseFloat(i.valor_total)
-    }));
-    CURRENT_OC_ID = id;
-    document.getElementById('pos-obra').value = itemsLog[0].obra_id || '';
-    document.getElementById('pos-fase').value = itemsLog[0].fase_obra || '';
-    document.getElementById('pos-solicitante').value = itemsLog[0].solicitante || '';
-    
-    const fornObj = STATE.fornecedores.find(f => f.id == itemsLog[0].fornecedor_id);
-    if (fornObj) {
-        document.getElementById('pos-fornecedor').value = fornObj.id;
-        document.getElementById('pos-fornecedor-btn').querySelector('span').innerText = fornObj.nome;
-    } else {
-        document.getElementById('pos-fornecedor').value = '';
-        document.getElementById('pos-fornecedor-btn').querySelector('span').innerText = 'Selecionar...';
-    }
-    
-    document.getElementById('pos-cond-pagamento').value = '';
-    document.getElementById('pos-obs-geral').value = itemsLog[0].observacao || '';
-    openNovaOC();
-    renderCart();
-    showToast(`Editando O.C. #${id}`);
-}
-
-async function estornarOC(id) {
-    if (!confirm("Estornar O.C. para PENDENTE?")) return;
-    showLoading(true);
-    await sb.from('jsp_logs').update({ tipo: 'oc_pendente', status_financeiro: 'PENDENTE', forma_pagamento: null }).eq('id', id).eq('tipo', 'compra');
-    showToast("O.C. Estornada!");
-    loadData();
-}
-
-async function deleteOC(id) {
-    if (!confirm("Excluir esta O.C.?")) return;
-    showLoading(true);
-    await sb.from('jsp_logs').delete().eq('id', id).eq('tipo', 'oc_pendente');
-    showToast("O.C. Excluída!");
-    loadData();
-}
-
-function openConfirmOC(id) {
-    document.getElementById('confirm-oc-id').value = id;
-    openOverlayForm('modal-confirm-oc');
-}
-
-async function executeConfirmOC() {
-    const id = document.getElementById('confirm-oc-id').value;
-    const formPagto = document.getElementById('confirm-oc-payment').value;
-    showLoading(true);
-    let statusFinal = formPagto === 'PIX' ? 'PAGO' : 'PENDENTE';
-    let dataVenc = new Date();
-    if (formPagto !== 'PIX') dataVenc.setDate(dataVenc.getDate() + 30);
-    
-    const { error } = await sb.from('jsp_logs').update({
-        tipo: 'compra',
-        forma_pagamento: formPagto,
-        status_financeiro: statusFinal,
-        data: new Date().toISOString(),
-        vencimento: dataVenc.toISOString()
-    }).eq('id', id).eq('tipo', 'oc_pendente');
-    
-    if (error) {
-        showLoading(false);
-        return showToast("Erro: " + error.message, true);
-    }
-    closeOverlayForm('modal-confirm-oc');
-    showToast("Compra efetivada!");
-    loadData();
-}
-
-function verOC(id) {
-    const content = buildHTMLOC(id, false);
-    document.getElementById('modal-view-oc-content').innerHTML = content;
-    openModal('modal-view-oc');
-}
-
-async function compartilharNative(id, isRomaneio = false) {
-    showLoading(true);
-    try {
-        const logsOC = STATE.logs.filter(l => String(l.id) === String(id) && (l.tipo === 'oc_pendente' || l.tipo === 'compra'));
-        if (!logsOC.length) {
-            showLoading(false);
-            return showToast("O.C. não encontrada", true);
-        }
-        
-        const o = logsOC[0];
-        const obra = STATE.obras.find(x => x.id == o.obra_id) || { nome: 'Sem Obra', endereco: '-' };
-        const forn = STATE.fornecedores.find(x => x.id == o.fornecedor_id) || { nome: 'A Definir', documento: '', telefone: '' };
-        
-        let justObs = o.observacao || 'Nenhuma observação informada.';
-        if (justObs.includes(' | Obs: ')) {
-            const parts = justObs.split(' | Obs: ');
-            justObs = parts[0] + '\n' + parts[1];
-        }
-
-        let total = 0;
-        const bodyTabela = [];
-        const headerRow = [
-            { text: 'Descrição', style: 'tableHeader', alignment: 'left' },
-            { text: 'Qtd', style: 'tableHeader', alignment: 'center' }
-        ];
-        if (!isRomaneio) {
-            headerRow.push({ text: 'Unit. Estimado', style: 'tableHeader', alignment: 'right' });
-            headerRow.push({ text: 'Total Estimado', style: 'tableHeader', alignment: 'right' });
-        }
-        bodyTabela.push(headerRow);
-
-        logsOC.forEach((i, index) => {
-            const valor = parseFloat(i.valor_total);
-            total += valor;
-            const price = valor / parseFloat(i.quantidade);
-            const bgColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
-
-            const row = [
-                { text: i.produto_nome, fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 },
-                { text: i.quantidade.toString(), alignment: 'center', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 }
-            ];
-            if (!isRomaneio) {
-                row.push({ text: formatMoney(price), alignment: 'right', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 });
-                row.push({ text: formatMoney(valor), alignment: 'right', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 });
-            }
-            bodyTabela.push(row);
-        });
-
-        async function getLogoBase64(url) {
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.crossOrigin = 'Anonymous';
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0);
-                    resolve(canvas.toDataURL('image/png'));
-                };
-                img.onerror = () => resolve(null);
-                img.src = url;
-            });
-        }
-
-        const logoBase64 = await getLogoBase64("https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png");
-        const docTitle = isRomaneio ? 'ROMANEIO DE ENTREGA' : 'ORDEM DE COMPRA';
-
-        const docDefinition = {
-            pageSize: 'A4',
-            pageMargins: [40, 40, 40, 40],
-            defaultStyle: { font: 'Roboto' },
-            background: function () {
-                return { canvas: [{ type: 'rect', x: 25, y: 25, w: 545.28, h: 791.89, lineWidth: 1, lineColor: '#000000' }] };
-            },
-            content: [
-                {
-                    table: {
-                        widths: [90, '*', 'auto'],
-                        body: [
-                            [
-                                logoBase64 ? { image: logoBase64, width: 80, alignment: 'center', margin: [0, 0, 10, 0] } : '',
-                                {
-                                    text: [
-                                        { text: 'RV NEGÓCIOS E COMPANHIA\n', fontSize: 16, bold: true, color: '#1d4ed8' },
-                                        { text: 'CNPJ: 61.893.912/0001-24\n', fontSize: 9, color: '#475569', lineHeight: 1.3 },
-                                        { text: 'Rua Mineiros, 530 | Jataí - GO | (64) 99981-5852', fontSize: 9, color: '#475569', lineHeight: 1.3 }
-                                    ],
-                                    margin: [0, 10, 0, 0]
-                                },
-                                {
-                                    text: [
-                                        { text: docTitle + '\n', fontSize: 13, bold: true },
-                                        { text: `Nº: ${o.id}\n`, fontSize: 9 },
-                                        { text: `Emissão: ${formatDate(o.data)}\n`, fontSize: 9 },
-                                        { text: `Fase: ${o.fase_obra || '-'}`, fontSize: 9 }
-                                    ],
-                                    alignment: 'right',
-                                    margin: [0, 10, 0, 0]
-                                }
-                            ]
-                        ]
-                    },
-                    layout: 'noBorders',
-                    margin: [0, 0, 0, 10]
-                },
-                { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 2 }], margin: [0, 0, 0, 20] },
-                {
-                    columns: [
-                        {
-                            width: '48%',
-                            table: {
-                                widths: ['*'],
-                                body: [
-                                    [{ text: 'DADOS DO FORNECEDOR', fillColor: '#f1f5f9', bold: true, fontSize: 8, margin: [4, 4, 4, 4] }],
-                                    [{ text: `${forn.nome}\nDoc: ${forn.documento || '-'}\nTel: ${forn.telefone || '-'}`, fontSize: 9, margin: [6, 8, 6, 8] }]
-                                ]
-                            },
-                            layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000000', vLineColor: () => '#000000' }
-                        },
-                        { width: '4%', text: '' },
-                        {
-                            width: '48%',
-                            table: {
-                                widths: ['*'],
-                                body: [
-                                    [{ text: 'DESTINO (OBRA)', fillColor: '#f1f5f9', bold: true, fontSize: 8, margin: [4, 4, 4, 4] }],
-                                    [{ text: `${obra.nome}\nEndereço: ${obra.endereco || '-'}\nSolicitante: ${o.solicitante || obra.solicitante || '-'} | Fase: ${o.fase_obra || '-'}`, fontSize: 9, margin: [6, 8, 6, 8] }]
-                                ]
-                            },
-                            layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000000', vLineColor: () => '#000000' }
-                        }
-                    ],
-                    margin: [0, 0, 0, 20]
-                },
-                {
-                    table: {
-                        headerRows: 1,
-                        widths: isRomaneio ? ['*', 'auto'] : ['*', 'auto', 'auto', 'auto'],
-                        body: bodyTabela
-                    },
-                    layout: {
-                        hLineWidth: (i, node) => (i === 0 || i === node.table.body.length) ? 0 : 1,
-                        vLineWidth: () => 0,
-                        hLineColor: () => '#000000',
-                        paddingLeft: () => 4,
-                        paddingRight: () => 4
-                    },
-                    margin: [0, 0, 0, 20]
-                },
-                {
-                    columns: [
-                        {
-                            width: isRomaneio ? '100%' : '60%',
-                            table: {
-                                widths: ['*'],
-                                body: [[{ text: [{ text: 'Observações:\n', fontSize: 9, bold: true }, { text: justObs, fontSize: 9 }], margin: [6, 6, 6, 25] }]]
-                            },
-                            layout: {
-                                hLineWidth: () => 1,
-                                vLineWidth: () => 1,
-                                hLineColor: () => '#cbd5e1',
-                                vLineColor: () => '#cbd5e1',
-                                hLineStyle: () => ({ dash: { length: 4, space: 4 } }),
-                                vLineStyle: () => ({ dash: { length: 4, space: 4 } })
-                            }
-                        },
-                        isRomaneio ? '' : {
-                            width: '40%',
-                            alignment: 'right',
-                            margin: [0, 10, 0, 0],
-                            text: [{ text: 'TOTAL ESTIMADO:   ', bold: true, fontSize: 10 }, { text: formatMoney(total), bold: true, fontSize: 13 }]
-                        }
-                    ],
-                    margin: [0, 0, 0, 60]
-                },
-                { text: '_________________________________________________\nASSINATURA RESPONSÁVEL', alignment: 'center', fontSize: 9, bold: true }
-            ],
-            styles: { tableHeader: { bold: true, fontSize: 10, color: 'white', fillColor: '#0f172a', margin: [4, 6, 4, 6] } }
-        };
-
-        const pdfDocGenerator = pdfMake.createPdf(docDefinition);
-        pdfDocGenerator.getBlob(async (blob) => {
-            const filename = `Documento_${id}.pdf`;
-            const file = new File([blob], filename, { type: 'application/pdf' });
-            showLoading(false);
-            const tituloShare = isRomaneio ? `Romaneio OC #${id}` : `OC #${id}`;
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                try {
-                    await navigator.share({ title: tituloShare, text: "Segue o documento.", files: [file] });
-                } catch (err) { console.log("Compartilhamento cancelado."); }
-            } else {
-                const url = URL.createObjectURL(file);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                a.click();
-                URL.revokeObjectURL(url);
-                showToast("Seu celular não tem suporte nativo. Arquivo baixado!");
-            }
-        });
-    } catch (e) {
-        console.error(e);
-        showLoading(false);
-        showToast("Erro ao montar PDF", true);
-    }
-}
-
-function renderFinance() {
-    const obraFilter = document.getElementById('fin-obra-filter').value;
-    const faseFilter = document.getElementById('fin-fase-filter').value;
-    const catFilter = document.getElementById('fin-cat-filter').value;
-    const term = document.getElementById('fin-search').value.toLowerCase();
-    const dtStart = document.getElementById('fin-start').value;
-    const dtEnd = document.getElementById('fin-end').value;
-
-    let logsFilt = STATE.logs.filter(l => l.tipo !== 'oc_pendente' && l.status_financeiro !== 'CANCELADO');
-    
-    if (obraFilter) logsFilt = logsFilt.filter(l => String(l.obra_id) === String(obraFilter));
-    if (faseFilter) logsFilt = logsFilt.filter(l => (l.fase_obra || '') === faseFilter);
-    if (term) logsFilt = logsFilt.filter(l => (l.produto_nome || '').toLowerCase().includes(term));
-    
-    if (catFilter) {
-        logsFilt = logsFilt.filter(l => {
-            const prod = STATE.produtos.find(p => p.nome === l.produto_nome);
-            return prod && prod.categoria === catFilter;
-        });
-    }
-
-    if (dtStart) logsFilt = logsFilt.filter(l => new Date(l.data || l.vencimento) >= new Date(dtStart));
-    if (dtEnd) {
-        let endD = new Date(dtEnd);
-        endD.setHours(23, 59, 59);
-        logsFilt = logsFilt.filter(l => new Date(l.data || l.vencimento) <= endD);
-    }
-
-    let totDesp = 0, totRec = 0;
-    const listaDesp = document.getElementById('fin-expense-history-list');
-    let despArrRaw = logsFilt.filter(l => l.tipo === 'compra' || l.tipo === 'despesa');
-    let despArr = [];
-    let groupedOCs = {};
-    
-    despArrRaw.forEach(l => {
-        if (l.tipo === 'compra') {
-            if (!groupedOCs[l.id]) {
-                groupedOCs[l.id] = { ...l, valor_total: 0, is_oc: true };
-                despArr.push(groupedOCs[l.id]);
-            }
-            groupedOCs[l.id].valor_total += parseFloat(l.valor_total);
-        } else {
-            despArr.push(l);
-        }
-    });
-    despArr.sort((a, b) => new Date(b.vencimento || b.data) - new Date(a.vencimento || a.data));
-    
-    listaDesp.innerHTML = despArr.map(l => {
-        const isPago = l.status_financeiro === 'PAGO';
-        if (isPago) totDesp += parseFloat(l.valor_total);
-        const obra = STATE.obras.find(x => x.id == l.obra_id);
-        return `
-        <div class="bg-white p-2.5 rounded-xl border-l-4 ${isPago ? 'border-l-green-500' : 'border-l-red-500'} shadow-sm flex flex-col gap-1 relative">
-            <div class="flex justify-between items-start">
-                <div class="flex-1 pr-2">
-                    <span class="text-[9px] font-bold text-slate-400">${formatDate(l.vencimento || l.data)}</span>
-                    <div class="font-bold text-slate-800 text-xs leading-tight mt-0.5">${l.is_oc ? `O.C. #${l.id} - Consolidada` : l.produto_nome}</div>
-                    <div class="text-[9px] text-blue-700 font-bold uppercase mt-1"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome || 'Geral'} <span class="text-slate-400">| ${l.fase_obra || '-'}</span></div>
-                </div>
-                <div class="text-right">
-                    <div class="font-black ${isPago ? 'text-slate-500' : 'text-red-600'} text-sm">${formatMoney(l.valor_total)}</div>
-                    ${!isPago ? `<div class="text-[8px] text-slate-400 mt-1 uppercase">${l.forma_pagamento || '-'}</div>` : `<span class="bg-green-100 text-green-700 text-[8px] font-bold px-1 rounded">PAGO</span>`}
-                </div>
-            </div>
-        </div>`;
-    }).join('');
-
-    const listaRec = document.getElementById('fin-receivables-list');
-    let recArr = logsFilt.filter(l => l.tipo === 'receita');
-    recArr.sort((a, b) => new Date(b.vencimento || b.data) - new Date(a.vencimento || a.data));
-    
-    listaRec.innerHTML = recArr.map(l => {
-        const isPago = l.status_financeiro === 'PAGO';
-        if (isPago) totRec += parseFloat(l.valor_total);
-        const obra = STATE.obras.find(x => x.id == l.obra_id);
-        return `
-        <div class="bg-white p-2.5 rounded-xl border-l-4 ${isPago ? 'border-l-green-500' : 'border-l-orange-400'} shadow-sm flex flex-col gap-1">
-            <div class="flex justify-between items-start">
-                <div class="flex-1 pr-2">
-                    <span class="text-[9px] font-bold text-slate-400">${formatDate(l.vencimento || l.data)}</span>
-                    <div class="font-bold text-slate-800 text-xs leading-tight">${l.produto_nome}</div>
-                    <div class="text-[9px] text-blue-700 font-bold uppercase mt-1"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome || 'Geral'}</div>
-                </div>
-                <div class="text-right">
-                    <div class="font-black text-green-700 text-sm">${formatMoney(l.valor_total)}</div>
-                    ${isPago ? `<span class="bg-green-100 text-green-700 text-[8px] font-bold px-1 rounded">RECEBIDO</span>` : `<span class="bg-orange-100 text-orange-700 text-[8px] font-bold px-1 rounded">A REC.</span>`}
-                </div>
-            </div>
-        </div>`;
-    }).join('');
-
-    document.getElementById('fin-expenses').innerText = formatMoney(totDesp);
-    document.getElementById('fin-income').innerText = formatMoney(totRec);
-    lucide.createIcons();
-    window.financeiroAtual = { despArr, recArr, totDesp, totRec };
-}
-
-function imprimirFinanceiro() {
-    if (!window.financeiroAtual) return showToast("Filtre o financeiro primeiro.");
-    const { despArr, recArr, totDesp, totRec } = window.financeiroAtual;
-    const dtStart = document.getElementById('fin-start').value;
-    const dtEnd = document.getElementById('fin-end').value;
-    const obraFilter = document.getElementById('fin-obra-filter');
-    const nomeObraFiltro = obraFilter.options[obraFilter.selectedIndex]?.text || "Todas";
-
-    let htmlTabela = `
-    <div style="font-family: Arial, sans-serif; padding: 15px; background: white;">
-        <h2 style="margin: 0 0 5px 0; color: #1e3a8a; font-size: 16px;">Relatório Financeiro</h2>
-        <h3 style="margin: 0 0 10px 0; color: #333; font-size: 14px;">Filtro: ${nomeObraFiltro}</h3>
-        <p style="font-size: 10px; color: #666; margin-bottom: 15px;">Período: ${dtStart ? formatDate(dtStart) : 'Início'} até ${dtEnd ? formatDate(dtEnd) : 'Hoje'}</p>
-        <table width="100%" style="border-collapse: collapse; font-size: 10px; margin-bottom: 20px;">
-            <thead style="background-color: #f1f5f9;">
-                <tr><th style="padding: 6px; border-bottom: 2px solid #ccc; text-align: left;">Data</th><th style="padding: 6px; border-bottom: 2px solid #ccc; text-align: left;">Descrição</th><th style="padding: 6px; border-bottom: 2px solid #ccc; text-align: left;">Obra / Fase</th><th style="padding: 6px; border-bottom: 2px solid #ccc; text-align: center;">Status</th><th style="padding: 6px; border-bottom: 2px solid #ccc; text-align: right;">Valor</th></tr></thead>
-            <tbody>`;
-
-    if (despArr.length > 0) {
-        htmlTabela += `<tr><td colspan="5" style="background: #fee2e2; padding: 4px; font-weight: bold; color: #b91c1c;">CUSTOS / DESPESAS</td></tr>`;
-        despArr.forEach(l => {
-            const obra = STATE.obras.find(x => x.id == l.obra_id);
-            const isPago = l.status_financeiro === 'PAGO';
-            htmlTabela += `<tr><td style="padding: 5px; border-bottom: 1px solid #ddd;">${formatDate(l.vencimento || l.data)}</td>
-                <td style="padding: 5px; border-bottom: 1px solid #ddd;">${l.is_oc ? `O.C. #${l.id}` : l.produto_nome}</td>
-                <td style="padding: 5px; border-bottom: 1px solid #ddd;">${obra?.nome || 'Geral'} <br> <span style="font-size:8px; color:#666;">${l.fase_obra || '-'}</span></td>
-                <td align="center">${isPago ? 'PAGO' : 'PEND.'}</td>
-                <td align="right" style="color: #b91c1c;">${formatMoney(l.valor_total)}</td></tr>`;
-        });
-    }
-
-    if (recArr.length > 0) {
-        htmlTabela += `<tr><td colspan="5" style="background: #dcfce7; padding: 4px; font-weight: bold; color: #15803d;">MEDIÇÕES / RECEITAS</td></tr>`;
-        recArr.forEach(l => {
-            const obra = STATE.obras.find(x => x.id == l.obra_id);
-            const isPago = l.status_financeiro === 'PAGO';
-            htmlTabela += `<tr><td style="padding: 5px; border-bottom: 1px solid #ddd;">${formatDate(l.vencimento || l.data)}</td>
-                <td style="padding: 5px; border-bottom: 1px solid #ddd;">${l.produto_nome}</td>
-                <td style="padding: 5px; border-bottom: 1px solid #ddd;">${obra?.nome || 'Geral'}</td>
-                <td align="center">${isPago ? 'REC.' : 'PEND.'}</td>
-                <td align="right" style="color: #15803d;">${formatMoney(l.valor_total)}</td></tr>`;
-        });
-    }
-
-    htmlTabela += `</tbody>
-        </table>
-        <table width="100%" style="font-size: 12px; font-weight: bold; border-top: 2px solid #333; padding-top: 10px;">
-            <tr><td align="right">Total Custos Pagos:</td><td width="100" align="right" style="color: #b91c1c;">${formatMoney(totDesp)}</td></tr>
-            <tr><td align="right">Total Medições (Rec):</td><td align="right" style="color: #15803d;">${formatMoney(totRec)}</td></tr>
-        </table>
-    </div>`;
-
-    const printArea = document.getElementById('print-area');
-    printArea.innerHTML = htmlTabela;
-    printArea.classList.add('print-active');
-    window.print();
-    setTimeout(() => { printArea.classList.remove('print-active'); }, 1000);
-}
-
-function renderFornecedores() {
-    const term = document.getElementById('forn-search').value.toLowerCase();
-    const fil = STATE.fornecedores.filter(f => f.nome.toLowerCase().includes(term) || (f.documento || '').includes(term));
-    document.getElementById('fornecedores-list').innerHTML = fil.map(f => `
-        <div class="bg-white p-3 rounded-xl border border-slate-200 flex justify-between items-center shadow-sm">
-            <div><h4 class="font-bold text-slate-800 text-xs">${f.nome}</h4><p class="text-[10px] text-slate-500 mt-1">${f.telefone || '-'} | ${f.documento || '-'}</p></div>
-            <button onclick="openFornecedorForm('${f.id}')" class="p-1.5 bg-slate-100 text-blue-600 rounded-lg"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-        </div>`).join('');
-    lucide.createIcons();
-}
-
-function openFornecedorForm(id) {
-    if (id) {
-        const f = STATE.fornecedores.find(x => x.id == id);
-        if (f) {
-            document.getElementById('forn-id').value = f.id;
-            document.getElementById('forn-name').value = f.nome;
-            document.getElementById('forn-phone').value = f.telefone;
-            document.getElementById('forn-doc').value = f.documento;
-            document.getElementById('forn-addr').value = f.endereco;
-        }
-    } else {
-        document.getElementById('fornecedor-form-container').querySelector('form').reset();
-        document.getElementById('forn-id').value = '';
-    }
-    openOverlayForm('fornecedor-form-container');
-}
-
-async function saveFornecedor(e) {
-    e.preventDefault();
-    showLoading(true);
-    const isNew = !document.getElementById('forn-id').value;
-    const payload = {
-        nome: document.getElementById('forn-name').value,
-        telefone: document.getElementById('forn-phone').value,
-        documento: document.getElementById('forn-doc').value,
-        endereco: document.getElementById('forn-addr').value
-    };
-    if (!isNew) payload.id = document.getElementById('forn-id').value;
-    const { error } = await sb.from('jsp_fornecedores').upsert(payload);
-    if (error) {
-        showLoading(false);
-        return showToast("Erro: " + error.message, true);
-    }
-    closeOverlayForm('fornecedor-form-container');
-    showToast("Salvo!");
-    loadData();
-}
-
-function renderProducts() {
-    const term = document.getElementById('prod-search').value.toLowerCase();
-    const fil = STATE.produtos.filter(p => p.nome.toLowerCase().includes(term));
-    document.getElementById('prod-list').innerHTML = fil.map(p => `
-        <div class="bg-white p-3 rounded-xl border border-slate-200 flex justify-between items-center shadow-sm">
-            <div><h4 class="font-bold text-slate-800 text-xs leading-tight">${p.nome}</h4><span class="text-[9px] bg-slate-100 px-1 rounded uppercase text-slate-500">${p.categoria || 'GERAL'}</span></div>
-            <div class="flex items-center gap-3"><span class="font-bold text-slate-600 text-xs">${formatMoney(p.preco)}</span><button onclick="openProductForm('${p.id}')" class="p-1.5 bg-slate-100 text-blue-600 rounded-lg"><i data-lucide="edit-3" class="w-4 h-4"></i></button></div>
-        </div>`).join('');
-    lucide.createIcons();
-}
-
-function openProductForm(id) {
-    if (id) {
-        const p = STATE.produtos.find(x => x.id == id);
-        if (p) {
-            document.getElementById('prd-id').value = p.id;
-            document.getElementById('prd-name').value = p.nome;
-            document.getElementById('prd-cat').value = p.categoria;
-            document.getElementById('prd-price').value = p.preco;
-        }
-    } else {
-        document.getElementById('prod-form-container').querySelector('form').reset();
-        document.getElementById('prd-id').value = '';
-    }
-    openOverlayForm('prod-form-container');
-}
-
-async function saveProduct(e) {
-    e.preventDefault();
-    showLoading(true);
-    const isNew = !document.getElementById('prd-id').value;
-    const payload = {
-        nome: document.getElementById('prd-name').value,
-        categoria: document.getElementById('prd-cat').value,
-        preco: parseFloat(document.getElementById('prd-price').value) || 0
-    };
-    if (!isNew) payload.id = document.getElementById('prd-id').value;
-    const { error } = await sb.from('jsp_produtos').upsert(payload);
-    if (error) {
-        showLoading(false);
-        return showToast("Erro: " + error.message, true);
-    }
-    closeOverlayForm('prod-form-container');
-    showToast("Salvo!");
-    loadData();
-}
-
-function buildHTMLOC(id, isRomaneio = false) {
-    const logsOC = STATE.logs.filter(l => String(l.id) === String(id) && (l.tipo === 'oc_pendente' || l.tipo === 'compra'));
-    if (!logsOC.length) return '<p>OC não encontrada.</p>';
-    const o = logsOC[0];
-    const obra = STATE.obras.find(x => x.id == o.obra_id) || { nome: 'Sem Obra', endereco: '-' };
-    const forn = STATE.fornecedores.find(x => x.id == o.fornecedor_id) || { nome: 'A Definir', documento: '', telefone: '' };
-    let total = 0;
-    const linhas = logsOC.map((i, index) => {
-        const valor = parseFloat(i.valor_total);
-        total += valor;
-        const price = valor / parseFloat(i.quantidade);
-        const bg = index % 2 === 0 ? '#ffffff' : '#f8fafc';
-        const colPreco = isRomaneio ? '' : `<td align="right" style="border-bottom: 1px solid #000; padding: 6px;">${formatMoney(price)}</td><td align="right" style="border-bottom: 1px solid #000; padding: 6px;">${formatMoney(valor)}</td>`;
-        return `<tr style="background-color: ${bg};"><td style="border-bottom: 1px solid #000; padding: 6px;">${i.produto_nome}</td><td align="center" style="border-bottom: 1px solid #000; padding: 6px;">${i.quantidade}</td>${colPreco}</tr>`;
-    }).join('');
-    const cabecalhoPreco = isRomaneio ? '' : `<th align="right" style="background-color: #0f172a; color: #fff; padding: 6px;">Unit. Estimado</th><th align="right" style="background-color: #0f172a; color: #fff; padding: 6px;">Total Estimado</th>`;
-    const rodapePreco = isRomaneio ? '' : `<div style="margin-top: 15px; text-align: right; font-weight: bold;">TOTAL ESTIMADO: ${formatMoney(total)}</div>`;
-    const docTitle = isRomaneio ? 'ROMANEIO DE ENTREGA' : 'ORDEM DE COMPRA';
-    return `
-    <div style="font-family: 'Helvetica', sans-serif; padding: 10px; width: 100%; background: #fff;">
-        <div style="text-align: center; border-bottom: 2px solid #000; margin-bottom: 15px;">
-            <img src="logo.png" style="max-height: 60px;" /><br>
-            <h3 style="margin: 5px 0; color: #1d4ed8;">RV NEGÓCIOS E COMPANHIA</h3>
-            <div style="font-size: 10px;">CNPJ: 61.893.912/0001-24 | Rua Mineiros, 530 - Jataí/GO</div>
-            <h2>${docTitle} Nº ${o.id}</h2>
-            <div>Emissão: ${formatDate(o.data)} | Fase: ${o.fase_obra || '-'}</div>
-        </div>
-        <table style="width:100%; margin-bottom:15px;"><tr>
-            <td style="border:1px solid #000; padding:8px;"><strong>Fornecedor:</strong><br>${forn.nome}<br>${forn.documento || '-'}<br>${forn.telefone || '-'}</td>
-            <td style="border:1px solid #000; padding:8px;"><strong>Destino (Obra):</strong><br>${obra.nome}<br>${obra.endereco || '-'}<br>Solicitante: ${o.solicitante || obra.solicitante || '-'}</td>
-        </tr></table>
-        <table width="100%" style="border-collapse: collapse; margin-bottom:15px;">
-            <thead><tr style="background-color:#0f172a; color:#fff;"><th align="left" style="padding:6px;">Descrição</th><th align="center" style="padding:6px;">Qtd</th>${cabecalhoPreco}</tr></thead>
-            <tbody>${linhas}</tbody>
-        </table>
-        ${rodapePreco}
-        <div style="margin-top:20px; border-top:1px solid #ccc; padding:10px;"><strong>Observações:</strong><br>${o.observacao || 'Nenhuma'}</div>
-        <div style="margin-top:40px; text-align:center;"><hr style="width:200px;"><span>ASSINATURA RESPONSÁVEL</span></div>
-    </div>`;
-}
-
-  // ========== FUNÇÕES DA EQUIPE (UNIFICADA COM NOVOS PENDENTES) ==========
-  function getColaboradoresUnificados() {
-    const equipe = STATE.equipe.map(e => ({ ...e, tipo: 'diaria', valor_base: parseFloat(e.valor_diaria || 0), unidade: 'dias', table_origin: 'equipe' }));
-    const terceirizados = STATE.terceirizados.map(t => ({ ...t, nome: t.nome, categoria: 'Terceirizado (Metro)', telefone: t.telefone, cpf: t.cpf_cnpj, rg: t.rg, endereco: t.endereco, chave_pix: t.chave_pix, obra_atual_id: t.obra_atual_id, ativo: t.ativo, tipo: 'metro', valor_base: parseFloat(t.valor_metro || 0), unidade: 'metros', table_origin: 'terceirizados' }));
-    return [...equipe, ...terceirizados];
   }
 
-  function onCategoriaChange() { /* igual */ }
+  // Funções auxiliares de modal
+  function openModal(id) { const m = document.getElementById(id); if(m) { m.classList.remove('modal-hidden'); m.classList.add('modal-visible'); } }
+  function closeModal(id) { const m = document.getElementById(id); if(m) { m.classList.remove('modal-visible'); m.classList.add('modal-hidden'); } }
+  function openOverlayForm(id) { document.getElementById('overlay-forms').classList.remove('hidden'); document.querySelectorAll('#overlay-forms > div').forEach(d => d.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
+  function closeOverlayForm(id) { document.getElementById(id).classList.add('hidden'); document.getElementById('overlay-forms').classList.add('hidden'); }
+  function maskCPF(input) { let v = input.value.replace(/\D/g, ""); if (v.length > 11) v = v.slice(0, 11); v = v.replace(/(\d{3})(\d)/, "$1.$2"); v = v.replace(/(\d{3})(\d)/, "$1.$2"); v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2"); input.value = v; }
 
-  // --- CÁLCULO DE SALDO PENDENTE PARA DIÁRIAS (igual ao sistema desktop) ---
-  function calcularSaldoPendenteFuncionarioPorPeriodo(funcId, dataInicio, dataFim) {
-    let registros = STATE.ponto_diario.filter(p => p.funcionario_id === funcId && p.status === 'VALIDADO' && p.pago_em_fechamento !== true);
-    if (dataInicio) registros = registros.filter(p => p.hora_registro >= dataInicio + 'T00:00:00');
-    if (dataFim) registros = registros.filter(p => p.hora_registro <= dataFim + 'T23:59:59');
-    const porDia = new Map();
-    registros.forEach(p => { const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'}); if (!porDia.has(dataDia)) porDia.set(dataDia, []); porDia.get(dataDia).push(p); });
-    let totalDiarias = 0;
-    function diffMinutesUTC(startIso, endIso) { return (new Date(endIso) - new Date(startIso)) / (1000 * 60); }
-    function roundHalfDown(v) { if (v <= 0) return 0; if (v >= 1) return 1; let cents = v * 100; let dec = cents - Math.floor(cents); if (Math.abs(dec - 0.5) < 0.0001) return Math.floor(cents) / 100; return Math.round(cents) / 100; }
-    for (const registrosDoDia of porDia.values()) {
-      const entradas = registrosDoDia.filter(r => r.tipo === 'ENTRADA').map(r => r.hora_registro);
-      const saidas   = registrosDoDia.filter(r => r.tipo === 'SAIDA').map(r => r.hora_registro);
-      const ajustes  = registrosDoDia.filter(r => r.tipo === 'AJUSTE_MANUAL').reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
-      if (entradas.length === 0 && saidas.length === 0) { totalDiarias += Math.min(ajustes, 1); continue; }
-      const todosPontos = [...entradas.map(e => ({ tipo: 'E', hora: e })), ...saidas.map(s => ({ tipo: 'S', hora: s }))].sort((a, b) => new Date(a.hora) - new Date(b.hora));
-      let startManha = null, endManha = null, startTarde = null, endTarde = null;
-      for (const p of todosPontos) { const hour = new Date(p.hora).getUTCHours(); if (hour < 12) { if (p.tipo === 'E' && !startManha) startManha = p.hora; if (p.tipo === 'S') endManha = p.hora; } else { if (p.tipo === 'E' && !startTarde) startTarde = p.hora; if (p.tipo === 'S') endTarde = p.hora; } }
-      function calcMin(start, end, jornada) { if (!start || !end) return 0; let mins = diffMinutesUTC(start, end); const falta = jornada - mins; if (falta > 0 && falta <= 10) mins = jornada; return Math.min(jornada, Math.max(0, mins)); }
-      let minutosManha = calcMin(startManha, endManha, 240); let minutosTarde = calcMin(startTarde, endTarde, 240);
-      let baseFracao = (minutosManha + minutosTarde) / 480; baseFracao = Math.min(1, Math.max(0, baseFracao));
-      let fracao = baseFracao + ajustes; if (fracao > 1) fracao = 1; totalDiarias += roundHalfDown(fracao);
-    }
-    return totalDiarias;
-  }
-
-  // --- CÁLCULO DE METROS PENDENTES (TERCEIRIZADOS) ---
-  function calcularMetrosPendentesPorPeriodo(tercId, dataInicio, dataFim) {
-    let registros = STATE.producao_terc.filter(p => p.terceirizado_id === tercId && p.status !== 'PAGO');
-    if (dataInicio) registros = registros.filter(p => p.data_registro >= dataInicio);
-    if (dataFim) registros = registros.filter(p => p.data_registro <= dataFim);
-    return registros.reduce((acc, p) => acc + parseFloat(p.metros), 0);
-  }
-
-  // --- RENDER EQUIPE COM EXIBIÇÃO DOS PENDENTES E NOVOS BOTÕES ---
-  function renderEquipe() {
+  // Renderização específica da equipe para mobile (cards com botões e pendências)
+  function renderEquipeMobile() {
     const term = document.getElementById('eqp-search').value.toLowerCase();
     const filterObra = document.getElementById('eqp-filter-obra').value;
     const filterStatus = document.getElementById('eqp-filter-status').value;
     const filterTipo = document.getElementById('eqp-filter-tipo').value;
     const dataInicio = document.getElementById('eqp-filter-data-inicio').value;
     const dataFim = document.getElementById('eqp-filter-data-fim').value;
-    const colaboradores = getColaboradoresUnificados();
+    const colaboradores = getColaboradoresUnificados(); // função de shared.js
     
     let fil = colaboradores.filter(c => (c.nome||'').toLowerCase().includes(term) || (c.categoria||'').toLowerCase().includes(term));
-    if(filterObra) fil = fil.filter(c => String(c.obra_atual_id) === String(filterObra));
-    if(filterStatus !== "todos") { const isAtivo = filterStatus === "true"; fil = fil.filter(c => (c.ativo === true || c.ativo === 'true') === isAtivo); }
-    if(filterTipo !== 'todos') fil = fil.filter(c => c.tipo === filterTipo);
+    if (filterObra) fil = fil.filter(c => String(c.obra_atual_id) === String(filterObra));
+    if (filterStatus !== "todos") { const isAtivo = filterStatus === "true"; fil = fil.filter(c => (c.ativo === true || c.ativo === 'true') === isAtivo); }
+    if (filterTipo !== 'todos') fil = fil.filter(c => c.tipo === filterTipo);
     fil.sort((a,b) => (a.nome||'').localeCompare(b.nome||''));
 
     document.getElementById('equipe-list').innerHTML = fil.map(c => {
@@ -1294,726 +451,80 @@ function buildHTMLOC(id, isRomaneio = false) {
     lucide.createIcons();
   }
 
-  // ========== FUNÇÕES DOS MODAIS (SALDO PONTO, SALDO METROS, DOCUMENTOS) ==========
-// ========== FUNÇÕES DOS MODAIS (SALDO PONTO, SALDO METROS, DOCUMENTOS) ==========
+  // As funções openEquipeForm, saveEquipe, gerarIdSeguro, onCategoriaChange, etc. estão em shared.js
+  // As funções de ponto, metros, documentos, folha, checagem também estão em shared.js
+  // Portanto, não precisam ser redefinidas aqui.
 
-// 1. SALDO DE PONTO (DIÁRIAS)
-function abrirModalSaldo(equipeId) {
-    const func = STATE.equipe.find(e => e.id === equipeId);
-    if (!func) return;
-    document.getElementById('saldo-equipe-id').value = equipeId;
-    document.getElementById('saldo-modal-subtitle').innerHTML = `${func.nome} - Diária: ${formatMoney(func.valor_diaria || 0)}`;
-    
-    // Datas padrão: 1º de janeiro do ano atual até hoje
-    const hoje = new Date();
-    const anoAtual = hoje.getFullYear();
-    const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
-    const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
-    document.getElementById('saldo-filtro-data-inicio').value = `${anoAtual}-01-01`;
-    document.getElementById('saldo-filtro-data-fim').value = `${anoAtual}-${mesAtual}-${String(ultimoDia).padStart(2, '0')}`;
-    document.getElementById('saldo-filtro-status').value = 'PENDENTE';
-    
-    carregarTabelaSaldo();
-    openOverlayForm('modal-saldo-ponto');
-}
+  // Função de logout
+  function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
 
-function fecharModalSaldo() {
-    closeOverlayForm('modal-saldo-ponto');
-}
-
-async function carregarTabelaSaldo() {
-    const funcId = document.getElementById('saldo-equipe-id').value;
-    const dataInicio = document.getElementById('saldo-filtro-data-inicio').value;
-    const dataFim = document.getElementById('saldo-filtro-data-fim').value;
-    const statusFiltro = document.getElementById('saldo-filtro-status').value;
-    const func = STATE.equipe.find(e => e.id === funcId);
-    if (!func) return;
-
-    let registros = STATE.ponto_diario.filter(p => p.funcionario_id === funcId && p.status === 'VALIDADO');
-    if (dataInicio) registros = registros.filter(p => p.hora_registro >= dataInicio + 'T00:00:00');
-    if (dataFim) registros = registros.filter(p => p.hora_registro <= dataFim + 'T23:59:59');
-    if (statusFiltro === 'PENDENTE') registros = registros.filter(p => !p.pago_em_fechamento);
-    else if (statusFiltro === 'PAGO') registros = registros.filter(p => p.pago_em_fechamento === true);
-
-    const porDia = {};
-    registros.forEach(p => {
-        const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
-        if (!porDia[dataDia]) porDia[dataDia] = { entradas: [], saidas: [], ajustes: [] };
-        if (p.tipo === 'ENTRADA') porDia[dataDia].entradas.push(p.hora_registro);
-        else if (p.tipo === 'SAIDA') porDia[dataDia].saidas.push(p.hora_registro);
-        else if (p.tipo === 'AJUSTE_MANUAL') porDia[dataDia].ajustes.push(p);
-    });
-
-    const tbody = document.getElementById('saldo-tabela-body');
-    tbody.innerHTML = '';
-    let totalDiarias = 0;
-
-    const datasOrdenadas = Object.keys(porDia).sort((a, b) => {
-        const [da, ma, aa] = a.split('/');
-        const [db, mb, ab] = b.split('/');
-        return new Date(aa, ma-1, da) - new Date(ab, mb-1, db);
-    });
-
-    if (datasOrdenadas.length === 0) {
-        document.getElementById('saldo-sem-registros').classList.remove('hidden');
-        document.getElementById('saldo-total-diarias').innerText = '0.00';
-        document.getElementById('saldo-total-valor').innerText = formatMoney(0);
-        return;
-    }
-    document.getElementById('saldo-sem-registros').classList.add('hidden');
-
-    function diffMinutesUTC(startIso, endIso) {
-        return (new Date(endIso) - new Date(startIso)) / (1000 * 60);
-    }
-
-    function roundHalfDown(v) {
-        if (v <= 0) return 0;
-        if (v >= 1) return 1;
-        let cents = v * 100;
-        let dec = cents - Math.floor(cents);
-        if (Math.abs(dec - 0.5) < 0.0001) return Math.floor(cents) / 100;
-        return Math.round(cents) / 100;
-    }
-
-    for (const dataDia of datasOrdenadas) {
-        const pts = porDia[dataDia];
-        const todosPontos = [
-            ...pts.entradas.map(e => ({ tipo: 'E', hora: e })),
-            ...pts.saidas.map(s => ({ tipo: 'S', hora: s }))
-        ].sort((a, b) => new Date(a.hora) - new Date(b.hora));
-
-        let startManha = null, endManha = null, startTarde = null, endTarde = null;
-        for (const p of todosPontos) {
-            const hour = new Date(p.hora).getUTCHours();
-            if (hour < 12) {
-                if (p.tipo === 'E' && !startManha) startManha = p.hora;
-                if (p.tipo === 'S') endManha = p.hora;
-            } else {
-                if (p.tipo === 'E' && !startTarde) startTarde = p.hora;
-                if (p.tipo === 'S') endTarde = p.hora;
-            }
-        }
-
-        function calcMin(start, end, jornada) {
-            if (!start || !end) return 0;
-            let mins = diffMinutesUTC(start, end);
-            const falta = jornada - mins;
-            if (falta > 0 && falta <= 10) mins = jornada;
-            return Math.min(jornada, Math.max(0, mins));
-        }
-
-        let minutosManha = calcMin(startManha, endManha, 240);
-        let minutosTarde = calcMin(startTarde, endTarde, 240);
-        let baseFracao = (minutosManha + minutosTarde) / 480;
-        baseFracao = Math.min(1, Math.max(0, baseFracao));
-
-        let somaAjustes = pts.ajustes.reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
-        let fracao = baseFracao + somaAjustes;
-        if (fracao > 1) fracao = 1;
-        fracao = roundHalfDown(fracao);
-        totalDiarias += fracao;
-
-        // Construir string de horários
-        let horariosStr = '';
-        if (pts.entradas.length > 0 || pts.saidas.length > 0) {
-            const entradas = pts.entradas.sort();
-            const saidas = pts.saidas.sort();
-            const linhas = [];
-            for (let i = 0; i < Math.max(entradas.length, saidas.length); i++) {
-                const e = entradas[i];
-                const s = saidas[i];
-                if (e || s) {
-                    linhas.push(`<span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[10px]">${e ? new Date(e).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit', timeZone:'UTC'}) : '--:--'}</span> → <span class="bg-red-100 text-red-700 px-1.5 py-0.5 rounded text-[10px]">${s ? new Date(s).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit', timeZone:'UTC'}) : '--:--'}</span>`);
-                }
-            }
-            horariosStr = linhas.join('<br>');
-        }
-        if (pts.ajustes.length > 0) {
-            const ajustesText = pts.ajustes.map(a => a.observacao || 'Ajuste manual').join(', ');
-            horariosStr += (horariosStr ? '<br>' : '') + `<div class="text-indigo-600 text-[10px] mt-1">+ Ajuste manual (${somaAjustes.toFixed(2)} diárias) - ${ajustesText}</div>`;
-        }
-        if (!horariosStr) horariosStr = '<span class="text-slate-400 text-[10px]">Nenhum registro</span>';
-
-        const statusPago = pts.entradas[0] ? (STATE.ponto_diario.find(p => p.hora_registro === pts.entradas[0])?.pago_em_fechamento || false) : false;
-        const statusBadge = statusPago ? '<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold">PAGO</span>' : '<span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded text-[10px] font-bold">PENDENTE</span>';
-
-        tbody.innerHTML += `
-            <tr class="border-b hover:bg-slate-50">
-                <td class="p-2 text-xs font-bold text-slate-700 align-top">${dataDia}</td>
-                <td class="p-2 text-[11px] leading-relaxed">${horariosStr}</td>
-                <td class="p-2 text-center font-black ${fracao >= 1 ? 'text-green-600' : 'text-orange-600'} text-sm">${fracao.toFixed(2)}</td>
-                <td class="p-2 text-center">${statusBadge}</td>
-            </tr>
-        `;
-    }
-
-    document.getElementById('saldo-total-diarias').innerText = totalDiarias.toFixed(2);
-    const valorTotal = totalDiarias * parseFloat(func.valor_diaria || 0);
-    document.getElementById('saldo-total-valor').innerHTML = formatMoney(valorTotal);
-    lucide.createIcons();
-}
-
-async function lancarAjusteManual() {
-    const funcId = document.getElementById('saldo-equipe-id').value;
-    const data = document.getElementById('ajuste-data').value;
-    const fracao = parseFloat(document.getElementById('ajuste-fracao').value);
-    const justificativa = document.getElementById('ajuste-justificativa').value;
-    
-    if (!data || isNaN(fracao) || fracao <= 0) return showToast("Preencha data e fração válida.", true);
-    const func = STATE.equipe.find(e => e.id === funcId);
-    if (!func || !func.obra_atual_id) return showToast("Funcionário sem obra vinculada.", true);
-    
-    showLoading(true);
-    let nextId = 1;
-    if (STATE.ponto_diario && STATE.ponto_diario.length > 0) {
-        const maxId = Math.max(...STATE.ponto_diario.map(p => parseInt(p.id) || 0));
-        nextId = maxId + 1;
-    }
-    const payload = {
-        id: nextId,
-        funcionario_id: funcId,
-        obra_id: func.obra_atual_id,
-        tipo: 'AJUSTE_MANUAL',
-        status: 'VALIDADO',
-        hora_registro: new Date(data + 'T12:00:00').toISOString(),
-        fracao_diaria: fracao,
-        observacao: justificativa || 'Ajuste manual',
-        pago_em_fechamento: false,
-        lat_registro: 'MANUAL',
-        lng_registro: 'MANUAL'
-    };
-    const { error } = await sb.from('jsp_ponto_diario').insert([payload]);
-    if (error) { showLoading(false); return showToast('Erro ao lançar ajuste: ' + error.message, true); }
-    await loadData();
-    carregarTabelaSaldo();
-    showToast('Ajuste lançado com sucesso!');
-}
-
-async function fecharPagamentoSaldo() {
-    const funcId = document.getElementById('saldo-equipe-id').value;
-    const dataInicio = document.getElementById('saldo-filtro-data-inicio').value;
-    const dataFim = document.getElementById('saldo-filtro-data-fim').value;
-    const func = STATE.equipe.find(e => e.id === funcId);
-    if (!func) return;
-
-    let registros = STATE.ponto_diario.filter(p => p.funcionario_id === funcId && p.status === 'VALIDADO' && !p.pago_em_fechamento);
-    if (dataInicio) registros = registros.filter(p => p.hora_registro >= dataInicio + 'T00:00:00');
-    if (dataFim) registros = registros.filter(p => p.hora_registro <= dataFim + 'T23:59:59');
-    if (registros.length === 0) return showToast('Nenhum registro pendente para fechar.', true);
-
-    // Calcular total de diárias a partir dos registros (função auxiliar)
-    const totalDiarias = calcularTotalDiariasDosRegistros(registros);
-    const valorTotal = totalDiarias * parseFloat(func.valor_diaria || 0);
-    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-    const periodoDesc = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
-    if (!confirm(`Fechar pagamento de ${totalDiarias.toFixed(2)} diárias no valor de ${formatMoney(valorTotal)}?`)) return;
-
-    showLoading(true);
-    const descricao = `Pagamento de ponto - ${func.nome} - Período ${periodoDesc}`;
-    const { error: errFin } = await sb.from('jsp_logs').insert([{
-        id: getNextIdNum(STATE.logs).toString(),
-        obra_id: func.obra_atual_id ? parseInt(func.obra_atual_id) : null,
-        tipo: 'despesa',
-        produto_nome: descricao,
-        valor_total: valorTotal,
-        data: new Date().toISOString(),
-        vencimento: new Date().toISOString(),
-        status_financeiro: 'PENDENTE',
-        categoria: 'Mão de Obra',
-        observacao: `Fechamento de ponto - Funcionário: ${func.nome} - Total diárias: ${totalDiarias.toFixed(2)}`
-    }]);
-    if (errFin) { showLoading(false); return showToast('Erro ao gerar despesa: ' + errFin.message, true); }
-
-    const ids = registros.map(r => r.id);
-    const { error: errPonto } = await sb.from('jsp_ponto_diario').update({ pago_em_fechamento: true }).in('id', ids);
-    if (errPonto) { showLoading(false); return showToast('Erro ao atualizar registros: ' + errPonto.message, true); }
-
-    await loadData();
-    fecharModalSaldo();
-    renderEquipe();
-    showToast('Pagamento fechado! Despesa lançada como pendente.');
-}
-
-async function estornarUltimoFechamento() {
-    const funcId = document.getElementById('saldo-equipe-id').value;
-    const func = STATE.equipe.find(e => e.id === funcId);
-    if (!func) return;
-
-    const despesas = STATE.logs.filter(l => l.tipo === 'despesa' && l.produto_nome && l.produto_nome.includes(`Pagamento de ponto - ${func.nome}`) && (l.status_financeiro === 'PENDENTE' || l.status_financeiro === 'PAGO')).sort((a,b) => new Date(b.data) - new Date(a.data));
-    if (despesas.length === 0) return showToast('Nenhum pagamento de ponto encontrado para estornar.', true);
-    const ultimaDespesa = despesas[0];
-    if (!confirm(`Estornar o pagamento de ${formatMoney(ultimaDespesa.valor_total)} (${ultimaDespesa.status_financeiro})? Os registros de ponto voltarão a ficar pendentes.`)) return;
-
-    showLoading(true);
-    const { error: errFin } = await sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }).eq('id', ultimaDespesa.id).eq('tipo', 'despesa');
-    if (errFin) { showLoading(false); return showToast('Erro ao cancelar despesa: ' + errFin.message, true); }
-    const { error: errPonto } = await sb.from('jsp_ponto_diario').update({ pago_em_fechamento: false }).eq('funcionario_id', funcId).eq('pago_em_fechamento', true);
-    if (errPonto) { showLoading(false); return showToast('Erro ao reverter registros de ponto: ' + errPonto.message, true); }
-    await loadData();
-    carregarTabelaSaldo();
-    renderEquipe();
-    showToast('Estorno realizado com sucesso!');
-}
-
-function imprimirExtratoSaldo() {
-    const funcId = document.getElementById('saldo-equipe-id').value;
-    const func = STATE.equipe.find(e => e.id === funcId);
-    const dataInicio = document.getElementById('saldo-filtro-data-inicio').value;
-    const dataFim = document.getElementById('saldo-filtro-data-fim').value;
-    const statusFiltro = document.getElementById('saldo-filtro-status').value;
-    const totalDiarias = document.getElementById('saldo-total-diarias').innerText;
-    const valorTotal = document.getElementById('saldo-total-valor').innerText;
-
-    const tbody = document.getElementById('saldo-tabela-body');
-    const linhas = Array.from(tbody.querySelectorAll('tr')).map(tr => {
-        const tds = tr.querySelectorAll('td');
-        return { data: tds[0]?.innerText || '', horarios: tds[1]?.innerHTML || '', fracao: tds[2]?.innerText || '', status: tds[3]?.innerText || '' };
-    });
-
-    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : 'Início';
-    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'Fim';
-    const periodoExibicao = `${dataIniFormatada} a ${dataFimFormatada}`;
-    const hoje = new Date().toLocaleDateString('pt-BR');
-
-    let html = `<div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; padding: 30px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 15px; margin-bottom: 25px;">
-            <img src="logo.png" style="height: 70px;" />
-            <div style="text-align: right;">
-                <h1 style="margin: 0; font-size: 24px; font-weight: 900;">EXTRATO DE PONTO</h1>
-                <p style="margin: 5px 0 0 0; font-size: 14px; color: #1d4ed8; font-weight: bold;">${func.nome}</p>
-                <p style="margin: 2px 0 0 0; font-size: 12px;">Período: ${periodoExibicao} | Diária: ${formatMoney(func.valor_diaria)}</p>
-                <p style="margin: 2px 0 0 0; font-size: 11px;">Status: ${statusFiltro}</p>
-            </div>
-        </div>
-        <table width="100%" style="border-collapse: collapse; margin-bottom: 30px; font-size: 12px;">
-            <thead><tr style="background-color: #f1f5f9;"><th style="padding: 10px; border: 1px solid #cbd5e1;">Data</th><th style="padding: 10px; border: 1px solid #cbd5e1;">Horários</th><th style="padding: 10px; border: 1px solid #cbd5e1; text-align: center;">Diária</th><th style="padding: 10px; border: 1px solid #cbd5e1; text-align: center;">Status</th></tr></thead>
-            <tbody>${linhas.map(l => `<tr><td style="padding: 8px; border: 1px solid #cbd5e1;">${l.data}</td><td style="padding: 8px; border: 1px solid #cbd5e1;">${l.horarios}</td><td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${l.fracao}</td><td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${l.status}</td></tr>`).join('')}</tbody>
-        </table>
-        <div style="display: flex; justify-content: flex-end;"><div style="width: 300px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px;"><div>Total Diárias: <strong>${totalDiarias}</strong></div><div>Valor a Pagar: <strong style="color:#1d4ed8;">${valorTotal}</strong></div></div></div>
-        <div style="text-align: center; margin-top: 60px;"><div style="border-top: 1px solid #000; width: 200px; margin: 0 auto; padding-top: 10px;">RV NEGÓCIOS E COMPANHIA</div></div>
-    </div>`;
-    document.getElementById('print-area').innerHTML = html;
-    setTimeout(() => window.print(), 300);
-}
-
-function imprimirReciboDoModal() {
-    const funcId = document.getElementById('saldo-equipe-id').value;
-    const func = STATE.equipe.find(e => e.id === funcId);
-    if (!func) return;
-    const totalDiarias = document.getElementById('saldo-total-diarias').innerText;
-    const valorTotal = document.getElementById('saldo-total-valor').innerText;
-    const dataInicio = document.getElementById('saldo-filtro-data-inicio').value;
-    const dataFim = document.getElementById('saldo-filtro-data-fim').value;
-    const hoje = new Date().toLocaleDateString('pt-BR');
-    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-    const periodo = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
-    const html = `<div style="font-family: 'Segoe UI', Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
-            <img src="logo.png" style="height: 60px;" />
-            <div style="text-align: right;"><h1 style="margin: 0; font-size: 24px; font-weight: 900;">RECIBO SOBRE DIÁRIAS</h1><p style="margin: 5px 0 0 0; font-size: 18px; color: #1d4ed8; font-weight: bold;">VALOR: ${valorTotal}</p></div>
-        </div>
-        <div style="font-size: 14px; line-height: 1.8; text-align: justify; margin-bottom: 40px;">Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA</strong> (CNPJ: 61.893.912/0001-24), a importância de <strong>${valorTotal}</strong>, referente ao pagamento de diárias trabalhadas no período de <strong>${periodo}</strong>, totalizando <strong>${totalDiarias} dias</strong> com a diária acordada em <strong>${formatMoney(func.valor_diaria)}</strong>.</div>
-        <div style="font-size: 14px; margin-bottom: 40px;">Para maior clareza, firmo(amos) o presente recibo para que produza os seus efeitos legais.</div>
-        <div style="text-align: center; margin-bottom: 30px;">Jataí - GO, ${hoje}.</div>
-        <div style="margin-top: 60px; text-align: center; border-top: 1px solid #000; padding-top: 10px; width: 60%; margin-left: auto; margin-right: auto;"><strong>${func.nome.toUpperCase()}</strong><br><span style="font-size: 12px;">CPF: ${func.cpf || '_______________________'} | RG: ${func.rg || '_______________________'}</span></div>
-    </div>`;
-    document.getElementById('print-area').innerHTML = html;
-    setTimeout(() => window.print(), 300);
-}
-
-// 2. SALDO DE METROS (TERCEIRIZADOS)
-function abrirModalSaldoMetros(tercId) {
-    const terc = STATE.terceirizados.find(t => t.id === tercId);
-    if (!terc) return;
-    document.getElementById('saldo-terc-id').value = tercId;
-    document.getElementById('saldo-metros-subtitle').innerHTML = `${terc.nome} - Valor do Metro: ${formatMoney(terc.valor_metro || 0)}`;
-    const hoje = new Date();
-    const anoAtual = hoje.getFullYear();
-    const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
-    const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
-    document.getElementById('saldo-metros-data-inicio').value = `${anoAtual}-01-01`;
-    document.getElementById('saldo-metros-data-fim').value = `${anoAtual}-${mesAtual}-${String(ultimoDia).padStart(2, '0')}`;
-    document.getElementById('saldo-metros-filtro-status').value = 'PENDENTE';
-    carregarTabelaSaldoMetros();
-    openOverlayForm('modal-saldo-metros');
-}
-
-function fecharModalSaldoMetros() {
-    closeOverlayForm('modal-saldo-metros');
-}
-
-async function carregarTabelaSaldoMetros() {
-    const tercId = document.getElementById('saldo-terc-id').value;
-    const dataInicio = document.getElementById('saldo-metros-data-inicio').value;
-    const dataFim = document.getElementById('saldo-metros-data-fim').value;
-    const statusFiltro = document.getElementById('saldo-metros-filtro-status').value;
-    const terc = STATE.terceirizados.find(t => t.id === tercId);
-    if (!terc) return;
-
-    let registros = STATE.producao_terc.filter(p => p.terceirizado_id === tercId);
-    if (dataInicio) registros = registros.filter(p => p.data_registro >= dataInicio);
-    if (dataFim) registros = registros.filter(p => p.data_registro <= dataFim);
-    if (statusFiltro === 'PENDENTE') registros = registros.filter(p => p.status !== 'PAGO');
-    else if (statusFiltro === 'PAGO') registros = registros.filter(p => p.status === 'PAGO');
-
-    const tbody = document.getElementById('saldo-metros-tabela-body');
-    tbody.innerHTML = '';
-    let totalMetros = 0;
-    registros.sort((a,b) => new Date(a.data_registro) - new Date(b.data_registro));
-
-    if (registros.length === 0) {
-        document.getElementById('saldo-metros-sem-registros').classList.remove('hidden');
-        document.getElementById('saldo-metros-total-metros').innerText = '0.00';
-        document.getElementById('saldo-metros-total-valor').innerText = formatMoney(0);
-        return;
-    }
-    document.getElementById('saldo-metros-sem-registros').classList.add('hidden');
-
-    registros.forEach(prod => {
-        const metros = parseFloat(prod.metros) || 0;
-        totalMetros += metros;
-        const dataStr = new Date(prod.data_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
-        const statusBadge = prod.status === 'PAGO' ? '<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold">PAGO</span>' : '<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded text-[10px] font-bold">PENDENTE</span>';
-        tbody.innerHTML += `<tr><td class="p-3 font-bold text-slate-700">${dataStr}</td><td class="p-3 text-center font-black text-indigo-600">${metros.toFixed(2)} m</td><td class="p-3 text-center">${statusBadge}</td></tr>`;
-    });
-
-    document.getElementById('saldo-metros-total-metros').innerText = totalMetros.toFixed(2);
-    document.getElementById('saldo-metros-total-valor').innerText = formatMoney(totalMetros * parseFloat(terc.valor_metro || 0));
-    lucide.createIcons();
-}
-
-async function lancarAjusteManualMetros() {
-    const tercId = document.getElementById('saldo-terc-id').value;
-    const data = document.getElementById('ajuste-metros-data').value;
-    const metros = parseFloat(document.getElementById('ajuste-metros-valor').value);
-    const justificativa = document.getElementById('ajuste-metros-justificativa').value;
-    if (!data || isNaN(metros) || metros <= 0) return showToast('Preencha data e metragem válida.', true);
-    const terc = STATE.terceirizados.find(t => t.id === tercId);
-    if (!terc || !terc.obra_atual_id) return showToast('Terceirizado sem obra vinculada.', true);
-    showLoading(true);
-    const payload = { id: crypto.randomUUID(), terceirizado_id: tercId, obra_id: terc.obra_atual_id, data_registro: data, metros: metros, status: 'PENDENTE', observacao: justificativa || 'Ajuste manual' };
-    const { error } = await sb.from('jsp_producao_terc').insert([payload]);
-    if (error) { showLoading(false); return showToast('Erro ao lançar ajuste: ' + error.message, true); }
-    await loadData();
-    carregarTabelaSaldoMetros();
-    showToast('Ajuste lançado com sucesso!');
-}
-
-async function fecharPagamentoSaldoMetros() {
-    const tercId = document.getElementById('saldo-terc-id').value;
-    const dataInicio = document.getElementById('saldo-metros-data-inicio').value;
-    const dataFim = document.getElementById('saldo-metros-data-fim').value;
-    const terc = STATE.terceirizados.find(t => t.id === tercId);
-    if (!terc) return;
-
-    let registros = STATE.producao_terc.filter(p => p.terceirizado_id === tercId && p.status !== 'PAGO');
-    if (dataInicio) registros = registros.filter(p => p.data_registro >= dataInicio);
-    if (dataFim) registros = registros.filter(p => p.data_registro <= dataFim);
-    if (registros.length === 0) return showToast('Nenhum registro pendente para fechar.', true);
-
-    const totalMetros = registros.reduce((sum, r) => sum + parseFloat(r.metros), 0);
-    const valorTotal = totalMetros * parseFloat(terc.valor_metro || 0);
-    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-    const periodoDesc = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
-    if (!confirm(`Fechar pagamento de ${totalMetros.toFixed(2)} metros no valor de ${formatMoney(valorTotal)}?`)) return;
-
-    showLoading(true);
-    const descricao = `Pagamento de metragem - ${terc.nome} - Período ${periodoDesc}`;
-    const { error: errFin } = await sb.from('jsp_logs').insert([{
-        id: getNextIdNum(STATE.logs).toString(),
-        obra_id: terc.obra_atual_id ? parseInt(terc.obra_atual_id) : null,
-        tipo: 'despesa',
-        produto_nome: descricao,
-        valor_total: valorTotal,
-        data: new Date().toISOString(),
-        vencimento: new Date().toISOString(),
-        status_financeiro: 'PENDENTE',
-        categoria: 'Mão de Obra (Terceirizado)',
-        observacao: `Fechamento de metragem - Terceirizado: ${terc.nome} - Total metros: ${totalMetros.toFixed(2)}`
-    }]);
-    if (errFin) { showLoading(false); return showToast('Erro ao gerar despesa: ' + errFin.message, true); }
-
-    const ids = registros.map(r => r.id);
-    const { error: errProd } = await sb.from('jsp_producao_terc').update({ status: 'PAGO' }).in('id', ids);
-    if (errProd) { showLoading(false); return showToast('Erro ao atualizar registros: ' + errProd.message, true); }
-
-    await loadData();
-    fecharModalSaldoMetros();
-    renderEquipe();
-    showToast('Pagamento fechado! Despesa lançada como pendente.');
-}
-
-async function estornarUltimoFechamentoMetros() {
-    const tercId = document.getElementById('saldo-terc-id').value;
-    const terc = STATE.terceirizados.find(t => t.id === tercId);
-    if (!terc) return;
-
-    const despesas = STATE.logs.filter(l => l.tipo === 'despesa' && l.produto_nome && l.produto_nome.includes(`Pagamento de metragem - ${terc.nome}`) && (l.status_financeiro === 'PENDENTE' || l.status_financeiro === 'PAGO')).sort((a,b) => new Date(b.data) - new Date(a.data));
-    if (despesas.length === 0) return showToast('Nenhum pagamento de metragem encontrado para estornar.', true);
-    const ultimaDespesa = despesas[0];
-    if (!confirm(`Estornar o pagamento de ${formatMoney(ultimaDespesa.valor_total)} (${ultimaDespesa.status_financeiro})? Os registros de metragem voltarão a ficar pendentes.`)) return;
-
-    showLoading(true);
-    const { error: errFin } = await sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }).eq('id', ultimaDespesa.id).eq('tipo', 'despesa');
-    if (errFin) { showLoading(false); return showToast('Erro ao cancelar despesa: ' + errFin.message, true); }
-    const { error: errProd } = await sb.from('jsp_producao_terc').update({ status: 'PENDENTE' }).eq('terceirizado_id', tercId).eq('status', 'PAGO');
-    if (errProd) { showLoading(false); return showToast('Erro ao reverter registros de metragem: ' + errProd.message, true); }
-    await loadData();
-    carregarTabelaSaldoMetros();
-    renderEquipe();
-    showToast('Estorno realizado com sucesso!');
-}
-
-function imprimirExtratoSaldoMetros() {
-    const tercId = document.getElementById('saldo-terc-id').value;
-    const terc = STATE.terceirizados.find(t => t.id === tercId);
-    const dataInicio = document.getElementById('saldo-metros-data-inicio').value;
-    const dataFim = document.getElementById('saldo-metros-data-fim').value;
-    const statusFiltro = document.getElementById('saldo-metros-filtro-status').value;
-    const totalMetros = document.getElementById('saldo-metros-total-metros').innerText;
-    const valorTotal = document.getElementById('saldo-metros-total-valor').innerText;
-    const tbody = document.getElementById('saldo-metros-tabela-body');
-    const linhas = Array.from(tbody.querySelectorAll('tr')).map(tr => ({ data: tr.cells[0]?.innerText || '', metros: tr.cells[1]?.innerText || '', status: tr.cells[2]?.innerText || '' }));
-    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : 'Início';
-    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'Fim';
-    const periodoExibicao = `${dataIniFormatada} a ${dataFimFormatada}`;
-    const hoje = new Date().toLocaleDateString('pt-BR');
-    let html = `<div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 30px;"><div style="display: flex; justify-content: space-between; border-bottom: 3px solid #1d4ed8;"><img src="logo.png" style="height: 70px;" /><div><h1>EXTRATO DE METRAGEM</h1><p>${terc.nome}</p><p>Período: ${periodoExibicao} | Valor Metro: ${formatMoney(terc.valor_metro)}</p></div></div><table border="1" cellpadding="8" style="width:100%; border-collapse: collapse; margin-top:20px;"><thead><tr><th>Data</th><th>Metros</th><th>Status</th></tr></thead><tbody>${linhas.map(l => `<tr><td>${l.data}</td><td>${l.metros}</td><td>${l.status}</td></tr>`).join('')}</tbody></table><div style="margin-top:20px; text-align:right;"><strong>Total Metros: ${totalMetros}</strong><br><strong>Valor a Pagar: ${valorTotal}</strong></div><div style="margin-top:60px; text-align:center;">Emitido em ${hoje} - RV Negócios</div></div>`;
-    document.getElementById('print-area').innerHTML = html;
-    setTimeout(() => window.print(), 300);
-}
-
-function imprimirReciboMetrosDoModal() {
-    const tercId = document.getElementById('saldo-terc-id').value;
-    const terc = STATE.terceirizados.find(t => t.id === tercId);
-    if (!terc) return;
-    const totalMetros = document.getElementById('saldo-metros-total-metros').innerText;
-    const valorTotal = document.getElementById('saldo-metros-total-valor').innerText;
-    const dataInicio = document.getElementById('saldo-metros-data-inicio').value;
-    const dataFim = document.getElementById('saldo-metros-data-fim').value;
-    const hoje = new Date().toLocaleDateString('pt-BR');
-    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-    const periodo = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
-    const html = `<div style="font-family: 'Segoe UI', Arial, sans-serif; border: 2px solid #1e293b; padding: 30px;"><div style="display: flex; justify-content: space-between;"><img src="logo.png" style="height:60px" /><div><h1>RECIBO DE METRAGEM</h1><p>VALOR: ${valorTotal}</p></div></div><div style="margin:20px 0;">Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA</strong>, a importância de <strong>${valorTotal}</strong>, referente ao pagamento de produção por metragem no período de <strong>${periodo}</strong>, totalizando <strong>${totalMetros} metros</strong> com o valor acordado de <strong>${formatMoney(terc.valor_metro)} por metro</strong>.</div><div>Jataí - GO, ${hoje}.</div><div style="margin-top:60px; text-align:center; border-top:1px solid #000; padding-top:10px;"><strong>${terc.nome.toUpperCase()}</strong><br>CPF/CNPJ: ${terc.cpf_cnpj || '_______________________'}</div></div>`;
-    document.getElementById('print-area').innerHTML = html;
-    setTimeout(() => window.print(), 300);
-}
-
-// 3. DOCUMENTOS E CONTRATOS
-function abrirModalDocumentos(id) {
-    let pessoa = STATE.equipe.find(x => x.id == id);
-    let isTerc = false;
-    if (!pessoa) { pessoa = STATE.terceirizados.find(x => x.id == id); isTerc = true; }
-    if (!pessoa) return;
-    document.getElementById('doc-equipe-id').value = id;
-    document.getElementById('doc-equipe-nome').innerHTML = `Colaborador: ${pessoa.nome}`;
-    const btnAssinar = document.getElementById('btn-assinar-doc');
-    if (pessoa.contrato_assinado) {
-        btnAssinar.innerHTML = `<i data-lucide="check-double" class="w-4 h-4"></i> Contrato Já Assinado`;
-        btnAssinar.classList.add('bg-emerald-700');
-        btnAssinar.classList.remove('bg-green-600');
-        btnAssinar.onclick = () => {};
-    } else {
-        btnAssinar.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i> Marcar como Assinado`;
-        btnAssinar.classList.add('bg-green-600');
-        btnAssinar.classList.remove('bg-emerald-700');
-        btnAssinar.onclick = marcarContratoAssinado;
-    }
-    openOverlayForm('modal-docs-equipe');
-    lucide.createIcons();
-}
-
-async function marcarContratoAssinado() {
-    const id = document.getElementById('doc-equipe-id').value;
-    const isTerc = STATE.terceirizados.some(t => t.id == id);
-    showLoading(true);
-    if (isTerc) {
-        const { error } = await sb.from('jsp_terceirizados').update({ contrato_assinado: true }).eq('id', id);
-        if (error) { showLoading(false); return showToast("Erro: " + error.message, true); }
-    } else {
-        const { error } = await sb.from('jsp_equipe').update({ contrato_assinado: true }).eq('id', id);
-        if (error) { showLoading(false); return showToast("Erro: " + error.message, true); }
-    }
-    closeOverlayForm('modal-docs-equipe');
-    showToast("Contrato marcado como assinado!");
-    await loadData();
-}
-
-function imprimirDocumento() {
-    const id = document.getElementById('doc-equipe-id').value;
-    const tipo = document.getElementById('doc-tipo-select').value;
-    if (!tipo) { alert("Selecione um documento."); return; }
-    let pessoa = STATE.equipe.find(x => x.id == id);
-    let isTerc = false;
-    if (!pessoa) { pessoa = STATE.terceirizados.find(x => x.id == id); isTerc = true; }
-    if (!pessoa) return;
-    const e = {
-        nome: pessoa.nome || '',
-        cpf: isTerc ? (pessoa.cpf_cnpj || '') : (pessoa.cpf || ''),
-        rg: pessoa.rg || '',
-        endereco: pessoa.endereco || '',
-        categoria: isTerc ? 'TERCEIRIZADO (METRO)' : (pessoa.categoria || 'Geral'),
-        valor_diaria: isTerc ? parseFloat(pessoa.valor_metro || 0) : parseFloat(pessoa.valor_diaria || 0),
-        matricula: isTerc ? 'TERC' : (pessoa.matricula || '000'),
-        obra_atual_id: pessoa.obra_atual_id,
-        data_contrato: !isTerc ? pessoa.data_contrato : null
-    };
-    const dataAtual = new Date();
-    const dia = dataAtual.getDate();
-    const meses = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
-    const mes = meses[dataAtual.getMonth()];
-    const ano = dataAtual.getFullYear();
-    const dataExtenso = `${dia} de ${mes} de ${ano}`;
-    const hojeCurto = dataAtual.toLocaleDateString('pt-BR');
-    const obraVinculada = STATE.obras.find(o => o.id == e.obra_atual_id);
-    const enderecoObra = obraVinculada ? (obraVinculada.endereco || obraVinculada.nome) : 'Endereço não informado / Obra não definida';
-    const diariaTexto = formatMoney(e.valor_diaria || 0);
-    const matricula = parseFloat(e.matricula || 0);
-    let dataTerminoContrato = "____/____/______";
-    if (obraVinculada && obraVinculada.data_termino) {
-        const partes = obraVinculada.data_termino.split('-');
-        dataTerminoContrato = `${partes[2]}/${partes[1]}/${partes[0]}`;
-    }
-    let dataInicioContrato = "____/____/______";
-    if (e.data_contrato) {
-        const p = e.data_contrato.split('-');
-        dataInicioContrato = `${p[2]}/${p[1]}/${p[0]}`;
-    }
-    let titulo = "", corpoTexto = "", nomeContratanteAssinatura = "";
-    if (tipo === 'epi') {
-        titulo = "FICHA DE EPI / TERMO DE RECEBIMENTO";
-        nomeContratanteAssinatura = "RV NEGÓCIOS E COMPANHIA LTDA";
-        corpoTexto = `<div><p><strong>Nome:</strong> ${e.nome.toUpperCase()}</p><p><strong>Atividade:</strong> ${e.categoria.toUpperCase()}</p><p>Declaro ter recebido orientação sobre o uso correto dos EPIs...</p></div>`;
-    } else if (tipo === 'contrato1' || tipo === 'contrato2' || tipo === 'metragem') {
-        // Versão resumida para mobile – igual à do desktop, mas adaptada para o espaço
-        titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS Nº ${matricula}/2026`;
-        nomeContratanteAssinatura = "RV NEGOCIOS E COMPANHIA LTDA";
-        corpoTexto = `<div><p><strong>CONTRATANTE:</strong> RV NEGOCIOS E COMPANHIA LTDA<br><strong>CONTRATADO:</strong> ${e.nome.toUpperCase()}, CPF ${e.cpf}, RG ${e.rg}, residente em ${e.endereco}</p><p>OBJETO: prestação de serviços de construção civil na obra ${obraVinculada?.nome || 'informada'}.</p><p>VALOR DA DIÁRIA/METRO: ${diariaTexto}</p><p>PRAZO: ${dataInicioContrato} a ${dataTerminoContrato}</p><p>As partes declaram ciência e acordo com as cláusulas constantes no contrato completo disponível no sistema.</p></div>`;
-    }
-    const htmlDoc = `<div style="font-family:'Times New Roman', Times, serif; padding: 20px;"><div style="text-align:center;"><img src="logo.png" style="height:70px;"><h2>${titulo}</h2></div>${corpoTexto}<div style="text-align:right;">Jataí – GO, ${dataExtenso}.</div><div style="display:flex; justify-content:space-between; margin-top:50px;"><div style="text-align:center; width:45%; border-top:1px solid #000; padding-top:10px;"><strong>${nomeContratanteAssinatura}</strong><br>CONTRATANTE</div><div style="text-align:center; width:45%; border-top:1px solid #000; padding-top:10px;"><strong>${e.nome.toUpperCase()}</strong><br>CONTRATADO(A)</div></div></div>`;
-    document.getElementById('print-area').innerHTML = htmlDoc;
-    setTimeout(() => window.print(), 800);
-}
-
-// 4. FOLHA DE PAGAMENTO
-function abrirModalFolhaPagamento() {
-    const selectObra = document.getElementById('folha-obra');
-    selectObra.innerHTML = '<option value="">Todas as Obras</option>' + STATE.obras.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
-    const hoje = new Date();
-    const anoAtual = hoje.getFullYear();
-    const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
-    const primeiroDia = `${anoAtual}-${mesAtual}-01`;
-    const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
-    const ultimoDiaStr = `${anoAtual}-${mesAtual}-${String(ultimoDia).padStart(2, '0')}`;
-    document.getElementById('folha-data-inicio').value = primeiroDia;
-    document.getElementById('folha-data-fim').value = ultimoDiaStr;
-    openOverlayForm('modal-folha-pagamento');
-}
-
-function executarImpressaoFolha() {
-    const statusFinanceiro = document.getElementById('folha-status').value;
-    const obraFiltro = document.getElementById('folha-obra').value;
-    const statusFunc = document.getElementById('folha-status-func').value;
-    const dataInicio = document.getElementById('folha-data-inicio').value;
-    const dataFim = document.getElementById('folha-data-fim').value;
-    const colaboradores = getColaboradoresUnificados();
-    let filtrados = colaboradores.filter(c => {
-        if (statusFunc === 'true' && c.ativo === false) return false;
-        if (statusFunc === 'false' && c.ativo !== false) return false;
-        if (obraFiltro && c.obra_atual_id != obraFiltro) return false;
-        return true;
-    });
-    const dadosFolha = [];
-    filtrados.forEach(c => {
-        let valorTotal = 0, quantidade = 0;
-        if (c.tipo === 'diaria') {
-            const despesasPonto = STATE.logs.filter(l => l.tipo === 'despesa' && l.produto_nome && l.produto_nome.includes(`Pagamento de ponto - ${c.nome}`) && (statusFinanceiro === 'TODOS' || l.status_financeiro === statusFinanceiro));
-            let despesasFiltradas = despesasPonto;
-            if (dataInicio || dataFim) {
-                despesasFiltradas = despesasPonto.filter(d => {
-                    const dataDesp = d.data ? d.data.split('T')[0] : '';
-                    if (dataInicio && dataDesp < dataInicio) return false;
-                    if (dataFim && dataDesp > dataFim) return false;
-                    return true;
-                });
-            }
-            if (despesasFiltradas.length === 0) return;
-            let totalValor = 0, totalDiarias = 0;
-            despesasFiltradas.forEach(d => {
-                totalValor += parseFloat(d.valor_total);
-                const diariasMatch = d.observacao?.match(/Total diárias: ([\d.]+)/);
-                if (diariasMatch) totalDiarias += parseFloat(diariasMatch[1]);
-            });
-            if (totalValor > 0) dadosFolha.push({ nome: c.nome, pix: c.chave_pix || 'Não informado', tipo: 'Diária', unidade: 'dias', quantidade: totalDiarias, valor_unitario: c.valor_base, valor_total: totalValor });
-        } else {
-            const producao = STATE.producao_terc.filter(p => {
-                if (p.terceirizado_id !== c.id) return false;
-                if (dataInicio && p.data_registro < dataInicio) return false;
-                if (dataFim && p.data_registro > dataFim) return false;
-                return true;
-            });
-            const metros = statusFinanceiro === 'PAGO' ? producao.filter(p => p.status === 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros), 0) : (statusFinanceiro === 'PENDENTE' ? producao.filter(p => p.status !== 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros), 0) : producao.reduce((acc, p) => acc + parseFloat(p.metros), 0));
-            if (metros === 0) return;
-            const valorTotalMetro = metros * c.valor_base;
-            dadosFolha.push({ nome: c.nome, pix: c.chave_pix || 'Não informado', tipo: 'Metro', unidade: 'm', quantidade: metros, valor_unitario: c.valor_base, valor_total: valorTotalMetro });
-        }
-    });
-    if (dadosFolha.length === 0) return showToast('Nenhum registro encontrado com os filtros.', true);
-    dadosFolha.sort((a,b) => a.nome.localeCompare(b.nome));
-    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : 'Início';
-    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'Fim';
-    const periodoExibicao = (dataInicio || dataFim) ? `${dataIniFormatada} a ${dataFimFormatada}` : 'Todos os períodos';
-    const hoje = new Date().toLocaleDateString('pt-BR');
-    let html = `<div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; padding: 30px;"><div style="display: flex; justify-content: space-between; border-bottom: 3px solid #1d4ed8;"><img src="logo.png" style="height:70px;"><div><h1>FOLHA DE PAGAMENTOS</h1><p>Status: ${statusFinanceiro}</p><p>Período: ${periodoExibicao}</p></div></div><table width="100%" border="1" cellpadding="8" style="border-collapse: collapse; margin-top:20px;"><thead><tr><th>Funcionário / PIX</th><th>Tipo</th><th>Quantidade</th><th>Valor Unit.</th><th>Valor Total</th></tr></thead><tbody>`;
-    let somaGeral = 0;
-    dadosFolha.forEach(d => { somaGeral += d.valor_total; html += `<tr><td><strong>${d.nome.toUpperCase()}</strong><br>PIX: ${d.pix}</td><td align="center">${d.tipo}</td><td align="center">${d.quantidade.toFixed(2)} ${d.unidade}</td><td align="center">${formatMoney(d.valor_unitario)}</td><td align="right">${formatMoney(d.valor_total)}</td></tr>`; });
-    html += `</tbody></table><div style="margin-top:20px; text-align:right;"><strong>TOTAL GERAL: ${formatMoney(somaGeral)}</strong></div><div style="text-align:center; margin-top:40px;">Emitido em ${hoje} - RV Negócios</div></div>`;
-    closeOverlayForm('modal-folha-pagamento');
-    document.getElementById('print-area').innerHTML = html;
-    setTimeout(() => window.print(), 400);
-}
-
-// 5. PLANILHA DE CHECAGEM
-function imprimirChecagem() {
-    const dataInicio = document.getElementById('eqp-filter-data-inicio').value;
-    const dataFim = document.getElementById('eqp-filter-data-fim').value;
-    const obraFiltro = document.getElementById('eqp-filter-obra').value;
-    const statusFiltro = document.getElementById('eqp-filter-status').value;
-    const tipoFiltro = document.getElementById('eqp-filter-tipo').value;
-    const colaboradores = getColaboradoresUnificados();
-    let fil = colaboradores.filter(c => {
-        if (obraFiltro && c.obra_atual_id != obraFiltro) return false;
-        if (statusFiltro !== "todos") { const isAtivo = statusFiltro === "true"; if ((c.ativo === true || c.ativo === 'true') !== isAtivo) return false; }
-        if (tipoFiltro !== 'todos' && c.tipo !== tipoFiltro) return false;
-        return true;
-    });
-    const dados = [];
-    fil.forEach(c => {
-        let quantidade = 0;
-        if (c.tipo === 'diaria') { quantidade = calcularSaldoPendenteFuncionarioPorPeriodo(c.id, dataInicio, dataFim); }
-        else { const producao = STATE.producao_terc.filter(p => { if (p.terceirizado_id !== c.id) return false; if (dataInicio && p.data_registro < dataInicio) return false; if (dataFim && p.data_registro > dataFim) return false; return true; }); quantidade = producao.reduce((acc,p) => acc + parseFloat(p.metros), 0); }
-        if (quantidade > 0 || statusFiltro !== 'true') {
-            const obra = STATE.obras.find(o => o.id == c.obra_atual_id);
-            dados.push({ nome: c.nome, quantidade: quantidade, unidade: c.tipo === 'diaria' ? 'diárias' : 'm', obra: obra ? obra.nome : 'Sem obra' });
-        }
-    });
-    if (dados.length === 0) { showToast('Nenhum dado para exibir.', true); return; }
-    dados.sort((a,b) => a.nome.localeCompare(b.nome));
-    const hoje = new Date().toLocaleDateString('pt-BR');
-    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : 'Início';
-    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'Fim';
-    const periodoExibicao = (dataInicio || dataFim) ? `${dataIniFormatada} a ${dataFimFormatada}` : 'Todo o período';
-    let html = `<div style="font-family: 'Segoe UI', Arial, sans-serif; padding:30px;"><div style="display:flex; justify-content:space-between; border-bottom:3px solid #1d4ed8;"><div><img src="logo.png" style="height:70px;"><div>CNPJ: 61.893.912/0001-24</div></div><div><h2>PLANILHA DE CHECAGEM</h2><p>Período: ${periodoExibicao}</p></div></div><table width="100%" border="1" cellpadding="8" style="margin-top:20px;"><thead><tr><th>Nome</th><th>Qtd. Diárias / Metros</th><th>Obra</th></tr></thead><tbody>${dados.map(d => `<tr><td>${d.nome.toUpperCase()}</td><td align="center">${d.quantidade.toFixed(2)} ${d.unidade}</td><td>${d.obra}</td></tr>`).join('')}</tbody></table><div style="text-align:center; margin-top:50px;">Documento gerado em ${hoje} pela RV Negócios.</div></div>`;
-    document.getElementById('print-area').innerHTML = html;
-    setTimeout(() => window.print(), 300);
-}
-
-// Funções auxiliares de cálculo já existentes no escopo global
-function calcularTotalDiariasDosRegistros(registros) { /* implementada no escopo global, mas mantida aqui por segurança */ }
+  // Expor funções para o escopo global (necessário para os botões onclick)
+  window.navigate = navigate;
+  window.openNovaOC = openNovaOC;
+  window.closeNovaOC = closeNovaOC;
+  window.toggleFinTab = toggleFinTab;
+  window.openModal = openModal;
+  window.closeModal = closeModal;
+  window.openOverlayForm = openOverlayForm;
+  window.closeOverlayForm = closeOverlayForm;
+  window.maskCPF = maskCPF;
+  window.renderEquipeMobile = renderEquipeMobile;
+  window.fazerLogout = fazerLogout;
+  window.renderDashboard = renderDashboard;
+  window.renderOCList = renderOCList;
+  window.renderFinance = renderFinance;
+  window.renderFornecedores = renderFornecedores;
+  window.renderProducts = renderProducts;
+  window.updateCart = updateCart;
+  window.clearCart = clearCart;
+  window.openPosProductModal = openPosProductModal;
+  window.renderPosProductModal = renderPosProductModal;
+  window.addCartModal = addCartModal;
+  window.openPosFornecedorModal = openPosFornecedorModal;
+  window.renderPosFornecedorModal = renderPosFornecedorModal;
+  window.selectPosFornecedor = selectPosFornecedor;
+  window.saveOC = saveOC;
+  window.loadOCToCart = loadOCToCart;
+  window.estornarOC = estornarOC;
+  window.deleteOC = deleteOC;
+  window.openConfirmOC = openConfirmOC;
+  window.executeConfirmOC = executeConfirmOC;
+  window.verOC = verOC;
+  window.compartilharNative = compartilharNative;
+  window.imprimirFinanceiro = imprimirFinanceiro;
+  window.openObraForm = openObraForm;
+  window.saveObra = saveObra;
+  window.openFornecedorForm = openFornecedorForm;
+  window.saveFornecedor = saveFornecedor;
+  window.openProductForm = openProductForm;
+  window.saveProduct = saveProduct;
+  window.buildHTMLOC = buildHTMLOC;
+  window.abrirModalSaldo = abrirModalSaldo;
+  window.fecharModalSaldo = fecharModalSaldo;
+  window.carregarTabelaSaldo = carregarTabelaSaldo;
+  window.lancarAjusteManual = lancarAjusteManual;
+  window.fecharPagamentoSaldo = fecharPagamentoSaldo;
+  window.estornarUltimoFechamento = estornarUltimoFechamento;
+  window.imprimirExtratoSaldo = imprimirExtratoSaldo;
+  window.imprimirReciboDoModal = imprimirReciboDoModal;
+  window.abrirModalSaldoMetros = abrirModalSaldoMetros;
+  window.fecharModalSaldoMetros = fecharModalSaldoMetros;
+  window.carregarTabelaSaldoMetros = carregarTabelaSaldoMetros;
+  window.lancarAjusteManualMetros = lancarAjusteManualMetros;
+  window.fecharPagamentoSaldoMetros = fecharPagamentoSaldoMetros;
+  window.estornarUltimoFechamentoMetros = estornarUltimoFechamentoMetros;
+  window.imprimirExtratoSaldoMetros = imprimirExtratoSaldoMetros;
+  window.imprimirReciboMetrosDoModal = imprimirReciboMetrosDoModal;
+  window.abrirModalDocumentos = abrirModalDocumentos;
+  window.marcarContratoAssinado = marcarContratoAssinado;
+  window.imprimirDocumento = imprimirDocumento;
+  window.abrirModalFolhaPagamento = abrirModalFolhaPagamento;
+  window.executarImpressaoFolha = executarImpressaoFolha;
+  window.imprimirChecagem = imprimirChecagem;
+  window.openEquipeForm = openEquipeForm;
+  window.saveEquipe = saveEquipe;
+  window.onCategoriaChange = onCategoriaChange;
 </script>
+
 </body>
 </html>
