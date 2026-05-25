@@ -589,7 +589,7 @@
         const supabaseKey = 'sb_publishable_B2a4vA22qf4XGcrxPDRAaw_13rW51uI';
         const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], fases: [], equipe: [], terceirizados: [], ponto_diario: [] };
+        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], fases: [], equipe: [], ponto_diario: [], terceirizados: [], producao_terc: [] };
         let CART = [];
         let CURRENT_OC_ID = null; 
 
@@ -639,9 +639,53 @@
 
         // ====== DADOS ======
         async function fetchAllRecords(table) { let allRecords = []; let from=0; const step=1000; let keepFetching=true; while(keepFetching){ const {data,error}=await sb.from(table).select('*').range(from,from+step-1); if(error) throw error; if(data && data.length>0){ allRecords.push(...data); if(data.length<step) keepFetching=false; else from+=step; } else keepFetching=false; } return {data: allRecords}; }
-        async function loadData() { try { const [resObras,resForn,resProd,resLog,resFases,resEquipe,resTerceirizados,resPonto] = await Promise.all([ fetchAllRecords('jsp_obras'), fetchAllRecords('jsp_fornecedores'), fetchAllRecords('jsp_produtos'), fetchAllRecords('jsp_logs'), fetchAllRecords('jsp_fase'), fetchAllRecords('jsp_equipe'), fetchAllRecords('jsp_terceirizados'), fetchAllRecords('jsp_ponto_diario').catch(()=>({data:[]})) ]); STATE.obras = resObras.data || []; STATE.fornecedores = resForn.data || []; STATE.produtos = resProd.data || []; STATE.logs = resLog.data || []; STATE.fases = (resFases.data || []).sort((a,b)=>a.ordem - b.ordem); STATE.equipe = resEquipe.data || []; STATE.terceirizados = resTerceirizados.data || []; STATE.ponto_diario = resPonto.data || []; updateSelects(); if(!document.querySelector('main > .active-section')) navigate('dash'); else navigate(document.querySelector('main > .active-section').id.replace('view-','')); showLoading(false); } catch(err){ showLoading(false); showToast("Erro banco: "+err.message,true); } }
-        function getNextIdNum(array) { let max=0; array.forEach(item=>{ const val=parseInt(item.id); if(!isNaN(val) && val>max) max=val; }); return max+1; }
-        function updateSelects() {
+
+        async function loadData() {
+    try {
+        const [
+            resObras,
+            resForn,
+            resProd,
+            resLog,
+            resFases,
+            resEquipe,
+            resTerceirizados,
+            resPonto,
+            resProducaoTerc   // NOVO: carrega a produção por metragem
+        ] = await Promise.all([
+            fetchAllRecords('jsp_obras'),
+            fetchAllRecords('jsp_fornecedores'),
+            fetchAllRecords('jsp_produtos'),
+            fetchAllRecords('jsp_logs'),
+            fetchAllRecords('jsp_fase'),
+            fetchAllRecords('jsp_equipe'),
+            fetchAllRecords('jsp_terceirizados'),
+            fetchAllRecords('jsp_ponto_diario').catch(() => ({ data: [] })),
+            fetchAllRecords('jsp_producao_terc').catch(() => ({ data: [] })) // NOVO
+        ]);
+
+        STATE.obras = resObras.data || [];
+        STATE.fornecedores = resForn.data || [];
+        STATE.produtos = resProd.data || [];
+        STATE.logs = resLog.data || [];
+        STATE.fases = (resFases.data || []).sort((a, b) => a.ordem - b.ordem);
+        STATE.equipe = resEquipe.data || [];
+        STATE.terceirizados = resTerceirizados.data || [];
+        STATE.ponto_diario = resPonto.data || [];
+        STATE.producao_terc = resProducaoTerc.data || []; // NOVO
+
+        updateSelects();
+        if (!document.querySelector('main > .active-section')) navigate('dash');
+        else navigate(document.querySelector('main > .active-section').id.replace('view-', ''));
+        showLoading(false);
+    } catch (err) {
+        showLoading(false);
+        showToast("Erro banco: " + err.message, true);
+    }
+}
+      
+         function getNextIdNum(array) { let max=0; array.forEach(item=>{ const val=parseInt(item.id); if(!isNaN(val) && val>max) max=val; }); return max+1; }
+         function updateSelects() {
             const htmlObras = '<option value="">Todas Obras</option>'+STATE.obras.map(o=>`<option value="${o.id}">${o.nome}</option>`).join('');
             const htmlObrasStrict = '<option value="">-- Selecione Obra --</option>'+STATE.obras.map(o=>`<option value="${o.id}">${o.nome}</option>`).join('');
             const eqpObra = document.getElementById('eqp-obra_atual_id'); if(eqpObra && !eqpObra.value) eqpObra.innerHTML = htmlObrasStrict;
@@ -962,6 +1006,8 @@
 
       // ========== FUNÇÕES PARA SALDO DE METROS (TERCEIRIZADOS) ==========
 
+// ========== FUNÇÕES PARA SALDO DE METROS (TERCEIRIZADOS) ==========
+
 function fecharModalSaldoMetros() {
     document.getElementById('modal-saldo-metros').classList.add('hidden');
 }
@@ -973,7 +1019,6 @@ function abrirModalSaldoMetros(tercId) {
     document.getElementById('saldo-terc-id').value = tercId;
     document.getElementById('saldo-metros-subtitle').innerText = `${terc.nome} - Valor do Metro: ${formatMoney(terc.valor_metro || 0)}`;
 
-    // Define datas padrão: primeiro dia do ano até o último dia do mês atual
     const hoje = new Date();
     const anoAtual = hoje.getFullYear();
     const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
@@ -992,6 +1037,8 @@ function abrirModalSaldoMetros(tercId) {
 
 function carregarTabelaSaldoMetros() {
     const tercId = document.getElementById('saldo-terc-id').value;
+    if (!tercId) return;
+
     const dataInicio = document.getElementById('saldo-metros-data-inicio').value;
     const dataFim = document.getElementById('saldo-metros-data-fim').value;
     const statusFiltro = document.getElementById('saldo-metros-filtro-status').value;
@@ -999,7 +1046,9 @@ function carregarTabelaSaldoMetros() {
     const terc = STATE.terceirizados.find(t => t.id === tercId);
     if (!terc) return;
 
-    let registros = STATE.producao_terc.filter(p => p.terceirizado_id === tercId);
+    // Garantir que STATE.producao_terc existe
+    const producoes = STATE.producao_terc || [];
+    let registros = producoes.filter(p => p.terceirizado_id === tercId);
 
     if (dataInicio) registros = registros.filter(p => p.data_registro >= dataInicio);
     if (dataFim) registros = registros.filter(p => p.data_registro <= dataFim);
@@ -1010,9 +1059,7 @@ function carregarTabelaSaldoMetros() {
     tbody.innerHTML = '';
     let totalMetros = 0;
 
-    const registrosOrdenados = registros.sort((a, b) => new Date(a.data_registro) - new Date(b.data_registro));
-
-    if (registrosOrdenados.length === 0) {
+    if (!registros.length) {
         document.getElementById('saldo-metros-sem-registros').classList.remove('hidden');
         document.getElementById('saldo-metros-total-metros').innerText = '0.00';
         document.getElementById('saldo-metros-total-valor').innerText = formatMoney(0);
@@ -1020,7 +1067,9 @@ function carregarTabelaSaldoMetros() {
     }
     document.getElementById('saldo-metros-sem-registros').classList.add('hidden');
 
-    registrosOrdenados.forEach(prod => {
+    registros.sort((a, b) => new Date(a.data_registro) - new Date(b.data_registro));
+
+    registros.forEach(prod => {
         const metros = parseFloat(prod.metros) || 0;
         totalMetros += metros;
         const dataStr = new Date(prod.data_registro).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
@@ -1090,7 +1139,7 @@ async function fecharPagamentoSaldoMetros() {
     const terc = STATE.terceirizados.find(t => t.id === tercId);
     if (!terc) return;
 
-    let registros = STATE.producao_terc.filter(p => p.terceirizado_id === tercId && p.status !== 'PAGO');
+    let registros = (STATE.producao_terc || []).filter(p => p.terceirizado_id === tercId && p.status !== 'PAGO');
     if (dataInicio) registros = registros.filter(p => p.data_registro >= dataInicio);
     if (dataFim) registros = registros.filter(p => p.data_registro <= dataFim);
 
@@ -1171,14 +1220,12 @@ async function estornarUltimoFechamentoMetros() {
 
     showLoading(true);
 
-    // 1. Cancelar a despesa
     const { error: errFin } = await sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }).eq('id', ultimaDespesa.id).eq('tipo', 'despesa');
     if (errFin) {
         showLoading(false);
         return showToast('Erro ao cancelar despesa: ' + errFin.message, true);
     }
 
-    // 2. Reverter status PAGO para PENDENTE
     let query = sb.from('jsp_producao_terc').update({ status: 'PENDENTE' }).eq('terceirizado_id', tercId).eq('status', 'PAGO');
     if (periodo) {
         const partes = periodo.split(' a ');
@@ -1291,7 +1338,6 @@ function imprimirReciboMetrosDoModal() {
     document.getElementById('print-area').innerHTML = html;
     setTimeout(() => window.print(), 300);
 }
-
       
 
       
