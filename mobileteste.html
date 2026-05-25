@@ -10,7 +10,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 
-  <!-- ARQUIVO COMPARTILHADO (TODAS AS FUNÇÕES DE NEGÓCIO) -->
+  <!-- Arquivo com todas as funções compartilhadas (lógica de negócio, cálculos, Supabase) -->
   <script src="js/shared.js"></script>
 
   <link rel="icon" type="image/png" href="logo.png">
@@ -19,7 +19,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="application-name" content="RV Portal">
-  <meta name="theme-color" content="#0f172a">
+  <meta name="theme-color" content="#0f172a"> 
   
   <style>
     body { background-color: #f1f5f9; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
@@ -65,8 +65,7 @@
 <div id="toast" class="hidden fixed top-20 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl text-white font-bold text-sm z-[100] transition-all text-center w-[90%] max-w-sm"></div>
 
 <main class="p-4" id="main-content">
-  
-  <!-- DASHBOARD -->
+
   <div id="view-dash" class="active-section no-print">
     <div class="flex justify-between items-center mb-4">
       <h2 class="text-xl font-bold">Visão Geral</h2>
@@ -75,184 +74,74 @@
     <div id="dash-grid" class="flex flex-col gap-4 pb-4"></div>
   </div>
 
-  <!-- ORDENS DE COMPRA -->
   <div id="view-oc" class="hidden-section no-print relative min-h-[80vh]">
     <h2 class="text-xl font-bold mb-3 flex items-center gap-2"><i data-lucide="file-text" class="text-blue-700"></i> Ordens de Compra</h2>
     <div class="flex gap-2 mb-4">
-      <div class="relative flex-1">
-        <i data-lucide="search" class="absolute left-3 top-3 text-slate-400 w-4 h-4"></i>
-        <input type="text" id="oc-search" placeholder="Busca..." class="w-full pl-9 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 shadow-sm" onkeyup="renderOCList()">
-      </div>
-      <select id="oc-obra-filter" class="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 shadow-sm" onchange="renderOCList()">
-        <option value="">Todas Obras</option>
-      </select>
+      <div class="relative flex-1"><i data-lucide="search" class="absolute left-3 top-3 text-slate-400 w-4 h-4"></i><input type="text" id="oc-search" placeholder="Busca..." class="w-full pl-9 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 shadow-sm" onkeyup="renderOCList()"></div>
+      <select id="oc-obra-filter" class="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 shadow-sm" onchange="renderOCList()"><option value="">Todas Obras</option></select>
     </div>
     <div id="oc-list" class="flex flex-col gap-2 pb-16"></div>
-    <button onclick="openNovaOC()" class="fixed bottom-20 right-4 w-14 h-14 bg-blue-700 text-white rounded-full shadow-2xl flex items-center justify-center z-40 active:scale-95 transition-transform border-4 border-white">
-      <i data-lucide="plus" class="w-6 h-6"></i>
-    </button>
+    <button onclick="openNovaOC()" class="fixed bottom-20 right-4 w-14 h-14 bg-blue-700 text-white rounded-full shadow-2xl flex items-center justify-center z-40 active:scale-95 transition-transform border-4 border-white"><i data-lucide="plus" class="w-6 h-6"></i></button>
   </div>
 
-  <!-- CRIAR NOVA O.C. -->
   <div id="view-pos" class="hidden-section no-print">
     <div class="flex items-center gap-3 mb-4">
       <button onclick="closeNovaOC()" class="p-2 bg-slate-200 rounded-full text-slate-600 active:bg-slate-300"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
       <h2 class="text-xl font-bold flex items-center gap-2 text-blue-800">Criar Nova O.C.</h2>
     </div>
-    <button onclick="openPosProductModal()" class="w-full bg-blue-700 text-white p-3 rounded-xl font-bold flex justify-center items-center gap-2 shadow-lg mb-4 active:scale-95 transition-transform text-sm">
-      <i data-lucide="search" class="w-4 h-4"></i> Buscar Material
-    </button>
+    <button onclick="openPosProductModal()" class="w-full bg-blue-700 text-white p-3 rounded-xl font-bold flex justify-center items-center gap-2 shadow-lg mb-4 active:scale-95 transition-transform text-sm"><i data-lucide="search" class="w-4 h-4"></i> Buscar Material</button>
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col mb-4">
-      <div class="p-2 border-b flex justify-between items-center bg-slate-50 rounded-t-xl">
-        <span class="font-bold text-slate-700 text-xs">CARRINHO (<span id="cart-count">0</span>)</span>
-        <button onclick="clearCart()" class="text-[9px] text-red-500 font-bold px-2 py-1 rounded border border-red-200 bg-white">LIMPAR</button>
-      </div>
+      <div class="p-2 border-b flex justify-between items-center bg-slate-50 rounded-t-xl"><span class="font-bold text-slate-700 text-xs">CARRINHO (<span id="cart-count">0</span>)</span><button onclick="clearCart()" class="text-[9px] text-red-500 font-bold px-2 py-1 rounded border border-red-200 bg-white">LIMPAR</button></div>
       <div id="pos-cart-items" class="p-2 flex flex-col gap-2 max-h-48 overflow-y-auto no-scrollbar"></div>
-      <div class="p-3 bg-slate-50 rounded-b-xl border-t flex justify-between items-center">
-        <span class="text-[10px] font-bold text-slate-500">TOTAL EST.</span>
-        <span id="pos-total-display" class="text-lg font-black text-slate-800">R$ 0,00</span>
-      </div>
+      <div class="p-3 bg-slate-50 rounded-b-xl border-t flex justify-between items-center"><span class="text-[10px] font-bold text-slate-500">TOTAL EST.</span><span id="pos-total-display" class="text-lg font-black text-slate-800">R$ 0,00</span></div>
     </div>
     <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 space-y-3 mb-4">
-      <div>
-        <label class="text-[9px] font-bold text-slate-500 uppercase">Obra (Destino)</label>
-        <select id="pos-obra" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none"></select>
-      </div>
-      <div class="flex gap-2">
-        <div class="w-1/2">
-          <label class="text-[9px] font-bold text-slate-500 uppercase">Fase da Obra</label>
-          <select id="pos-fase" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none"></select>
-        </div>
-        <div class="w-1/2">
-          <label class="text-[9px] font-bold text-slate-500 uppercase">Solicitante</label>
-          <input type="text" id="pos-solicitante" placeholder="Nome..." class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none">
-        </div>
-      </div>
-      <div>
-        <label class="text-[9px] font-bold text-slate-500 uppercase">Fornecedor</label>
-        <div class="flex gap-2">
-          <input type="hidden" id="pos-fornecedor" value="">
-          <button id="pos-fornecedor-btn" onclick="openPosFornecedorModal()" class="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-left flex justify-between items-center text-slate-600 font-bold">
-            <span class="truncate">Selecionar...</span>
-            <i data-lucide="chevron-right" class="w-3 h-3 text-slate-400"></i>
-          </button>
-          <button onclick="openFornecedorForm()" class="p-2 bg-slate-200 rounded-lg active:bg-slate-300"><i data-lucide="user-plus" class="w-4 h-4 text-slate-700"></i></button>
-        </div>
-      </div>
-      <div>
-        <label class="text-[9px] font-bold text-slate-500 uppercase mb-1 block">Condição de Pagamento</label>
-        <select id="pos-cond-pagamento" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none mb-2 font-bold text-slate-700">
-          <option value="">A Definir / Padrão</option>
-          <option value="A Vista (PIX)">A Vista (PIX)</option>
-          <option value="A Vista (Boleto)">A Vista (Boleto)</option>
-          <option value="Boleto 15 Dias">Boleto 15 Dias</option>
-          <option value="Boleto 30 Dias">Boleto 30 Dias</option>
-          <option value="Boleto 30/60 Dias">Boleto 30/60 Dias</option>
-          <option value="Boleto 30/60/90 Dias">Boleto 30/60/90 Dias</option>
-          <option value="Cartão de Crédito">Cartão de Crédito</option>
-          <option value="Cartão de Débito">Cartão de Débito</option>
-          <option value="Carteira">Carteira</option>
-        </select>
-        <label class="text-[9px] font-bold text-slate-500 uppercase mb-1 block">Observações Gerais</label>
-        <textarea id="pos-obs-geral" rows="2" placeholder="Ex: Entregar pela manhã..." class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none resize-none"></textarea>
-      </div>
+      <div><label class="text-[9px] font-bold text-slate-500 uppercase">Obra (Destino)</label><select id="pos-obra" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none"></select></div>
+      <div class="flex gap-2"><div class="w-1/2"><label class="text-[9px] font-bold text-slate-500 uppercase">Fase da Obra</label><select id="pos-fase" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none"></select></div><div class="w-1/2"><label class="text-[9px] font-bold text-slate-500 uppercase">Solicitante</label><input type="text" id="pos-solicitante" placeholder="Nome..." class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none"></div></div>
+      <div><label class="text-[9px] font-bold text-slate-500 uppercase">Fornecedor</label><div class="flex gap-2"><input type="hidden" id="pos-fornecedor" value=""><button id="pos-fornecedor-btn" onclick="openPosFornecedorModal()" class="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-left flex justify-between items-center text-slate-600 font-bold"><span class="truncate">Selecionar...</span><i data-lucide="chevron-right" class="w-3 h-3 text-slate-400"></i></button><button onclick="openFornecedorForm()" class="p-2 bg-slate-200 rounded-lg active:bg-slate-300"><i data-lucide="user-plus" class="w-4 h-4 text-slate-700"></i></button></div></div>
+      <div><label class="text-[9px] font-bold text-slate-500 uppercase mb-1 block">Condição de Pagamento</label><select id="pos-cond-pagamento" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none mb-2 font-bold text-slate-700"><option value="">A Definir / Padrão</option><option value="A Vista (PIX)">A Vista (PIX)</option><option value="A Vista (Boleto)">A Vista (Boleto)</option><option value="Boleto 15 Dias">Boleto 15 Dias</option><option value="Boleto 30 Dias">Boleto 30 Dias</option><option value="Boleto 30/60 Dias">Boleto 30/60 Dias</option><option value="Boleto 30/60/90 Dias">Boleto 30/60/90 Dias</option><option value="Cartão de Crédito">Cartão de Crédito</option><option value="Cartão de Débito">Cartão de Débito</option><option value="Carteira">Carteira</option></select>
+      <label class="text-[9px] font-bold text-slate-500 uppercase mb-1 block">Observações Gerais</label><textarea id="pos-obs-geral" rows="2" placeholder="Ex: Entregar pela manhã..." class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none resize-none"></textarea></div>
     </div>
-    <button onclick="saveOC()" class="w-full bg-green-600 text-white p-3 rounded-xl font-black shadow-lg active:scale-95 transition-transform flex justify-center items-center gap-2 mb-6">
-      <i data-lucide="check-circle" class="w-5 h-5"></i> SALVAR O.C.
-    </button>
+    <button onclick="saveOC()" class="w-full bg-green-600 text-white p-3 rounded-xl font-black shadow-lg active:scale-95 transition-transform flex justify-center items-center gap-2 mb-6"><i data-lucide="check-circle" class="w-5 h-5"></i> SALVAR O.C.</button>
   </div>
 
-  <!-- FINANCEIRO -->
   <div id="view-fin" class="hidden-section no-print">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-xl font-bold flex items-center gap-2"><i data-lucide="bar-chart-3" class="text-blue-700"></i> Financeiro Obras</h2>
-      <button onclick="imprimirFinanceiro()" class="bg-slate-800 text-white p-2 rounded-xl text-sm font-bold shadow flex items-center gap-2"><i data-lucide="printer" class="w-4 h-4"></i></button>
-    </div>
+    <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold flex items-center gap-2"><i data-lucide="bar-chart-3" class="text-blue-700"></i> Financeiro Obras</h2><button onclick="imprimirFinanceiro()" class="bg-slate-800 text-white p-2 rounded-xl text-sm font-bold shadow flex items-center gap-2"><i data-lucide="printer" class="w-4 h-4"></i></button></div>
     <div class="grid grid-cols-2 gap-2 mb-4 bg-slate-50 p-3 rounded-xl border border-slate-200">
-      <div class="col-span-2">
-        <select id="fin-obra-filter" onchange="renderFinance()" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-blue-700 shadow-sm outline-none">
-          <option value="">Todas as Obras / Geral</option>
-        </select>
-      </div>
-      <select id="fin-fase-filter" onchange="renderFinance()" class="w-full p-2 bg-white border rounded-lg text-xs outline-none text-slate-600">
-        <option value="">Todas as Fases</option>
-      </select>
-      <select id="fin-cat-filter" onchange="renderFinance()" class="w-full p-2 bg-white border rounded-lg text-xs outline-none text-slate-600">
-        <option value="">Todas Categorias</option>
-      </select>
+      <div class="col-span-2"><select id="fin-obra-filter" onchange="renderFinance()" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-blue-700 shadow-sm outline-none"><option value="">Todas as Obras / Geral</option></select></div>
+      <select id="fin-fase-filter" onchange="renderFinance()" class="w-full p-2 bg-white border rounded-lg text-xs outline-none text-slate-600"><option value="">Todas as Fases</option></select>
+      <select id="fin-cat-filter" onchange="renderFinance()" class="w-full p-2 bg-white border rounded-lg text-xs outline-none text-slate-600"><option value="">Todas Categorias</option></select>
       <input type="text" id="fin-search" placeholder="Busca nome/prod..." class="col-span-2 w-full p-2 bg-white border rounded-lg text-xs outline-none" onkeyup="renderFinance()">
-      <div class="col-span-2 flex gap-2 mt-1">
-        <div class="w-1/2 flex flex-col"><label class="text-[9px] font-bold text-slate-400">INÍCIO</label><input type="date" id="fin-start" class="w-full p-2 bg-white border rounded-lg text-xs" onchange="renderFinance()"></div>
-        <div class="w-1/2 flex flex-col"><label class="text-[9px] font-bold text-slate-400">FIM</label><input type="date" id="fin-end" class="w-full p-2 bg-white border rounded-lg text-xs" onchange="renderFinance()"></div>
-      </div>
+      <div class="col-span-2 flex gap-2 mt-1"><div class="w-1/2 flex flex-col"><label class="text-[9px] font-bold text-slate-400">INÍCIO</label><input type="date" id="fin-start" class="w-full p-2 bg-white border rounded-lg text-xs" onchange="renderFinance()"></div><div class="w-1/2 flex flex-col"><label class="text-[9px] font-bold text-slate-400">FIM</label><input type="date" id="fin-end" class="w-full p-2 bg-white border rounded-lg text-xs" onchange="renderFinance()"></div></div>
     </div>
-    <div class="grid grid-cols-2 gap-3 mb-4">
-      <div class="bg-white p-3 rounded-xl border-b-4 border-red-500 shadow-sm text-center">
-        <p class="text-[9px] text-slate-500 font-bold uppercase">Custos Pagos</p>
-        <h3 id="fin-expenses" class="text-sm font-black text-slate-800 mt-1 truncate">R$ 0,00</h3>
-      </div>
-      <div class="bg-white p-3 rounded-xl border-b-4 border-green-500 shadow-sm text-center">
-        <p class="text-[9px] text-slate-500 font-bold uppercase">Medições Rec.</p>
-        <h3 id="fin-income" class="text-sm font-black text-slate-800 mt-1 truncate">R$ 0,00</h3>
-      </div>
-    </div>
-    <div class="flex gap-2 mb-4 bg-slate-200 p-1 rounded-xl">
-      <button onclick="toggleFinTab('despesas')" id="tab-despesas" class="flex-1 py-1.5 text-xs font-bold bg-white text-slate-800 rounded-lg shadow-sm transition-colors">Custos</button>
-      <button onclick="toggleFinTab('receitas')" id="tab-receitas" class="flex-1 py-1.5 text-xs font-bold text-slate-500 rounded-lg transition-colors">Medições</button>
-    </div>
-    <div id="fin-section-despesas">
-      <div id="fin-expense-history-list" class="flex flex-col gap-2 pb-4"></div>
-    </div>
-    <div id="fin-section-receitas" class="hidden">
-      <div id="fin-receivables-list" class="flex flex-col gap-2 pb-4"></div>
-    </div>
+    <div class="grid grid-cols-2 gap-3 mb-4"><div class="bg-white p-3 rounded-xl border-b-4 border-red-500 shadow-sm text-center"><p class="text-[9px] text-slate-500 font-bold uppercase">Custos Pagos</p><h3 id="fin-expenses" class="text-sm font-black text-slate-800 mt-1 truncate">R$ 0,00</h3></div><div class="bg-white p-3 rounded-xl border-b-4 border-green-500 shadow-sm text-center"><p class="text-[9px] text-slate-500 font-bold uppercase">Medições Rec.</p><h3 id="fin-income" class="text-sm font-black text-slate-800 mt-1 truncate">R$ 0,00</h3></div></div>
+    <div class="flex gap-2 mb-4 bg-slate-200 p-1 rounded-xl"><button onclick="toggleFinTab('despesas')" id="tab-despesas" class="flex-1 py-1.5 text-xs font-bold bg-white text-slate-800 rounded-lg shadow-sm transition-colors">Custos</button><button onclick="toggleFinTab('receitas')" id="tab-receitas" class="flex-1 py-1.5 text-xs font-bold text-slate-500 rounded-lg transition-colors">Medições</button></div>
+    <div id="fin-section-despesas"><div id="fin-expense-history-list" class="flex flex-col gap-2 pb-4"></div></div>
+    <div id="fin-section-receitas" class="hidden"><div id="fin-receivables-list" class="flex flex-col gap-2 pb-4"></div></div>
   </div>
 
-  <!-- MENU -->
   <div id="view-menu" class="hidden-section no-print">
     <h2 class="text-xl font-bold mb-4">Menu</h2>
     <div class="flex flex-col gap-3">
-      <button onclick="navigate('fornecedores')" class="bg-white p-4 rounded-xl shadow-sm border flex items-center gap-4 active:bg-slate-50">
-        <div class="bg-blue-100 p-3 rounded-lg text-blue-700"><i data-lucide="truck"></i></div>
-        <div class="text-left font-bold text-slate-700 flex-1">Fornecedores</div>
-        <i data-lucide="chevron-right" class="text-slate-300"></i>
-      </button>
-      <button onclick="navigate('prod')" class="bg-white p-4 rounded-xl shadow-sm border flex items-center gap-4 active:bg-slate-50">
-        <div class="bg-indigo-100 p-3 rounded-lg text-indigo-700"><i data-lucide="package"></i></div>
-        <div class="text-left font-bold text-slate-700 flex-1">Produtos</div>
-        <i data-lucide="chevron-right" class="text-slate-300"></i>
-      </button>
-      <button onclick="navigate('equipe')" class="bg-white p-4 rounded-xl shadow-sm border flex items-center gap-4 active:bg-slate-50">
-        <div class="bg-orange-100 p-3 rounded-lg text-orange-700"><i data-lucide="users"></i></div>
-        <div class="text-left font-bold text-slate-700 flex-1">Equipe</div>
-        <i data-lucide="chevron-right" class="text-slate-300"></i>
-      </button>
+      <button onclick="navigate('fornecedores')" class="bg-white p-4 rounded-xl shadow-sm border flex items-center gap-4 active:bg-slate-50"><div class="bg-blue-100 p-3 rounded-lg text-blue-700"><i data-lucide="truck"></i></div><div class="text-left font-bold text-slate-700 flex-1">Fornecedores</div><i data-lucide="chevron-right" class="text-slate-300"></i></button>
+      <button onclick="navigate('prod')" class="bg-white p-4 rounded-xl shadow-sm border flex items-center gap-4 active:bg-slate-50"><div class="bg-indigo-100 p-3 rounded-lg text-indigo-700"><i data-lucide="package"></i></div><div class="text-left font-bold text-slate-700 flex-1">Produtos</div><i data-lucide="chevron-right" class="text-slate-300"></i></button>
+      <button onclick="navigate('equipe')" class="bg-white p-4 rounded-xl shadow-sm border flex items-center gap-4 active:bg-slate-50"><div class="bg-orange-100 p-3 rounded-lg text-orange-700"><i data-lucide="users"></i></div><div class="text-left font-bold text-slate-700 flex-1">Equipe</div><i data-lucide="chevron-right" class="text-slate-300"></i></button>
     </div>
   </div>
 
-  <!-- FORNECEDORES -->
   <div id="view-fornecedores" class="hidden-section no-print">
-    <div class="flex items-center gap-3 mb-4">
-      <button onclick="navigate('menu')" class="p-2 bg-slate-200 rounded-full text-slate-600"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
-      <h2 class="text-xl font-bold flex-1">Fornecedores</h2>
-      <button onclick="openFornecedorForm()" class="bg-blue-700 text-white px-3 py-2 rounded-xl text-sm font-bold shadow"><i data-lucide="plus" class="w-4 h-4"></i></button>
-    </div>
+    <div class="flex items-center gap-3 mb-4"><button onclick="navigate('menu')" class="p-2 bg-slate-200 rounded-full text-slate-600"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h2 class="text-xl font-bold flex-1">Fornecedores</h2><button onclick="openFornecedorForm()" class="bg-blue-700 text-white px-3 py-2 rounded-xl text-sm font-bold shadow"><i data-lucide="plus" class="w-4 h-4"></i></button></div>
     <input type="text" id="forn-search" placeholder="Buscar..." class="w-full p-3 mb-4 bg-white border border-slate-200 rounded-xl text-sm outline-none shadow-sm" onkeyup="renderFornecedores()">
     <div id="fornecedores-list" class="flex flex-col gap-2 pb-4"></div>
   </div>
   
-  <!-- PRODUTOS -->
   <div id="view-prod" class="hidden-section no-print">
-    <div class="flex items-center gap-3 mb-4">
-      <button onclick="navigate('menu')" class="p-2 bg-slate-200 rounded-full text-slate-600"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
-      <h2 class="text-xl font-bold flex-1">Insumos</h2>
-      <button onclick="openProductForm()" class="bg-blue-700 text-white px-3 py-2 rounded-xl text-sm font-bold shadow"><i data-lucide="plus" class="w-4 h-4"></i></button>
-    </div>
+    <div class="flex items-center gap-3 mb-4"><button onclick="navigate('menu')" class="p-2 bg-slate-200 rounded-full text-slate-600"><i data-lucide="arrow-left" class="w-5 h-5"></i></button><h2 class="text-xl font-bold flex-1">Insumos</h2><button onclick="openProductForm()" class="bg-blue-700 text-white px-3 py-2 rounded-xl text-sm font-bold shadow"><i data-lucide="plus" class="w-4 h-4"></i></button></div>
     <input type="text" id="prod-search" placeholder="Buscar material..." class="w-full p-3 mb-4 bg-white border border-slate-200 rounded-xl text-sm outline-none shadow-sm" onkeyup="renderProducts()">
     <div id="prod-list" class="flex flex-col gap-2 pb-4"></div>
   </div>
 
-  <!-- EQUIPE (UNIFICADA COM TERCEIRIZADOS) -->
+  <!-- VIEW EQUIPE (UNIFICADA COM TERCEIRIZADOS) - Agora usa renderEquipeMobile() definida abaixo -->
   <div id="view-equipe" class="hidden-section no-print relative min-h-[80vh]">
     <div class="flex items-center gap-3 mb-4">
       <button onclick="navigate('menu')" class="p-2 bg-slate-200 rounded-full text-slate-600"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
@@ -260,27 +149,14 @@
       <button onclick="openEquipeForm()" class="bg-blue-700 text-white px-3 py-2 rounded-xl text-sm font-bold shadow"><i data-lucide="user-plus" class="w-4 h-4"></i></button>
     </div>
     <div class="flex gap-2 mb-3">
-      <div class="relative flex-1">
-        <i data-lucide="search" class="absolute left-3 top-3 text-slate-400 w-4 h-4"></i>
-        <input type="text" id="eqp-search" placeholder="Buscar nome..." class="w-full pl-9 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 shadow-sm" onkeyup="renderEquipeMobile()">
-      </div>
+      <div class="relative flex-1"><i data-lucide="search" class="absolute left-3 top-3 text-slate-400 w-4 h-4"></i><input type="text" id="eqp-search" placeholder="Buscar nome..." class="w-full pl-9 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 shadow-sm" onkeyup="renderEquipeMobile()"></div>
       <button onclick="imprimirChecagem()" class="bg-emerald-700 text-white px-3 py-2 rounded-xl text-[11px] font-bold shadow flex items-center gap-1"><i data-lucide="clipboard-check" class="w-3 h-3"></i> Checagem</button>
       <button onclick="abrirModalFolhaPagamento()" class="bg-slate-800 text-white px-3 py-2 rounded-xl text-[11px] font-bold shadow flex items-center gap-1"><i data-lucide="printer" class="w-3 h-3"></i> Folha</button>
     </div>
     <div class="flex gap-2 mb-4">
-      <select id="eqp-filter-obra" onchange="renderEquipeMobile()" class="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 shadow-sm">
-        <option value="">Todas as Obras</option>
-      </select>
-      <select id="eqp-filter-status" onchange="renderEquipeMobile()" class="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 shadow-sm">
-        <option value="true" selected>Ativos</option>
-        <option value="false">Inativos</option>
-        <option value="todos">Todos</option>
-      </select>
-      <select id="eqp-filter-tipo" onchange="renderEquipeMobile()" class="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 shadow-sm">
-        <option value="todos">Todos</option>
-        <option value="diaria">Diária</option>
-        <option value="metro">Metro</option>
-      </select>
+      <select id="eqp-filter-obra" onchange="renderEquipeMobile()" class="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 shadow-sm"><option value="">Todas as Obras</option></select>
+      <select id="eqp-filter-status" onchange="renderEquipeMobile()" class="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 shadow-sm"><option value="true" selected>Ativos</option><option value="false">Inativos</option><option value="todos">Todos</option></select>
+      <select id="eqp-filter-tipo" onchange="renderEquipeMobile()" class="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 shadow-sm"><option value="todos">Todos</option><option value="diaria">Diária</option><option value="metro">Metro</option></select>
     </div>
     <div class="flex gap-2 mb-4 bg-slate-50 p-2 rounded-xl">
       <div class="flex-1"><label class="text-[9px] font-bold text-slate-500 uppercase">Início</label><input type="date" id="eqp-filter-data-inicio" class="w-full p-1.5 border rounded text-xs bg-white" onchange="renderEquipeMobile()"></div>
@@ -288,6 +164,7 @@
     </div>
     <div id="equipe-list" class="flex flex-col gap-2 pb-16"></div>
   </div>
+
 </main>
 
 <nav class="fixed bottom-0 w-full bg-white border-t border-slate-200 flex justify-around items-center pb-safe pt-1 pb-1 z-40 no-print shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)] px-2">
@@ -297,106 +174,42 @@
   <button onclick="navigate('menu')" id="btn-menu" class="flex flex-col items-center p-2 text-slate-400 nav-bottom-btn w-1/4 transition-colors"><i data-lucide="menu" class="w-5 h-5 mb-1"></i><span class="text-[10px] font-bold">Menu</span></button>
 </nav>
 
-<!-- ====================== MODAIS GERAIS ====================== -->
+<!-- MODAIS GERAIS (reutilizados) -->
 <div id="pos-product-modal" class="fixed inset-0 bg-white z-50 flex flex-col mobile-modal modal-hidden no-print">
-  <div class="p-3 border-b flex justify-between items-center bg-slate-50 pt-safe">
-    <h3 class="font-bold text-base">Buscar Material</h3>
-    <button onclick="closeModal('pos-product-modal')" class="p-1.5 text-slate-500 bg-slate-200 rounded-full"><i data-lucide="x" class="w-4 h-4"></i></button>
-  </div>
-  <div class="p-3 border-b shadow-sm">
-    <input type="text" id="pos-modal-search" placeholder="Digite o nome..." class="w-full p-3 bg-slate-100 border-none rounded-xl font-bold outline-none text-sm" onkeyup="renderPosProductModal()" autofocus>
-  </div>
+  <div class="p-3 border-b flex justify-between items-center bg-slate-50 pt-safe"><h3 class="font-bold text-base">Buscar Material</h3><button onclick="closeModal('pos-product-modal')" class="p-1.5 text-slate-500 bg-slate-200 rounded-full"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+  <div class="p-3 border-b shadow-sm"><input type="text" id="pos-modal-search" placeholder="Digite o nome..." class="w-full p-3 bg-slate-100 border-none rounded-xl font-bold outline-none text-sm" onkeyup="renderPosProductModal()" autofocus></div>
   <div class="flex-1 overflow-y-auto p-3 bg-slate-50 no-scrollbar" id="pos-modal-grid"></div>
 </div>
 
 <div id="pos-fornecedor-modal" class="fixed inset-0 bg-white z-50 flex flex-col mobile-modal modal-hidden no-print">
-  <div class="p-3 border-b flex justify-between items-center bg-slate-50 pt-safe">
-    <h3 class="font-bold text-base">Fornecedor</h3>
-    <button onclick="closeModal('pos-fornecedor-modal')" class="p-1.5 text-slate-500 bg-slate-200 rounded-full"><i data-lucide="x" class="w-4 h-4"></i></button>
-  </div>
-  <div class="p-3 border-b shadow-sm">
-    <input type="text" id="pos-fornecedor-modal-search" placeholder="Buscar fornecedor..." class="w-full p-3 bg-slate-100 border-none rounded-xl font-bold outline-none text-sm" onkeyup="renderPosFornecedorModal()">
-  </div>
+  <div class="p-3 border-b flex justify-between items-center bg-slate-50 pt-safe"><h3 class="font-bold text-base">Fornecedor</h3><button onclick="closeModal('pos-fornecedor-modal')" class="p-1.5 text-slate-500 bg-slate-200 rounded-full"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+  <div class="p-3 border-b shadow-sm"><input type="text" id="pos-fornecedor-modal-search" placeholder="Buscar fornecedor..." class="w-full p-3 bg-slate-100 border-none rounded-xl font-bold outline-none text-sm" onkeyup="renderPosFornecedorModal()"></div>
   <div class="flex-1 overflow-y-auto p-3 bg-slate-50 no-scrollbar" id="pos-fornecedor-modal-grid"></div>
-  <div class="p-3 border-t pb-safe bg-white">
-    <button onclick="selectPosFornecedor('', 'A Definir')" class="w-full p-3 bg-slate-200 text-slate-700 font-bold rounded-xl text-sm">Limpar</button>
-  </div>
+  <div class="p-3 border-t pb-safe bg-white"><button onclick="selectPosFornecedor('', 'A Definir')" class="w-full p-3 bg-slate-200 text-slate-700 font-bold rounded-xl text-sm">Limpar</button></div>
 </div>
 
 <div id="modal-view-oc" class="fixed inset-0 bg-white z-[80] flex flex-col mobile-modal modal-hidden no-print">
-  <div class="p-3 border-b flex justify-between items-center bg-slate-900 text-white pt-safe">
-    <h3 class="font-bold text-sm">Visualizar O.C.</h3>
-    <button onclick="closeModal('modal-view-oc')" class="p-1.5 bg-slate-700 rounded-full"><i data-lucide="x" class="w-4 h-4 text-white"></i></button>
-  </div>
-  <div class="flex-1 overflow-y-auto p-2 bg-slate-100 no-scrollbar relative" id="modal-view-oc-content">
-  </div>
+  <div class="p-3 border-b flex justify-between items-center bg-slate-900 text-white pt-safe"><h3 class="font-bold text-sm">Visualizar O.C.</h3><button onclick="closeModal('modal-view-oc')" class="p-1.5 bg-slate-700 rounded-full"><i data-lucide="x" class="w-4 h-4 text-white"></i></button></div>
+  <div class="flex-1 overflow-y-auto p-2 bg-slate-100 no-scrollbar relative" id="modal-view-oc-content"></div>
 </div>
 
 <!-- OVERLAY DE FORMULÁRIOS E MODAIS AVANÇADOS -->
 <div id="overlay-forms" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end justify-center no-print">
 
-  <!-- FORMULÁRIO UNIFICADO DE EQUIPE / TERCEIRIZADO -->
+  <!-- FORMULÁRIO UNIFICADO EQUIPE / TERCEIRIZADO -->
   <div id="equipe-form-container" class="hidden w-full bg-white rounded-t-3xl p-5 pb-10 shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar">
     <h3 class="font-bold text-lg mb-4 flex justify-between">Cadastro de Colaborador <button type="button" onclick="closeOverlayForm('equipe-form-container')" class="text-slate-400"><i data-lucide="x"></i></button></h3>
     <form onsubmit="saveEquipe(event)" class="space-y-3">
-      <input type="hidden" id="eqp-id">
-      <input type="hidden" id="eqp-tipo-origem" value="equipe">
-      <div>
-        <label class="text-[10px] font-bold text-slate-500 uppercase">Nome Completo</label>
-        <input type="text" id="eqp-nome" required placeholder="Ex: João da Silva" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm">
-      </div>
-      <div>
-        <label class="text-[10px] font-bold text-slate-500 uppercase">Categoria / Função</label>
-        <select id="eqp-categoria" required class="w-full p-2.5 bg-slate-50 border rounded-xl text-sm font-bold text-slate-700 outline-none" onchange="onCategoriaChange()">
-          <option value="" disabled selected>-- Selecione --</option>
-          <option value="Pedreiro">Pedreiro (Diária)</option>
-          <option value="Servente">Servente (Diária)</option>
-          <option value="Terceirizado">Terceirizado (Metro)</option>
-        </select>
-      </div>
-      <div class="flex gap-2">
-        <div class="w-1/2">
-          <label class="text-[10px] font-bold text-slate-500 uppercase">CPF</label>
-          <input type="text" id="eqp-cpf" placeholder="000.000.000-00" oninput="maskCPF(this)" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm">
-        </div>
-        <div class="w-1/2">
-          <label class="text-[10px] font-bold text-slate-500 uppercase">RG</label>
-          <input type="text" id="eqp-rg" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm">
-        </div>
-      </div>
-      <div>
-        <label class="text-[10px] font-bold text-slate-500 uppercase">Telefone</label>
-        <input type="tel" id="eqp-telefone" placeholder="(00) 00000-0000" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm">
-      </div>
-      <div>
-        <label class="text-[10px] font-bold text-slate-500 uppercase">Endereço</label>
-        <input type="text" id="eqp-endereco" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm">
-      </div>
-      <div>
-        <label class="text-[10px] font-bold text-slate-500 uppercase">Chave PIX</label>
-        <input type="text" id="eqp-chave_pix" placeholder="Celular, CPF, E-mail ou Aleatória" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm font-bold text-slate-700">
-      </div>
-      <div class="flex gap-2">
-        <div class="w-1/2">
-          <label class="text-[10px] font-bold text-slate-500 uppercase">Status</label>
-          <select id="eqp-ativo" required class="w-full p-2.5 bg-slate-50 border rounded-xl text-sm font-bold text-slate-700 outline-none">
-            <option value="true">Ativo</option>
-            <option value="false">Inativo</option>
-          </select>
-        </div>
-        <div class="w-1/2">
-          <label class="text-[10px] font-bold text-slate-500 uppercase">Data de Contrato</label>
-          <input type="date" id="eqp-data_contrato" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm">
-        </div>
-      </div>
-      <div>
-        <label class="text-[10px] font-bold text-slate-500 uppercase" id="label-valor-base">Valor da Diária (R$)</label>
-        <input type="number" step="0.01" id="eqp-valor_diaria" placeholder="0.00" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm">
-      </div>
-      <div>
-        <label class="text-[10px] font-bold text-slate-500 uppercase">Obra Alocada (Opcional)</label>
-        <select id="eqp-obra_atual_id" class="w-full p-2.5 bg-slate-50 border rounded-xl text-sm font-bold text-slate-700 outline-none"></select>
-      </div>
+      <input type="hidden" id="eqp-id"><input type="hidden" id="eqp-tipo-origem" value="equipe">
+      <div><label class="text-[10px] font-bold text-slate-500 uppercase">Nome Completo</label><input type="text" id="eqp-nome" required class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm"></div>
+      <div><label class="text-[10px] font-bold text-slate-500 uppercase">Categoria / Função</label><select id="eqp-categoria" required class="w-full p-2.5 bg-slate-50 border rounded-xl text-sm font-bold text-slate-700 outline-none" onchange="onCategoriaChange()"><option value="" disabled selected>-- Selecione --</option><option value="Pedreiro">Pedreiro (Diária)</option><option value="Servente">Servente (Diária)</option><option value="Terceirizado">Terceirizado (Metro)</option></select></div>
+      <div class="flex gap-2"><div class="w-1/2"><label class="text-[10px] font-bold text-slate-500 uppercase">CPF</label><input type="text" id="eqp-cpf" placeholder="000.000.000-00" oninput="maskCPF(this)" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm"></div><div class="w-1/2"><label class="text-[10px] font-bold text-slate-500 uppercase">RG</label><input type="text" id="eqp-rg" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm"></div></div>
+      <div><label class="text-[10px] font-bold text-slate-500 uppercase">Telefone</label><input type="tel" id="eqp-telefone" placeholder="(00) 00000-0000" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm"></div>
+      <div><label class="text-[10px] font-bold text-slate-500 uppercase">Endereço</label><input type="text" id="eqp-endereco" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm"></div>
+      <div><label class="text-[10px] font-bold text-slate-500 uppercase">Chave PIX</label><input type="text" id="eqp-chave_pix" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm font-bold text-slate-700"></div>
+      <div class="flex gap-2"><div class="w-1/2"><label class="text-[10px] font-bold text-slate-500 uppercase">Status</label><select id="eqp-ativo" class="w-full p-2.5 bg-slate-50 border rounded-xl text-sm font-bold text-slate-700 outline-none"><option value="true">Ativo</option><option value="false">Inativo</option></select></div><div class="w-1/2"><label class="text-[10px] font-bold text-slate-500 uppercase">Data de Contrato</label><input type="date" id="eqp-data_contrato" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm"></div></div>
+      <div><label class="text-[10px] font-bold text-slate-500 uppercase" id="label-valor-base">Valor da Diária (R$)</label><input type="number" step="0.01" id="eqp-valor_diaria" placeholder="0.00" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm"></div>
+      <div><label class="text-[10px] font-bold text-slate-500 uppercase">Obra Alocada (Opcional)</label><select id="eqp-obra_atual_id" class="w-full p-2.5 bg-slate-50 border rounded-xl text-sm font-bold text-slate-700 outline-none"></select></div>
       <button type="submit" class="w-full p-3 bg-blue-700 text-white rounded-xl font-bold mt-2 shadow-lg">Salvar</button>
     </form>
   </div>
@@ -428,7 +241,7 @@
     <div class="bg-indigo-600 p-4 text-white flex justify-between items-center shrink-0"><div><h3 class="font-black text-lg flex items-center gap-2"><i data-lucide="ruler" class="w-5 h-5"></i> Saldo de Metros</h3><p id="saldo-metros-subtitle" class="text-xs font-medium opacity-90 mt-0.5"></p></div><button onclick="fecharModalSaldoMetros()" class="text-white hover:bg-white/20 p-2 rounded-lg transition"><i data-lucide="x" class="w-5 h-5"></i></button></div>
     <div class="p-5 overflow-y-auto flex-1 bg-slate-50"><input type="hidden" id="saldo-terc-id">
       <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-4 flex flex-wrap gap-3 items-end"><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Início</label><input type="date" id="saldo-metros-data-inicio" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="carregarTabelaSaldoMetros()"></div><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Fim</label><input type="date" id="saldo-metros-data-fim" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="carregarTabelaSaldoMetros()"></div><div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label><select id="saldo-metros-filtro-status" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-36" onchange="carregarTabelaSaldoMetros()"><option value="PENDENTE" selected>Pendentes</option><option value="PAGO">Já Pagos</option><option value="TODOS">Todos</option></select></div><div class="flex-1"></div><button onclick="imprimirExtratoSaldoMetros()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow"><i data-lucide="printer" class="w-4 h-4"></i> Imprimir Extrato</button></div>
-      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm"><table class="w-full text-sm"><thead class="bg-slate-100 text-slate-600 border-b"><tr><th class="p-3 text-left text-xs font-bold uppercase">Data</th><th class="p-3 text-center text-xs font-bold uppercase">Metros</th><th class="p-3 text-center text-xs font-bold uppercase">Status</th></tr></thead><tbody id="saldo-metros-tabela-body" class="divide-y"></tbody></table><div id="saldo-metros-sem-registros" class="p-8 text-center text-slate-400 font-medium hidden">Nenhum registro encontrado para os filtros.</div></div>
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm"><table class="w-full text-sm"><thead class="bg-slate-100 text-slate-600 border-b"><tr><th class="p-3 text-left text-xs font-bold uppercase">Data</th><th class="p-3 text-center text-xs font-bold uppercase">Metros</th><th class="p-3 text-center text-xs font-bold uppercase">Status</th></tr></thead><tbody id="saldo-metros-tabela-body" class="divide-y"></tbody><table><div id="saldo-metros-sem-registros" class="p-8 text-center text-slate-400 font-medium hidden">Nenhum registro encontrado para os filtros.</div></div>
       <div class="mt-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm"><h4 class="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2"><i data-lucide="plus-circle" class="w-4 h-4 text-indigo-600"></i> Lançar Ajuste Manual (Metros)</h4><div class="grid grid-cols-1 md:grid-cols-4 gap-3"><div><label class="block text-xs font-bold text-slate-500 mb-1">Data</label><input type="date" id="ajuste-metros-data" class="w-full p-2 border rounded-lg text-sm"></div><div><label class="block text-xs font-bold text-slate-500 mb-1">Metros</label><input type="number" step="0.01" min="0" id="ajuste-metros-valor" class="w-full p-2 border rounded-lg text-sm font-bold"></div><div><label class="block text-xs font-bold text-slate-500 mb-1">Justificativa</label><input type="text" id="ajuste-metros-justificativa" placeholder="Ex: Ajuste manual" class="w-full p-2 border rounded-lg text-sm"></div><div class="flex items-end"><button onclick="lancarAjusteManualMetros()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold flex items-center justify-center gap-1"><i data-lucide="save" class="w-4 h-4"></i> Lançar</button></div></div></div>
     </div>
     <div class="p-4 bg-white border-t flex justify-between items-center shrink-0"><div><span class="text-sm font-bold text-slate-500">Total de Metros Pendentes:</span><span id="saldo-metros-total-metros" class="text-2xl font-black text-indigo-700 ml-2">0.00</span></div><div class="flex items-center gap-4"><div class="text-right"><div class="text-xs text-slate-500 font-bold uppercase">Valor a Pagar</div><div id="saldo-metros-total-valor" class="text-2xl font-black text-green-600">R$ 0,00</div></div><div class="flex gap-2"><button onclick="imprimirReciboMetrosDoModal()" class="bg-slate-700 hover:bg-slate-800 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2"><i data-lucide="receipt" class="w-5 h-5"></i> Recibo</button><button onclick="estornarUltimoFechamentoMetros()" class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2"><i data-lucide="rotate-ccw" class="w-5 h-5"></i> Estornar Último</button><button onclick="fecharPagamentoSaldoMetros()" class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2"><i data-lucide="check-circle" class="w-5 h-5"></i> Conferido</button></div></div></div>
@@ -446,22 +259,9 @@
     <div class="flex gap-3 mt-6"><button onclick="closeOverlayForm('modal-folha-pagamento')" class="flex-1 p-3 bg-slate-200 text-slate-700 rounded-xl font-bold">Cancelar</button><button onclick="executarImpressaoFolha()" class="flex-1 p-3 bg-blue-700 text-white rounded-xl font-bold shadow-lg flex items-center justify-center gap-2"><i data-lucide="printer" class="w-5 h-5"></i> Imprimir</button></div>
   </div>
 
-  <!-- MODAL DE CONFIRMAÇÃO O.C. -->
+  <!-- MODAL CONFIRMAÇÃO OC -->
   <div id="modal-confirm-oc" class="hidden w-full bg-white rounded-t-3xl p-5 pb-10 shadow-2xl">
-    <h3 class="font-bold text-lg mb-2 text-slate-800">Confirmar Compra</h3>
-    <p class="text-xs text-slate-500 mb-4">Escolha o pagamento. PIX já entra como pago.</p>
-    <input type="hidden" id="confirm-oc-id">
-    <select id="confirm-oc-payment" class="w-full p-3 border rounded-xl font-bold text-slate-700 bg-slate-50 mb-4 text-sm">
-      <option value="PIX">PIX</option>
-      <option value="Boleto">Boleto</option>
-      <option value="Cartão de Crédito">Cartão de Crédito</option>
-      <option value="Cartão de Débito">Cartão de Débito</option>
-      <option value="Transferência">Transferência</option>
-    </select>
-    <div class="flex gap-2">
-      <button type="button" onclick="closeOverlayForm('modal-confirm-oc')" class="w-1/3 p-3 bg-slate-200 rounded-xl font-bold text-sm">Voltar</button>
-      <button onclick="executeConfirmOC()" class="w-2/3 p-3 bg-green-600 text-white rounded-xl font-bold shadow text-sm">Efetivar</button>
-    </div>
+    <h3 class="font-bold text-lg mb-2 text-slate-800">Confirmar Compra</h3><p class="text-xs text-slate-500 mb-4">Escolha o pagamento. PIX já entra como pago.</p><input type="hidden" id="confirm-oc-id"><select id="confirm-oc-payment" class="w-full p-3 border rounded-xl font-bold text-slate-700 bg-slate-50 mb-4 text-sm"><option value="PIX">PIX</option><option value="Boleto">Boleto</option><option value="Cartão de Crédito">Cartão de Crédito</option><option value="Cartão de Débito">Cartão de Débito</option><option value="Transferência">Transferência</option></select><div class="flex gap-2"><button type="button" onclick="closeOverlayForm('modal-confirm-oc')" class="w-1/3 p-3 bg-slate-200 rounded-xl font-bold text-sm">Voltar</button><button onclick="executeConfirmOC()" class="w-2/3 p-3 bg-green-600 text-white rounded-xl font-bold shadow text-sm">Efetivar</button></div>
   </div>
 </div>
 
@@ -478,51 +278,66 @@
 <div id="print-area" class="print-only"></div>
 
 <script>
-  // ==================== CÓDIGO ESPECÍFICO DO MOBILE (USANDO SHARED.JS) ====================
-  // Todas as funções de negócio (loadData, formatMoney, getColaboradoresUnificados, etc.) estão em shared.js
-  // Aqui definimos apenas as funções de navegação e renderização específicas do mobile
+  // ====== CÓDIGO ESPECÍFICO DO MOBILE ======
+  // Todas as funções de renderização que dependem da interface mobile (cards, listas) são definidas aqui.
+  // As funções de lógica de negócio (cálculos, Supabase, modais de ponto/metros/documentos) estão em shared.js
 
-  // 1. Verificar login
+  // Variáveis globais do mobile
   let dadosUsuario = null;
   const userSessao = localStorage.getItem('rv_user');
-  if (!userSessao) {
-    window.location.replace('index.html');
-  } else {
-    dadosUsuario = JSON.parse(userSessao);
-  }
+  if (!userSessao) window.location.replace('index.html');
+  else dadosUsuario = JSON.parse(userSessao);
 
-  // 2. Funções de navegação
-  function navigate(viewId) {
-    document.querySelectorAll('main > div[id^="view-"]').forEach(el => {
-      el.classList.add('hidden-section');
-      el.classList.remove('active-section');
-    });
-    const target = document.getElementById('view-' + viewId);
-    if (target) {
-      target.classList.remove('hidden-section');
-      target.classList.add('active-section');
+  // As funções showLoading, showToast, formatMoney, etc. já estão em shared.js
+
+  // Inicialização
+  window.onload = function() {
+    if (dadosUsuario) {
+      showLoading(true);
+      // As funções loadData, updateSelects, renderDashboard, etc. estão em shared.js
+      loadData().then(() => {
+        // Após carregar os dados, configuramos os filtros de data da equipe
+        const hoje = new Date();
+        const anoAtual = hoje.getFullYear();
+        const primeiroDia = `${anoAtual}-01-01`;
+        const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
+        const ultimoDiaStr = `${anoAtual}-${String(hoje.getMonth()+1).padStart(2,'0')}-${String(ultimoDia).padStart(2,'0')}`;
+        const eqpDataInicio = document.getElementById('eqp-filter-data-inicio');
+        const eqpDataFim = document.getElementById('eqp-filter-data-fim');
+        if (eqpDataInicio) eqpDataInicio.value = primeiroDia;
+        if (eqpDataFim) eqpDataFim.value = ultimoDiaStr;
+        
+        renderEquipeMobile(); // renderização específica mobile
+        showLoading(false);
+      });
     }
+    lucide.createIcons();
+  };
+
+  // Função de navegação mobile
+  function navigate(viewId) {
+    document.querySelectorAll('main > div[id^="view-"]').forEach(el => { el.classList.add('hidden-section'); el.classList.remove('active-section'); });
+    const target = document.getElementById('view-' + viewId);
+    if (target) { target.classList.remove('hidden-section'); target.classList.add('active-section'); }
     document.querySelectorAll('.nav-bottom-btn').forEach(btn => btn.classList.remove('nav-active', 'text-blue-700'));
     const activeBtn = document.getElementById('btn-' + viewId);
     if (activeBtn && viewId !== 'pos') activeBtn.classList.add('nav-active');
-    
-    // Chama as funções de renderização (definidas em shared.js)
     if (viewId === 'dash') renderDashboard();
     if (viewId === 'oc') { updateSelects(); renderOCList(); }
     if (viewId === 'fin') { updateSelects(); renderFinance(); }
     if (viewId === 'fornecedores') renderFornecedores();
     if (viewId === 'prod') renderProducts();
     if (viewId === 'equipe') { updateSelects(); renderEquipeMobile(); }
-    
     lucide.createIcons();
-    window.scrollTo(0, 0);
+    window.scrollTo(0,0);
   }
 
+  // Abrir/fechar formulários específicos do mobile
   function openNovaOC() {
     document.getElementById('view-oc').classList.replace('active-section', 'hidden-section');
     document.getElementById('view-pos').classList.replace('hidden-section', 'active-section');
     updateSelects();
-    window.scrollTo(0, 0);
+    window.scrollTo(0,0);
   }
   function closeNovaOC() {
     document.getElementById('view-pos').classList.replace('active-section', 'hidden-section');
@@ -535,15 +350,13 @@
     const secRec = document.getElementById('fin-section-receitas');
     if (secDesp && secRec) {
       if (tab === 'despesas') {
-        secDesp.classList.remove('hidden');
-        secRec.classList.add('hidden');
+        secDesp.classList.remove('hidden'); secRec.classList.add('hidden');
         document.getElementById('tab-despesas').classList.replace('text-slate-500', 'text-slate-800');
         document.getElementById('tab-despesas').classList.add('bg-white', 'shadow-sm');
         document.getElementById('tab-receitas').classList.replace('text-slate-800', 'text-slate-500');
         document.getElementById('tab-receitas').classList.remove('bg-white', 'shadow-sm');
       } else {
-        secDesp.classList.add('hidden');
-        secRec.classList.remove('hidden');
+        secDesp.classList.add('hidden'); secRec.classList.remove('hidden');
         document.getElementById('tab-receitas').classList.replace('text-slate-500', 'text-slate-800');
         document.getElementById('tab-receitas').classList.add('bg-white', 'shadow-sm');
         document.getElementById('tab-despesas').classList.replace('text-slate-800', 'text-slate-500');
@@ -552,218 +365,48 @@
     }
   }
 
-   function formatMoney(val) { return parseFloat(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
-        function formatDate(d) { try { return d ? new Date(d).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : '-'; } catch(e) { return '-'; } }
-        function showLoading(show) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
-        function showToast(msg, isError) { 
-            const t=document.getElementById('toast'); 
-            t.textContent=msg; t.className=`fixed top-5 right-5 px-6 py-3 rounded-lg shadow-xl text-white font-medium z-50 ${isError?'bg-red-600':'bg-slate-800'}`; 
-            t.style.display='block'; setTimeout(()=>t.style.display='none',3000); 
-        }
+  // Funções auxiliares de modal
+  function openModal(id) { const m = document.getElementById(id); if(m) { m.classList.remove('modal-hidden'); m.classList.add('modal-visible'); } }
+  function closeModal(id) { const m = document.getElementById(id); if(m) { m.classList.remove('modal-visible'); m.classList.add('modal-hidden'); } }
+  function openOverlayForm(id) { document.getElementById('overlay-forms').classList.remove('hidden'); document.querySelectorAll('#overlay-forms > div').forEach(d => d.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
+  function closeOverlayForm(id) { document.getElementById(id).classList.add('hidden'); document.getElementById('overlay-forms').classList.add('hidden'); }
+  function maskCPF(input) { let v = input.value.replace(/\D/g, ""); if (v.length > 11) v = v.slice(0, 11); v = v.replace(/(\d{3})(\d)/, "$1.$2"); v = v.replace(/(\d{3})(\d)/, "$1.$2"); v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2"); input.value = v; }
 
-        function getTodayDate() {
-            const d = new Date();
-            const year = d.getFullYear();
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        async function fetchAllRecords(table) {
-            let allRecords = []; let from = 0; const step = 1000; let keepFetching = true;
-            while (keepFetching) {
-                const { data, error } = await sb.from(table).select('*').range(from, from + step - 1);
-                if (error) throw error;
-                if (data && data.length > 0) {
-                    allRecords.push(...data);
-                    if (data.length < step) keepFetching = false;
-                    else from += step;
-                } else keepFetching = false;
-            }
-            return { data: allRecords };
-        }
-
-        async function loadData() {
-    try {
-        const [
-          resObras, resForn, resProd, resLog,
-          resEqp, resFases, resPonto, resTerc,
-          resPontoDiario, resHistPrecos, resProdTerc
-        ] = await Promise.all([
-          fetchAllRecords('jsp_obras'),
-          fetchAllRecords('jsp_fornecedores'),
-          fetchAllRecords('jsp_produtos'),
-          fetchAllRecords('jsp_logs'),
-          fetchAllRecords('jsp_equipe').catch(() => ({ data: [] })),
-          fetchAllRecords('jsp_fase').catch(() => ({ data: [] })),
-          fetchAllRecords('jsp_ponto').catch(() => ({ data: [] })),
-          fetchAllRecords('jsp_terceirizados').catch(() => ({ data: [] })),
-          fetchAllRecords('jsp_ponto_diario').catch(() => ({ data: [] })),
-          fetchAllRecords('jsp_historico_precos').catch(() => ({ data: [] })),
-          fetchAllRecords('jsp_producao_terc').catch(() => ({ data: [] }))
-        ]);
-
-        STATE.obras = resObras.data || [];
-        STATE.fornecedores = resForn.data || [];
-        STATE.produtos = resProd.data || [];
-        STATE.logs = resLog.data || [];
-        STATE.equipe = resEqp.data || [];
-        STATE.fases = (resFases.data || []).sort((a,b) => a.ordem - b.ordem);
-        STATE.ponto = resPonto.data || [];
-        STATE.terceirizados = resTerc.data || [];
-        STATE.ponto_diario = resPontoDiario.data || []; 
-        STATE.historico_precos = resHistPrecos.data || [];
-        STATE.producao_terc = resProdTerc.data || [];
-        //console.log("Histórico de Preços carregado:", STATE.historico_precos);
-        // Garante que data_preco seja string 'yyyy-mm-dd'
-        STATE.historico_precos = STATE.historico_precos.map(r => ({
-          ...r,
-          data_preco: typeof r.data_preco === 'string' ? r.data_preco : r.data_preco instanceof Date ? r.data_preco.toISOString().split('T')[0] : r.data_preco
-        }));
-
-      
-  
- 
-
-
-
-        if (dadosUsuario.nivel === 'admin') {
-            const navUsersBtn = document.getElementById('nav-users');
-            if (navUsersBtn) navUsersBtn.classList.remove('hidden');
-            const resUsers = await fetchAllRecords('jsp_usuarios');
-            STATE.users = resUsers.data || [];
-        }
-
-        updateSelects();
-        if(!document.querySelector('.active-section')) navigate('dash');
-        else navigate(document.querySelector('.active-section').id.replace('view-',''));
-        showLoading(false);
-    } catch (err) {
-        showLoading(false);
-        showToast("Erro ao conectar no banco: " + err.message, true);
-    }
-}
-
-        function getNextIdNum(array) {
-            let max = 0;
-            array.forEach(item => { const val = parseInt(item.id); if(!isNaN(val) && val > max) max = val; });
-            return max + 1;
-        }
-
-        function updateSelects() {
-            // Selects de Obras
-            const selectsObra = ['pos-obra', 'fin-obra-filter', 'exp-obra', 'rev-obra', 'rep-obra', 'eqp-obra', 'eqp-obra-filter'];
-            const htmlObras = '<option value="">-- Selecione uma Obra --</option>' + STATE.obras.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
-            
-            selectsObra.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    const currentVal = el.value;
-                    if(id === 'fin-obra-filter' || id === 'rep-obra' || id === 'eqp-obra-filter') {
-                        el.innerHTML = '<option value="">Todas as Obras / Geral</option>' + STATE.obras.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
-                    } else {
-                        el.innerHTML = htmlObras;
-                    }
-                    if(currentVal) el.value = currentVal;
-                }
-            });
-
-            // Selects de Fases
-            const selectsFase = ['pos-fase', 'exp-fase', 'rev-fase', 'rep-fase'];
-            const htmlFasesOpcoes = STATE.fases.map(f => `<option value="${f.ordem} - ${f.nome}">${f.ordem} - ${f.nome}</option>`).join('');
-            
-            selectsFase.forEach(id => {
-                const el = document.getElementById(id);
-                if(el) {
-                    const currentVal = el.value;
-                    if(id === 'rep-fase') {
-                        el.innerHTML = '<option value="">Todas as Fases</option>' + htmlFasesOpcoes;
-                    } else {
-                        el.innerHTML = '<option value="">-- Não especificada --</option>' + htmlFasesOpcoes;
-                    }
-                    if(currentVal) el.value = currentVal;
-                }
-            });
-        }
-
-
-  // Funções básicas de UI (garantia de funcionamento)
-    function showLoading(show) {
-        const el = document.getElementById('loading');
-        if (el) el.style.display = show ? 'flex' : 'none';
-    }
-    function showToast(msg, isError = false) {
-        const t = document.getElementById('toast');
-        if (!t) return;
-        t.textContent = msg;
-        t.className = `fixed top-10 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl text-white font-bold text-sm z-[100] transition-all text-center w-[90%] max-w-sm ${isError ? 'bg-red-600' : 'bg-slate-800'}`;
-        t.style.display = 'block';
-        setTimeout(() => t.style.display = 'none', 3000);
-    }
-    function formatMoney(val) {
-        return parseFloat(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    }
-
-  // 3. Renderização da equipe (mobile)
+  // Renderização específica da equipe para mobile (cards com botões e pendências)
   function renderEquipeMobile() {
-    const term = document.getElementById('eqp-search')?.value.toLowerCase() || '';
-    const filterObra = document.getElementById('eqp-filter-obra')?.value || '';
-    const filterStatus = document.getElementById('eqp-filter-status')?.value || 'true';
-    const filterTipo = document.getElementById('eqp-filter-tipo')?.value || 'todos';
-    const dataInicio = document.getElementById('eqp-filter-data-inicio')?.value || '';
-    const dataFim = document.getElementById('eqp-filter-data-fim')?.value || '';
+    const term = document.getElementById('eqp-search').value.toLowerCase();
+    const filterObra = document.getElementById('eqp-filter-obra').value;
+    const filterStatus = document.getElementById('eqp-filter-status').value;
+    const filterTipo = document.getElementById('eqp-filter-tipo').value;
+    const dataInicio = document.getElementById('eqp-filter-data-inicio').value;
+    const dataFim = document.getElementById('eqp-filter-data-fim').value;
+    const colaboradores = getColaboradoresUnificados(); // função de shared.js
     
-    if (typeof getColaboradoresUnificados !== 'function') {
-      console.error('getColaboradoresUnificados não está definida. Verifique shared.js');
-      return;
-    }
-    const colaboradores = getColaboradoresUnificados();
-    
-    let fil = colaboradores.filter(c => 
-      (c.nome || '').toLowerCase().includes(term) || 
-      (c.categoria || '').toLowerCase().includes(term)
-    );
+    let fil = colaboradores.filter(c => (c.nome||'').toLowerCase().includes(term) || (c.categoria||'').toLowerCase().includes(term));
     if (filterObra) fil = fil.filter(c => String(c.obra_atual_id) === String(filterObra));
-    if (filterStatus !== 'todos') {
-      const isAtivo = filterStatus === 'true';
-      fil = fil.filter(c => (c.ativo === true || c.ativo === 'true') === isAtivo);
-    }
+    if (filterStatus !== "todos") { const isAtivo = filterStatus === "true"; fil = fil.filter(c => (c.ativo === true || c.ativo === 'true') === isAtivo); }
     if (filterTipo !== 'todos') fil = fil.filter(c => c.tipo === filterTipo);
-    fil.sort((a,b) => (a.nome || '').localeCompare(b.nome || ''));
-    
-    const container = document.getElementById('equipe-list');
-    if (!container) return;
-    
-    container.innerHTML = fil.map(c => {
+    fil.sort((a,b) => (a.nome||'').localeCompare(b.nome||''));
+
+    document.getElementById('equipe-list').innerHTML = fil.map(c => {
       const obra = STATE.obras.find(x => x.id == c.obra_atual_id);
       const nomeObra = obra ? obra.nome : 'Sem obra alocada';
       const isAtivo = c.ativo === true || c.ativo === 'true';
-      const tipoBadge = c.tipo === 'diaria' 
-        ? '<span class="bg-blue-100 text-blue-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">DIÁRIA</span>'
-        : '<span class="bg-purple-100 text-purple-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">METRO</span>';
+      const tipoBadge = c.tipo === 'diaria' ? '<span class="bg-blue-100 text-blue-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">DIÁRIA</span>' : '<span class="bg-purple-100 text-purple-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">METRO</span>';
       const valorExibicao = c.tipo === 'diaria' ? formatMoney(c.valor_base) : `${formatMoney(c.valor_base)}/m`;
       
+      // Calcular pendentes
       let quantidadePendente = 0;
       let valorPendente = 0;
       if (c.tipo === 'diaria') {
-        if (typeof calcularSaldoPendenteFuncionarioPorPeriodo === 'function') {
-          quantidadePendente = calcularSaldoPendenteFuncionarioPorPeriodo(c.id, dataInicio, dataFim);
-          valorPendente = quantidadePendente * c.valor_base;
-        }
+        quantidadePendente = calcularSaldoPendenteFuncionarioPorPeriodo(c.id, dataInicio, dataFim);
+        valorPendente = quantidadePendente * c.valor_base;
       } else {
-        if (typeof calcularMetrosPendentesPorPeriodo === 'function') {
-          quantidadePendente = calcularMetrosPendentesPorPeriodo(c.id, dataInicio, dataFim);
-          valorPendente = quantidadePendente * c.valor_base;
-        }
+        quantidadePendente = calcularMetrosPendentesPorPeriodo(c.id, dataInicio, dataFim);
+        valorPendente = quantidadePendente * c.valor_base;
       }
       
-      let zapBtn = '';
-      if (c.telefone) {
-        const numZap = c.telefone.replace(/\D/g, '');
-        if (numZap.length >= 10) {
-          zapBtn = `<a href="https://wa.me/55${numZap}" target="_blank" class="p-1.5 bg-green-100 text-green-600 rounded-lg shrink-0 flex items-center justify-center"><i data-lucide="message-circle" class="w-4 h-4"></i></a>`;
-        }
-      }
+      let zapBtn = ''; if(c.telefone) { const numZap = c.telefone.replace(/\D/g, ''); if(numZap.length >= 10) zapBtn = `<a href="https://wa.me/55${numZap}" target="_blank" class="p-1.5 bg-green-100 text-green-600 rounded-lg shrink-0 flex items-center justify-center"><i data-lucide="message-circle" class="w-4 h-4"></i></a>`; }
       
       let botoesAcao = '';
       if (c.tipo === 'diaria') {
@@ -781,12 +424,12 @@
           ${zapBtn}
         `;
       }
-      
+
       return `
       <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm relative">
         <div class="absolute top-2 right-2 flex gap-1 items-center">
           ${c.tipo === 'diaria' ? `<span class="bg-slate-100 text-slate-500 border border-slate-200 text-[8px] font-bold px-1.5 py-0.5 rounded">Mat: ${c.matricula || '-'}</span>` : ''}
-          <span class="${isAtivo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} text-[8px] font-bold px-1.5 py-0.5 rounded">${isAtivo ? 'ATIVO' : 'INATIVO'}</span>
+          <span class="${isAtivo?'bg-green-100 text-green-700':'bg-red-100 text-red-700'} text-[8px] font-bold px-1.5 py-0.5 rounded">${isAtivo?'ATIVO':'INATIVO'}</span>
         </div>
         <div class="flex justify-between items-start mb-1 pr-24">
           <div>
@@ -795,7 +438,7 @@
             <p class="text-[9px] text-blue-600 mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${nomeObra}</p>
             <div class="flex flex-wrap items-baseline gap-2 mt-1">
               <span class="text-[10px] font-bold text-slate-700">${valorExibicao}</span>
-              <span class="text-[9px] text-orange-600 font-bold">${quantidadePendente.toFixed(2)} ${c.tipo === 'diaria' ? 'dias pend.' : 'm pend.'}</span>
+              <span class="text-[9px] text-orange-600 font-bold">${quantidadePendente.toFixed(2)} ${c.tipo==='diaria'?'dias pend.':'m pend.'}</span>
               <span class="text-[11px] font-black text-green-600">${formatMoney(valorPendente)}</span>
             </div>
           </div>
@@ -805,53 +448,83 @@
         </div>
       </div>`;
     }).join('');
-    
     lucide.createIcons();
   }
 
-  // 4. Inicialização
-  window.onload = function() {
-    if (!dadosUsuario) return;
-    showLoading(true);
-    if (typeof loadData === 'function') {
-      loadData().then(() => {
-        // Definir datas padrão para os filtros da equipe
-        const hoje = new Date();
-        const anoAtual = hoje.getFullYear();
-        const primeiroDia = `${anoAtual}-01-01`;
-        const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
-        const ultimoDiaStr = `${anoAtual}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
-        const inputInicio = document.getElementById('eqp-filter-data-inicio');
-        const inputFim = document.getElementById('eqp-filter-data-fim');
-        if (inputInicio) inputInicio.value = primeiroDia;
-        if (inputFim) inputFim.value = ultimoDiaStr;
-        
-        renderEquipeMobile();
-        showLoading(false);
-      }).catch(err => {
-        showLoading(false);
-        showToast("Erro ao carregar dados: " + err.message, true);
-      });
-    } else {
-      console.error('loadData não definida. Verifique shared.js');
-      showLoading(false);
-    }
-    lucide.createIcons();
-  };
+  // As funções openEquipeForm, saveEquipe, gerarIdSeguro, onCategoriaChange, etc. estão em shared.js
+  // As funções de ponto, metros, documentos, folha, checagem também estão em shared.js
+  // Portanto, não precisam ser redefinidas aqui.
 
-  // 5. Logout
-  function fazerLogout() {
-    localStorage.removeItem('rv_user');
-    window.location.replace('index.html');
-  }
+  // Função de logout
+  function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
 
-  // 6. Expor funções globais (para os botões)
+  // Expor funções para o escopo global (necessário para os botões onclick)
   window.navigate = navigate;
   window.openNovaOC = openNovaOC;
   window.closeNovaOC = closeNovaOC;
   window.toggleFinTab = toggleFinTab;
+  window.openModal = openModal;
+  window.closeModal = closeModal;
+  window.openOverlayForm = openOverlayForm;
+  window.closeOverlayForm = closeOverlayForm;
+  window.maskCPF = maskCPF;
   window.renderEquipeMobile = renderEquipeMobile;
   window.fazerLogout = fazerLogout;
+  window.renderDashboard = renderDashboard;
+  window.renderOCList = renderOCList;
+  window.renderFinance = renderFinance;
+  window.renderFornecedores = renderFornecedores;
+  window.renderProducts = renderProducts;
+  window.updateCart = updateCart;
+  window.clearCart = clearCart;
+  window.openPosProductModal = openPosProductModal;
+  window.renderPosProductModal = renderPosProductModal;
+  window.addCartModal = addCartModal;
+  window.openPosFornecedorModal = openPosFornecedorModal;
+  window.renderPosFornecedorModal = renderPosFornecedorModal;
+  window.selectPosFornecedor = selectPosFornecedor;
+  window.saveOC = saveOC;
+  window.loadOCToCart = loadOCToCart;
+  window.estornarOC = estornarOC;
+  window.deleteOC = deleteOC;
+  window.openConfirmOC = openConfirmOC;
+  window.executeConfirmOC = executeConfirmOC;
+  window.verOC = verOC;
+  window.compartilharNative = compartilharNative;
+  window.imprimirFinanceiro = imprimirFinanceiro;
+  window.openObraForm = openObraForm;
+  window.saveObra = saveObra;
+  window.openFornecedorForm = openFornecedorForm;
+  window.saveFornecedor = saveFornecedor;
+  window.openProductForm = openProductForm;
+  window.saveProduct = saveProduct;
+  window.buildHTMLOC = buildHTMLOC;
+  window.abrirModalSaldo = abrirModalSaldo;
+  window.fecharModalSaldo = fecharModalSaldo;
+  window.carregarTabelaSaldo = carregarTabelaSaldo;
+  window.lancarAjusteManual = lancarAjusteManual;
+  window.fecharPagamentoSaldo = fecharPagamentoSaldo;
+  window.estornarUltimoFechamento = estornarUltimoFechamento;
+  window.imprimirExtratoSaldo = imprimirExtratoSaldo;
+  window.imprimirReciboDoModal = imprimirReciboDoModal;
+  window.abrirModalSaldoMetros = abrirModalSaldoMetros;
+  window.fecharModalSaldoMetros = fecharModalSaldoMetros;
+  window.carregarTabelaSaldoMetros = carregarTabelaSaldoMetros;
+  window.lancarAjusteManualMetros = lancarAjusteManualMetros;
+  window.fecharPagamentoSaldoMetros = fecharPagamentoSaldoMetros;
+  window.estornarUltimoFechamentoMetros = estornarUltimoFechamentoMetros;
+  window.imprimirExtratoSaldoMetros = imprimirExtratoSaldoMetros;
+  window.imprimirReciboMetrosDoModal = imprimirReciboMetrosDoModal;
+  window.abrirModalDocumentos = abrirModalDocumentos;
+  window.marcarContratoAssinado = marcarContratoAssinado;
+  window.imprimirDocumento = imprimirDocumento;
+  window.abrirModalFolhaPagamento = abrirModalFolhaPagamento;
+  window.executarImpressaoFolha = executarImpressaoFolha;
+  window.imprimirChecagem = imprimirChecagem;
+  window.openEquipeForm = openEquipeForm;
+  window.saveEquipe = saveEquipe;
+  window.onCategoriaChange = onCategoriaChange;
 </script>
+
 </body>
 </html>
