@@ -1478,194 +1478,207 @@
         }
 
         // ====== FUNÇÕES PARA CÁLCULO DE PENDENTES (DIÁRIAS E METROS) ======
-        function calcularDiariasPendentes(funcionarioId) {
-            // Filtra registros de ponto do funcionário que estão VALIDADOS e ainda NÃO pagos (pago_em_fechamento = false)
-            const registros = STATE.ponto_diario.filter(p => 
-                p.funcionario_id === funcionarioId && 
-                p.status === 'VALIDADO' &&
-                !p.pago_em_fechamento
-            );
-            if (registros.length === 0) return 0;
-            
-            // Agrupa por dia
-            const porDia = new Map();
-            registros.forEach(p => {
-                const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
-                if (!porDia.has(dataDia)) porDia.set(dataDia, []);
-                porDia.get(dataDia).push(p);
-            });
-            
-            let totalDiarias = 0;
-            
-            function diffMinutesUTC(startIso, endIso) {
-                return (new Date(endIso) - new Date(startIso)) / (1000 * 60);
-            }
-            
-            function roundHalfDown(v) {
-                if (v <= 0) return 0;
-                if (v >= 1) return 1;
-                let cents = v * 100;
-                let dec = cents - Math.floor(cents);
-                if (Math.abs(dec - 0.5) < 0.0001) return Math.floor(cents) / 100;
-                return Math.round(cents) / 100;
-            }
-            
-            function calcularFracaoDia(registrosDoDia) {
-                const entradas = registrosDoDia.filter(r => r.tipo === 'ENTRADA').map(r => r.hora_registro);
-                const saidas   = registrosDoDia.filter(r => r.tipo === 'SAIDA').map(r => r.hora_registro);
-                const ajustes  = registrosDoDia.filter(r => r.tipo === 'AJUSTE_MANUAL')
-                                        .reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
-                
-                if (entradas.length === 0 && saidas.length === 0) return Math.min(ajustes, 1);
-                
-                const todosPontos = [
-                    ...entradas.map(e => ({ tipo: 'E', hora: e })),
-                    ...saidas.map(s => ({ tipo: 'S', hora: s }))
-                ].sort((a, b) => new Date(a.hora) - new Date(b.hora));
-                
-                let startManha = null, endManha = null;
-                let startTarde = null, endTarde = null;
-                
-                for (const p of todosPontos) {
-                    const hour = new Date(p.hora).getUTCHours();
-                    if (hour < 12) {
-                        if (p.tipo === 'E' && !startManha) startManha = p.hora;
-                        if (p.tipo === 'S') endManha = p.hora;
-                    } else {
-                        if (p.tipo === 'E' && !startTarde) startTarde = p.hora;
-                        if (p.tipo === 'S') endTarde = p.hora;
-                    }
-                }
-                
-                function calcMin(start, end, jornada) {
-                    if (!start || !end) return 0;
-                    let mins = diffMinutesUTC(start, end);
-                    const falta = jornada - mins;
-                    if (falta > 0 && falta <= 10) mins = jornada;
-                    return Math.min(jornada, Math.max(0, mins));
-                }
-                
-                let minutosManha = calcMin(startManha, endManha, 240);
-                let minutosTarde = calcMin(startTarde, endTarde, 240);
-                let baseFracao = (minutosManha + minutosTarde) / 480;
-                baseFracao = Math.min(1, Math.max(0, baseFracao));
-                
-                let fracao = baseFracao + ajustes;
-                if (fracao > 1) fracao = 1;
-                return roundHalfDown(fracao);
-            }
-            
-            for (const registrosDoDia of porDia.values()) {
-                totalDiarias += calcularFracaoDia(registrosDoDia);
-            }
-            return totalDiarias;
-        }
+        // ====== FUNÇÕES PARA CÁLCULO DE PENDENTES (DIÁRIAS E METROS) ======
+function calcularDiariasPendentes(funcionarioId) {
+    const registros = STATE.ponto_diario.filter(p => 
+        p.funcionario_id === funcionarioId && 
+        p.status === 'VALIDADO' &&
+        !p.pago_em_fechamento
+    );
+    if (registros.length === 0) return { diarias: 0, valor: 0 };
+    
+    const porDia = new Map();
+    registros.forEach(p => {
+        const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+        if (!porDia.has(dataDia)) porDia.set(dataDia, []);
+        porDia.get(dataDia).push(p);
+    });
+    
+    let totalDiarias = 0;
+    
+    function diffMinutesUTC(startIso, endIso) {
+        return (new Date(endIso) - new Date(startIso)) / (1000 * 60);
+    }
+    
+    function roundHalfDown(v) {
+        if (v <= 0) return 0;
+        if (v >= 1) return 1;
+        let cents = v * 100;
+        let dec = cents - Math.floor(cents);
+        if (Math.abs(dec - 0.5) < 0.0001) return Math.floor(cents) / 100;
+        return Math.round(cents) / 100;
+    }
+    
+    function calcularFracaoDia(registrosDoDia) {
+        const entradas = registrosDoDia.filter(r => r.tipo === 'ENTRADA').map(r => r.hora_registro);
+        const saidas   = registrosDoDia.filter(r => r.tipo === 'SAIDA').map(r => r.hora_registro);
+        const ajustes  = registrosDoDia.filter(r => r.tipo === 'AJUSTE_MANUAL')
+                                .reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
         
-        function calcularMetrosPendentes(terceirizadoId) {
-            const producoes = STATE.producao_terc.filter(p => 
-                p.terceirizado_id === terceirizadoId && 
-                p.status !== 'PAGO'
-            );
-            return producoes.reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
-        }
+        if (entradas.length === 0 && saidas.length === 0) return Math.min(ajustes, 1);
         
-        function calcularPendenteEquipe(c) {
-            if (c.tipo === 'diaria') {
-                const diariasPendentes = calcularDiariasPendentes(c.id);
-                return diariasPendentes * c.valor_base;
+        const todosPontos = [
+            ...entradas.map(e => ({ tipo: 'E', hora: e })),
+            ...saidas.map(s => ({ tipo: 'S', hora: s }))
+        ].sort((a, b) => new Date(a.hora) - new Date(b.hora));
+        
+        let startManha = null, endManha = null;
+        let startTarde = null, endTarde = null;
+        
+        for (const p of todosPontos) {
+            const hour = new Date(p.hora).getUTCHours();
+            if (hour < 12) {
+                if (p.tipo === 'E' && !startManha) startManha = p.hora;
+                if (p.tipo === 'S') endManha = p.hora;
             } else {
-                const metrosPendentes = calcularMetrosPendentes(c.id);
-                return metrosPendentes * c.valor_base;
+                if (p.tipo === 'E' && !startTarde) startTarde = p.hora;
+                if (p.tipo === 'S') endTarde = p.hora;
             }
         }
+        
+        function calcMin(start, end, jornada) {
+            if (!start || !end) return 0;
+            let mins = diffMinutesUTC(start, end);
+            const falta = jornada - mins;
+            if (falta > 0 && falta <= 10) mins = jornada;
+            return Math.min(jornada, Math.max(0, mins));
+        }
+        
+        let minutosManha = calcMin(startManha, endManha, 240);
+        let minutosTarde = calcMin(startTarde, endTarde, 240);
+        let baseFracao = (minutosManha + minutosTarde) / 480;
+        baseFracao = Math.min(1, Math.max(0, baseFracao));
+        
+        let fracao = baseFracao + ajustes;
+        if (fracao > 1) fracao = 1;
+        return roundHalfDown(fracao);
+    }
+    
+    for (const registrosDoDia of porDia.values()) {
+        totalDiarias += calcularFracaoDia(registrosDoDia);
+    }
+    
+    const membro = STATE.equipe.find(e => e.id == funcionarioId);
+    const valorDiaria = membro ? parseFloat(membro.valor_diaria || 0) : 0;
+    return { diarias: totalDiarias, valor: totalDiarias * valorDiaria };
+}
 
+function calcularMetrosPendentes(terceirizadoId) {
+    const producoes = STATE.producao_terc.filter(p => 
+        p.terceirizado_id === terceirizadoId && 
+        p.status !== 'PAGO'
+    );
+    const totalMetros = producoes.reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
+    const membro = STATE.terceirizados.find(t => t.id == terceirizadoId);
+    const valorMetro = membro ? parseFloat(membro.valor_metro || 0) : 0;
+    return { metros: totalMetros, valor: totalMetros * valorMetro };
+}
+
+function calcularPendenteEquipe(c) {
+    if (c.tipo === 'diaria') {
+        return calcularDiariasPendentes(c.id);
+    } else {
+        return calcularMetrosPendentes(c.id);
+    }
+}
+      
         // ====== RENDERIZAÇÃO DA EQUIPE UNIFICADA (com valor pendente) ======
-        function renderEquipe() {
-            const term = document.getElementById('eqp-search').value.toLowerCase();
-            const filterObra = document.getElementById('eqp-filter-obra').value;
-            const filterStatus = document.getElementById('eqp-filter-status').value;
-            const filterTipo = document.getElementById('eqp-filter-tipo').value;
-            
-            const colaboradores = getColaboradoresUnificados();
-            
-            let fil = colaboradores.filter(c => 
-                (c.nome || '').toLowerCase().includes(term) || 
-                (c.categoria || '').toLowerCase().includes(term)
-            );
+       function renderEquipe() {
+    const term = document.getElementById('eqp-search').value.toLowerCase();
+    const filterObra = document.getElementById('eqp-filter-obra').value;
+    const filterStatus = document.getElementById('eqp-filter-status').value;
+    const filterTipo = document.getElementById('eqp-filter-tipo').value;
+    
+    const colaboradores = getColaboradoresUnificados();
+    
+    let fil = colaboradores.filter(c => 
+        (c.nome || '').toLowerCase().includes(term) || 
+        (c.categoria || '').toLowerCase().includes(term)
+    );
 
-            if(filterObra) {
-                fil = fil.filter(c => String(c.obra_atual_id) === String(filterObra));
+    if(filterObra) {
+        fil = fil.filter(c => String(c.obra_atual_id) === String(filterObra));
+    }
+    if(filterStatus) {
+        const isAtivoStatus = filterStatus === 'true';
+        fil = fil.filter(c => (c.ativo === true || c.ativo === 'true') === isAtivoStatus);
+    }
+    if(filterTipo !== 'todos') {
+        fil = fil.filter(c => c.tipo === filterTipo);
+    }
+
+    fil.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+    
+    document.getElementById('equipe-list').innerHTML = fil.map(c => {
+        const obra = STATE.obras.find(x => x.id == c.obra_atual_id);
+        const nomeObra = obra ? obra.nome : 'Sem obra alocada';
+        const isAtivo = c.ativo === true || c.ativo === 'true';
+        
+        const tipoBadge = c.tipo === 'diaria' 
+            ? '<span class="bg-blue-100 text-blue-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">DIÁRIA</span>'
+            : '<span class="bg-purple-100 text-purple-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">METRO</span>';
+        
+        const valorExibicao = c.tipo === 'diaria' 
+            ? formatMoney(c.valor_base) 
+            : `${formatMoney(c.valor_base)}/m`;
+        
+        const pendente = calcularPendenteEquipe(c);
+        let textoPendente = '';
+        if (pendente.valor > 0) {
+            if (c.tipo === 'diaria') {
+                textoPendente = `<p class="text-[10px] font-black text-red-600 mt-1">${pendente.diarias.toFixed(2)} diárias pendentes · ${formatMoney(pendente.valor)}</p>`;
+            } else {
+                textoPendente = `<p class="text-[10px] font-black text-red-600 mt-1">${pendente.metros.toFixed(2)} m pendentes · ${formatMoney(pendente.valor)}</p>`;
             }
-            if(filterStatus) {
-                const isAtivoStatus = filterStatus === 'true';
-                fil = fil.filter(c => (c.ativo === true || c.ativo === 'true') === isAtivoStatus);
-            }
-            if(filterTipo !== 'todos') {
-                fil = fil.filter(c => c.tipo === filterTipo);
-            }
-
-            fil.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
-            
-            document.getElementById('equipe-list').innerHTML = fil.map(c => {
-                const obra = STATE.obras.find(x => x.id == c.obra_atual_id);
-                const nomeObra = obra ? obra.nome : 'Sem obra alocada';
-                const isAtivo = c.ativo === true || c.ativo === 'true';
-                
-                const tipoBadge = c.tipo === 'diaria' 
-                    ? '<span class="bg-blue-100 text-blue-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">DIÁRIA</span>'
-                    : '<span class="bg-purple-100 text-purple-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">METRO</span>';
-                
-                const valorExibicao = c.tipo === 'diaria' 
-                    ? formatMoney(c.valor_base) 
-                    : `${formatMoney(c.valor_base)}/m`;
-                
-                const valorPendente = calcularPendenteEquipe(c);
-                
-                let zapBtn = '';
-                if(c.telefone) {
-                    const numZap = c.telefone.replace(/\D/g, '');
-                    if(numZap.length >= 10) {
-                        zapBtn = `<a href="https://wa.me/55${numZap}" target="_blank" class="p-1.5 bg-green-100 text-green-600 rounded-lg shrink-0 flex items-center justify-center"><i data-lucide="message-circle" class="w-4 h-4"></i></a>`;
-                    }
-                }
-
-                let botoesAcao = '';
-                if (c.tipo === 'diaria') {
-                    botoesAcao = `
-                        <button onclick="openEquipeForm('${c.id}')" class="p-1.5 bg-slate-100 text-blue-600 rounded-lg shrink-0 flex items-center justify-center"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                        ${zapBtn}
-                    `;
-                } else {
-                    botoesAcao = `
-                        <button onclick="openEquipeForm('${c.id}', 'terceirizado')" class="p-1.5 bg-slate-100 text-blue-600 rounded-lg shrink-0 flex items-center justify-center"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                        ${zapBtn}
-                    `;
-                }
-
-                return `
-                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm relative">
-                    <div class="absolute top-2 right-2 flex gap-1 items-center">
-                        ${c.tipo === 'diaria' ? `<span class="bg-slate-100 text-slate-500 border border-slate-200 text-[8px] font-bold px-1.5 py-0.5 rounded">Mat: ${c.matricula || '-'}</span>` : ''}
-                        <span class="${isAtivo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} text-[8px] font-bold px-1.5 py-0.5 rounded">${isAtivo ? 'ATIVO' : 'INATIVO'}</span>
-                    </div>
-                    <div class="flex justify-between items-start mb-1 pr-24">
-                        <div>
-                            <h4 class="font-bold text-slate-800 text-xs flex items-center">
-                                ${c.nome || '-'} ${tipoBadge}
-                            </h4>
-                            <p class="text-[10px] text-slate-500 font-bold uppercase mt-1">${c.categoria || '-'} ${c.telefone ? ` | ${c.telefone}` : ''}</p>
-                            <p class="text-[9px] text-blue-600 mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${nomeObra}</p>
-                            <p class="text-[9px] text-slate-500 mt-0.5 font-bold">${valorExibicao}</p>
-                            ${valorPendente > 0 ? `<p class="text-[10px] font-black text-red-600 mt-1">Pendente: ${formatMoney(valorPendente)}</p>` : `<p class="text-[9px] text-green-600 mt-1">✓ Nada pendente</p>`}
-                        </div>
-                    </div>
-                    <div class="flex justify-end gap-2 mt-2 pt-2 border-t border-slate-50">
-                        ${botoesAcao}
-                    </div>
-                </div>`;
-            }).join('');
-            lucide.createIcons();
+        } else {
+            textoPendente = `<p class="text-[9px] text-green-600 mt-1">✓ Nada pendente</p>`;
         }
+        
+        let zapBtn = '';
+        if(c.telefone) {
+            const numZap = c.telefone.replace(/\D/g, '');
+            if(numZap.length >= 10) {
+                zapBtn = `<a href="https://wa.me/55${numZap}" target="_blank" class="p-1.5 bg-green-100 text-green-600 rounded-lg shrink-0 flex items-center justify-center"><i data-lucide="message-circle" class="w-4 h-4"></i></a>`;
+            }
+        }
+
+        let botoesAcao = '';
+        if (c.tipo === 'diaria') {
+            botoesAcao = `
+                <button onclick="openEquipeForm('${c.id}')" class="p-1.5 bg-slate-100 text-blue-600 rounded-lg shrink-0 flex items-center justify-center"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                ${zapBtn}
+            `;
+        } else {
+            botoesAcao = `
+                <button onclick="openEquipeForm('${c.id}', 'terceirizado')" class="p-1.5 bg-slate-100 text-blue-600 rounded-lg shrink-0 flex items-center justify-center"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                ${zapBtn}
+            `;
+        }
+
+        return `
+        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm relative">
+            <div class="absolute top-2 right-2 flex gap-1 items-center">
+                ${c.tipo === 'diaria' ? `<span class="bg-slate-100 text-slate-500 border border-slate-200 text-[8px] font-bold px-1.5 py-0.5 rounded">Mat: ${c.matricula || '-'}</span>` : ''}
+                <span class="${isAtivo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} text-[8px] font-bold px-1.5 py-0.5 rounded">${isAtivo ? 'ATIVO' : 'INATIVO'}</span>
+            </div>
+            <div class="flex justify-between items-start mb-1 pr-24">
+                <div>
+                    <h4 class="font-bold text-slate-800 text-xs flex items-center">
+                        ${c.nome || '-'} ${tipoBadge}
+                    </h4>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase mt-1">${c.categoria || '-'} ${c.telefone ? ` | ${c.telefone}` : ''}</p>
+                    <p class="text-[9px] text-blue-600 mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${nomeObra}</p>
+                    <p class="text-[9px] text-slate-500 mt-0.5 font-bold">${valorExibicao}</p>
+                    ${textoPendente}
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 mt-2 pt-2 border-t border-slate-50">
+                ${botoesAcao}
+            </div>
+        </div>`;
+    }).join('');
+    lucide.createIcons();
+}
 
         // Função que une equipe própria e terceirizados
         function getColaboradoresUnificados() {
