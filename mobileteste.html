@@ -1076,30 +1076,107 @@
             if(error){ showLoading(false); return showToast('Erro: '+error.message,true); }
             await loadData(); carregarTabelaSaldo(); showToast('Ajuste lançado!');
         }
-        async function fecharPagamentoSaldo(){
-            const funcId=document.getElementById('saldo-equipe-id').value;
-            const dataInicio=document.getElementById('saldo-filtro-data-inicio').value;
-            const dataFim=document.getElementById('saldo-filtro-data-fim').value;
-            const func=STATE.equipe.find(e=>e.id===funcId);
-            if(!func) return;
-            let registros=STATE.ponto_diario.filter(p=>p.funcionario_id===funcId && p.status==='VALIDADO' && !p.pago_em_fechamento);
-            if(dataInicio) registros=registros.filter(p=>p.hora_registro>=dataInicio+'T00:00:00');
-            if(dataFim) registros=registros.filter(p=>p.hora_registro<=dataFim+'T23:59:59');
-            if(registros.length===0) return showToast('Nenhum registro pendente',true);
-            const totalDiarias=()=>{ let tot=0; const porDia=new Map(); registros.forEach(p=>{ const d=new Date(p.hora_registro).toLocaleDateString('pt-BR',{timeZone:'UTC'}); if(!porDia.has(d)) porDia.set(d,[]); porDia.get(d).push(p); }); function diff(m){return (new Date(m[1])-new Date(m[0]))/(1000*60);} function round(v){let c=v*100; let d=c-Math.floor(c); if(Math.abs(d-0.5)<0.0001) return Math.floor(c)/100; return Math.round(c)/100;} function calc(regs){ let ent=regs.filter(r=>r.tipo==='ENTRADA').map(r=>r.hora_registro), sai=regs.filter(r=>r.tipo==='SAIDA').map(r=>r.hora_registro), aj=regs.filter(r=>r.tipo==='AJUSTE_MANUAL').reduce((s,a)=>s+parseFloat(a.fracao_diaria||0),0); if(ent.length===0 && sai.length===0) return Math.min(aj,1); let pts=[...ent.map(e=>({tipo:'E',hora:e})),...sai.map(s=>({tipo:'S',hora:s}))].sort((a,b)=>new Date(a.hora)-new Date(b.hora)); let sm=null,em=null,st=null,et=null; for(const p of pts){ const h=new Date(p.hora).getUTCHours(); if(h<12){ if(p.tipo==='E' && !sm) sm=p.hora; if(p.tipo==='S') em=p.hora; } else { if(p.tipo==='E' && !st) st=p.hora; if(p.tipo==='S') et=p.hora; } } function calcM(s,e,j){ if(!s||!e) return 0; let m=diff([s,e]); let f=j-m; if(f>0&&f<=10) m=j; return Math.min(j,Math.max(0,m)); } let minM=calcM(sm,em,240), minT=calcM(st,et,240); let base=(minM+minT)/480; base=Math.min(1,Math.max(0,base)); let f=base+aj; if(f>1) f=1; return round(f); } for(const regs of porDia.values()) tot+=calc(regs); return tot; };
-            const valorTotal=totalDiarias*parseFloat(func.valor_diaria||0);
-            if(!confirm(`Fechar pagamento de ${totalDiarias.toFixed(2)} diárias no valor de ${formatMoney(valorTotal)}?`)) return;
-            showLoading(true);
-            const dataIniFormatada=dataInicio?new Date(dataInicio+'T00:00:00').toLocaleDateString('pt-BR'):''; const dataFimFormatada=dataFim?new Date(dataFim+'T00:00:00').toLocaleDateString('pt-BR'):'';
-            const periodoDesc=dataIniFormatada&&dataFimFormatada?`${dataIniFormatada} a ${dataFimFormatada}`:'período selecionado';
-            const descricao=`Pagamento de ponto - ${func.nome} - Período ${periodoDesc}`;
-            const {error:errFin}=await sb.from('jsp_logs').insert([{ id:getNextIdNum(STATE.logs).toString(), obra_id:func.obra_atual_id?parseInt(func.obra_atual_id):null, tipo:'despesa', produto_nome:descricao, valor_total:valorTotal, data:new Date().toISOString(), vencimento:new Date().toISOString(), status_financeiro:'PENDENTE', categoria:'Mão de Obra', observacao:`Fechamento de ponto - Funcionário: ${func.nome} - Total diárias: ${totalDiarias.toFixed(2)}` }]);
-            if(errFin){ showLoading(false); return showToast('Erro ao gerar despesa: '+errFin.message,true); }
-            const ids=registros.map(r=>r.id);
-            const {error:errPonto}=await sb.from('jsp_ponto_diario').update({ pago_em_fechamento:true }).in('id',ids);
-            if(errPonto){ showLoading(false); return showToast('Erro ao atualizar registros: '+errPonto.message,true); }
-            await loadData(); fecharModalSaldo(); renderEquipe(); showToast('Pagamento fechado! Despesa lançada.');
+        async function fecharPagamentoSaldo() {
+    const funcId = document.getElementById('saldo-equipe-id').value;
+    const dataInicio = document.getElementById('saldo-filtro-data-inicio').value;
+    const dataFim = document.getElementById('saldo-filtro-data-fim').value;
+    const func = STATE.equipe.find(e => e.id === funcId);
+    if (!func) return;
+
+    let registros = STATE.ponto_diario.filter(p => p.funcionario_id === funcId && p.status === 'VALIDADO' && !p.pago_em_fechamento);
+    if (dataInicio) registros = registros.filter(p => p.hora_registro >= dataInicio + 'T00:00:00');
+    if (dataFim) registros = registros.filter(p => p.hora_registro <= dataFim + 'T23:59:59');
+    if (registros.length === 0) return showToast('Nenhum registro pendente', true);
+
+    // Função para calcular total de diárias (CORRIGIDA)
+    function calcularTotalDiarias() {
+        let tot = 0;
+        const porDia = new Map();
+        registros.forEach(p => {
+            const d = new Date(p.hora_registro).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+            if (!porDia.has(d)) porDia.set(d, []);
+            porDia.get(d).push(p);
+        });
+        function diff(arr) { return (new Date(arr[1]) - new Date(arr[0])) / (1000 * 60); }
+        function round(v) { let c = v * 100; let d = c - Math.floor(c); if (Math.abs(d - 0.5) < 0.0001) return Math.floor(c) / 100; return Math.round(c) / 100; }
+        function calc(regs) {
+            let ent = regs.filter(r => r.tipo === 'ENTRADA').map(r => r.hora_registro);
+            let sai = regs.filter(r => r.tipo === 'SAIDA').map(r => r.hora_registro);
+            let aj = regs.filter(r => r.tipo === 'AJUSTE_MANUAL').reduce((s, a) => s + parseFloat(a.fracao_diaria || 0), 0);
+            if (ent.length === 0 && sai.length === 0) return Math.min(aj, 1);
+            let pts = [...ent.map(e => ({ tipo: 'E', hora: e })), ...sai.map(s => ({ tipo: 'S', hora: s }))].sort((a, b) => new Date(a.hora) - new Date(b.hora));
+            let sm = null, em = null, st = null, et = null;
+            for (const p of pts) {
+                const h = new Date(p.hora).getUTCHours();
+                if (h < 12) {
+                    if (p.tipo === 'E' && !sm) sm = p.hora;
+                    if (p.tipo === 'S') em = p.hora;
+                } else {
+                    if (p.tipo === 'E' && !st) st = p.hora;
+                    if (p.tipo === 'S') et = p.hora;
+                }
+            }
+            function calcM(s, e, j) {
+                if (!s || !e) return 0;
+                let m = diff([s, e]);
+                let f = j - m;
+                if (f > 0 && f <= 10) m = j;
+                return Math.min(j, Math.max(0, m));
+            }
+            let minM = calcM(sm, em, 240);
+            let minT = calcM(st, et, 240);
+            let base = (minM + minT) / 480;
+            base = Math.min(1, Math.max(0, base));
+            let f = base + aj;
+            if (f > 1) f = 1;
+            return round(f);
         }
+        for (const regs of porDia.values()) tot += calc(regs);
+        return tot;
+    }
+
+    const totalDiarias = calcularTotalDiarias(); // AGORA É UM NÚMERO
+    const valorTotal = totalDiarias * parseFloat(func.valor_diaria || 0);
+
+    if (!confirm(`Fechar pagamento de ${totalDiarias.toFixed(2)} diárias no valor de ${formatMoney(valorTotal)}?`)) return;
+
+    showLoading(true);
+    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+    const periodoDesc = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
+    const descricao = `Pagamento de ponto - ${func.nome} - Período ${periodoDesc}`;
+
+    const { error: errFin } = await sb.from('jsp_logs').insert([{
+        id: getNextIdNum(STATE.logs).toString(),
+        obra_id: func.obra_atual_id ? parseInt(func.obra_atual_id) : null,
+        tipo: 'despesa',
+        produto_nome: descricao,
+        valor_total: valorTotal,
+        data: new Date().toISOString(),
+        vencimento: new Date().toISOString(),
+        status_financeiro: 'PENDENTE',
+        categoria: 'Mão de Obra',
+        observacao: `Fechamento de ponto - Funcionário: ${func.nome} - Total diárias: ${totalDiarias.toFixed(2)}`
+    }]);
+
+    if (errFin) {
+        showLoading(false);
+        return showToast('Erro ao gerar despesa: ' + errFin.message, true);
+    }
+
+    const ids = registros.map(r => r.id);
+    const { error: errPonto } = await sb.from('jsp_ponto_diario').update({ pago_em_fechamento: true }).in('id', ids);
+    if (errPonto) {
+        showLoading(false);
+        return showToast('Erro ao atualizar registros: ' + errPonto.message, true);
+    }
+
+    await loadData();
+    fecharModalSaldo();
+    renderEquipe();
+    showToast('Pagamento fechado! Despesa lançada.');
+}
+      
         function imprimirExtratoSaldo(){
             const funcId=document.getElementById('saldo-equipe-id').value; const func=STATE.equipe.find(e=>e.id===funcId); const dataInicio=document.getElementById('saldo-filtro-data-inicio').value; const dataFim=document.getElementById('saldo-filtro-data-fim').value; const statusFiltro=document.getElementById('saldo-filtro-status').value; const totalDiarias=document.getElementById('saldo-total-diarias').innerText; const valorTotal=document.getElementById('saldo-total-valor').innerText; const tbody=document.getElementById('saldo-tabela-body'); const linhas=Array.from(tbody.querySelectorAll('tr')).map(tr=>{ const tds=tr.querySelectorAll('td'); return{ data:tds[0]?.innerText||'', horarios:tds[1]?.innerText||'', fracao:tds[2]?.innerText||'', status:tds[3]?.innerText||'' }; }); const dataIniFormatada=dataInicio?new Date(dataInicio+'T00:00:00').toLocaleDateString('pt-BR'):'Início'; const dataFimFormatada=dataFim?new Date(dataFim+'T00:00:00').toLocaleDateString('pt-BR'):'Fim'; const periodoExibicao=`${dataIniFormatada} a ${dataFimFormatada}`; const hoje=new Date().toLocaleDateString('pt-BR'); let html=`<div style="font-family:'Segoe UI',Arial; padding:30px;"><div style="display:flex; justify-content:space-between; border-bottom:3px solid #1d4ed8; padding-bottom:15px; margin-bottom:25px;"><img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height:70px;"><div><h1 style="margin:0; font-size:24px;">EXTRATO DE PONTO</h1><p style="margin:5px 0 0 0; color:#1d4ed8;">${func.nome}</p><p>Período: ${periodoExibicao} | Diária: ${formatMoney(func.valor_diaria)}</p><p>Status: ${statusFiltro}</p></div></div><table width="100%" style="border-collapse:collapse;"><thead><tr style="background:#f1f5f9;"><th style="padding:12px; border:1px solid #cbd5e1;">Data</th><th style="padding:12px; border:1px solid #cbd5e1;">Horários</th><th style="padding:12px; border:1px solid #cbd5e1; text-align:center;">Diária</th><th style="padding:12px; border:1px solid #cbd5e1; text-align:center;">Status</th></tr></thead><tbody>${linhas.map(l=>`<tr><td style="padding:10px;">${l.data}</td><td style="padding:10px;">${l.horarios}</td><td style="padding:10px; text-align:center;">${l.fracao}</td><td style="padding:10px; text-align:center;">${l.status}</td></tr>`).join('')}</tbody></table><div style="display:flex; justify-content:flex-end; margin-top:40px;"><div style="width:300px; background:#f8fafc; padding:20px;"><div>Total de Diárias: <strong>${totalDiarias}</strong></div><div>Valor a Pagar: <strong style="color:#1d4ed8;">${valorTotal}</strong></div></div></div><div style="margin-top:60px; text-align:center;"><div style="border-top:1px solid #94a3b8; padding-top:10px;"><strong>RV NEGÓCIOS E COMPANHIA</strong><br>Contratante</div><div style="border-top:1px solid #94a3b8; padding-top:10px; margin-top:20px;"><strong>${func.nome.toUpperCase()}</strong><br>Profissional</div></div></div>`; document.getElementById('print-area').innerHTML=html; setTimeout(()=>window.print(),300);
         }
