@@ -1505,7 +1505,134 @@ function imprimirReciboMetrosDoModal() {
     setTimeout(() => window.print(), 300);
 }
       
+function imprimirReciboDoModal() {
+    const funcId = document.getElementById('saldo-equipe-id').value;
+    const func = STATE.equipe.find(e => e.id === funcId);
+    if (!func) return;
+    
+    const totalDiarias = document.getElementById('saldo-total-diarias').innerText;
+    const valorTotal = document.getElementById('saldo-total-valor').innerText;
+    const dataInicio = document.getElementById('saldo-filtro-data-inicio').value;
+    const dataFim = document.getElementById('saldo-filtro-data-fim').value;
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    
+    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+    const periodo = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
+    
+    const html = `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
+                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
+                <div style="text-align: right;">
+                    <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO SOBRE DIÁRIAS</h1>
+                    <p style="margin: 5px 0 0 0; font-size: 18px; color: #1d4ed8; font-weight: bold;">VALOR: ${valorTotal}</p>
+                </div>
+            </div>
+            
+            <div style="font-size: 14px; line-height: 1.8; text-align: justify; margin-bottom: 40px;">
+                Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA</strong> (CNPJ: 61.893.912/0001-24), a importância de <strong>${valorTotal}</strong>, 
+                referente ao pagamento de diárias trabalhadas no período de <strong>${periodo}</strong>, totalizando <strong>${totalDiarias} dias</strong> 
+                com a diária acordada em <strong>${formatMoney(func.valor_diaria)}</strong>.
+            </div>
+            
+            <div style="font-size: 14px; margin-bottom: 40px;">
+                Para maior clareza, firmo(amos) o presente recibo para que produza os seus efeitos legais.
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 30px; font-size: 14px;">
+                Jataí - GO, ${hoje}.
+            </div>
+            
+            <div style="margin-top: 60px; display: flex; justify-content: center;">
+                <div style="text-align: center; width: 60%; border-top: 1px solid #000; padding-top: 10px;">
+                    <strong>${func.nome.toUpperCase()}</strong><br>
+                    <span style="font-size: 12px; color: #64748b;">CPF: ${func.cpf || '_______________________'} | RG: ${func.rg || '_______________________'}</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('print-area').innerHTML = html;
+    setTimeout(() => window.print(), 300);
+}
 
+
+      async function estornarUltimoFechamentoMetros() {
+    const tercId = document.getElementById('saldo-terc-id').value;
+    const terc = STATE.terceirizados.find(t => t.id === tercId);
+    if (!terc) return;
+
+    // Busca a despesa mais recente gerada para este terceirizado (metragem)
+    const despesas = STATE.logs.filter(l => 
+        l.tipo === 'despesa' &&
+        l.produto_nome && l.produto_nome.includes(`Pagamento de metragem - ${terc.nome}`) &&
+        (l.status_financeiro === 'PENDENTE' || l.status_financeiro === 'PAGO')
+    ).sort((a, b) => new Date(b.data) - new Date(a.data));
+
+    if (despesas.length === 0) {
+        return showToast('Nenhum pagamento de metragem encontrado para estornar.', true);
+    }
+
+    const ultimaDespesa = despesas[0];
+    
+    // Extrai período da descrição (formato "Pagamento de metragem - Nome - Período dd/mm/aaaa a dd/mm/aaaa")
+    let periodo = null;
+    const match = ultimaDespesa.produto_nome.match(/Período (.*)$/);
+    if (match) {
+        periodo = match[1];
+    }
+
+    let confirmMsg = `Estornar o pagamento de ${formatMoney(ultimaDespesa.valor_total)} (${ultimaDespesa.status_financeiro})?`;
+    if (periodo) confirmMsg += `\nPeríodo: ${periodo}`;
+    confirmMsg += `\n\nOs registros de metragem voltarão a ficar pendentes.`;
+    
+    if (!confirm(confirmMsg)) return;
+
+    showLoading(true);
+
+    // 1. Cancelar a despesa no financeiro
+    const { error: errFin } = await sb.from('jsp_logs')
+        .update({ status_financeiro: 'CANCELADO' })
+        .eq('id', ultimaDespesa.id)
+        .eq('tipo', 'despesa');
+
+    if (errFin) {
+        showLoading(false);
+        return showToast('Erro ao cancelar despesa: ' + errFin.message, true);
+    }
+
+    // 2. Reverter status PAGO para PENDENTE nos registros de produção do período
+    let query = sb.from('jsp_producao_terc')
+        .update({ status: 'PENDENTE' })
+        .eq('terceirizado_id', tercId)
+        .eq('status', 'PAGO');
+
+    if (periodo) {
+        // Tenta extrair datas do período (formato "dd/mm/aaaa a dd/mm/aaaa")
+        const partes = periodo.split(' a ');
+        if (partes.length === 2) {
+            const dataInicio = partes[0].split('/').reverse().join('-');
+            const dataFim = partes[1].split('/').reverse().join('-');
+            query = query.gte('data_registro', dataInicio).lte('data_registro', dataFim);
+        }
+    }
+
+    const { error: errProd } = await query;
+
+    if (errProd) {
+        showLoading(false);
+        return showToast('Erro ao reverter registros de metragem: ' + errProd.message, true);
+    }
+
+    await loadData();
+    carregarTabelaSaldoMetros();
+    renderEquipe();
+    showToast('Estorno realizado com sucesso! Despesa cancelada e metragens liberadas.');
+}
+
+
+      
       
 
         function openEquipeForm(id, tipoOrigem='equipe'){
