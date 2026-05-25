@@ -263,10 +263,14 @@
 
       <!-- VIEW EQUIPE (UNIFICADA COM TERCEIRIZADOS) -->
       <div id="view-equipe" class="hidden-section no-print relative min-h-[80vh]">
-          <div class="flex items-center gap-3 mb-4">
+          <div class="flex items-center gap-3 mb-4 flex-wrap">
               <button onclick="navigate('menu')" class="p-2 bg-slate-200 rounded-full text-slate-600"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
               <h2 class="text-xl font-bold flex-1">Equipe</h2>
-              <button onclick="openEquipeForm()" class="bg-blue-700 text-white px-3 py-2 rounded-xl text-sm font-bold shadow"><i data-lucide="user-plus" class="w-4 h-4"></i></button>
+              <div class="flex gap-2">
+                  <button onclick="imprimirChecagem()" class="bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow flex items-center gap-1"><i data-lucide="clipboard-check" class="w-3 h-3"></i> Checagem</button>
+                  <button onclick="abrirModalFolhaPagamento()" class="bg-slate-800 text-white px-3 py-2 rounded-xl text-xs font-bold shadow flex items-center gap-1"><i data-lucide="printer" class="w-3 h-3"></i> Folha</button>
+                  <button onclick="openEquipeForm()" class="bg-blue-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow"><i data-lucide="plus" class="w-3 h-3"></i> Novo</button>
+              </div>
           </div>
           
           <div class="flex gap-2 mb-3">
@@ -291,6 +295,10 @@
                   <option value="diaria">Diária</option>
                   <option value="metro">Metro</option>
               </select>
+          </div>
+          <div class="grid grid-cols-2 gap-2 mb-4">
+              <input type="date" id="eqp-filter-data-inicio" placeholder="Data início" class="p-2 bg-white border rounded-xl text-xs" onchange="renderEquipe()">
+              <input type="date" id="eqp-filter-data-fim" placeholder="Data fim" class="p-2 bg-white border rounded-xl text-xs" onchange="renderEquipe()">
           </div>
 
           <div id="equipe-list" class="flex flex-col gap-2 pb-16"></div>
@@ -490,7 +498,6 @@
         </div>
     </div>
 
-    <!-- ================= NOVOS MODAIS: SALDO PONTO E CONTRATOS ================= -->
     <!-- MODAL SALDO DE PONTO (DIÁRIAS) -->
     <div id="modal-saldo-ponto" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-[70] flex flex-col mobile-modal modal-hidden no-print">
         <div class="bg-white w-full rounded-t-3xl flex flex-col max-h-[90vh] overflow-hidden">
@@ -535,6 +542,50 @@
         </div>
     </div>
 
+    <!-- MODAL SALDO DE METROS (TERCEIRIZADOS) -->
+    <div id="modal-saldo-metros" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-[70] flex flex-col mobile-modal modal-hidden no-print">
+        <div class="bg-white w-full rounded-t-3xl flex flex-col max-h-[90vh] overflow-hidden">
+            <div class="bg-indigo-600 p-4 text-white flex justify-between items-center">
+                <div>
+                    <h3 class="font-black text-lg flex items-center gap-2"><i data-lucide="ruler" class="w-5 h-5"></i> Saldo de Metros</h3>
+                    <p id="saldo-metros-subtitle" class="text-xs font-medium opacity-90 mt-0.5"></p>
+                </div>
+                <button onclick="fecharModalSaldoMetros()" class="text-white hover:bg-white/20 p-2 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-5 overflow-y-auto flex-1 bg-slate-50">
+                <input type="hidden" id="saldo-terc-id">
+                <div class="bg-white p-4 rounded-xl border mb-4 flex flex-wrap gap-3 items-end">
+                    <div><label class="text-[9px] font-bold text-slate-500 uppercase">Data Início</label><input type="date" id="saldo-metros-data-inicio" class="p-2 border rounded text-sm font-bold bg-slate-50 w-36" onchange="carregarTabelaSaldoMetros()"></div>
+                    <div><label class="text-[9px] font-bold text-slate-500 uppercase">Data Fim</label><input type="date" id="saldo-metros-data-fim" class="p-2 border rounded text-sm font-bold bg-slate-50 w-36" onchange="carregarTabelaSaldoMetros()"></div>
+                    <div><label class="text-[9px] font-bold text-slate-500 uppercase">Status</label><select id="saldo-metros-filtro-status" class="p-2 border rounded text-sm font-bold bg-slate-50 w-28" onchange="carregarTabelaSaldoMetros()"><option value="PENDENTE" selected>Pendentes</option><option value="PAGO">Já Pagos</option><option value="TODOS">Todos</option></select></div>
+                    <button onclick="imprimirExtratoSaldoMetros()" class="bg-slate-800 text-white px-3 py-2 rounded text-xs font-bold flex items-center gap-1"><i data-lucide="printer" class="w-3 h-3"></i> Extrato</button>
+                </div>
+                <div class="bg-white rounded-xl border overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs">
+                            <thead class="bg-slate-100"><tr><th class="p-2 text-left">Data</th><th class="p-2 text-center">Metros</th><th class="p-2 text-center">Status</th></tr></thead>
+                            <tbody id="saldo-metros-tabela-body"></tbody>
+                        </table>
+                    </div>
+                    <div id="saldo-metros-sem-registros" class="p-6 text-center text-slate-400 hidden">Nenhum registro encontrado.</div>
+                </div>
+                <div class="mt-4 bg-white p-4 rounded-xl border">
+                    <h4 class="font-bold text-sm mb-2">Lançar Ajuste Manual</h4>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="date" id="ajuste-metros-data" class="p-2 border rounded text-xs"><input type="number" step="0.01" id="ajuste-metros-valor" placeholder="Metros" class="p-2 border rounded text-xs"><input type="text" id="ajuste-metros-justificativa" placeholder="Justificativa" class="col-span-2 p-2 border rounded text-xs"><button onclick="lancarAjusteManualMetros()" class="col-span-2 bg-indigo-600 text-white p-2 rounded font-bold text-xs">Lançar</button>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 bg-white border-t flex justify-between items-center">
+                <span class="text-sm font-bold">Total Metros Pendentes: <span id="saldo-metros-total-metros" class="text-xl font-black text-indigo-700">0.00</span></span>
+                <div class="flex items-center gap-2">
+                    <span class="text-right"><div class="text-[9px] font-bold">Valor a Pagar</div><div id="saldo-metros-total-valor" class="text-lg font-black text-green-600">R$ 0,00</div></span>
+                    <button onclick="fecharPagamentoSaldoMetros()" class="bg-blue-700 text-white px-4 py-2 rounded-xl font-bold shadow text-xs">Conferido</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL DOCUMENTOS/CONTRATOS -->
     <div id="modal-docs-equipe" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-[70] flex flex-col mobile-modal modal-hidden no-print">
         <div class="bg-white w-full rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto">
@@ -545,6 +596,43 @@
                 <div><label class="text-[10px] font-bold uppercase">Tipo de Documento</label><select id="doc-tipo-select" class="w-full p-3 border rounded font-bold text-slate-700"><option value="" selected hidden>Selecione...</option><option value="contrato1">Contrato Trabalho - Servente</option><option value="contrato2">Contrato Trabalho - Pedreiro</option><option value="metragem">Contrato Trabalho - Metragem</option><option value="epi">Comprovante de EPI's</option></select></div>
                 <button onclick="imprimirDocumento()" class="w-full bg-slate-800 text-white p-3 rounded font-bold flex items-center justify-center gap-2"><i data-lucide="printer"></i> Imprimir Documento</button>
                 <button id="btn-assinar-doc" onclick="marcarContratoAssinado()" class="w-full bg-green-600 text-white p-3 rounded font-bold">Marcar como Assinado</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ADMINISTRATIVO DE REGISTROS (PONTO) -->
+    <div id="modal-admin-registros" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-[70] flex flex-col mobile-modal modal-hidden no-print">
+        <div class="bg-white w-full rounded-t-3xl flex flex-col max-h-[90vh] overflow-hidden">
+            <div class="bg-slate-800 p-4 text-white flex justify-between items-center">
+                <div><h3 class="font-black text-lg flex items-center gap-2"><i data-lucide="database" class="w-5 h-5"></i> Registros de Ponto (Admin)</h3><p id="admin-registros-subtitle" class="text-xs font-medium opacity-90"></p></div>
+                <button onclick="fecharModalAdminRegistros()" class="text-white hover:bg-white/20 p-2 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-5 overflow-y-auto flex-1 bg-slate-50">
+                <input type="hidden" id="admin-func-id">
+                <div class="bg-white rounded-xl border overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs">
+                            <thead class="bg-slate-100"><tr><th class="p-2 text-left">Data/Hora</th><th class="p-2 text-left">Tipo</th><th class="p-2 text-center">Status</th><th class="p-2 text-center">Pago?</th><th class="p-2 text-center w-10">Ação</th></tr></thead>
+                            <tbody id="admin-registros-tbody"></tbody>
+                        </table>
+                    </div>
+                    <div id="admin-sem-registros" class="p-6 text-center text-slate-400 hidden">Nenhum registro encontrado.</div>
+                </div>
+            </div>
+            <div class="p-4 bg-white border-t flex justify-end"><button onclick="fecharModalAdminRegistros()" class="px-4 py-2 bg-slate-200 rounded-xl font-bold">Fechar</button></div>
+        </div>
+    </div>
+
+    <!-- MODAL FOLHA DE PAGAMENTOS -->
+    <div id="modal-folha-pagamento" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-[70] flex flex-col mobile-modal modal-hidden no-print">
+        <div class="bg-white w-full rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-lg"><i data-lucide="printer" class="inline text-blue-600"></i> Imprimir Folha de Pagamentos</h3><button onclick="fecharModalFolha()" class="text-slate-400"><i data-lucide="x"></i></button></div>
+            <div class="space-y-4">
+                <div><label class="text-[10px] font-bold uppercase">Status Financeiro</label><select id="folha-status" class="w-full p-3 border rounded"><option value="PENDENTE" selected>Apenas Pendentes</option><option value="PAGO">Apenas Pagos</option><option value="TODOS">Todos</option></select><p class="text-[9px] text-slate-400">"Pendentes" são os que ainda não tiveram baixa no financeiro.</p></div>
+                <div><label class="text-[10px] font-bold uppercase">Obra</label><select id="folha-obra" class="w-full p-3 border rounded"><option value="">Todas as Obras</option></select></div>
+                <div><label class="text-[10px] font-bold uppercase">Status do Funcionário</label><select id="folha-status-func" class="w-full p-3 border rounded"><option value="true" selected>Ativos</option><option value="false">Desativados</option><option value="todos">Todos</option></select></div>
+                <div class="grid grid-cols-2 gap-2"><input type="date" id="folha-data-inicio" placeholder="Data início" class="p-2 border rounded"><input type="date" id="folha-data-fim" placeholder="Data fim" class="p-2 border rounded"></div>
+                <button onclick="executarImpressaoFolha()" class="w-full bg-blue-700 text-white p-3 rounded font-bold flex justify-center gap-2"><i data-lucide="printer"></i> Imprimir</button>
             </div>
         </div>
     </div>
@@ -562,7 +650,7 @@
         const supabaseKey = 'sb_publishable_B2a4vA22qf4XGcrxPDRAaw_13rW51uI';
         const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], fases: [], equipe: [], terceirizados: [], ponto_diario: [] };
+        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], fases: [], equipe: [], terceirizados: [], ponto_diario: [], producao_terc: [] };
         let CART = [];
         let CURRENT_OC_ID = null; 
 
@@ -586,7 +674,10 @@
         function openOverlayForm(id) { document.getElementById('overlay-forms').classList.remove('hidden'); document.querySelectorAll('#overlay-forms > div').forEach(d => d.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
         function closeOverlayForm(id) { document.getElementById(id).classList.add('hidden'); document.getElementById('overlay-forms').classList.add('hidden'); }
         function fecharModalSaldo() { closeModal('modal-saldo-ponto'); }
+        function fecharModalSaldoMetros() { closeModal('modal-saldo-metros'); }
         function fecharModalDocs() { closeModal('modal-docs-equipe'); }
+        function fecharModalAdminRegistros() { closeModal('modal-admin-registros'); }
+        function fecharModalFolha() { closeModal('modal-folha-pagamento'); }
 
         // ====== NAVEGAÇÃO MOBILE ======
         function navigate(viewId) {
@@ -612,7 +703,20 @@
 
         // ====== DADOS ======
         async function fetchAllRecords(table) { let allRecords = []; let from=0; const step=1000; let keepFetching=true; while(keepFetching){ const {data,error}=await sb.from(table).select('*').range(from,from+step-1); if(error) throw error; if(data && data.length>0){ allRecords.push(...data); if(data.length<step) keepFetching=false; else from+=step; } else keepFetching=false; } return {data: allRecords}; }
-        async function loadData() { try { const [resObras,resForn,resProd,resLog,resFases,resEquipe,resTerceirizados,resPonto] = await Promise.all([ fetchAllRecords('jsp_obras'), fetchAllRecords('jsp_fornecedores'), fetchAllRecords('jsp_produtos'), fetchAllRecords('jsp_logs'), fetchAllRecords('jsp_fase'), fetchAllRecords('jsp_equipe'), fetchAllRecords('jsp_terceirizados'), fetchAllRecords('jsp_ponto_diario').catch(()=>({data:[]})) ]); STATE.obras = resObras.data || []; STATE.fornecedores = resForn.data || []; STATE.produtos = resProd.data || []; STATE.logs = resLog.data || []; STATE.fases = (resFases.data || []).sort((a,b)=>a.ordem - b.ordem); STATE.equipe = resEquipe.data || []; STATE.terceirizados = resTerceirizados.data || []; STATE.ponto_diario = resPonto.data || []; updateSelects(); if(!document.querySelector('main > .active-section')) navigate('dash'); else navigate(document.querySelector('main > .active-section').id.replace('view-','')); showLoading(false); } catch(err){ showLoading(false); showToast("Erro banco: "+err.message,true); } }
+        async function loadData() { 
+            try { 
+                const [resObras,resForn,resProd,resLog,resFases,resEquipe,resTerceirizados,resPonto,resProducaoTerc] = await Promise.all([ 
+                    fetchAllRecords('jsp_obras'), fetchAllRecords('jsp_fornecedores'), fetchAllRecords('jsp_produtos'), fetchAllRecords('jsp_logs'), 
+                    fetchAllRecords('jsp_fase'), fetchAllRecords('jsp_equipe'), fetchAllRecords('jsp_terceirizados'), 
+                    fetchAllRecords('jsp_ponto_diario').catch(()=>({data:[]})), fetchAllRecords('jsp_producao_terc').catch(()=>({data:[]}))
+                ]); 
+                STATE.obras = resObras.data || []; STATE.fornecedores = resForn.data || []; STATE.produtos = resProd.data || []; STATE.logs = resLog.data || []; 
+                STATE.fases = (resFases.data || []).sort((a,b)=>a.ordem - b.ordem); STATE.equipe = resEquipe.data || []; STATE.terceirizados = resTerceirizados.data || []; 
+                STATE.ponto_diario = resPonto.data || []; STATE.producao_terc = resProducaoTerc.data || [];
+                updateSelects(); if(!document.querySelector('main > .active-section')) navigate('dash'); else navigate(document.querySelector('main > .active-section').id.replace('view-','')); 
+                showLoading(false); 
+            } catch(err){ showLoading(false); showToast("Erro banco: "+err.message,true); } 
+        }
         function getNextIdNum(array) { let max=0; array.forEach(item=>{ const val=parseInt(item.id); if(!isNaN(val) && val>max) max=val; }); return max+1; }
         function updateSelects() {
             const htmlObras = '<option value="">Todas Obras</option>'+STATE.obras.map(o=>`<option value="${o.id}">${o.nome}</option>`).join('');
@@ -627,6 +731,7 @@
             const posFase = document.getElementById('pos-fase'); if(posFase && !posFase.value) posFase.innerHTML = htmlFases;
             const finFase = document.getElementById('fin-fase-filter'); if(finFase){ const cVal = finFase.value; finFase.innerHTML = htmlFasesFilter; if(cVal) finFase.value = cVal; }
             const finCat = document.getElementById('fin-cat-filter'); if(finCat){ const cVal = finCat.value; const categorias = [...new Set(STATE.produtos.map(p=>p.categoria).filter(Boolean))]; if(!categorias.includes("Mão de Obra")) categorias.push("Mão de Obra"); finCat.innerHTML = '<option value="">Todas Categorias</option>'+categorias.map(c=>`<option value="${c}">${c}</option>`).join(''); if(cVal) finCat.value = cVal; }
+            const folhaObra = document.getElementById('folha-obra'); if(folhaObra) folhaObra.innerHTML = '<option value="">Todas as Obras</option>'+STATE.obras.map(o=>`<option value="${o.id}">${o.nome}</option>`).join('');
         }
 
         // ====== RENDER DASHBOARD ======
@@ -662,7 +767,7 @@
 
         // ====== FINANCEIRO ======
         function renderFinance(){ const obraFilter=document.getElementById('fin-obra-filter').value; const faseFilter=document.getElementById('fin-fase-filter').value; const catFilter=document.getElementById('fin-cat-filter').value; const term=document.getElementById('fin-search').value.toLowerCase(); const dtStart=document.getElementById('fin-start').value; const dtEnd=document.getElementById('fin-end').value; let logsFilt=STATE.logs.filter(l=>l.tipo!=='oc_pendente'&&l.status_financeiro!=='CANCELADO'); if(obraFilter) logsFilt=logsFilt.filter(l=>String(l.obra_id)===String(obraFilter)); if(faseFilter) logsFilt=logsFilt.filter(l=>(l.fase_obra||'')===faseFilter); if(term) logsFilt=logsFilt.filter(l=>(l.produto_nome||'').toLowerCase().includes(term)); if(catFilter){ logsFilt=logsFilt.filter(l=>{ const prod=STATE.produtos.find(p=>p.nome===l.produto_nome); return prod&&prod.categoria===catFilter; }); } if(dtStart) logsFilt=logsFilt.filter(l=>new Date(l.data||l.vencimento)>=new Date(dtStart)); if(dtEnd){ let endD=new Date(dtEnd); endD.setHours(23,59,59); logsFilt=logsFilt.filter(l=>new Date(l.data||l.vencimento)<=endD); } let totDesp=0, totRec=0; const listaDesp=document.getElementById('fin-expense-history-list'); let despArrRaw=logsFilt.filter(l=>l.tipo==='compra'||l.tipo==='despesa'); let despArr=[], groupedOCs={}; despArrRaw.forEach(l=>{ if(l.tipo==='compra'){ if(!groupedOCs[l.id]){ groupedOCs[l.id]={...l,valor_total:0,is_oc:true}; despArr.push(groupedOCs[l.id]); } groupedOCs[l.id].valor_total+=parseFloat(l.valor_total); } else { despArr.push(l); } }); despArr.sort((a,b)=>new Date(b.vencimento||b.data)-new Date(a.vencimento||a.data)); listaDesp.innerHTML=despArr.map(l=>{ const isPago=l.status_financeiro==='PAGO'; if(isPago) totDesp+=parseFloat(l.valor_total); const obra=STATE.obras.find(x=>x.id==l.obra_id); return `<div class="bg-white p-2.5 rounded-xl border-l-4 ${isPago?'border-l-green-500':'border-l-red-500'} shadow-sm flex flex-col gap-1"><div class="flex justify-between"><div><span class="text-[9px] font-bold text-slate-400">${formatDate(l.vencimento||l.data)}</span><div class="font-bold text-xs">${l.is_oc?`O.C. #${l.id} - Consolidada`:l.produto_nome}</div><div class="text-[9px] text-blue-700 font-bold mt-1"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Geral'} <span class="text-slate-400">| ${l.fase_obra||'-'}</span></div></div><div class="text-right"><div class="font-black ${isPago?'text-slate-500':'text-red-600'} text-sm">${formatMoney(l.valor_total)}</div>${!isPago?`<div class="text-[8px] text-slate-400">${l.forma_pagamento||'-'}</div>`:`<span class="bg-green-100 text-green-700 text-[8px] font-bold px-1 rounded">PAGO</span>`}</div></div></div>`; }).join(''); const listaRec=document.getElementById('fin-receivables-list'); let recArr=logsFilt.filter(l=>l.tipo==='receita'); recArr.sort((a,b)=>new Date(b.vencimento||b.data)-new Date(a.vencimento||a.data)); listaRec.innerHTML=recArr.map(l=>{ const isPago=l.status_financeiro==='PAGO'; if(isPago) totRec+=parseFloat(l.valor_total); const obra=STATE.obras.find(x=>x.id==l.obra_id); return `<div class="bg-white p-2.5 rounded-xl border-l-4 ${isPago?'border-l-green-500':'border-l-orange-400'} shadow-sm flex flex-col gap-1"><div class="flex justify-between"><div><span class="text-[9px] font-bold text-slate-400">${formatDate(l.vencimento||l.data)}</span><div class="font-bold text-xs">${l.produto_nome}</div><div class="text-[9px] text-blue-700 font-bold mt-1"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Geral'}</div></div><div class="text-right"><div class="font-black text-green-700 text-sm">${formatMoney(l.valor_total)}</div>${isPago?`<span class="bg-green-100 text-green-700 text-[8px] font-bold px-1 rounded">RECEBIDO</span>`:`<span class="bg-orange-100 text-orange-700 text-[8px] font-bold px-1 rounded">A REC.</span>`}</div></div></div>`; }).join(''); document.getElementById('fin-expenses').innerText=formatMoney(totDesp); document.getElementById('fin-income').innerText=formatMoney(totRec); lucide.createIcons(); window.financeiroAtual={despArr,recArr,totDesp,totRec}; }
-        function imprimirFinanceiro(){ if(!window.financeiroAtual) return showToast("Filtre o financeiro primeiro."); const {despArr,recArr,totDesp,totRec}=window.financeiroAtual; const dtStart=document.getElementById('fin-start').value; const dtEnd=document.getElementById('fin-end').value; const obraFilter=document.getElementById('fin-obra-filter'); const nomeObraFiltro=obraFilter.options[obraFilter.selectedIndex].text; let htmlTabela=`<div style="font-family: Arial; padding:15px;"><h2 style="margin:0 0 5px 0;">Relatório Financeiro</h2><h3 style="margin:0 0 10px 0;">Filtro: ${nomeObraFiltro}</h3><p style="font-size:10px;">Período: ${dtStart?formatDate(dtStart):'Início'} até ${dtEnd?formatDate(dtEnd):'Hoje'}</p><table width="100%" style="border-collapse:collapse; font-size:10px;"><thead><tr style="background:#f1f5f9;"><th style="padding:6px;">Data</th><th style="padding:6px;">Descrição</th><th style="padding:6px;">Obra/Fase</th><th style="padding:6px;">Status</th><th style="padding:6px;">Valor</th></tr></thead><tbody>`; if(despArr.length){ htmlTabela+=`<tr><td colspan="5" style="background:#fee2e2; font-weight:bold;">CUSTOS</td></tr>`; despArr.forEach(l=>{ const obra=STATE.obras.find(x=>x.id==l.obra_id); const isPago=l.status_financeiro==='PAGO'; htmlTabela+=`<tr><td style="padding:5px;">${formatDate(l.vencimento||l.data)}</td><td>${l.is_oc?`O.C. #${l.id}`:l.produto_nome}</td><td>${obra?.nome||'Geral'} <span style="font-size:8px;">${l.fase_obra||'-'}</span></td><td align="center">${isPago?'PAGO':'PEND.'}</td><td align="right" style="color:#b91c1c;">${formatMoney(l.valor_total)}</td></tr>`; }); } if(recArr.length){ htmlTabela+=`<tr><td colspan="5" style="background:#dcfce7; font-weight:bold;">MEDIÇÕES</td></tr>`; recArr.forEach(l=>{ const obra=STATE.obras.find(x=>x.id==l.obra_id); const isPago=l.status_financeiro==='PAGO'; htmlTabela+=`<tr><td style="padding:5px;">${formatDate(l.vencimento||l.data)}</td><td>${l.produto_nome}</td><td>${obra?.nome||'Geral'}</td><td align="center">${isPago?'REC.':'PEND.'}</td><td align="right" style="color:#15803d;">${formatMoney(l.valor_total)}</td></tr>`; }); } htmlTabela+=`</tbody></table><table width="100%" style="margin-top:10px;"><tr><td align="right">Total Custos Pagos:</td><td align="right" style="color:#b91c1c;">${formatMoney(totDesp)}</td></tr><tr><td align="right">Total Medições Rec:</td><td align="right" style="color:#15803d;">${formatMoney(totRec)}</td></tr></table></div>`; const printArea=document.getElementById('print-area'); printArea.innerHTML=htmlTabela; printArea.classList.add('print-active'); window.print(); setTimeout(()=>printArea.classList.remove('print-active'),1000); }
+        function imprimirFinanceiro(){ if(!window.financeiroAtual) return showToast("Filtre o financeiro primeiro."); const {despArr,recArr,totDesp,totRec}=window.financeiroAtual; const dtStart=document.getElementById('fin-start').value; const dtEnd=document.getElementById('fin-end').value; const obraFilter=document.getElementById('fin-obra-filter'); const nomeObraFiltro=obraFilter.options[obraFilter.selectedIndex].text; let htmlTabela=`<div style="font-family: Arial; padding:15px;"><h2 style="margin:0 0 5px 0;">Relatório Financeiro</h2><h3 style="margin:0 0 10px 0;">Filtro: ${nomeObraFiltro}</h3><p style="font-size:10px;">Período: ${dtStart?formatDate(dtStart):'Início'} até ${dtEnd?formatDate(dtEnd):'Hoje'}</p><table width="100%" style="border-collapse:collapse; font-size:10px;"><thead><tr style="background:#f1f5f9;"><th style="padding:6px;">Data</th><th style="padding:6px;">Descrição</th><th style="padding:6px;">Obra/Fase</th><th style="padding:6px;">Status</th><th style="padding:6px;">Valor</th></tr></thead><tbody>`; if(despArr.length){ htmlTabela+=`<tr><td colspan="5" style="background:#fee2e2; font-weight:bold;">CUSTOS</td>`; despArr.forEach(l=>{ const obra=STATE.obras.find(x=>x.id==l.obra_id); const isPago=l.status_financeiro==='PAGO'; htmlTabela+=`<tr><td style="padding:5px;">${formatDate(l.vencimento||l.data)}</td><td>${l.is_oc?`O.C. #${l.id}`:l.produto_nome}</td><td>${obra?.nome||'Geral'} <span style="font-size:8px;">${l.fase_obra||'-'}</span></td><td align="center">${isPago?'PAGO':'PEND.'}</td><td align="right" style="color:#b91c1c;">${formatMoney(l.valor_total)}</td></tr>`; }); } if(recArr.length){ htmlTabela+=`<tr><td colspan="5" style="background:#dcfce7; font-weight:bold;">MEDIÇÕES</td>`; recArr.forEach(l=>{ const obra=STATE.obras.find(x=>x.id==l.obra_id); const isPago=l.status_financeiro==='PAGO'; htmlTabela+=`<tr><td style="padding:5px;">${formatDate(l.vencimento||l.data)}</td><td>${l.produto_nome}</td><td>${obra?.nome||'Geral'}</td><td align="center">${isPago?'REC.':'PEND.'}</td><td align="right" style="color:#15803d;">${formatMoney(l.valor_total)}</td></tr>`; }); } htmlTabela+=`</tbody></table><table width="100%" style="margin-top:10px;"><tr><td align="right">Total Custos Pagos:</td><td align="right" style="color:#b91c1c;">${formatMoney(totDesp)}</td></tr><tr><td align="right">Total Medições Rec:</td><td align="right" style="color:#15803d;">${formatMoney(totRec)}</td></table></div>`; const printArea=document.getElementById('print-area'); printArea.innerHTML=htmlTabela; printArea.classList.add('print-active'); window.print(); setTimeout(()=>printArea.classList.remove('print-active'),1000); }
 
         // ====== FORNECEDORES E PRODUTOS ======
         function renderFornecedores(){ const term=document.getElementById('forn-search').value.toLowerCase(); const fil=STATE.fornecedores.filter(f=>f.nome.toLowerCase().includes(term)||(f.documento||'').includes(term)); document.getElementById('fornecedores-list').innerHTML=fil.map(f=>`<div class="bg-white p-3 rounded-xl border flex justify-between"><div><h4 class="font-bold text-xs">${f.nome}</h4><p class="text-[10px] text-slate-500">${f.telefone||'-'} | ${f.documento||'-'}</p></div><button onclick="openFornecedorForm('${f.id}')" class="p-1.5 bg-slate-100 text-blue-600 rounded"><i data-lucide="edit-3" class="w-4 h-4"></i></button></div>`).join(''); lucide.createIcons(); }
@@ -676,7 +781,7 @@
         function getColaboradoresUnificados(){ const equipe=STATE.equipe.map(e=>({...e, tipo:'diaria', valor_base:parseFloat(e.valor_diaria||0), unidade:'dias', table_origin:'equipe'})); const terceirizados=STATE.terceirizados.map(t=>({...t, nome:t.nome, categoria:'Terceirizado (Metro)', telefone:t.telefone, cpf:t.cpf_cnpj, rg:t.rg, endereco:t.endereco, chave_pix:t.chave_pix, obra_atual_id:t.obra_atual_id, ativo:t.ativo, tipo:'metro', valor_base:parseFloat(t.valor_metro||0), unidade:'metros', table_origin:'terceirizados'})); return [...equipe, ...terceirizados]; }
         function onCategoriaChange(){ const cat=document.getElementById('eqp-categoria').value; const label=document.getElementById('label-valor-base'); const tipoOrigem=document.getElementById('eqp-tipo-origem'); if(cat==='Terceirizado'){ label.innerText='Valor do Metro (R$)'; tipoOrigem.value='terceirizado'; } else { label.innerText='Valor da Diária (R$)'; tipoOrigem.value='equipe'; } }
 
-        // ====== CÁLCULO DE SALDO PENDENTE (diárias) ======
+        // ====== CÁLCULOS DE SALDO ======
         function calcularSaldoPendenteFuncionarioPorPeriodo(funcId, dataInicio, dataFim){
             let registros = STATE.ponto_diario.filter(p=> p.funcionario_id===funcId && p.status==='VALIDADO' && !p.pago_em_fechamento);
             if(dataInicio) registros = registros.filter(p=>p.hora_registro >= dataInicio+'T00:00:00');
@@ -714,6 +819,8 @@
             const filterObra = document.getElementById('eqp-filter-obra').value;
             const filterStatus = document.getElementById('eqp-filter-status').value;
             const filterTipo = document.getElementById('eqp-filter-tipo').value;
+            const dataInicio = document.getElementById('eqp-filter-data-inicio').value;
+            const dataFim = document.getElementById('eqp-filter-data-fim').value;
             const colaboradores = getColaboradoresUnificados();
             let fil = colaboradores.filter(c=>(c.nome||'').toLowerCase().includes(term));
             if(filterObra) fil = fil.filter(c=>String(c.obra_atual_id)===String(filterObra));
@@ -727,22 +834,21 @@
                 const valorExibicao = c.tipo==='diaria' ? formatMoney(c.valor_base) : `${formatMoney(c.valor_base)}/m`;
                 const isAtivo = c.ativo===true||c.ativo==='true';
                 
-                // Cálculo do saldo pendente para diárias
-                let saldoDiarias = 0, valorPendente = 0, diasTrabalhados = 0;
+                let saldoInfo = '';
                 if(c.tipo === 'diaria') {
-                    const dataInicio = document.getElementById('eqp-filter-data-inicio')?.value || (new Date().getFullYear()+'-01-01');
-                    const dataFim = document.getElementById('eqp-filter-data-fim')?.value || new Date().toISOString().split('T')[0];
                     const saldo = calcularSaldoPendenteFuncionarioPorPeriodo(c.id, dataInicio, dataFim);
-                    diasTrabalhados = saldo.totalDiarias;
-                    valorPendente = diasTrabalhados * c.valor_base;
+                    const dias = saldo.totalDiarias;
+                    const valor = dias * c.valor_base;
+                    saldoInfo = dias>0 ? `<span class="text-[9px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">Saldo: ${formatMoney(valor)} (${dias.toFixed(2)} dias)</span>` : '';
                 }
+                
                 let zapBtn = '';
                 if(c.telefone){
                     const numZap = c.telefone.replace(/\D/g,'');
                     if(numZap.length>=10) zapBtn = `<a href="https://wa.me/55${numZap}" target="_blank" class="p-1.5 bg-green-100 text-green-600 rounded-lg"><i data-lucide="message-circle" class="w-4 h-4"></i></a>`;
                 }
                 const acoes = `<div class="flex justify-end gap-2 mt-2 pt-2 border-t border-slate-100">
-                    ${c.tipo==='diaria'?`<button onclick="abrirModalSaldo('${c.id}')" class="p-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-1"><i data-lucide="calculator" class="w-3 h-3"></i> Calcular</button>`:``}
+                    <button onclick="abrirModalSaldo('${c.id}')" class="p-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-1"><i data-lucide="calculator" class="w-3 h-3"></i> Calcular</button>
                     <button onclick="abrirModalDocumentos('${c.id}')" class="p-1.5 bg-slate-800 text-white rounded-lg text-[10px] font-bold flex items-center gap-1"><i data-lucide="file-signature" class="w-3 h-3"></i> Contratos</button>
                     <button onclick="openEquipeForm('${c.id}')" class="p-1.5 bg-slate-100 text-blue-600 rounded-lg"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
                     ${zapBtn}
@@ -753,9 +859,8 @@
                         <div><h4 class="font-bold text-slate-800 text-xs flex items-center">${c.nome||'-'} ${tipoBadge}</h4>
                         <p class="text-[10px] text-slate-500 font-bold uppercase mt-1">${c.categoria||'-'} ${c.telefone?`| ${c.telefone}`:''}</p>
                         <p class="text-[9px] text-blue-600 mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${nomeObra}</p>
-                        <div class="flex items-center gap-3 mt-1"><span class="font-black text-sm text-slate-700">${valorExibicao}</span>
-                        ${c.tipo==='diaria' && diasTrabalhados>0?`<span class="text-[9px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">Saldo: ${formatMoney(valorPendente)} (${diasTrabalhados.toFixed(2)} dias)</span>`:``}
-                        </div></div>
+                        <div class="flex items-center gap-2 mt-1 flex-wrap"><span class="font-black text-sm text-slate-700">${valorExibicao}</span> ${saldoInfo}</div>
+                        </div>
                     </div>
                     ${acoes}
                 </div>`;
@@ -765,7 +870,8 @@
         // ====== MODAL DE SALDO PONTO ======
         function abrirModalSaldo(equipeId){
             const colaborador = getColaboradoresUnificados().find(c=>c.id===equipeId);
-            if(!colaborador || colaborador.tipo!=='diaria') return;
+            if(!colaborador) return;
+            if(colaborador.tipo==='metro') { abrirModalSaldoMetros(equipeId); return; }
             const func = STATE.equipe.find(e=>e.id===equipeId);
             if(!func) return;
             document.getElementById('saldo-equipe-id').value=equipeId;
@@ -817,7 +923,8 @@
                 }
                 if(pts.ajustes.length){ horariosStr+=(horariosStr?'<br>':'')+`<div class="text-indigo-600 text-[9px]">+ Ajuste manual (${somaAjustes.toFixed(2)} diárias)</div>`;}
                 if(!horariosStr) horariosStr='<span class="text-slate-400">--</span>';
-                tbody.innerHTML+=`<tr><td class="p-2 font-bold text-slate-700 text-[10px]">${dataDia}</td><td class="p-2 text-[10px]">${horariosStr}</td><td class="p-2 text-center font-black">${fracao.toFixed(2)}</td><td class="p-2 text-center"><span class="px-1 py-0.5 rounded text-[9px] font-bold ${pts.ajustes[0]?.pago_em_fechamento||registros.some(r=>r.hora_registro===pts.entradas[0]&&r.pago_em_fechamento)?'bg-green-100 text-green-700':'bg-orange-100 text-orange-700'}">${registros.some(r=>r.hora_registro===pts.entradas[0]&&r.pago_em_fechamento)?'PAGO':'PENDENTE'}</span></td></tr>`;
+                const isPago = pts.ajustes[0]?.pago_em_fechamento || registros.some(r=>r.hora_registro===pts.entradas[0]&&r.pago_em_fechamento);
+                tbody.innerHTML+=`<tr><td class="p-2 font-bold text-slate-700 text-[10px]">${dataDia}</td><td class="p-2 text-[10px]">${horariosStr}</td><td class="p-2 text-center font-black">${fracao.toFixed(2)}</td><td class="p-2 text-center"><div class="flex items-center justify-center gap-1"><span class="px-1 py-0.5 rounded text-[9px] font-bold ${isPago?'bg-green-100 text-green-700':'bg-orange-100 text-orange-700'}">${isPago?'PAGO':'PENDENTE'}</span><button onclick="abrirModalAdminRegistros('${funcId}')" class="text-slate-400 hover:text-indigo-600 p-1 rounded"><i data-lucide="shield-alert" class="w-3 h-3"></i></button></div></td></tr>`;
             });
             document.getElementById('saldo-total-diarias').innerText=totalDiarias.toFixed(2);
             document.getElementById('saldo-total-valor').innerText=formatMoney(totalDiarias * parseFloat(func.valor_diaria||0));
@@ -848,7 +955,7 @@
             if(dataInicio) registros=registros.filter(p=>p.hora_registro>=dataInicio+'T00:00:00');
             if(dataFim) registros=registros.filter(p=>p.hora_registro<=dataFim+'T23:59:59');
             if(registros.length===0) return showToast('Nenhum registro pendente',true);
-            const totalDiarias=()=>{ let tot=0; const porDia=new Map(); registros.forEach(p=>{ const d=new Date(p.hora_registro).toLocaleDateString('pt-BR',{timeZone:'UTC'}); if(!porDia.has(d)) porDia.set(d,[]); porDia.get(d).push(p); }); function diff(m){return (new Date(m[1])-new Date(m[0]))/(1000*60);} function round(v){let c=v*100; let d=c-Math.floor(c); if(Math.abs(d-0.5)<0.0001) return Math.floor(c)/100; return Math.round(c)/100;} function calc(regs){ let ent=regs.filter(r=>r.tipo==='ENTRADA').map(r=>r.hora_registro), sai=regs.filter(r=>r.tipo==='SAIDA').map(r=>r.hora_registro), aj=regs.filter(r=>r.tipo==='AJUSTE_MANUAL').reduce((s,a)=>s+parseFloat(a.fracao_diaria||0),0); if(ent.length===0 && sai.length===0) return Math.min(aj,1); let pts=[...ent.map(e=>({tipo:'E',hora:e})),...sai.map(s=>({tipo:'S',hora:s}))].sort((a,b)=>new Date(a.hora)-new Date(b.hora)); let sm=null,em=null,st=null,et=null; for(const p of pts){ const h=new Date(p.hora).getUTCHours(); if(h<12){ if(p.tipo==='E' && !sm) sm=p.hora; if(p.tipo==='S') em=p.hora; } else { if(p.tipo==='E' && !st) st=p.hora; if(p.tipo==='S') et=p.hora; } } function calcM(s,e,j){ if(!s||!e) return 0; let m=diff([s,e]); let f=j-m; if(f>0&&f<=10) m=j; return Math.min(j,Math.max(0,m)); } let minM=calcM(sm,em,240), minT=calcM(st,et,240); let base=(minM+minT)/480; base=Math.min(1,Math.max(0,base)); let f=base+aj; if(f>1) f=1; return round(f); } for(const regs of porDia.values()) tot+=calc(regs); return tot; };
+            const totalDiarias=()=>{ let tot=0; const porDia=new Map(); registros.forEach(p=>{ const d=new Date(p.hora_registro).toLocaleDateString('pt-BR',{timeZone:'UTC'}); if(!porDia.has(d)) porDia.set(d,[]); porDia.get(d).push(p); }); function diff(m){return (new Date(m[1])-new Date(m[0]))/(1000*60);} function round(v){let c=v*100; let d=c-Math.floor(c); if(Math.abs(d-0.5)<0.0001) return Math.floor(c)/100; return Math.round(c)/100;} function calc(regs){ let ent=regs.filter(r=>r.tipo==='ENTRADA').map(r=>r.hora_registro), sai=regs.filter(r=>r.tipo==='SAIDA').map(r=>r.hora_registro), aj=regs.filter(r=>r.tipo==='AJUSTE_MANUAL').reduce((s,a)=>s+parseFloat(a.fracao_diaria||0),0); if(ent.length===0 && sai.length===0) return Math.min(aj,1); let pts=[...ent.map(e=>({tipo:'E',hora:e})),...sai.map(s=>({tipo:'S',hora:s}))].sort((a,b)=>new Date(a.hora)-new Date(b.hora)); let sm=null,em=null,st=null,et=null; for(const p of pts){ const h=new Date(p.hora).getUTCHours(); if(h<12){ if(p.tipo==='E' && !sm) sm=p.hora; if(p.tipo==='S') em=p.hora; } else { if(p.tipo==='E' && !st) st=p.hora; if(p.tipo==='S') et=p.hora; } } function calcM(s,e,j){ if(!s||!e) return 0; let m=diff([s,e]); let f=j-m; if(f>0&&f<=10) m=j; return Math.min(j,Math.max(0,m)); } let minM=calcM(sm,em,240), minT=calcM(st,et,240); let base=(minM+minT)/480; base=Math.min(1,Math.max(0,base)); let f=base+aj; if(f>1) f=1; return round(f); } for(const regs of porDia.values()) tot+=calc(regs); return tot; }();
             const valorTotal=totalDiarias*parseFloat(func.valor_diaria||0);
             if(!confirm(`Fechar pagamento de ${totalDiarias.toFixed(2)} diárias no valor de ${formatMoney(valorTotal)}?`)) return;
             showLoading(true);
@@ -863,10 +970,170 @@
             await loadData(); fecharModalSaldo(); renderEquipe(); showToast('Pagamento fechado! Despesa lançada.');
         }
         function imprimirExtratoSaldo(){
-            const funcId=document.getElementById('saldo-equipe-id').value; const func=STATE.equipe.find(e=>e.id===funcId); const dataInicio=document.getElementById('saldo-filtro-data-inicio').value; const dataFim=document.getElementById('saldo-filtro-data-fim').value; const statusFiltro=document.getElementById('saldo-filtro-status').value; const totalDiarias=document.getElementById('saldo-total-diarias').innerText; const valorTotal=document.getElementById('saldo-total-valor').innerText; const tbody=document.getElementById('saldo-tabela-body'); const linhas=Array.from(tbody.querySelectorAll('tr')).map(tr=>{ const tds=tr.querySelectorAll('td'); return{ data:tds[0]?.innerText||'', horarios:tds[1]?.innerText||'', fracao:tds[2]?.innerText||'', status:tds[3]?.innerText||'' }; }); const dataIniFormatada=dataInicio?new Date(dataInicio+'T00:00:00').toLocaleDateString('pt-BR'):'Início'; const dataFimFormatada=dataFim?new Date(dataFim+'T00:00:00').toLocaleDateString('pt-BR'):'Fim'; const periodoExibicao=`${dataIniFormatada} a ${dataFimFormatada}`; const hoje=new Date().toLocaleDateString('pt-BR'); let html=`<div style="font-family:'Segoe UI',Arial; padding:30px;"><div style="display:flex; justify-content:space-between; border-bottom:3px solid #1d4ed8; padding-bottom:15px; margin-bottom:25px;"><img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height:70px;"><div><h1 style="margin:0; font-size:24px;">EXTRATO DE PONTO</h1><p style="margin:5px 0 0 0; color:#1d4ed8;">${func.nome}</p><p>Período: ${periodoExibicao} | Diária: ${formatMoney(func.valor_diaria)}</p><p>Status: ${statusFiltro}</p></div></div><table width="100%" style="border-collapse:collapse;"><thead><tr style="background:#f1f5f9;"><th style="padding:12px; border:1px solid #cbd5e1;">Data</th><th style="padding:12px; border:1px solid #cbd5e1;">Horários</th><th style="padding:12px; border:1px solid #cbd5e1; text-align:center;">Diária</th><th style="padding:12px; border:1px solid #cbd5e1; text-align:center;">Status</th></tr></thead><tbody>${linhas.map(l=>`<tr><td style="padding:10px;">${l.data}</td><td style="padding:10px;">${l.horarios}</td><td style="padding:10px; text-align:center;">${l.fracao}</td><td style="padding:10px; text-align:center;">${l.status}</td></tr>`).join('')}</tbody></table><div style="display:flex; justify-content:flex-end; margin-top:40px;"><div style="width:300px; background:#f8fafc; padding:20px;"><div>Total de Diárias: <strong>${totalDiarias}</strong></div><div>Valor a Pagar: <strong style="color:#1d4ed8;">${valorTotal}</strong></div></div></div><div style="margin-top:60px; text-align:center;"><div style="border-top:1px solid #94a3b8; padding-top:10px;"><strong>RV NEGÓCIOS E COMPANHIA</strong><br>Contratante</div><div style="border-top:1px solid #94a3b8; padding-top:10px; margin-top:20px;"><strong>${func.nome.toUpperCase()}</strong><br>Profissional</div></div></div>`; document.getElementById('print-area').innerHTML=html; setTimeout(()=>window.print(),300);
+            const funcId=document.getElementById('saldo-equipe-id').value; const func=STATE.equipe.find(e=>e.id===funcId); const dataInicio=document.getElementById('saldo-filtro-data-inicio').value; const dataFim=document.getElementById('saldo-filtro-data-fim').value; const statusFiltro=document.getElementById('saldo-filtro-status').value; const totalDiarias=document.getElementById('saldo-total-diarias').innerText; const valorTotal=document.getElementById('saldo-total-valor').innerText; const tbody=document.getElementById('saldo-tabela-body'); const linhas=Array.from(tbody.querySelectorAll('tr')).map(tr=>{ const tds=tr.querySelectorAll('td'); return{ data:tds[0]?.innerText||'', horarios:tds[1]?.innerText||'', fracao:tds[2]?.innerText||'', status:tds[3]?.innerText||'' }; }); const dataIniFormatada=dataInicio?new Date(dataInicio+'T00:00:00').toLocaleDateString('pt-BR'):'Início'; const dataFimFormatada=dataFim?new Date(dataFim+'T00:00:00').toLocaleDateString('pt-BR'):'Fim'; const periodoExibicao=`${dataIniFormatada} a ${dataFimFormatada}`; const hoje=new Date().toLocaleDateString('pt-BR'); let html=`<div style="font-family:'Segoe UI',Arial; padding:30px;"><div style="display:flex; justify-content:space-between; border-bottom:3px solid #1d4ed8; padding-bottom:15px; margin-bottom:25px;"><img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height:70px;"><div><h1 style="margin:0; font-size:24px;">EXTRATO DE PONTO</h1><p style="margin:5px 0 0 0; color:#1d4ed8;">${func.nome}</p><p>Período: ${periodoExibicao} | Diária: ${formatMoney(func.valor_diaria)}</p><p>Status: ${statusFiltro}</p></div></div><table width="100%" style="border-collapse:collapse;"><thead><tr style="background:#f1f5f9;"><th style="padding:12px; border:1px solid #cbd5e1;">Data</th><th style="padding:12px; border:1px solid #cbd5e1;">Horários</th><th style="padding:12px; border:1px solid #cbd5e1; text-align:center;">Diária</th><th style="padding:12px; border:1px solid #cbd5e1; text-align:center;">Status</th><tr></thead><tbody>${linhas.map(l=>`<tr><td style="padding:10px;">${l.data}</td><td style="padding:10px;">${l.horarios}</td><td style="padding:10px; text-align:center;">${l.fracao}</td><td style="padding:10px; text-align:center;">${l.status}</td></tr>`).join('')}</tbody></table><div style="display:flex; justify-content:flex-end; margin-top:40px;"><div style="width:300px; background:#f8fafc; padding:20px;"><div>Total de Diárias: <strong>${totalDiarias}</strong></div><div>Valor a Pagar: <strong style="color:#1d4ed8;">${valorTotal}</strong></div></div></div><div style="margin-top:60px; text-align:center;"><div style="border-top:1px solid #94a3b8; padding-top:10px;"><strong>RV NEGÓCIOS E COMPANHIA</strong><br>Contratante</div><div style="border-top:1px solid #94a3b8; padding-top:10px; margin-top:20px;"><strong>${func.nome.toUpperCase()}</strong><br>Profissional</div></div></div>`; document.getElementById('print-area').innerHTML=html; setTimeout(()=>window.print(),300);
         }
 
-        // ====== MODAL DOCUMENTOS/CONTRATOS ======
+        // ====== MODAL DE SALDO METROS ======
+        function abrirModalSaldoMetros(tercId){
+            const terc = STATE.terceirizados.find(t=>t.id===tercId);
+            if(!terc) return;
+            document.getElementById('saldo-terc-id').value=tercId;
+            document.getElementById('saldo-metros-subtitle').innerText=`${terc.nome} - Valor do Metro: ${formatMoney(terc.valor_metro||0)}`;
+            const hoje=new Date(); const anoAtual=hoje.getFullYear(); const mesAtual=String(hoje.getMonth()+1).padStart(2,'0');
+            const primeiroDia=`${anoAtual}-01-01`; const ultimoDia=new Date(anoAtual, hoje.getMonth()+1,0).getDate();
+            const ultimoDiaStr=`${anoAtual}-${mesAtual}-${String(ultimoDia).padStart(2,'0')}`;
+            document.getElementById('saldo-metros-data-inicio').value=primeiroDia;
+            document.getElementById('saldo-metros-data-fim').value=ultimoDiaStr;
+            document.getElementById('saldo-metros-filtro-status').value='PENDENTE';
+            carregarTabelaSaldoMetros();
+            openModal('modal-saldo-metros');
+        }
+        function carregarTabelaSaldoMetros(){
+            const tercId=document.getElementById('saldo-terc-id').value;
+            const dataInicio=document.getElementById('saldo-metros-data-inicio').value;
+            const dataFim=document.getElementById('saldo-metros-data-fim').value;
+            const statusFiltro=document.getElementById('saldo-metros-filtro-status').value;
+            const terc=STATE.terceirizados.find(t=>t.id===tercId);
+            if(!terc) return;
+            let registros=STATE.producao_terc.filter(p=>p.terceirizado_id===tercId);
+            if(dataInicio) registros=registros.filter(p=>p.data_registro>=dataInicio);
+            if(dataFim) registros=registros.filter(p=>p.data_registro<=dataFim);
+            if(statusFiltro==='PENDENTE') registros=registros.filter(p=>p.status!=='PAGO');
+            else if(statusFiltro==='PAGO') registros=registros.filter(p=>p.status==='PAGO');
+            const tbody=document.getElementById('saldo-metros-tabela-body'); tbody.innerHTML=''; let totalMetros=0;
+            const registrosOrdenados=registros.sort((a,b)=>new Date(a.data_registro)-new Date(b.data_registro));
+            if(registrosOrdenados.length===0){ document.getElementById('saldo-metros-sem-registros').classList.remove('hidden'); document.getElementById('saldo-metros-total-metros').innerText='0.00'; document.getElementById('saldo-metros-total-valor').innerText=formatMoney(0); return; }
+            document.getElementById('saldo-metros-sem-registros').classList.add('hidden');
+            registrosOrdenados.forEach(prod=>{
+                const metros=parseFloat(prod.metros)||0; totalMetros+=metros;
+                const dataStr=new Date(prod.data_registro).toLocaleDateString('pt-BR',{timeZone:'UTC'});
+                const status=prod.status==='PAGO'?'PAGO':'PENDENTE';
+                tbody.innerHTML+=`<td><td class="p-2 font-bold text-slate-700 text-[10px]">${dataStr}</td><td class="p-2 text-center font-black text-indigo-600">${metros.toFixed(2)} m</td><td class="p-2 text-center"><div class="flex items-center justify-center gap-1"><span class="px-1 py-0.5 rounded text-[9px] font-bold ${status==='PAGO'?'bg-green-100 text-green-700':'bg-orange-100 text-orange-700'}">${status}</span><button onclick="abrirModalAdminRegistrosMetros('${tercId}')" class="text-slate-400 hover:text-indigo-600 p-1 rounded"><i data-lucide="shield-alert" class="w-3 h-3"></i></button></div></td></tr>`;
+            });
+            document.getElementById('saldo-metros-total-metros').innerText=totalMetros.toFixed(2);
+            document.getElementById('saldo-metros-total-valor').innerText=formatMoney(totalMetros * parseFloat(terc.valor_metro||0));
+            lucide.createIcons();
+        }
+        async function lancarAjusteManualMetros(){
+            const tercId=document.getElementById('saldo-terc-id').value;
+            const data=document.getElementById('ajuste-metros-data').value;
+            const metros=parseFloat(document.getElementById('ajuste-metros-valor').value);
+            const justificativa=document.getElementById('ajuste-metros-justificativa').value;
+            if(!data||isNaN(metros)||metros<=0) return showToast('Preencha data e metragem',true);
+            const terc=STATE.terceirizados.find(t=>t.id===tercId);
+            if(!terc||!terc.obra_atual_id) return showToast('Terceirizado sem obra',true);
+            showLoading(true);
+            const payload={ id:crypto.randomUUID(), terceirizado_id:tercId, obra_id:terc.obra_atual_id, data_registro:data, metros:metros, status:'PENDENTE', observacao:justificativa||'Ajuste manual' };
+            const {error}=await sb.from('jsp_producao_terc').insert([payload]);
+            if(error){ showLoading(false); return showToast('Erro: '+error.message,true); }
+            await loadData(); carregarTabelaSaldoMetros(); showToast('Ajuste lançado!');
+        }
+        async function fecharPagamentoSaldoMetros(){
+            const tercId=document.getElementById('saldo-terc-id').value;
+            const dataInicio=document.getElementById('saldo-metros-data-inicio').value;
+            const dataFim=document.getElementById('saldo-metros-data-fim').value;
+            const terc=STATE.terceirizados.find(t=>t.id===tercId);
+            if(!terc) return;
+            let registros=STATE.producao_terc.filter(p=>p.terceirizado_id===tercId && p.status!=='PAGO');
+            if(dataInicio) registros=registros.filter(p=>p.data_registro>=dataInicio);
+            if(dataFim) registros=registros.filter(p=>p.data_registro<=dataFim);
+            if(registros.length===0) return showToast('Nenhum registro pendente',true);
+            const totalMetros=registros.reduce((sum,r)=>sum+parseFloat(r.metros),0);
+            const valorTotal=totalMetros*parseFloat(terc.valor_metro||0);
+            if(!confirm(`Fechar pagamento de ${totalMetros.toFixed(2)} metros no valor de ${formatMoney(valorTotal)}?`)) return;
+            showLoading(true);
+            const descricao=`Pagamento de metragem - ${terc.nome}`;
+            const {error:errFin}=await sb.from('jsp_logs').insert([{ id:getNextIdNum(STATE.logs).toString(), obra_id:terc.obra_atual_id?parseInt(terc.obra_atual_id):null, tipo:'despesa', produto_nome:descricao, valor_total:valorTotal, data:new Date().toISOString(), vencimento:new Date().toISOString(), status_financeiro:'PENDENTE', categoria:'Mão de Obra (Terceirizado)', observacao:`Fechamento de metragem - Terceirizado: ${terc.nome} - Total metros: ${totalMetros.toFixed(2)}` }]);
+            if(errFin){ showLoading(false); return showToast('Erro ao gerar despesa: '+errFin.message,true); }
+            const ids=registros.map(r=>r.id);
+            const {error:errProd}=await sb.from('jsp_producao_terc').update({ status:'PAGO' }).in('id',ids);
+            if(errProd){ showLoading(false); return showToast('Erro ao atualizar registros: '+errProd.message,true); }
+            await loadData(); fecharModalSaldoMetros(); renderEquipe(); showToast('Pagamento fechado! Despesa lançada.');
+        }
+        function imprimirExtratoSaldoMetros(){
+            const tercId=document.getElementById('saldo-terc-id').value; const terc=STATE.terceirizados.find(t=>t.id===tercId); const dataInicio=document.getElementById('saldo-metros-data-inicio').value; const dataFim=document.getElementById('saldo-metros-data-fim').value; const statusFiltro=document.getElementById('saldo-metros-filtro-status').value; const totalMetros=document.getElementById('saldo-metros-total-metros').innerText; const valorTotal=document.getElementById('saldo-metros-total-valor').innerText; const tbody=document.getElementById('saldo-metros-tabela-body'); const linhas=Array.from(tbody.querySelectorAll('tr')).map(tr=>{ const tds=tr.querySelectorAll('td'); return{ data:tds[0]?.innerText||'', metros:tds[1]?.innerText||'', status:tds[2]?.innerText||'' }; }); const dataIniFormatada=dataInicio?new Date(dataInicio+'T00:00:00').toLocaleDateString('pt-BR'):'Início'; const dataFimFormatada=dataFim?new Date(dataFim+'T00:00:00').toLocaleDateString('pt-BR'):'Fim'; const periodoExibicao=`${dataIniFormatada} a ${dataFimFormatada}`; const hoje=new Date().toLocaleDateString('pt-BR'); let html=`<div style="font-family:'Segoe UI',Arial; padding:30px;"><div style="display:flex; justify-content:space-between; border-bottom:3px solid #1d4ed8; padding-bottom:15px; margin-bottom:25px;"><img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height:70px;"><div><h1 style="margin:0; font-size:24px;">EXTRATO DE METRAGEM</h1><p style="margin:5px 0 0 0; color:#1d4ed8;">${terc.nome}</p><p>Período: ${periodoExibicao} | Valor Metro: ${formatMoney(terc.valor_metro)}</p><p>Status: ${statusFiltro}</p></div></div><table width="100%" style="border-collapse:collapse;"><thead><tr style="background:#f1f5f9;"><th style="padding:12px; border:1px solid #cbd5e1;">Data</th><th style="padding:12px; border:1px solid #cbd5e1; text-align:center;">Metros</th><th style="padding:12px; border:1px solid #cbd5e1; text-align:center;">Status</th></tr></thead><tbody>${linhas.map(l=>`<tr><td style="padding:10px;">${l.data}</td><td style="padding:10px; text-align:center;">${l.metros}</td><td style="padding:10px; text-align:center;">${l.status}</td></tr>`).join('')}</tbody></table><div style="display:flex; justify-content:flex-end; margin-top:40px;"><div style="width:300px; background:#f8fafc; padding:20px;"><div>Total de Metros: <strong>${totalMetros}</strong></div><div>Valor a Pagar: <strong style="color:#1d4ed8;">${valorTotal}</strong></div></div></div><div style="margin-top:60px; text-align:center;"><div style="border-top:1px solid #94a3b8; padding-top:10px;"><strong>RV NEGÓCIOS E COMPANHIA</strong><br>Contratante</div><div style="border-top:1px solid #94a3b8; padding-top:10px; margin-top:20px;"><strong>${terc.nome.toUpperCase()}</strong><br>Profissional</div></div></div>`; document.getElementById('print-area').innerHTML=html; setTimeout(()=>window.print(),300);
+        }
+
+        // ====== MODAL ADMINISTRATIVO DE REGISTROS ======
+        async function abrirModalAdminRegistros(funcId){
+            const senha=prompt("🔐 Acesso Restrito. Digite a senha mestra:");
+            if(senha!=="147258369"){ alert("Senha incorreta. Acesso negado."); return; }
+            const func=STATE.equipe.find(e=>e.id===funcId);
+            if(!func) return;
+            document.getElementById('admin-func-id').value=funcId;
+            document.getElementById('admin-registros-subtitle').innerText=`${func.nome} - Todos os registros de ponto`;
+            await carregarListaAdminRegistros(funcId);
+            openModal('modal-admin-registros');
+        }
+        async function carregarListaAdminRegistros(funcId){
+            const tbody=document.getElementById('admin-registros-tbody');
+            tbody.innerHTML='<tr><td colspan="5" class="p-4 text-center">Carregando...</td></tr>';
+            const {data,error}=await sb.from('jsp_ponto_diario').select('*').eq('funcionario_id',funcId).order('hora_registro',{ascending:false});
+            if(error){ tbody.innerHTML=`<tr><td colspan="5" class="p-4 text-center text-red-500">Erro: ${error.message}</td></tr>`; return; }
+            if(!data||data.length===0){ document.getElementById('admin-sem-registros').classList.remove('hidden'); tbody.innerHTML=''; return; }
+            document.getElementById('admin-sem-registros').classList.add('hidden');
+            tbody.innerHTML=data.map(reg=>{
+                const dataHora=new Date(reg.hora_registro).toLocaleString('pt-BR',{timeZone:'UTC'});
+                const tipoBadge=reg.tipo==='ENTRADA'?'<span class="bg-green-100 text-green-700 px-1 py-0.5 rounded text-[9px]">ENTRADA</span>':(reg.tipo==='SAIDA'?'<span class="bg-red-100 text-red-700 px-1 py-0.5 rounded text-[9px]">SAÍDA</span>':'<span class="bg-indigo-100 text-indigo-700 px-1 py-0.5 rounded text-[9px]">AJUSTE</span>');
+                const statusBadge=reg.status==='VALIDADO'?'<span class="bg-blue-100 text-blue-700 px-1 py-0.5 rounded text-[9px]">VALIDADO</span>':'<span class="bg-yellow-100 text-yellow-700 px-1 py-0.5 rounded text-[9px]">PENDENTE</span>';
+                const pagoBadge=reg.pago_em_fechamento?'<span class="bg-green-100 text-green-700 px-1 py-0.5 rounded text-[9px]">Sim</span>':'<span class="bg-slate-100 text-slate-500 px-1 py-0.5 rounded text-[9px]">Não</span>';
+                return `<tr class="border-b"><td class="p-2 text-[10px] font-mono">${dataHora}</td><td class="p-2">${tipoBadge}</td><td class="p-2 text-center">${statusBadge}</td><td class="p-2 text-center">${pagoBadge}</td><td class="p-2 text-center"><button onclick="excluirRegistroAdmin('${reg.id}')" class="text-red-500 hover:text-red-700 p-1 rounded"><i data-lucide="trash-2" class="w-3 h-3"></i></button></td></tr>`;
+            }).join('');
+            lucide.createIcons();
+        }
+        async function excluirRegistroAdmin(registroId){
+            if(!confirm("Tem certeza que deseja excluir este registro permanentemente?")) return;
+            showLoading(true);
+            try{
+                const {error}=await sb.from('jsp_ponto_diario').delete().eq('id',registroId);
+                if(error) throw error;
+                showToast("Registro excluído com sucesso.");
+                const funcId=document.getElementById('admin-func-id').value;
+                await carregarListaAdminRegistros(funcId);
+                if(!document.getElementById('modal-saldo-ponto').classList.contains('hidden')){ await loadData(); carregarTabelaSaldo(); }
+                if(!document.getElementById('modal-saldo-metros').classList.contains('hidden')){ await loadData(); carregarTabelaSaldoMetros(); }
+            } catch(err){ showToast("Erro ao excluir: "+err.message,true); } finally{ showLoading(false); }
+        }
+        async function abrirModalAdminRegistrosMetros(tercId){
+            const senha=prompt("🔐 Acesso Restrito. Digite a senha mestra:");
+            if(senha!=="147258369"){ alert("Senha incorreta. Acesso negado."); return; }
+            const terc=STATE.terceirizados.find(t=>t.id===tercId);
+            if(!terc) return;
+            document.getElementById('admin-func-id').value=tercId;
+            document.getElementById('admin-registros-subtitle').innerText=`${terc.nome} - Todos os registros de metragem`;
+            await carregarListaAdminRegistrosMetros(tercId);
+            openModal('modal-admin-registros');
+        }
+        async function carregarListaAdminRegistrosMetros(tercId){
+            const tbody=document.getElementById('admin-registros-tbody');
+            tbody.innerHTML='<tr><td colspan="4" class="p-4 text-center">Carregando...</td></tr>';
+            const {data,error}=await sb.from('jsp_producao_terc').select('*').eq('terceirizado_id',tercId).order('data_registro',{ascending:false});
+            if(error){ tbody.innerHTML=`<tr><td colspan="4" class="p-4 text-center text-red-500">Erro: ${error.message}</td></tr>`; return; }
+            if(!data||data.length===0){ document.getElementById('admin-sem-registros').classList.remove('hidden'); tbody.innerHTML=''; return; }
+            document.getElementById('admin-sem-registros').classList.add('hidden');
+            const thead=document.querySelector('#modal-admin-registros thead tr');
+            if(thead) thead.innerHTML=`<th class="p-2 text-left">Data</th><th class="p-2 text-center">Metros</th><th class="p-2 text-center">Status</th><th class="p-2 text-center w-10">Ação</th>`;
+            tbody.innerHTML=data.map(reg=>{
+                const dataStr=new Date(reg.data_registro).toLocaleDateString('pt-BR',{timeZone:'UTC'});
+                const statusBadge=reg.status==='PAGO'?'<span class="bg-green-100 text-green-700 px-1 py-0.5 rounded text-[9px]">PAGO</span>':'<span class="bg-orange-100 text-orange-700 px-1 py-0.5 rounded text-[9px]">PENDENTE</span>';
+                return `<tr class="border-b"><td class="p-2 text-[10px]">${dataStr}</td><td class="p-2 text-center font-bold">${parseFloat(reg.metros).toFixed(2)} m</td><td class="p-2 text-center">${statusBadge}</td><td class="p-2 text-center"><button onclick="excluirRegistroAdminMetros('${reg.id}')" class="text-red-500 hover:text-red-700 p-1 rounded"><i data-lucide="trash-2" class="w-3 h-3"></i></button></td></tr>`;
+            }).join('');
+            lucide.createIcons();
+        }
+        async function excluirRegistroAdminMetros(registroId){
+            if(!confirm("Tem certeza que deseja excluir este registro permanentemente?")) return;
+            showLoading(true);
+            try{
+                const {error}=await sb.from('jsp_producao_terc').delete().eq('id',registroId);
+                if(error) throw error;
+                showToast("Registro excluído com sucesso.");
+                const tercId=document.getElementById('admin-func-id').value;
+                await carregarListaAdminRegistrosMetros(tercId);
+                if(!document.getElementById('modal-saldo-metros').classList.contains('hidden')){ await loadData(); carregarTabelaSaldoMetros(); }
+            } catch(err){ showToast("Erro ao excluir: "+err.message,true); } finally{ showLoading(false); }
+        }
+
+        // ====== MODAL DOCUMENTOS (CONTRATOS COMPLETOS) ======
         function abrirModalDocumentos(equipeId){
             const pessoa = STATE.equipe.find(e=>e.id===equipeId) || STATE.terceirizados.find(t=>t.id===equipeId);
             if(!pessoa) return;
@@ -895,12 +1162,12 @@
             let titulo="", corpoTexto="", nomeContratanteAssinatura="RV NEGOCIOS E COMPANHIA LTDA";
             if(tipo==='epi'){
                 titulo="FICHA DE EPI / TERMO DE RECEBIMENTO";
-                corpoTexto=`<div><p><strong>Nome:</strong> ${e.nome.toUpperCase()}</p><p><strong>Atividade:</strong> ${e.categoria.toUpperCase()}</p><p>Declaro ter recebido orientação sobre EPI's.</p><table border="1" style="width:100%; border-collapse:collapse;"><tr><th>DATA</th><th>EPI</th><th>C.A.</th><th>QUANT.</th><th>Assinatura</th></tr><tr><td></td><td>Capacete</td><td>21420</td><td>1</td><td></td></tr><tr><td></td><td>Sapato de segurança</td><td>24312</td><td>1</td><td></td></tr><tr><td></td><td>Óculos</td><td>07732</td><td>1</td><td></td></tr></table></div>`;
+                corpoTexto=`<div><p><strong>Nome do Prestador de Serviços:</strong> ${e.nome.toUpperCase()}</p><p><strong>Atividade a ser desenvolvida:</strong> ${e.categoria.toUpperCase()}</p><p>"Declaro ter recebido orientação sobre o uso correto dos Equipamentos de Segurança, bem como, estou ciente de que sou obrigado a usá-los sob pena de SUSPENSÃO ou CANCELAMENTO do contrato de prestação dos serviços de autônomo."</p><h3>RECEBIMENTO</h3><table border="1" style="width:100%; border-collapse:collapse;"><thead><tr><th>DATA</th><th>EPI (Descrição)</th><th>C.A.</th><th>QUANT.</th><th>Motivo da retirada</th><th>Assinatura</th></tr></thead><tbody><tr><td></td><td>Capacete</td><td>21420</td><td>1</td><td></td><td></td></tr><tr><td></td><td>Sapato de segurança</td><td>24312</td><td>1</td><td></td><td></td></tr><tr><td></td><td>Óculos</td><td>07732</td><td>1</td><td></td><td></td></tr><tr><td></td><td>Protetor Auricular</td><td>07790</td><td>1</td><td></td><td></td></tr><tr><td></td><td>Luva</td><td>00501</td><td>1</td><td></td><td></td></tr></tbody></table><p>Eu, <strong>${e.nome.toUpperCase()}</strong>, declaro ter recebido os equipamentos de proteção necessários para execução da função ao qual irei exercer COMO <strong>${e.categoria.toUpperCase()}</strong> POR OBRA CERTA OU PRAZO DETERMINADO, bem como, o treinamento de utilização da forma correta.</p><p>Por fim, estando ciente e de acordo assino este termo de compromisso em duas vias.</p></div>`;
             } else {
-                titulo=`CONTRATO DE PRESTAÇÃO DE SERVIÇOS Nº ${matricula}/2026 | JATAÍ – GOIÁS`;
-                corpoTexto=`<div><p>CONTRATANTE: RV NEGOCIOS E COMPANHIA LTDA, CNPJ 61.893.912/0001-24.</p><p>CONTRATADO: ${e.nome}, CPF ${e.cpf}, RG ${e.rg}, residente em ${e.endereco}.</p><p>Objeto: Fornecimento de mão de obra qualificada para construção civil.</p><p>Valor: ${diariaTexto} por ${e.categoria.includes('METRO')?'metro':'diária completa'}.</p><p>Prazo: Início ${dataInicioContrato}, término ${dataTerminoContrato}.</p><p>Foro: Jataí-GO.</p></div>`;
+                titulo=`CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE FORNECIMENTO DE MÃO DE OBRA QUALIFICADA PARA SERVIÇOS DE CONSTRUÇÃO CIVIL <br> SEM VÍNCULO EMPREGATÍCIO <br><br> Nº ${matricula}/2026 | JATAÍ – GOIÁS`;
+                corpoTexto=`<div style="text-align: justify;"><p>Contrato de Prestação de Serviços celebrado entre as seguintes partes:</p><p><strong>CONTRATANTE</strong></p><p><strong>RV NEGOCIOS E COMPANHIA LTDA</strong>, pessoa jurídica de direito privado, inscrita no CNPJ nº 61.893.912/0001-24, com sede na Rua Mineiros, S/N - QD 09 LT 12  - CEP 75.800-094, Santa Maria, no Município de Jataí, Estado de Goiás, neste ato representada por seu titular NÚBIA LAFAIETE APARECIDA DA SILVA, brasileiro, portador do CPF nº 320.993.981-00, residente e domiciliado na Rua Mineiros, S/N - QD 09 LT 12  - CEP 75.800-094, Santa Maria, Município de Jataí, Estado de Goiás, doravante denominado(a) simplesmente <strong>CONTRATANTE</strong>.</p><p><strong>CONTRATADO</strong></p><p><strong>${e.nome.toUpperCase()}</strong>, portador do RG ${e.rg||'______________'}, inscrito no CPF nº ${e.cpf||'______________'} residente e domiciliado na ${e.endereco||'____________________________________________________'}, no Município de Jataí, Estado de Goiás, doravante denominado simplesmente <strong>CONTRATADO</strong>.</p><p>As partes acima identificadas, tendo em vista o interesse mútuo, resolvem celebrar o presente contrato de prestação de serviços, que se regerá pelas cláusulas e condições seguintes:</p><p><strong>CLÁUSULA PRIMEIRA – DO OBJETO</strong></p><p>O presente contrato tem como objeto a prestação de serviços com o fornecimento de mão de obra qualificada para execução de obra de construção civil, a serem executados pelo CONTRATADO, compreendendo as atividades descritas no item 1.3.1, conforme:</p><div><strong>1.1.</strong> O CONTRATADO realizará os serviços com sua própria mão de obra, ou mediante disponibilização de profissional integrante de sua equipe, com qualificações iguais ou superiores às exigidas.</div><div><strong>1.2.</strong> No caso de envio de subcontratado, os dados do(s) colaborador(es) deverão ser encaminhados com antecedência mínima de 48 (quarenta e oito) horas, acompanhados de documentos pessoais, comprovação de qualificação e programação dos períodos de atuação na obra.</div><div><strong>1.3.</strong> Na execução das atividades, o(s) profissional(is) deverá(ão) realizar os serviços conforme o objeto contratual abaixo:</div><div><strong>1.3.1.</strong> Transporte de materiais entre ambientes de descarga até o local de utilização; abastecimento de materiais nos postos indicados pela CONTRATANTE; adequação de espaço para início da obra; auxílio na execução de galpão de almoxarifado, galpão de engenharia e administrativo; limpeza da área de trabalho com destinação adequada dos materiais; demolição de salas desde a cobertura até as fundações; implantação de gabarito; locação de obra; escavação e compactação de fundação; concretagem de blocos de fundação; concretagem de vigas baldrames; concretagem de pilares e vigas superiores; concretagem de laje; desforma de caixarias; impermeabilização de estruturas; produção e transporte de argamassa para alvenaria, chapisco, reboco e emboço; separação e transporte de materiais hidráulicos e elétricos; lixamento de paredes; preparação de áreas para pintura; execução de concreto dosado para pisos e contrapisos; marcação e cortes em alvenaria para passagem de eletrodutos; limpeza do canteiro de obras; quantificação de materiais; produção de argamassa para assentamento de pisos cerâmicos e revestimentos de parede, conforme indicação da CONTRATANTE.</div><p><strong>Parágrafo Primeiro:</strong> As atividades serão executadas na obra localizada na <strong>${enderecoObra}</strong>.</p><p><strong>Parágrafo Segundo:</strong> O CONTRATADO declara possuir capacidade técnica, experiência e disponibilidade para execução direta ou por meio de profissionais de sua equipe, responsabilizando-se pela qualidade e segurança dos serviços.</p><p><strong>CLÁUSULA SEGUNDA – DAS OBRIGAÇÕES DO CONTRATADO</strong></p><p>Além das obrigações implícitas, o CONTRATADO se obriga a:</p><div><strong>2.1.</strong> Executar os serviços com qualidade, presteza e diligência, observando normas técnicas e orientações da CONTRATANTE.</div><div><strong>2.2.</strong> Utilizar e exigir o uso de Equipamentos de Proteção Individual (EPIs), responsabilizando-se por sua correta utilização.</div><div><strong>2.3.</strong> Responsabilizar-se por danos causados a terceiros ou à CONTRATANTE por dolo ou culpa.</div><div><strong>2.4.</strong> Manter disciplina e ordem no local de trabalho.</div><div><strong>2.5.</strong> Emitir recibos de pagamento pelos serviços prestados.</div><div><strong>2.6.</strong> Arcar com despesas de deslocamento, alimentação e vestuário.</div><div><strong>2.7.</strong> Responsabilizar-se pelo recolhimento de todos os tributos incidentes (ISS, IR, INSS, entre outros).</div><div><strong>2.8.</strong> Cumprir rigorosamente os prazos estabelecidos.</div><div><strong>2.9.</strong> Manter todas as condições de habilitação durante a vigência do contrato.</div><p><strong>CLÁUSULA TERCEIRA – DAS OBRIGAÇÕES DO CONTRATANTE</strong></p><p>O CONTRANTE se obriga a:</p><div><strong>3.1.</strong> Fornecer informações e materiais necessários à execução dos serviços.</div><div><strong>3.2.</strong> Fiscalizar a execução dos serviços.</div><div><strong>3.3.</strong> Efetuar os pagamentos conforme estabelecido.</div><div><strong>3.4.</strong> Disponibilizar ambiente de trabalho seguro.</div><div><strong>3.5.</strong> Disponibilizar treinamentos obrigatórios, quando necessário, conforme normas regulamentadoras.</div><p><strong>CLÁUSULA QUARTA – DO VALOR E DA FORMA DE PAGAMENTO</strong></p><p>Os serviços serão remunerados conforme entregas executadas e aprovadas, mediante Recibo de Prestação de Serviços.</p><div><strong>4.1.</strong> O valor será de <strong>${diariaTexto}</strong> por entrega diária completa.</div><div><strong>4.2.</strong> O pagamento será efetuado a cada 18 (dezoito) dias corridos, com medição quinzenal.</div><div><strong>4.3.</strong> O pagamento será realizado via transferência bancária para a conta indicada pelo CONTRATADO.</div><p><strong>CLÁUSULA QUINTA – DO PRAZO</strong></p><p>O contrato terá início em <strong>${dataInicioContrato}</strong> e término em <strong>${dataTerminoContrato}</strong>, podendo ser prorrogado até o limite de 24 (vinte e quatro) meses.</p><p><strong>CLÁUSULA SEXTA – DA RESCISÃO</strong></p><p>O contrato poderá ser rescindido por qualquer das partes mediante aviso prévio de 5 (cinco) dias, ou de forma imediata nos casos previstos neste instrumento.</p><p><strong>CLÁUSULA SÉTIMA – DA NATUREZA DO CONTRATO</strong></p><p>O presente contrato possui natureza civil, não gerando vínculo empregatício, sendo o CONTRATADO integralmente responsável por obrigações fiscais, previdenciárias e trabalhistas.</p><p><strong>CLÁUSULA OITAVA – DO SIGILO</strong></p><p>O CONTRATADO compromete-se a manter sigilo sobre informações da CONTRATANTE.</p><p><strong>CLÁUSULA NONA – DO ABANDONO DA OBRA</strong></p><p>Em caso de abandono injustificado, valores pendentes somente serão pagos após conclusão da etapa por terceiros e recebimento integral pela CONTRATANTE.</p><p><strong>CLÁUSULA DÉCIMA – DAS DISPOSIÇÕES GERAIS</strong></p><p>O contrato obriga as partes e seus sucessores.</p><div><strong>10.1.</strong> Alterações somente por escrito.</div><p>Fica eleito o foro da comarca de Jataí-GO, para dirimir quaisquer controvérsias.</p></div>`;
             }
-            const htmlDoc=`<div style="font-family:'Times New Roman'; padding:20px;"><div style="text-align:center; border-bottom:2px solid #000;"><img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height:70px;"><h2>${titulo}</h2></div><div style="margin:20px;">${corpoTexto}</div><div style="margin-top:60px; text-align:center;"><div style="border-top:1px solid #000; padding-top:10px;">${nomeContratanteAssinatura}<br>CONTRATANTE</div><div style="border-top:1px solid #000; padding-top:10px; margin-top:20px;">${e.nome.toUpperCase()}<br>CONTRATADO(A)</div></div></div>`;
+            const htmlDoc=`<div style="font-family:'Times New Roman', Times, serif; padding:20px;"><div style="text-align:center; border-bottom:2px solid #000;"><img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height:70px;"><h2>${titulo}</h2></div><div style="margin:20px;">${corpoTexto}</div><div style="margin-top:60px; display:flex; justify-content:space-between;"><div style="text-align:center; width:45%; border-top:1px solid #000; padding-top:10px;"><strong>${nomeContratanteAssinatura}</strong><br>CONTRATANTE</div><div style="text-align:center; width:45%; border-top:1px solid #000; padding-top:10px;"><strong>${e.nome.toUpperCase()}</strong><br>CONTRATADO(A)</div></div></div>`;
             document.getElementById('print-area').innerHTML=htmlDoc; setTimeout(()=>window.print(),300);
         }
         async function marcarContratoAssinado(){
@@ -910,6 +1177,90 @@
             else await sb.from('jsp_equipe').update({ contrato_assinado:true }).eq('id',id);
             showToast("Contrato marcado como assinado!"); fecharModalDocs(); loadData();
         }
+
+        // ====== CHEGAGEM E FOLHA DE PAGAMENTO ======
+        function imprimirChecagem(){
+            const dataInicio=document.getElementById('eqp-filter-data-inicio').value;
+            const dataFim=document.getElementById('eqp-filter-data-fim').value;
+            const obraFiltro=document.getElementById('eqp-filter-obra').value;
+            const statusFiltro=document.getElementById('eqp-filter-status').value;
+            const tipoFiltro=document.getElementById('eqp-filter-tipo').value;
+            const colaboradores=getColaboradoresUnificados();
+            let fil=colaboradores.filter(c=>{
+                if(obraFiltro && c.obra_atual_id!=obraFiltro) return false;
+                if(statusFiltro!=="todos"){ const isAtivo=statusFiltro==="true"; if((c.ativo===true||c.ativo==='true')!==isAtivo) return false; }
+                if(tipoFiltro!=='todos' && c.tipo!==tipoFiltro) return false;
+                return true;
+            });
+            const dados=[];
+            fil.forEach(c=>{
+                let quantidade=0;
+                if(c.tipo==='diaria'){ const saldo=calcularSaldoPendenteFuncionarioPorPeriodo(c.id,dataInicio,dataFim); quantidade=saldo.totalDiarias; }
+                else{ const prod=STATE.producao_terc.filter(p=>p.terceirizado_id===c.id && (!dataInicio||p.data_registro>=dataInicio) && (!dataFim||p.data_registro<=dataFim)); const metrosPendentes=prod.filter(p=>p.status!=='PAGO').reduce((a,p)=>a+parseFloat(p.metros),0); const metrosPagos=prod.filter(p=>p.status==='PAGO').reduce((a,p)=>a+parseFloat(p.metros),0); quantidade=metrosPendentes+metrosPagos; }
+                if(quantidade>0 || statusFiltro!=='true'){ const obra=STATE.obras.find(o=>o.id==c.obra_atual_id); dados.push({ nome:c.nome, quantidade:quantidade, unidade:c.tipo==='diaria'?'diárias':'m', obra:obra?obra.nome:'Sem obra' }); }
+            });
+            dados.sort((a,b)=>a.nome.localeCompare(b.nome));
+            if(dados.length===0){ showToast('Nenhum dado para exibir.',true); return; }
+            const hoje=new Date().toLocaleDateString('pt-BR');
+            const dataIniFormatada=dataInicio?new Date(dataInicio+'T00:00:00').toLocaleDateString('pt-BR'):'Início';
+            const dataFimFormatada=dataFim?new Date(dataFim+'T00:00:00').toLocaleDateString('pt-BR'):'Fim';
+            const periodoExibicao=(dataInicio||dataFim)?`${dataIniFormatada} a ${dataFimFormatada}`:'Todo o período';
+            let html=`<div style="font-family:'Segoe UI',Arial; padding:30px;"><div style="display:flex; justify-content:space-between; border-bottom:3px solid #1d4ed8;"><div><img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height:70px;"><div>CNPJ: 61.893.912/0001-24<br>Rua Mineiros, 530 | Jataí - GO | (64) 99981-5852</div></div><div><h2>PLANILHA DE CHECAGEM</h2><p>Período: ${periodoExibicao}</p></div></div><table width="100%" style="border-collapse:collapse; margin-top:20px;"><thead><tr style="background:#f1f5f9;"><th style="padding:10px; border:1px solid #cbd5e1;">Nome</th><th style="padding:10px; border:1px solid #cbd5e1; text-align:center;">Qtd. Diárias / Metros</th><th style="padding:10px; border:1px solid #cbd5e1;">Obra</th></tr></thead><tbody>${dados.map(d=>`<tr><td style="padding:8px; border:1px solid #cbd5e1;">${d.nome.toUpperCase()}</td><td style="padding:8px; border:1px solid #cbd5e1; text-align:center;">${d.quantidade.toFixed(2)} ${d.unidade}</td><td style="padding:8px; border:1px solid #cbd5e1;">${d.obra}</td></tr>`).join('')}</tbody></table><div style="text-align:center; margin-top:50px;">Documento gerado em ${hoje} pela RV Negócios.</div></div>`;
+            document.getElementById('print-area').innerHTML=html; setTimeout(()=>window.print(),300);
+        }
+        function abrirModalFolhaPagamento(){
+            updateSelects();
+            const hoje=new Date(); const anoAtual=hoje.getFullYear(); const mesAtual=String(hoje.getMonth()+1).padStart(2,'0');
+            const primeiroDia=`${anoAtual}-${mesAtual}-01`; const ultimoDia=new Date(anoAtual, hoje.getMonth()+1,0).getDate();
+            const ultimoDiaStr=`${anoAtual}-${mesAtual}-${String(ultimoDia).padStart(2,'0')}`;
+            document.getElementById('folha-data-inicio').value=primeiroDia;
+            document.getElementById('folha-data-fim').value=ultimoDiaStr;
+            openModal('modal-folha-pagamento');
+        }
+        function executarImpressaoFolha(){
+            const statusFinanceiro=document.getElementById('folha-status').value;
+            const obraFiltro=document.getElementById('folha-obra').value;
+            const statusFunc=document.getElementById('folha-status-func').value;
+            const dataInicio=document.getElementById('folha-data-inicio').value;
+            const dataFim=document.getElementById('folha-data-fim').value;
+            const colaboradores=getColaboradoresUnificados();
+            let filtrados=colaboradores.filter(c=>{
+                if(statusFunc==='true' && c.ativo===false) return false;
+                if(statusFunc==='false' && c.ativo!==false) return false;
+                if(obraFiltro && c.obra_atual_id!=obraFiltro) return false;
+                return true;
+            });
+            const dadosFolha=[];
+            filtrados.forEach(c=>{
+                let valorTotal=0, quantidade=0;
+                if(c.tipo==='diaria'){
+                    const despesasPonto=STATE.logs.filter(l=>l.tipo==='despesa' && l.produto_nome && l.produto_nome.includes(`Pagamento de ponto - ${c.nome}`) && (statusFinanceiro==='TODOS'||l.status_financeiro===statusFinanceiro));
+                    let despesasFiltradas=despesasPonto;
+                    if(dataInicio||dataFim) despesasFiltradas=despesasPonto.filter(d=>{ const dataDesp=d.data?d.data.split('T')[0]:''; if(dataInicio&&dataDesp<dataInicio) return false; if(dataFim&&dataDesp>dataFim) return false; return true; });
+                    if(despesasFiltradas.length===0) return;
+                    let totalValor=0, totalDiarias=0;
+                    despesasFiltradas.forEach(d=>{ totalValor+=parseFloat(d.valor_total); const diariasMatch=d.observacao?.match(/Total diárias: ([\d.]+)/); if(diariasMatch) totalDiarias+=parseFloat(diariasMatch[1]); });
+                    if(totalValor>0){ dadosFolha.push({ nome:c.nome, pix:c.chave_pix||'Não informado', tipo:'Diária', unidade:'dias', quantidade:totalDiarias, valor_unitario:c.valor_base, valor_total:totalValor }); }
+                } else {
+                    const producao=STATE.producao_terc.filter(p=>p.terceirizado_id===c.id && (!dataInicio||p.data_registro>=dataInicio) && (!dataFim||p.data_registro<=dataFim));
+                    const metros=(statusFinanceiro==='PAGO'?producao.filter(p=>p.status==='PAGO').reduce((a,p)=>a+parseFloat(p.metros),0):(statusFinanceiro==='PENDENTE'?producao.filter(p=>p.status!=='PAGO').reduce((a,p)=>a+parseFloat(p.metros),0):producao.reduce((a,p)=>a+parseFloat(p.metros),0)));
+                    if(metros===0) return;
+                    const valorTotalMetro=metros*c.valor_base;
+                    dadosFolha.push({ nome:c.nome, pix:c.chave_pix||'Não informado', tipo:'Metro', unidade:'m', quantidade:metros, valor_unitario:c.valor_base, valor_total:valorTotalMetro });
+                }
+            });
+            dadosFolha.sort((a,b)=>a.nome.localeCompare(b.nome));
+            if(dadosFolha.length===0){ showToast('Nenhum registro encontrado.',true); return; }
+            const dataIniFormatada=dataInicio?new Date(dataInicio+'T00:00:00').toLocaleDateString('pt-BR'):'Início';
+            const dataFimFormatada=dataFim?new Date(dataFim+'T00:00:00').toLocaleDateString('pt-BR'):'Fim';
+            const periodoExibicao=(dataInicio||dataFim)?`${dataIniFormatada} a ${dataFimFormatada}`:'Todos os períodos';
+            const hoje=new Date().toLocaleDateString('pt-BR');
+            let somaGeral=0; dadosFolha.forEach(d=>somaGeral+=d.valor_total);
+            let html=`<div style="font-family:'Segoe UI',Arial; padding:30px;"><div style="display:flex; justify-content:space-between; border-bottom:3px solid #1d4ed8;"><img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height:70px;"><div><h2>FOLHA DE PAGAMENTOS</h2><p>Status: ${statusFinanceiro==='PENDENTE'?'PENDENTES (NÃO BAIXADOS)':statusFinanceiro}</p><p>Período: ${periodoExibicao}</p></div></div><table width="100%" style="border-collapse:collapse;"><thead><tr style="background:#f1f5f9;"><th style="padding:12px; border:1px solid #cbd5e1;">Funcionário / PIX</th><th style="padding:12px; border:1px solid #cbd5e1; text-align:center;">Tipo</th><th style="padding:12px; border:1px solid #cbd5e1; text-align:center;">Quantidade</th><th style="padding:12px; border:1px solid #cbd5e1; text-align:center;">Valor Unit.</th><th style="padding:12px; border:1px solid #cbd5e1; text-align:right;">Valor Total</th></tr></thead><tbody>${dadosFolha.map(d=>`<tr><td style="padding:10px; border:1px solid #cbd5e1;"><div><strong>${d.nome.toUpperCase()}</strong></div><div style="font-size:11px; color:#1d4ed8;">PIX: ${d.pix}</div></td><td style="padding:10px; border:1px solid #cbd5e1; text-align:center;">${d.tipo}</td><td style="padding:10px; border:1px solid #cbd5e1; text-align:center;">${d.quantidade.toFixed(2)} ${d.unidade}</td><td style="padding:10px; border:1px solid #cbd5e1; text-align:center;">${formatMoney(d.valor_unitario)}</td><td style="padding:10px; border:1px solid #cbd5e1; text-align:right;">${formatMoney(d.valor_total)}</td></tr>`).join('')}</tbody></table><div style="display:flex; justify-content:flex-end; margin-top:20px;"><div style="width:300px; background:#f8fafc; padding:20px;"><div>TOTAL GERAL: <strong style="color:#b91c1c;">${formatMoney(somaGeral)}</strong></div></div></div></div>`;
+            fecharModalFolha(); document.getElementById('print-area').innerHTML=html; setTimeout(()=>window.print(),300);
+        }
+
+        // ====== SALVAR EQUIPE ======
         function gerarIdSeguro(){ if(typeof crypto!=='undefined'&&crypto.randomUUID) return crypto.randomUUID(); return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{ const r=Math.random()*16|0,v=c=='x'?r:(r&0x3|0x8); return v.toString(16); }); }
         async function saveEquipe(e){
             e.preventDefault(); showLoading(true);
@@ -931,7 +1282,6 @@
             }
             closeOverlayForm('equipe-form-container'); showToast("✅ Salvo!"); await loadData(); navigate('equipe');
         }
-
         function openEquipeForm(id, tipoOrigem='equipe'){
             document.getElementById('equipe-form-container').classList.remove('hidden');
             const catSelect=document.getElementById('eqp-categoria'); const tipoHidden=document.getElementById('eqp-tipo-origem');
