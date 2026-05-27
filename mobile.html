@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="pt-BR">
   <head>
@@ -305,6 +307,7 @@
         <button onclick="navigate('menu')" id="btn-menu" class="flex flex-col items-center p-2 text-slate-400 nav-bottom-btn w-1/4 transition-colors"><i data-lucide="menu" class="w-5 h-5 mb-1"></i><span class="text-[10px] font-bold">Menu</span></button>
     </nav>
 
+    <!-- MODAL BUSCAR MATERIAL (POS) -->
     <div id="pos-product-modal" class="fixed inset-0 bg-white z-50 flex flex-col mobile-modal modal-hidden no-print">
         <div class="p-3 border-b flex justify-between items-center bg-slate-50 pt-safe">
             <h3 class="font-bold text-base">Buscar Material</h3>
@@ -316,6 +319,7 @@
         <div class="flex-1 overflow-y-auto p-3 bg-slate-50 no-scrollbar" id="pos-modal-grid"></div>
     </div>
 
+    <!-- MODAL FORNECEDOR (POS) -->
     <div id="pos-fornecedor-modal" class="fixed inset-0 bg-white z-50 flex flex-col mobile-modal modal-hidden no-print">
         <div class="p-3 border-b flex justify-between items-center bg-slate-50 pt-safe">
             <h3 class="font-bold text-base">Fornecedor</h3>
@@ -330,6 +334,7 @@
         </div>
     </div>
 
+    <!-- MODAL VER OC -->
     <div id="modal-view-oc" class="fixed inset-0 bg-white z-[80] flex flex-col mobile-modal modal-hidden no-print">
         <div class="p-3 border-b flex justify-between items-center bg-slate-900 text-white pt-safe">
             <h3 class="font-bold text-sm">Visualizar O.C.</h3>
@@ -339,6 +344,277 @@
             </div>
     </div>
 
+    <!-- MODAL SALDO DE PONTO (CALCULAR - DIÁRIA) -->
+    <div id="modal-saldo-ponto" class="hidden fixed inset-0 bg-black/60 z-[90] flex items-end justify-center no-print">
+        <div class="bg-white rounded-t-3xl w-full flex flex-col max-h-[92vh] overflow-hidden shadow-2xl">
+            <div class="bg-indigo-600 p-4 text-white flex justify-between items-center shrink-0 rounded-t-3xl">
+                <div>
+                    <h3 class="font-black text-base flex items-center gap-2">
+                        <i data-lucide="calculator" class="w-5 h-5"></i> Saldo de Ponto
+                    </h3>
+                    <p id="saldo-modal-subtitle" class="text-xs font-medium opacity-90 mt-0.5"></p>
+                </div>
+                <button onclick="fecharModalSaldo()" class="text-white bg-white/20 p-2 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-4 overflow-y-auto flex-1 bg-slate-50 no-scrollbar">
+                <input type="hidden" id="saldo-equipe-id">
+                
+                <!-- Filtros -->
+                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm mb-4 space-y-2">
+                    <div class="flex gap-2">
+                        <div class="flex-1">
+                            <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Data Início</label>
+                            <input type="date" id="saldo-filtro-data-inicio" class="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50" onchange="carregarTabelaSaldo()">
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Data Fim</label>
+                            <input type="date" id="saldo-filtro-data-fim" class="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50" onchange="carregarTabelaSaldo()">
+                        </div>
+                    </div>
+                    <div class="flex gap-2 items-end">
+                        <div class="flex-1">
+                            <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Status</label>
+                            <select id="saldo-filtro-status" class="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50" onchange="carregarTabelaSaldo()">
+                                <option value="PENDENTE" selected>Pendentes</option>
+                                <option value="PAGO">Já Pagos</option>
+                                <option value="TODOS">Todos</option>
+                            </select>
+                        </div>
+                        <button onclick="imprimirExtratoSaldo()" class="bg-slate-800 text-white px-3 py-2 rounded-lg font-bold text-xs flex items-center gap-1 shrink-0">
+                            <i data-lucide="printer" class="w-4 h-4"></i> Extrato
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabela de registros -->
+                <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm mb-4">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs">
+                            <thead class="bg-slate-100 text-slate-600 border-b">
+                                <tr>
+                                    <th class="p-2 text-left font-bold uppercase">Data</th>
+                                    <th class="p-2 text-left font-bold uppercase">Horários</th>
+                                    <th class="p-2 text-center font-bold uppercase">Diária</th>
+                                    <th class="p-2 text-center font-bold uppercase">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="saldo-tabela-body" class="divide-y"></tbody>
+                        </table>
+                    </div>
+                    <div id="saldo-sem-registros" class="p-6 text-center text-slate-400 font-medium hidden text-xs">
+                        Nenhum registro encontrado para os filtros.
+                    </div>
+                </div>
+
+                <!-- Ajuste manual -->
+                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                    <h4 class="font-bold text-slate-700 text-xs mb-3 flex items-center gap-2">
+                        <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-600"></i> Lançar Ajuste Manual
+                    </h4>
+                    <div class="space-y-2">
+                        <div class="flex gap-2">
+                            <div class="flex-1">
+                                <label class="block text-[9px] font-bold text-slate-500 mb-1">Data</label>
+                                <input type="date" id="ajuste-data" class="w-full p-2 border rounded-lg text-xs">
+                            </div>
+                            <div class="flex-1">
+                                <label class="block text-[9px] font-bold text-slate-500 mb-1">Fração (ex: 0.5)</label>
+                                <input type="number" step="0.01" min="0" id="ajuste-fracao" class="w-full p-2 border rounded-lg text-xs font-bold">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[9px] font-bold text-slate-500 mb-1">Justificativa</label>
+                            <input type="text" id="ajuste-justificativa" placeholder="Ex: Esqueceu bater ponto" class="w-full p-2 border rounded-lg text-xs">
+                        </div>
+                        <button onclick="lancarAjusteManual()" class="w-full bg-indigo-600 text-white px-3 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1">
+                            <i data-lucide="save" class="w-4 h-4"></i> Lançar Ajuste
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rodapé -->
+            <div class="p-3 bg-white border-t shrink-0">
+                <div class="flex justify-between items-center mb-3">
+                    <div>
+                        <span class="text-xs font-bold text-slate-500">Total Diárias:</span>
+                        <span id="saldo-total-diarias" class="text-xl font-black text-indigo-700 ml-2">0.00</span>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-[9px] text-slate-500 font-bold uppercase">Valor a Pagar</div>
+                        <div id="saldo-total-valor" class="text-xl font-black text-green-600">R$ 0,00</div>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="imprimirReciboDoModal()" class="flex-1 bg-slate-700 text-white py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1">
+                        <i data-lucide="receipt" class="w-4 h-4"></i> Recibo
+                    </button>
+                    <button onclick="estornarUltimoFechamento()" class="flex-1 bg-amber-600 text-white py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Estornar
+                    </button>
+                    <button onclick="fecharPagamentoSaldo()" class="flex-1 bg-blue-700 text-white py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i> Conferido
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SALDO DE METROS (CALCULAR - TERCEIRIZADO) -->
+    <div id="modal-saldo-metros" class="hidden fixed inset-0 bg-black/60 z-[90] flex items-end justify-center no-print">
+        <div class="bg-white rounded-t-3xl w-full flex flex-col max-h-[92vh] overflow-hidden shadow-2xl">
+            <div class="bg-indigo-600 p-4 text-white flex justify-between items-center shrink-0 rounded-t-3xl">
+                <div>
+                    <h3 class="font-black text-base flex items-center gap-2">
+                        <i data-lucide="ruler" class="w-5 h-5"></i> Saldo de Metros
+                    </h3>
+                    <p id="saldo-metros-subtitle" class="text-xs font-medium opacity-90 mt-0.5"></p>
+                </div>
+                <button onclick="fecharModalSaldoMetros()" class="text-white bg-white/20 p-2 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-4 overflow-y-auto flex-1 bg-slate-50 no-scrollbar">
+                <input type="hidden" id="saldo-terc-id">
+                
+                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm mb-4 space-y-2">
+                    <div class="flex gap-2">
+                        <div class="flex-1">
+                            <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Data Início</label>
+                            <input type="date" id="saldo-metros-data-inicio" class="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50" onchange="carregarTabelaSaldoMetros()">
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Data Fim</label>
+                            <input type="date" id="saldo-metros-data-fim" class="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50" onchange="carregarTabelaSaldoMetros()">
+                        </div>
+                    </div>
+                    <div class="flex gap-2 items-end">
+                        <div class="flex-1">
+                            <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Status</label>
+                            <select id="saldo-metros-filtro-status" class="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50" onchange="carregarTabelaSaldoMetros()">
+                                <option value="PENDENTE" selected>Pendentes</option>
+                                <option value="PAGO">Já Pagos</option>
+                                <option value="TODOS">Todos</option>
+                            </select>
+                        </div>
+                        <button onclick="imprimirExtratoSaldoMetros()" class="bg-slate-800 text-white px-3 py-2 rounded-lg font-bold text-xs flex items-center gap-1 shrink-0">
+                            <i data-lucide="printer" class="w-4 h-4"></i> Extrato
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm mb-4">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs">
+                            <thead class="bg-slate-100 text-slate-600 border-b">
+                                <tr>
+                                    <th class="p-2 text-left font-bold uppercase">Data</th>
+                                    <th class="p-2 text-center font-bold uppercase">Metros</th>
+                                    <th class="p-2 text-center font-bold uppercase">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="saldo-metros-tabela-body" class="divide-y"></tbody>
+                        </table>
+                    </div>
+                    <div id="saldo-metros-sem-registros" class="p-6 text-center text-slate-400 font-medium hidden text-xs">
+                        Nenhum registro encontrado.
+                    </div>
+                </div>
+
+                <!-- Ajuste manual metros -->
+                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                    <h4 class="font-bold text-slate-700 text-xs mb-3 flex items-center gap-2">
+                        <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-600"></i> Lançar Ajuste Manual (Metros)
+                    </h4>
+                    <div class="space-y-2">
+                        <div class="flex gap-2">
+                            <div class="flex-1">
+                                <label class="block text-[9px] font-bold text-slate-500 mb-1">Data</label>
+                                <input type="date" id="ajuste-metros-data" class="w-full p-2 border rounded-lg text-xs">
+                            </div>
+                            <div class="flex-1">
+                                <label class="block text-[9px] font-bold text-slate-500 mb-1">Metros</label>
+                                <input type="number" step="0.01" min="0" id="ajuste-metros-valor" class="w-full p-2 border rounded-lg text-xs font-bold">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[9px] font-bold text-slate-500 mb-1">Justificativa</label>
+                            <input type="text" id="ajuste-metros-justificativa" placeholder="Ex: Ajuste manual" class="w-full p-2 border rounded-lg text-xs">
+                        </div>
+                        <button onclick="lancarAjusteManualMetros()" class="w-full bg-indigo-600 text-white px-3 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1">
+                            <i data-lucide="save" class="w-4 h-4"></i> Lançar Ajuste
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rodapé metros -->
+            <div class="p-3 bg-white border-t shrink-0">
+                <div class="flex justify-between items-center mb-3">
+                    <div>
+                        <span class="text-xs font-bold text-slate-500">Total Metros:</span>
+                        <span id="saldo-metros-total-metros" class="text-xl font-black text-indigo-700 ml-2">0.00</span>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-[9px] text-slate-500 font-bold uppercase">Valor a Pagar</div>
+                        <div id="saldo-metros-total-valor" class="text-xl font-black text-green-600">R$ 0,00</div>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="imprimirReciboMetrosDoModal()" class="flex-1 bg-slate-700 text-white py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1">
+                        <i data-lucide="receipt" class="w-4 h-4"></i> Recibo
+                    </button>
+                    <button onclick="estornarUltimoFechamentoMetros()" class="flex-1 bg-amber-600 text-white py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Estornar
+                    </button>
+                    <button onclick="fecharPagamentoSaldoMetros()" class="flex-1 bg-blue-700 text-white py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i> Conferido
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DOCUMENTOS E CONTRATOS -->
+    <div id="modal-docs-equipe" class="hidden fixed inset-0 bg-black/60 z-[90] flex items-end justify-center no-print">
+        <div class="bg-white rounded-t-3xl w-full p-5 pb-10 shadow-2xl max-h-[80vh] overflow-y-auto no-scrollbar">
+            <h3 class="font-bold text-lg mb-1 text-slate-800 flex items-center gap-2"><i data-lucide="file-text" class="text-blue-600"></i> Documentos e Contratos</h3>
+            <p id="doc-equipe-nome" class="text-xs font-bold text-slate-500 mb-4"></p>
+            <input type="hidden" id="doc-equipe-id">
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Selecione o Documento</label>
+                    <select id="doc-tipo-select" class="w-full p-3 border rounded-xl font-bold text-slate-700 outline-none text-sm bg-slate-50">
+                        <option value="" selected disabled hidden>Clique aqui para selecionar...</option>
+                        <option value="contrato1">Contrato de Trabalho - Servente</option>
+                        <option value="contrato2">Contrato de Trabalho - Pedreiro</option>
+                        <option value="metragem">Contrato de Trabalho - Metragem (M²)</option>
+                        <option value="epi">Comprovante de Entrega de EPI's</option>
+                    </select>
+                </div>
+
+                <button onclick="imprimirDocumento()" class="w-full p-3 bg-slate-800 text-white rounded-xl font-bold flex items-center justify-center gap-2 text-sm active:bg-slate-900">
+                    <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Documento Selecionado
+                </button>
+
+                <div class="border-t pt-4">
+                    <label class="block text-[9px] font-bold text-slate-500 uppercase mb-2">Status do Contrato</label>
+                    <button id="btn-assinar-doc" onclick="marcarContratoAssinado()" class="w-full p-3 bg-green-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 text-sm active:bg-green-700">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i> Marcar como Assinado
+                    </button>
+                </div>
+            </div>
+            
+            <button onclick="document.getElementById('modal-docs-equipe').classList.add('hidden')" class="w-full mt-4 p-3 bg-slate-200 text-slate-700 rounded-xl font-bold text-sm active:bg-slate-300">Fechar</button>
+        </div>
+    </div>
+
+    <!-- OVERLAY FORMULÁRIOS -->
     <div id="overlay-forms" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-end justify-center no-print">
 
       <!-- FORMULÁRIO UNIFICADO DE EQUIPE / TERCEIRIZADO -->
@@ -417,7 +693,6 @@
             </form>
         </div>
       
-        
         <div id="obra-form-container" class="hidden w-full bg-white rounded-t-3xl p-5 pb-10 shadow-2xl transition-transform max-h-[90vh] overflow-y-auto no-scrollbar">
             <h3 class="font-bold text-lg mb-4 text-slate-800 flex justify-between items-center">Dados da Obra <button type="button" onclick="closeOverlayForm('obra-form-container')" class="text-slate-400"><i data-lucide="x"></i></button></h3>
             <form onsubmit="saveObra(event)" class="space-y-3">
@@ -471,6 +746,7 @@
         </div>
     </div>
 
+  <!-- MODAL SUCESSO MATRÍCULA -->
   <div id="modal-sucesso-matricula" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4 no-print">
         <div class="bg-white rounded-3xl p-6 w-full max-w-xs text-center shadow-2xl">
             <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -503,12 +779,7 @@
         const supabaseKey = 'sb_publishable_B2a4vA22qf4XGcrxPDRAaw_13rW51uI';
         const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        // STATE agora inclui ponto_diario e producao_terc
-        let STATE = { 
-            obras: [], fornecedores: [], produtos: [], logs: [], fases: [], 
-            equipe: [], terceirizados: [], 
-            ponto_diario: [], producao_terc: [] 
-        };
+        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], fases: [], equipe: [], terceirizados: [], ponto_diario: [], producao_terc: [] };
         let CART = [];
         let CURRENT_OC_ID = null; 
 
@@ -622,10 +893,7 @@
 
         async function loadData() {
             try {
-                const [
-                    resObras, resForn, resProd, resLog, resFases, 
-                    resEquipe, resTerceirizados, resPontoDiario, resProducaoTerc
-                ] = await Promise.all([
+                const [resObras, resForn, resProd, resLog, resFases, resEquipe, resTerceirizados, resPontoDiario, resProdTerc] = await Promise.all([
                     fetchAllRecords('jsp_obras'), 
                     fetchAllRecords('jsp_fornecedores'),
                     fetchAllRecords('jsp_produtos'), 
@@ -645,7 +913,7 @@
                 STATE.equipe = resEquipe.data || [];
                 STATE.terceirizados = resTerceirizados.data || [];
                 STATE.ponto_diario = resPontoDiario.data || [];
-                STATE.producao_terc = resProducaoTerc.data || [];
+                STATE.producao_terc = resProdTerc.data || [];
 
                 updateSelects();
                 if(!document.querySelector('main > .active-section')) navigate('dash');
@@ -692,31 +960,17 @@
             }
         }
 
-        // ====== RENDERERS DASHBOARD & OBRAS ======
+        // ====== DASHBOARD ======
         function renderDashboard() {
             const grid = document.getElementById('dash-grid');
             const saldosObras = {};
-            
-            STATE.obras.forEach(o => {
-                saldosObras[o.id] = { 
-                    custos: 0, 
-                    medicoes: 0,
-                    valor_contrato: parseFloat(o.valor_contrato) || 0
-                };
-            });
-
+            STATE.obras.forEach(o => { saldosObras[o.id] = { custos: 0, medicoes: 0, valor_contrato: parseFloat(o.valor_contrato) || 0 }; });
             STATE.logs.forEach(l => {
                 if (l.status_financeiro === 'CANCELADO') return;
                 if (!saldosObras[l.obra_id]) return;
-                
-                if (l.tipo === 'receita' && l.status_financeiro === 'PAGO') {
-                    saldosObras[l.obra_id].medicoes += parseFloat(l.valor_total || 0);
-                }
-                if ((l.tipo === 'compra' || l.tipo === 'despesa') && l.status_financeiro === 'PAGO') {
-                    saldosObras[l.obra_id].custos += parseFloat(l.valor_total || 0);
-                }
+                if (l.tipo === 'receita' && l.status_financeiro === 'PAGO') saldosObras[l.obra_id].medicoes += parseFloat(l.valor_total || 0);
+                if ((l.tipo === 'compra' || l.tipo === 'despesa') && l.status_financeiro === 'PAGO') saldosObras[l.obra_id].custos += parseFloat(l.valor_total || 0);
             });
-
             grid.innerHTML = STATE.obras.map(o => {
                 const s = saldosObras[o.id] || { custos: 0, medicoes: 0, valor_contrato: 0 };
                 const valorContrato = s.valor_contrato;
@@ -724,56 +978,28 @@
                 const gasto = s.custos;
                 const aReceber = valorContrato - recebido;
                 const caixaAtual = recebido - gasto;
-                
                 const pctRecebido = valorContrato > 0 ? Math.min((recebido / valorContrato) * 100, 100) : 0;
-                
                 return `
                 <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm relative">
                     <div class="pr-6 mb-2">
                         <h4 class="font-black text-base text-slate-800 leading-tight">${o.nome}</h4>
-                        <p class="text-[10px] text-slate-500 font-bold uppercase truncate">
-                            <i data-lucide="map-pin" class="inline w-3 h-3"></i> ${o.endereco || 'Endereço n. inf.'}
-                        </p>
+                        <p class="text-[10px] text-slate-500 font-bold uppercase truncate"><i data-lucide="map-pin" class="inline w-3 h-3"></i> ${o.endereco || 'Endereço n. inf.'}</p>
                     </div>
-                    
                     <div class="w-full bg-slate-100 rounded-full h-1.5 mb-1 mt-2">
                         <div class="bg-blue-600 h-1.5 rounded-full" style="width: ${pctRecebido}%"></div>
                     </div>
                     <div class="text-[9px] font-bold text-slate-400 text-right mb-3">${pctRecebido.toFixed(1)}% recebido</div>
-                    
                     <div class="grid grid-cols-2 gap-2 text-[10px]">
-                        <div class="bg-slate-50 p-2 rounded-lg border border-slate-100">
-                            <div class="text-slate-400 uppercase font-bold">Contrato</div>
-                            <div class="font-black text-slate-700 text-xs">${formatMoney(valorContrato)}</div>
-                        </div>
-                        <div class="bg-green-50 p-2 rounded-lg border border-green-100">
-                            <div class="text-green-600 uppercase font-bold">Medições</div>
-                            <div class="font-black text-green-700 text-xs">${formatMoney(recebido)}</div>
-                        </div>
-                        <div class="bg-orange-50 p-2 rounded-lg border border-orange-100">
-                            <div class="text-orange-600 uppercase font-bold">A Receber</div>
-                            <div class="font-black text-orange-700 text-xs">${formatMoney(aReceber)}</div>
-                        </div>
-                        <div class="bg-red-50 p-2 rounded-lg border border-red-100">
-                            <div class="text-red-600 uppercase font-bold">Custos</div>
-                            <div class="font-black text-red-700 text-xs">${formatMoney(gasto)}</div>
-                        </div>
+                        <div class="bg-slate-50 p-2 rounded-lg border border-slate-100"><div class="text-slate-400 uppercase font-bold">Contrato</div><div class="font-black text-slate-700 text-xs">${formatMoney(valorContrato)}</div></div>
+                        <div class="bg-green-50 p-2 rounded-lg border border-green-100"><div class="text-green-600 uppercase font-bold">Medições</div><div class="font-black text-green-700 text-xs">${formatMoney(recebido)}</div></div>
+                        <div class="bg-orange-50 p-2 rounded-lg border border-orange-100"><div class="text-orange-600 uppercase font-bold">A Receber</div><div class="font-black text-orange-700 text-xs">${formatMoney(aReceber)}</div></div>
+                        <div class="bg-red-50 p-2 rounded-lg border border-red-100"><div class="text-red-600 uppercase font-bold">Custos</div><div class="font-black text-red-700 text-xs">${formatMoney(gasto)}</div></div>
                     </div>
-                    
                     <div class="mt-3 pt-3 border-t border-slate-200 flex justify-between items-end">
-                        <div>
-                            <span class="text-[10px] font-bold text-slate-500 uppercase">Custos Pagos</span>
-                            <div class="font-black text-xl text-red-600 leading-5">${formatMoney(gasto)}</div>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-[10px] font-bold text-slate-500 uppercase">Caixa Atual</span>
-                            <div class="font-black text-xl ${caixaAtual >= 0 ? 'text-blue-700' : 'text-red-600'} leading-5">
-                                ${formatMoney(caixaAtual)}
-                            </div>
-                        </div>
+                        <div><span class="text-[10px] font-bold text-slate-500 uppercase">Custos Pagos</span><div class="font-black text-xl text-red-600 leading-5">${formatMoney(gasto)}</div></div>
+                        <div class="text-right"><span class="text-[10px] font-bold text-slate-500 uppercase">Caixa Atual</span><div class="font-black text-xl ${caixaAtual >= 0 ? 'text-blue-700' : 'text-red-600'} leading-5">${formatMoney(caixaAtual)}</div></div>
                     </div>
-                </div>
-                `;
+                </div>`;
             }).join('');
             lucide.createIcons();
         }
@@ -795,12 +1021,7 @@
         async function saveObra(e) {
             e.preventDefault(); showLoading(true);
             const isNew = !document.getElementById('obra-id').value;
-            const payload = { 
-                nome: document.getElementById('obra-name').value, 
-                endereco: document.getElementById('obra-addr').value, 
-                solicitante: document.getElementById('obra-solic').value,
-                valor_contrato: parseFloat(document.getElementById('obra-contrato').value) || 0
-            };
+            const payload = { nome: document.getElementById('obra-name').value, endereco: document.getElementById('obra-addr').value, solicitante: document.getElementById('obra-solic').value, valor_contrato: parseFloat(document.getElementById('obra-contrato').value) || 0 };
             if(!isNew) payload.id = document.getElementById('obra-id').value;
             const { error } = await sb.from('jsp_obras').upsert(payload);
             if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
@@ -891,59 +1112,44 @@
             const fornId = document.getElementById('pos-fornecedor').value || null;
             const fase = document.getElementById('pos-fase').value;
             const solic = document.getElementById('pos-solicitante').value;
-            
             const obsPag = document.getElementById('pos-cond-pagamento').value.trim();
             const obsGeral = document.getElementById('pos-obs-geral').value.trim();
             let observacaoFinal = "";
             if(obsPag) observacaoFinal += "Condições de Pagamento:\n" + obsPag + "\n\n";
             if(obsGeral) observacaoFinal += "Observações Gerais:\n" + obsGeral;
-
             const newId = CURRENT_OC_ID || getNextIdNum(STATE.logs);
             const dt = new Date().toISOString();
-
             if(CURRENT_OC_ID) await sb.from('jsp_logs').delete().eq('id', CURRENT_OC_ID);
-
             const inserts = CART.map(i => ({
                 id: newId.toString(), obra_id: parseInt(obraId), fornecedor_id: fornId ? parseInt(fornId) : null,
                 tipo: 'oc_pendente', produto_nome: i.name, quantidade: i.qty, valor_total: (i.qty * i.price),
                 data: dt, vencimento: dt, status_financeiro: 'PENDENTE', observacao: observacaoFinal.trim(), fase_obra: fase, solicitante: solic
             }));
-
             const { error } = await sb.from('jsp_logs').insert(inserts);
             if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
             clearCart(); showToast("O.C. Salva!"); await loadData(); closeNovaOC();
         }
 
-        // ====== O.C. PENDENTES E CONFIRMADAS ======
+        // ====== O.C. ======
         function renderOCList() {
             const list = document.getElementById('oc-list');
             const term = document.getElementById('oc-search').value.toLowerCase();
             const obraFilt = document.getElementById('oc-obra-filter').value;
             const ocs = {};
-            
             STATE.logs.filter(l => (l.tipo === 'oc_pendente' || l.tipo === 'compra') && l.status_financeiro !== 'CANCELADO').forEach(l => {
                 if(obraFilt && String(l.obra_id) !== String(obraFilt)) return;
-                
                 if(!ocs[l.id]) ocs[l.id] = { id: l.id, data: l.data, itemsText: [], total: 0, obra_id: l.obra_id, forn_id: l.fornecedor_id, status: l.tipo === 'compra' ? 'CONFIRMADA' : 'PENDENTE' };
                 ocs[l.id].itemsText.push(l.produto_nome); ocs[l.id].total += parseFloat(l.valor_total);
                 if(l.tipo === 'compra') ocs[l.id].status = 'CONFIRMADA';
             });
-
             let arr = Object.values(ocs).sort((a, b) => Number(b.id) - Number(a.id));
-            
-            if(arr.length === 0) { 
-                list.innerHTML = `<p class="text-center text-slate-400 mt-10 text-xs">Nenhuma O.C. encontrada.</p>`; 
-                return; 
-            }
-
+            if(arr.length === 0) { list.innerHTML = `<p class="text-center text-slate-400 mt-10 text-xs">Nenhuma O.C. encontrada.</p>`; return; }
             list.innerHTML = arr.map(o => {
                 const obra = STATE.obras.find(x=>x.id == o.obra_id);
                 const forn = STATE.fornecedores.find(x=>x.id == o.forn_id);
                 const txt = (obra?.nome || '') + ' ' + (forn?.nome || '') + ' ' + o.id;
                 if(term && !txt.toLowerCase().includes(term)) return '';
-
                 const isConfirmada = o.status === 'CONFIRMADA';
-
                 return `
                 <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm relative">
                     <div class="absolute top-2 right-2 text-[8px] font-bold px-1.5 py-0.5 rounded ${isConfirmada ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">${isConfirmada ? 'EFETIVADA' : 'PENDENTE'}</div>
@@ -956,10 +1162,8 @@
                     </div>
                     <div class="font-black text-sm text-slate-800 mb-1">${formatMoney(o.total)}</div>
                     <p class="text-[9px] text-slate-500 truncate mb-2 bg-slate-50 p-1 rounded">${o.itemsText.join(', ')}</p>
-                    
                     <div class="flex justify-between gap-1 border-t border-slate-100 pt-2 items-center">
                         ${!isConfirmada ? `<button onclick="openConfirmOC('${o.id}')" class="flex-1 bg-green-600 active:bg-green-700 text-white py-1.5 rounded-lg text-[10px] font-bold shadow-sm">Comprar</button>` : `<span class="flex-1 text-slate-400 text-[10px] font-bold">Lançado Caixa</span>`}
-                        
                         <div class="flex gap-1 shrink-0">
                             <button onclick="verOC('${o.id}')" class="p-1.5 border border-slate-200 text-slate-500 rounded-lg active:bg-slate-100" title="Ver OC"><i data-lucide="eye" class="w-4 h-4"></i></button>
                             ${!isConfirmada ? `<button onclick="loadOCToCart('${o.id}')" class="p-1.5 border border-slate-200 text-slate-500 rounded-lg active:bg-slate-100"><i data-lucide="edit-3" class="w-4 h-4"></i></button>` : ''}
@@ -982,11 +1186,9 @@
             document.getElementById('pos-obra').value = itemsLog[0].obra_id || '';
             document.getElementById('pos-fase').value = itemsLog[0].fase_obra || '';
             document.getElementById('pos-solicitante').value = itemsLog[0].solicitante || '';
-            
             const fornObj = STATE.fornecedores.find(f => f.id == itemsLog[0].fornecedor_id);
             if(fornObj) { document.getElementById('pos-fornecedor').value = fornObj.id; document.getElementById('pos-fornecedor-btn').querySelector('span').innerText = fornObj.nome; } 
             else { document.getElementById('pos-fornecedor').value = ''; document.getElementById('pos-fornecedor-btn').querySelector('span').innerText = 'Selecionar...'; }
-            
             document.getElementById('pos-cond-pagamento').value = '';
             document.getElementById('pos-obs-geral').value = itemsLog[0].observacao || '';
             openNovaOC(); renderCart(); showToast(`Editando O.C. #${id}`);
@@ -1015,29 +1217,25 @@
             showLoading(true);
             let statusFinal = formPagto === 'PIX' ? 'PAGO' : 'PENDENTE';
             let dataVenc = new Date(); if(formPagto !== 'PIX') dataVenc.setDate(dataVenc.getDate() + 30);
-            
             const { error } = await sb.from('jsp_logs').update({ tipo: 'compra', forma_pagamento: formPagto, status_financeiro: statusFinal, data: new Date().toISOString(), vencimento: dataVenc.toISOString() }).eq('id', id).eq('tipo', 'oc_pendente');
             if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
             closeOverlayForm('modal-confirm-oc'); showToast("Compra efetivada!"); loadData();
         }
 
-        // ====== IMPRESSÃO, VER OC E COMPARTILHAMENTO (Nativo) ======
+        // ====== IMPRESSÃO / VER OC / COMPARTILHAR ======
         function buildHTMLOC(id, isRomaneio = false) {
             const logsOC = STATE.logs.filter(l => String(l.id) === String(id) && (l.tipo === 'oc_pendente' || l.tipo === 'compra'));
             if(!logsOC.length) return '';
             const o = logsOC[0]; const obra = STATE.obras.find(x => x.id == o.obra_id) || { nome: 'Sem Obra', endereco: '-' }; const forn = STATE.fornecedores.find(x => x.id == o.fornecedor_id) || { nome: 'A Definir', documento: '', telefone: '' };
             let total = 0;
-            
             const linhas = logsOC.map((i, index) => {
                 const valor = parseFloat(i.valor_total); total += valor; const price = valor / parseFloat(i.quantidade); const bg = index % 2 === 0 ? '#ffffff' : '#f8fafc';
                 const colPreco = isRomaneio ? '' : `<td align="right" style="border-bottom: 1px solid #000; padding: 6px;">${formatMoney(price)}</td><td align="right" style="border-bottom: 1px solid #000; padding: 6px;">${formatMoney(valor)}</td>`;
                 return `<tr style="background-color: ${bg};"><td style="border-bottom: 1px solid #000; padding: 6px;">${i.produto_nome}</td><td align="center" style="border-bottom: 1px solid #000; padding: 6px;">${i.quantidade}</td>${colPreco}</tr>`;
             }).join('');
-
             const cabecalhoPreco = isRomaneio ? '' : `<th align="right" style="background-color: #0f172a; color: #fff; padding: 6px;">Unit. Estimado</th><th align="right" style="background-color: #0f172a; color: #fff; padding: 6px;">Total Estimado</th>`;
             const rodapePreco = isRomaneio ? '' : `<table width="100%" style="font-size: 11px; border-collapse: collapse;"><tr><td style="padding: 10px 0; font-weight: 900;">TOTAL ESTIMADO:</td><td align="right" style="padding: 10px 0; font-size: 13px; font-weight: 900;">${formatMoney(total)}</td></tr></table>`;
             const docTitle = isRomaneio ? 'ROMANEIO DE ENTREGA' : 'ORDEM DE COMPRA';
-
             return `
            <div style="font-family: 'Helvetica', sans-serif; padding: 10px; width: 100%; background: #fff;">
                 <table width="100%" style="border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
@@ -1050,7 +1248,7 @@
                 <table width="100%" style="margin-bottom: 15px;">
                     <tr>
                         <td width="48%" valign="top" style="border: 1px solid #000; padding: 0;"><div style="background-color: #f1f5f9; padding: 4px; font-size: 9px; font-weight: bold; border-bottom: 1px solid #000;">DADOS DO FORNECEDOR</div><div style="padding: 8px; font-size: 10px;"><strong>${forn.nome}</strong><br>Doc: ${forn.documento || '-'}<br>Tel: ${forn.telefone || '-'}</div></td>
-                        <td width="4%"></td> 
+                        <td width="4%"></td>
                         <td width="48%" valign="top" style="border: 1px solid #000; padding: 0;"><div style="background-color: #f1f5f9; padding: 4px; font-size: 9px; font-weight: bold; border-bottom: 1px solid #000;">DESTINO (OBRA)</div><div style="padding: 8px; font-size: 10px;"><strong>${obra.nome}</strong><br>Endereço: ${obra.endereco || '-'}<br>Solicitante: ${o.solicitante || obra.solicitante || '-'} | Fase: ${o.fase_obra || '-'}</div></td>
                     </tr>
                 </table>
@@ -1078,185 +1276,58 @@
             try {
                 const logsOC = STATE.logs.filter(l => String(l.id) === String(id) && (l.tipo === 'oc_pendente' || l.tipo === 'compra'));
                 if(!logsOC.length) { showLoading(false); return showToast("O.C. não encontrada", true); }
-                
                 const o = logsOC[0];
                 const obra = STATE.obras.find(x => x.id == o.obra_id) || { nome: 'Sem Obra', endereco: '-' };
                 const forn = STATE.fornecedores.find(x => x.id == o.fornecedor_id) || { nome: 'A Definir', documento: '', telefone: '' };
-                
                 let justObs = o.observacao || 'Nenhuma observação informada.';
-                if(justObs.includes(' | Obs: ')) {
-                    const parts = justObs.split(' | Obs: ');
-                    justObs = parts[0] + '\n' + parts[1];
-                }
-
+                if(justObs.includes(' | Obs: ')) { const parts = justObs.split(' | Obs: '); justObs = parts[0] + '\n' + parts[1]; }
                 let total = 0;
                 const bodyTabela = [];
-                
-                const headerRow = [
-                    { text: 'Descrição', style: 'tableHeader', alignment: 'left' },
-                    { text: 'Qtd', style: 'tableHeader', alignment: 'center' }
-                ];
-                if(!isRomaneio) {
-                    headerRow.push({ text: 'Unit. Estimado', style: 'tableHeader', alignment: 'right' });
-                    headerRow.push({ text: 'Total Estimado', style: 'tableHeader', alignment: 'right' });
-                }
+                const headerRow = [{ text: 'Descrição', style: 'tableHeader', alignment: 'left' }, { text: 'Qtd', style: 'tableHeader', alignment: 'center' }];
+                if(!isRomaneio) { headerRow.push({ text: 'Unit. Estimado', style: 'tableHeader', alignment: 'right' }); headerRow.push({ text: 'Total Estimado', style: 'tableHeader', alignment: 'right' }); }
                 bodyTabela.push(headerRow);
-
                 logsOC.forEach((i, index) => {
-                    const valor = parseFloat(i.valor_total);
-                    total += valor;
-                    const price = valor / parseFloat(i.quantidade);
-                    const bgColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
-
-                    const row = [
-                        { text: i.produto_nome, fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 },
-                        { text: i.quantidade.toString(), alignment: 'center', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 }
-                    ];
-                    
-                    if(!isRomaneio) {
-                        row.push({ text: formatMoney(price), alignment: 'right', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 });
-                        row.push({ text: formatMoney(valor), alignment: 'right', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 });
-                    }
+                    const valor = parseFloat(i.valor_total); total += valor; const price = valor / parseFloat(i.quantidade); const bgColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+                    const row = [{ text: i.produto_nome, fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 }, { text: i.quantidade.toString(), alignment: 'center', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 }];
+                    if(!isRomaneio) { row.push({ text: formatMoney(price), alignment: 'right', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 }); row.push({ text: formatMoney(valor), alignment: 'right', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 }); }
                     bodyTabela.push(row);
                 });
-
                 async function getLogoBase64(url) {
                     return new Promise((resolve) => {
-                        const img = new Image();
-                        img.crossOrigin = 'Anonymous';
-                        img.onload = () => {
-                            const canvas = document.createElement('canvas');
-                            canvas.width = img.width;
-                            canvas.height = img.height;
-                            const ctx = canvas.getContext('2d');
-                            ctx.drawImage(img, 0, 0);
-                            resolve(canvas.toDataURL('image/png'));
-                        };
-                        img.onerror = () => resolve(null);
-                        img.src = url;
+                        const img = new Image(); img.crossOrigin = 'Anonymous';
+                        img.onload = () => { const canvas = document.createElement('canvas'); canvas.width = img.width; canvas.height = img.height; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0); resolve(canvas.toDataURL('image/png')); };
+                        img.onerror = () => resolve(null); img.src = url;
                     });
                 }
-
                 const logoBase64 = await getLogoBase64("https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png");
                 const docTitle = isRomaneio ? 'ROMANEIO DE ENTREGA' : 'ORDEM DE COMPRA';
-
                 const docDefinition = {
-                    pageSize: 'A4',
-                    pageMargins: [40, 40, 40, 40],
-                    defaultStyle: { font: 'Roboto' },
-                    background: function (currentPage, pageCount) {
-                        return { canvas: [ { type: 'rect', x: 25, y: 25, w: 545.28, h: 791.89, lineWidth: 1, lineColor: '#000000' } ] };
-                    },
+                    pageSize: 'A4', pageMargins: [40, 40, 40, 40], defaultStyle: { font: 'Roboto' },
+                    background: function (currentPage, pageCount) { return { canvas: [ { type: 'rect', x: 25, y: 25, w: 545.28, h: 791.89, lineWidth: 1, lineColor: '#000000' } ] }; },
                     content: [
-                        {
-                            table: {
-                                widths: [90, '*', 'auto'],
-                                body: [
-                                    [
-                                        logoBase64 ? { image: logoBase64, width: 80, alignment: 'center', margin: [0, 0, 10, 0] } : '',
-                                        {
-                                            text: [
-                                                { text: 'RV NEGÓCIOS E COMPANHIA\n', fontSize: 16, bold: true, color: '#1d4ed8' },
-                                                { text: 'CNPJ: 61.893.912/0001-24\n', fontSize: 9, color: '#475569', lineHeight: 1.3 },
-                                                { text: 'Rua Mineiros, 530 | Jataí - GO | (64) 99981-5852', fontSize: 9, color: '#475569', lineHeight: 1.3 }
-                                            ],
-                                            margin: [0, 10, 0, 0]
-                                        },
-                                        {
-                                            text: [
-                                                { text: docTitle + '\n', fontSize: 13, bold: true },
-                                                { text: `Nº: ${o.id}\n`, fontSize: 9 },
-                                                { text: `Emissão: ${formatDate(o.data)}\n`, fontSize: 9 },
-                                                { text: `Fase: ${o.fase_obra || '-'}`, fontSize: 9 }
-                                            ],
-                                            alignment: 'right',
-                                            margin: [0, 10, 0, 0]
-                                        }
-                                    ]
-                                ]
-                            },
-                            layout: 'noBorders',
-                            margin: [0, 0, 0, 10]
-                        },
+                        { table: { widths: [90, '*', 'auto'], body: [[ logoBase64 ? { image: logoBase64, width: 80, alignment: 'center', margin: [0, 0, 10, 0] } : '', { text: [{ text: 'RV NEGÓCIOS E COMPANHIA\n', fontSize: 16, bold: true, color: '#1d4ed8' }, { text: 'CNPJ: 61.893.912/0001-24\n', fontSize: 9, color: '#475569', lineHeight: 1.3 }, { text: 'Rua Mineiros, 530 | Jataí - GO | (64) 99981-5852', fontSize: 9, color: '#475569', lineHeight: 1.3 }], margin: [0, 10, 0, 0] }, { text: [{ text: docTitle + '\n', fontSize: 13, bold: true }, { text: `Nº: ${o.id}\n`, fontSize: 9 }, { text: `Emissão: ${formatDate(o.data)}\n`, fontSize: 9 }, { text: `Fase: ${o.fase_obra || '-'}`, fontSize: 9 }], alignment: 'right', margin: [0, 10, 0, 0] } ]] }, layout: 'noBorders', margin: [0, 0, 0, 10] },
                         { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 2 }], margin: [0, 0, 0, 20] },
-                        {
-                            columns: [
-                                {
-                                    width: '48%',
-                                    table: { widths: ['*'], body: [ [{ text: 'DADOS DO FORNECEDOR', fillColor: '#f1f5f9', bold: true, fontSize: 8, margin: [4, 4, 4, 4] }], [{ text: `${forn.nome}\nDoc: ${forn.documento || '-'}\nTel: ${forn.telefone || '-'}`, fontSize: 9, margin: [6, 8, 6, 8] }] ] },
-                                    layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000000', vLineColor: () => '#000000' }
-                                },
-                                { width: '4%', text: '' }, 
-                                {
-                                    width: '48%',
-                                    table: { widths: ['*'], body: [ [{ text: 'DESTINO (OBRA)', fillColor: '#f1f5f9', bold: true, fontSize: 8, margin: [4, 4, 4, 4] }], [{ text: `${obra.nome}\nEndereço: ${obra.endereco || '-'}\nSolicitante: ${o.solicitante || obra.solicitante || '-'} | Fase: ${o.fase_obra || '-'}`, fontSize: 9, margin: [6, 8, 6, 8] }] ] },
-                                    layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000000', vLineColor: () => '#000000' }
-                                }
-                            ],
-                            margin: [0, 0, 0, 20]
-                        },
-                        {
-                            table: {
-                                headerRows: 1,
-                                widths: isRomaneio ? ['*', 'auto'] : ['*', 'auto', 'auto', 'auto'],
-                                body: bodyTabela
-                            },
-                            layout: { hLineWidth: (i, node) => (i === 0 || i === node.table.body.length) ? 0 : 1, vLineWidth: () => 0, hLineColor: () => '#000000', paddingLeft: () => 4, paddingRight: () => 4 },
-                            margin: [0, 0, 0, 20]
-                        },
-                        {
-                            columns: [
-                                {
-                                    width: isRomaneio ? '100%' : '60%',
-                                    table: { widths: ['*'], body: [ [{ text: [ { text: 'Observações:\n', fontSize: 9, bold: true }, { text: justObs, fontSize: 9 } ], margin: [6, 6, 6, 25] }] ] },
-                                    layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#cbd5e1', vLineColor: () => '#cbd5e1', hLineStyle: () => ({dash: {length: 4, space: 4}}), vLineStyle: () => ({dash: {length: 4, space: 4}}) }
-                                },
-                                isRomaneio ? '' : {
-                                    width: '40%', alignment: 'right', margin: [0, 10, 0, 0], text: [ { text: 'TOTAL ESTIMADO:   ', bold: true, fontSize: 10 }, { text: formatMoney(total), bold: true, fontSize: 13 } ]
-                                }
-                            ],
-                            margin: [0, 0, 0, 60]
-                        },
+                        { columns: [{ width: '48%', table: { widths: ['*'], body: [[{ text: 'DADOS DO FORNECEDOR', fillColor: '#f1f5f9', bold: true, fontSize: 8, margin: [4, 4, 4, 4] }], [{ text: `${forn.nome}\nDoc: ${forn.documento || '-'}\nTel: ${forn.telefone || '-'}`, fontSize: 9, margin: [6, 8, 6, 8] }]] }, layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000000', vLineColor: () => '#000000' } }, { width: '4%', text: '' }, { width: '48%', table: { widths: ['*'], body: [[{ text: 'DESTINO (OBRA)', fillColor: '#f1f5f9', bold: true, fontSize: 8, margin: [4, 4, 4, 4] }], [{ text: `${obra.nome}\nEndereço: ${obra.endereco || '-'}\nSolicitante: ${o.solicitante || obra.solicitante || '-'} | Fase: ${o.fase_obra || '-'}`, fontSize: 9, margin: [6, 8, 6, 8] }]] }, layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000000', vLineColor: () => '#000000' } }], margin: [0, 0, 0, 20] },
+                        { table: { headerRows: 1, widths: isRomaneio ? ['*', 'auto'] : ['*', 'auto', 'auto', 'auto'], body: bodyTabela }, layout: { hLineWidth: (i, node) => (i === 0 || i === node.table.body.length) ? 0 : 1, vLineWidth: () => 0, hLineColor: () => '#000000', paddingLeft: () => 4, paddingRight: () => 4 }, margin: [0, 0, 0, 20] },
+                        { columns: [{ width: isRomaneio ? '100%' : '60%', table: { widths: ['*'], body: [[{ text: [{ text: 'Observações:\n', fontSize: 9, bold: true }, { text: justObs, fontSize: 9 }], margin: [6, 6, 6, 25] }]] }, layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#cbd5e1', vLineColor: () => '#cbd5e1', hLineStyle: () => ({dash: {length: 4, space: 4}}), vLineStyle: () => ({dash: {length: 4, space: 4}}) } }, isRomaneio ? '' : { width: '40%', alignment: 'right', margin: [0, 10, 0, 0], text: [{ text: 'TOTAL ESTIMADO:   ', bold: true, fontSize: 10 }, { text: formatMoney(total), bold: true, fontSize: 13 }] }], margin: [0, 0, 0, 60] },
                         { text: '_________________________________________________\nASSINATURA RESPONSÁVEL', alignment: 'center', fontSize: 9, bold: true }
                     ],
                     styles: { tableHeader: { bold: true, fontSize: 10, color: 'white', fillColor: '#0f172a', margin: [4, 6, 4, 6] } }
                 };
-
                 const pdfDocGenerator = pdfMake.createPdf(docDefinition);
                 pdfDocGenerator.getBlob(async (blob) => {
                     const filename = `Documento_${id}.pdf`;
                     const file = new File([blob], filename, { type: 'application/pdf' });
-                    
                     showLoading(false);
-                    
                     const tituloShare = isRomaneio ? `Romaneio OC #${id}` : `OC #${id}`;
-
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        try {
-                            await navigator.share({
-                                title: tituloShare,
-                                text: "Segue o documento.",
-                                files: [file]
-                            });
-                        } catch (err) {
-                            console.log("Compartilhamento cancelado.");
-                        }
+                        try { await navigator.share({ title: tituloShare, text: "Segue o documento.", files: [file] }); } catch (err) { console.log("Compartilhamento cancelado."); }
                     } else {
-                        const url = URL.createObjectURL(file);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = filename;
-                        a.click();
-                        URL.revokeObjectURL(url);
+                        const url = URL.createObjectURL(file); const a = document.createElement('a'); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url);
                         showToast("Seu celular não tem suporte nativo. Arquivo baixado!");
                     }
                 });
-
-            } catch(e) {
-                console.error(e);
-                showLoading(false);
-                showToast("Erro ao montar PDF", true);
-            }
+            } catch(e) { console.error(e); showLoading(false); showToast("Erro ao montar PDF", true); }
         }
       
         // ====== FINANCEIRO ======
@@ -1267,45 +1338,25 @@
             const term = document.getElementById('fin-search').value.toLowerCase();
             const dtStart = document.getElementById('fin-start').value;
             const dtEnd = document.getElementById('fin-end').value;
-
             let logsFilt = STATE.logs.filter(l => l.tipo !== 'oc_pendente' && l.status_financeiro !== 'CANCELADO');
-            
             if(obraFilter) logsFilt = logsFilt.filter(l => String(l.obra_id) === String(obraFilter));
             if(faseFilter) logsFilt = logsFilt.filter(l => (l.fase_obra || '') === faseFilter);
             if(term) logsFilt = logsFilt.filter(l => (l.produto_nome || '').toLowerCase().includes(term));
-            
-            if(catFilter) {
-                logsFilt = logsFilt.filter(l => {
-                    const prod = STATE.produtos.find(p => p.nome === l.produto_nome);
-                    return prod && prod.categoria === catFilter;
-                });
-            }
-
+            if(catFilter) { logsFilt = logsFilt.filter(l => { const prod = STATE.produtos.find(p => p.nome === l.produto_nome); return prod && prod.categoria === catFilter; }); }
             if(dtStart) logsFilt = logsFilt.filter(l => new Date(l.data || l.vencimento) >= new Date(dtStart));
             if(dtEnd) { let endD = new Date(dtEnd); endD.setHours(23,59,59); logsFilt = logsFilt.filter(l => new Date(l.data || l.vencimento) <= endD); }
-
             let totDesp = 0; let totRec = 0;
-            
             const listaDesp = document.getElementById('fin-expense-history-list');
             let despArrRaw = logsFilt.filter(l => l.tipo === 'compra' || l.tipo === 'despesa');
-            let despArr = [];
-            let groupedOCs = {};
-            
+            let despArr = []; let groupedOCs = {};
             despArrRaw.forEach(l => {
-                if (l.tipo === 'compra') {
-                    if (!groupedOCs[l.id]) { groupedOCs[l.id] = { ...l, valor_total: 0, is_oc: true }; despArr.push(groupedOCs[l.id]); }
-                    groupedOCs[l.id].valor_total += parseFloat(l.valor_total);
-                } else {
-                    despArr.push(l);
-                }
+                if (l.tipo === 'compra') { if (!groupedOCs[l.id]) { groupedOCs[l.id] = { ...l, valor_total: 0, is_oc: true }; despArr.push(groupedOCs[l.id]); } groupedOCs[l.id].valor_total += parseFloat(l.valor_total); } else { despArr.push(l); }
             });
             despArr.sort((a,b)=> new Date(b.vencimento || b.data) - new Date(a.vencimento || a.data));
-            
             listaDesp.innerHTML = despArr.map(l => {
                 const isPago = l.status_financeiro === 'PAGO';
                 if(isPago) totDesp += parseFloat(l.valor_total);
                 const obra = STATE.obras.find(x=>x.id==l.obra_id);
-                
                 return `
                 <div class="bg-white p-2.5 rounded-xl border-l-4 ${isPago?'border-l-green-500':'border-l-red-500'} shadow-sm flex flex-col gap-1 relative">
                     <div class="flex justify-between items-start">
@@ -1321,11 +1372,9 @@
                     </div>
                 </div>`;
             }).join('');
-
             const listaRec = document.getElementById('fin-receivables-list');
             let recArr = logsFilt.filter(l => l.tipo === 'receita');
             recArr.sort((a,b)=> new Date(b.vencimento || b.data) - new Date(a.vencimento || a.data));
-            
             listaRec.innerHTML = recArr.map(l => {
                 const isPago = l.status_financeiro === 'PAGO';
                 if(isPago) totRec += parseFloat(l.valor_total);
@@ -1345,79 +1394,29 @@
                     </div>
                 </div>`;
             }).join('');
-
             document.getElementById('fin-expenses').innerText = formatMoney(totDesp);
             document.getElementById('fin-income').innerText = formatMoney(totRec);
             lucide.createIcons();
-            
             window.financeiroAtual = { despArr, recArr, totDesp, totRec };
         }
 
         function imprimirFinanceiro() {
             if(!window.financeiroAtual) return showToast("Filtre o financeiro primeiro.");
-            
             const { despArr, recArr, totDesp, totRec } = window.financeiroAtual;
             const dtStart = document.getElementById('fin-start').value;
             const dtEnd = document.getElementById('fin-end').value;
             const obraFilter = document.getElementById('fin-obra-filter');
             const nomeObraFiltro = obraFilter.options[obraFilter.selectedIndex].text;
-
-            let htmlTabela = `
-            <div style="font-family: Arial, sans-serif; padding: 15px; background: white;">
-                <h2 style="margin: 0 0 5px 0; color: #1e3a8a; font-size: 16px;">Relatório Financeiro</h2>
-                <h3 style="margin: 0 0 10px 0; color: #333; font-size: 14px;">Filtro: ${nomeObraFiltro}</h3>
-                <p style="font-size: 10px; color: #666; margin-bottom: 15px;">Período: ${dtStart ? formatDate(dtStart) : 'Início'} até ${dtEnd ? formatDate(dtEnd) : 'Hoje'}</p>
-                
-                <table width="100%" style="border-collapse: collapse; font-size: 10px; margin-bottom: 20px;">
-                    <thead style="background-color: #f1f5f9;">
-                        <tr>
-                            <th style="padding: 6px; border-bottom: 2px solid #ccc; text-align: left;">Data</th>
-                            <th style="padding: 6px; border-bottom: 2px solid #ccc; text-align: left;">Descrição</th>
-                            <th style="padding: 6px; border-bottom: 2px solid #ccc; text-align: left;">Obra / Fase</th>
-                            <th style="padding: 6px; border-bottom: 2px solid #ccc; text-align: center;">Status</th>
-                            <th style="padding: 6px; border-bottom: 2px solid #ccc; text-align: right;">Valor</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-
+            let htmlTabela = `<div style="font-family: Arial, sans-serif; padding: 15px; background: white;"><h2 style="margin: 0 0 5px 0; color: #1e3a8a; font-size: 16px;">Relatório Financeiro</h2><h3 style="margin: 0 0 10px 0; color: #333; font-size: 14px;">Filtro: ${nomeObraFiltro}</h3><p style="font-size: 10px; color: #666; margin-bottom: 15px;">Período: ${dtStart ? formatDate(dtStart) : 'Início'} até ${dtEnd ? formatDate(dtEnd) : 'Hoje'}</p><table width="100%" style="border-collapse: collapse; font-size: 10px; margin-bottom: 20px;"><thead style="background-color: #f1f5f9;"><tr><th style="padding: 6px; border-bottom: 2px solid #ccc; text-align: left;">Data</th><th style="padding: 6px; border-bottom: 2px solid #ccc; text-align: left;">Descrição</th><th style="padding: 6px; border-bottom: 2px solid #ccc; text-align: left;">Obra / Fase</th><th style="padding: 6px; border-bottom: 2px solid #ccc; text-align: center;">Status</th><th style="padding: 6px; border-bottom: 2px solid #ccc; text-align: right;">Valor</th></tr></thead><tbody>`;
             if(despArr.length > 0) {
                 htmlTabela += `<tr><td colspan="5" style="background: #fee2e2; padding: 4px; font-weight: bold; color: #b91c1c;">CUSTOS / DESPESAS</td></tr>`;
-                despArr.forEach(l => {
-                    const obra = STATE.obras.find(x=>x.id==l.obra_id);
-                    const isPago = l.status_financeiro === 'PAGO';
-                    htmlTabela += `<tr>
-                        <td style="padding: 5px; border-bottom: 1px solid #ddd;">${formatDate(l.vencimento || l.data)}</td>
-                        <td style="padding: 5px; border-bottom: 1px solid #ddd;">${l.is_oc ? `O.C. #${l.id}` : l.produto_nome}</td>
-                        <td style="padding: 5px; border-bottom: 1px solid #ddd;">${obra?.nome || 'Geral'} <br> <span style="font-size:8px; color:#666;">${l.fase_obra || '-'}</span></td>
-                        <td align="center" style="padding: 5px; border-bottom: 1px solid #ddd;">${isPago ? 'PAGO' : 'PEND.'}</td>
-                        <td align="right" style="padding: 5px; border-bottom: 1px solid #ddd; color: #b91c1c;">${formatMoney(l.valor_total)}</td>
-                    </tr>`;
-                });
+                despArr.forEach(l => { const obra = STATE.obras.find(x=>x.id==l.obra_id); const isPago = l.status_financeiro === 'PAGO'; htmlTabela += `<tr><td style="padding: 5px; border-bottom: 1px solid #ddd;">${formatDate(l.vencimento || l.data)}</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">${l.is_oc ? `O.C. #${l.id}` : l.produto_nome}</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">${obra?.nome || 'Geral'} <br> <span style="font-size:8px; color:#666;">${l.fase_obra || '-'}</span></td><td align="center" style="padding: 5px; border-bottom: 1px solid #ddd;">${isPago ? 'PAGO' : 'PEND.'}</td><td align="right" style="padding: 5px; border-bottom: 1px solid #ddd; color: #b91c1c;">${formatMoney(l.valor_total)}</td></tr>`; });
             }
-
             if(recArr.length > 0) {
-                htmlTabela += `<tr><td colspan="5" style="background: #dcfce7; padding: 4px; font-weight: bold; color: #15803d; margin-top: 10px;">MEDIÇÕES / RECEITAS</td></tr>`;
-                recArr.forEach(l => {
-                    const obra = STATE.obras.find(x=>x.id==l.obra_id);
-                    const isPago = l.status_financeiro === 'PAGO';
-                    htmlTabela += `<tr>
-                        <td style="padding: 5px; border-bottom: 1px solid #ddd;">${formatDate(l.vencimento || l.data)}</td>
-                        <td style="padding: 5px; border-bottom: 1px solid #ddd;">${l.produto_nome}</td>
-                        <td style="padding: 5px; border-bottom: 1px solid #ddd;">${obra?.nome || 'Geral'}</td>
-                        <td align="center" style="padding: 5px; border-bottom: 1px solid #ddd;">${isPago ? 'REC.' : 'PEND.'}</td>
-                        <td align="right" style="padding: 5px; border-bottom: 1px solid #ddd; color: #15803d;">${formatMoney(l.valor_total)}</td>
-                    </tr>`;
-                });
+                htmlTabela += `<tr><td colspan="5" style="background: #dcfce7; padding: 4px; font-weight: bold; color: #15803d;">MEDIÇÕES / RECEITAS</td></tr>`;
+                recArr.forEach(l => { const obra = STATE.obras.find(x=>x.id==l.obra_id); const isPago = l.status_financeiro === 'PAGO'; htmlTabela += `<tr><td style="padding: 5px; border-bottom: 1px solid #ddd;">${formatDate(l.vencimento || l.data)}</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">${l.produto_nome}</td><td style="padding: 5px; border-bottom: 1px solid #ddd;">${obra?.nome || 'Geral'}</td><td align="center" style="padding: 5px; border-bottom: 1px solid #ddd;">${isPago ? 'REC.' : 'PEND.'}</td><td align="right" style="padding: 5px; border-bottom: 1px solid #ddd; color: #15803d;">${formatMoney(l.valor_total)}</td></tr>`; });
             }
-
-            htmlTabela += `</tbody>
-                </table>
-                <table width="100%" style="font-size: 12px; font-weight: bold; border-top: 2px solid #333; padding-top: 10px;">
-                    <tr><td align="right">Total Custos Pagos:</td><td width="100" align="right" style="color: #b91c1c;">${formatMoney(totDesp)}</td></tr>
-                    <tr><td align="right">Total Medições (Rec):</td><td align="right" style="color: #15803d;">${formatMoney(totRec)}</td></tr>
-                </table>
-            </div>`;
-
+            htmlTabela += `</tbody></table><table width="100%" style="font-size: 12px; font-weight: bold; border-top: 2px solid #333; padding-top: 10px;"><tr><td align="right">Total Custos Pagos:</td><td width="100" align="right" style="color: #b91c1c;">${formatMoney(totDesp)}</td></tr><tr><td align="right">Total Medições (Rec):</td><td align="right" style="color: #15803d;">${formatMoney(totRec)}</td></tr></table></div>`;
             const printArea = document.getElementById('print-area');
             printArea.innerHTML = htmlTabela;
             printArea.classList.add('print-active');
@@ -1477,332 +1476,199 @@
             await sb.from('jsp_produtos').upsert(payload); closeOverlayForm('prod-form-container'); showToast("Salvo!"); loadData();
         }
 
-        // ====== FUNÇÕES PARA CÁLCULO DE PENDENTES (DIÁRIAS E METROS) ======
-        // ====== FUNÇÕES PARA CÁLCULO DE PENDENTES (DIÁRIAS E METROS) ======
-function calcularDiariasPendentes(funcionarioId) {
-    const registros = STATE.ponto_diario.filter(p => 
-        p.funcionario_id === funcionarioId && 
-        p.status === 'VALIDADO' &&
-        !p.pago_em_fechamento
-    );
-    if (registros.length === 0) return { diarias: 0, valor: 0 };
-    
-    const porDia = new Map();
-    registros.forEach(p => {
-        const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
-        if (!porDia.has(dataDia)) porDia.set(dataDia, []);
-        porDia.get(dataDia).push(p);
-    });
-    
-    let totalDiarias = 0;
-    
-    function diffMinutesUTC(startIso, endIso) {
-        return (new Date(endIso) - new Date(startIso)) / (1000 * 60);
-    }
-    
-    function roundHalfDown(v) {
-        if (v <= 0) return 0;
-        if (v >= 1) return 1;
-        let cents = v * 100;
-        let dec = cents - Math.floor(cents);
-        if (Math.abs(dec - 0.5) < 0.0001) return Math.floor(cents) / 100;
-        return Math.round(cents) / 100;
-    }
-    
-    function calcularFracaoDia(registrosDoDia) {
-        const entradas = registrosDoDia.filter(r => r.tipo === 'ENTRADA').map(r => r.hora_registro);
-        const saidas   = registrosDoDia.filter(r => r.tipo === 'SAIDA').map(r => r.hora_registro);
-        const ajustes  = registrosDoDia.filter(r => r.tipo === 'AJUSTE_MANUAL')
-                                .reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
-        
-        if (entradas.length === 0 && saidas.length === 0) return Math.min(ajustes, 1);
-        
-        const todosPontos = [
-            ...entradas.map(e => ({ tipo: 'E', hora: e })),
-            ...saidas.map(s => ({ tipo: 'S', hora: s }))
-        ].sort((a, b) => new Date(a.hora) - new Date(b.hora));
-        
-        let startManha = null, endManha = null;
-        let startTarde = null, endTarde = null;
-        
-        for (const p of todosPontos) {
-            const hour = new Date(p.hora).getUTCHours();
-            if (hour < 12) {
-                if (p.tipo === 'E' && !startManha) startManha = p.hora;
-                if (p.tipo === 'S') endManha = p.hora;
-            } else {
-                if (p.tipo === 'E' && !startTarde) startTarde = p.hora;
-                if (p.tipo === 'S') endTarde = p.hora;
-            }
-        }
-        
-        function calcMin(start, end, jornada) {
-            if (!start || !end) return 0;
-            let mins = diffMinutesUTC(start, end);
-            const falta = jornada - mins;
-            if (falta > 0 && falta <= 10) mins = jornada;
-            return Math.min(jornada, Math.max(0, mins));
-        }
-        
-        let minutosManha = calcMin(startManha, endManha, 240);
-        let minutosTarde = calcMin(startTarde, endTarde, 240);
-        let baseFracao = (minutosManha + minutosTarde) / 480;
-        baseFracao = Math.min(1, Math.max(0, baseFracao));
-        
-        let fracao = baseFracao + ajustes;
-        if (fracao > 1) fracao = 1;
-        return roundHalfDown(fracao);
-    }
-    
-    for (const registrosDoDia of porDia.values()) {
-        totalDiarias += calcularFracaoDia(registrosDoDia);
-    }
-    
-    const membro = STATE.equipe.find(e => e.id == funcionarioId);
-    const valorDiaria = membro ? parseFloat(membro.valor_diaria || 0) : 0;
-    return { diarias: totalDiarias, valor: totalDiarias * valorDiaria };
-}
-
-function calcularMetrosPendentes(terceirizadoId) {
-    const producoes = STATE.producao_terc.filter(p => 
-        p.terceirizado_id === terceirizadoId && 
-        p.status !== 'PAGO'
-    );
-    const totalMetros = producoes.reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
-    const membro = STATE.terceirizados.find(t => t.id == terceirizadoId);
-    const valorMetro = membro ? parseFloat(membro.valor_metro || 0) : 0;
-    return { metros: totalMetros, valor: totalMetros * valorMetro };
-}
-
-function calcularPendenteEquipe(c) {
-    if (c.tipo === 'diaria') {
-        return calcularDiariasPendentes(c.id);
-    } else {
-        return calcularMetrosPendentes(c.id);
-    }
-}
-      
-        // ====== RENDERIZAÇÃO DA EQUIPE UNIFICADA (com valor pendente) ======
-       function renderEquipe() {
-    const term = document.getElementById('eqp-search').value.toLowerCase();
-    const filterObra = document.getElementById('eqp-filter-obra').value;
-    const filterStatus = document.getElementById('eqp-filter-status').value;
-    const filterTipo = document.getElementById('eqp-filter-tipo').value;
-    
-    const colaboradores = getColaboradoresUnificados();
-    
-    let fil = colaboradores.filter(c => 
-        (c.nome || '').toLowerCase().includes(term) || 
-        (c.categoria || '').toLowerCase().includes(term)
-    );
-
-    if(filterObra) {
-        fil = fil.filter(c => String(c.obra_atual_id) === String(filterObra));
-    }
-    if(filterStatus) {
-        const isAtivoStatus = filterStatus === 'true';
-        fil = fil.filter(c => (c.ativo === true || c.ativo === 'true') === isAtivoStatus);
-    }
-    if(filterTipo !== 'todos') {
-        fil = fil.filter(c => c.tipo === filterTipo);
-    }
-
-    fil.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
-    
-    document.getElementById('equipe-list').innerHTML = fil.map(c => {
-        const obra = STATE.obras.find(x => x.id == c.obra_atual_id);
-        const nomeObra = obra ? obra.nome : 'Sem obra alocada';
-        const isAtivo = c.ativo === true || c.ativo === 'true';
-        
-        const tipoBadge = c.tipo === 'diaria' 
-            ? '<span class="bg-blue-100 text-blue-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">DIÁRIA</span>'
-            : '<span class="bg-purple-100 text-purple-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">METRO</span>';
-        
-        const valorExibicao = c.tipo === 'diaria' 
-            ? formatMoney(c.valor_base) 
-            : `${formatMoney(c.valor_base)}/m`;
-        
-        const pendente = calcularPendenteEquipe(c);
-        let textoPendente = '';
-        if (pendente.valor > 0) {
-            if (c.tipo === 'diaria') {
-                textoPendente = `<p class="text-[10px] font-black text-red-600 mt-1">${pendente.diarias.toFixed(2)} diárias pendentes · ${formatMoney(pendente.valor)}</p>`;
-            } else {
-                textoPendente = `<p class="text-[10px] font-black text-red-600 mt-1">${pendente.metros.toFixed(2)} m pendentes · ${formatMoney(pendente.valor)}</p>`;
-            }
-        } else {
-            textoPendente = `<p class="text-[9px] text-green-600 mt-1">✓ Nada pendente</p>`;
-        }
-        
-        let zapBtn = '';
-        if(c.telefone) {
-            const numZap = c.telefone.replace(/\D/g, '');
-            if(numZap.length >= 10) {
-                zapBtn = `<a href="https://wa.me/55${numZap}" target="_blank" class="p-1.5 bg-green-100 text-green-600 rounded-lg shrink-0 flex items-center justify-center"><i data-lucide="message-circle" class="w-4 h-4"></i></a>`;
-            }
-        }
-
-        let botoesAcao = '';
-        if (c.tipo === 'diaria') {
-            botoesAcao = `
-                <button onclick="openEquipeForm('${c.id}')" class="p-1.5 bg-slate-100 text-blue-600 rounded-lg shrink-0 flex items-center justify-center"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                ${zapBtn}
-            `;
-        } else {
-            botoesAcao = `
-                <button onclick="openEquipeForm('${c.id}', 'terceirizado')" class="p-1.5 bg-slate-100 text-blue-600 rounded-lg shrink-0 flex items-center justify-center"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                ${zapBtn}
-            `;
-        }
-
-        return `
-        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm relative">
-            <div class="absolute top-2 right-2 flex gap-1 items-center">
-                ${c.tipo === 'diaria' ? `<span class="bg-slate-100 text-slate-500 border border-slate-200 text-[8px] font-bold px-1.5 py-0.5 rounded">Mat: ${c.matricula || '-'}</span>` : ''}
-                <span class="${isAtivo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} text-[8px] font-bold px-1.5 py-0.5 rounded">${isAtivo ? 'ATIVO' : 'INATIVO'}</span>
-            </div>
-            <div class="flex justify-between items-start mb-1 pr-24">
-                <div>
-                    <h4 class="font-bold text-slate-800 text-xs flex items-center">
-                        ${c.nome || '-'} ${tipoBadge}
-                    </h4>
-                    <p class="text-[10px] text-slate-500 font-bold uppercase mt-1">${c.categoria || '-'} ${c.telefone ? ` | ${c.telefone}` : ''}</p>
-                    <p class="text-[9px] text-blue-600 mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${nomeObra}</p>
-                    <p class="text-[9px] text-slate-500 mt-0.5 font-bold">${valorExibicao}</p>
-                    ${textoPendente}
-                </div>
-            </div>
-            <div class="flex justify-end gap-2 mt-2 pt-2 border-t border-slate-50">
-                ${botoesAcao}
-            </div>
-        </div>`;
-    }).join('');
-    lucide.createIcons();
-}
-
-        // Função que une equipe própria e terceirizados
+        // ====== EQUIPE UNIFICADA ======
         function getColaboradoresUnificados() {
-            const equipe = STATE.equipe.map(e => ({
-                ...e,
-                tipo: 'diaria',
-                valor_base: parseFloat(e.valor_diaria || 0),
-                unidade: 'dias',
-                table_origin: 'equipe'
-            }));
-
-            const terceirizados = STATE.terceirizados.map(t => ({
-                ...t,
-                nome: t.nome,
-                categoria: 'Terceirizado (Metro)',
-                telefone: t.telefone,
-                cpf: t.cpf_cnpj,
-                rg: t.rg,
-                endereco: t.endereco,
-                chave_pix: t.chave_pix,
-                obra_atual_id: t.obra_atual_id,
-                ativo: t.ativo,
-                tipo: 'metro',
-                valor_base: parseFloat(t.valor_metro || 0),
-                unidade: 'metros',
-                table_origin: 'terceirizados'
-            }));
-
+            const equipe = STATE.equipe.map(e => ({ ...e, tipo: 'diaria', valor_base: parseFloat(e.valor_diaria || 0), unidade: 'dias', table_origin: 'equipe' }));
+            const terceirizados = STATE.terceirizados.map(t => ({ ...t, nome: t.nome, categoria: 'Terceirizado (Metro)', telefone: t.telefone, cpf: t.cpf_cnpj, rg: t.rg, endereco: t.endereco, chave_pix: t.chave_pix, obra_atual_id: t.obra_atual_id, ativo: t.ativo, tipo: 'metro', valor_base: parseFloat(t.valor_metro || 0), unidade: 'metros', table_origin: 'terceirizados' }));
             return [...equipe, ...terceirizados];
         }
-        
-        // Altera label do campo valor conforme categoria selecionada
+
         function onCategoriaChange() {
             const cat = document.getElementById('eqp-categoria').value;
             const label = document.getElementById('label-valor-base');
             const tipoOrigem = document.getElementById('eqp-tipo-origem');
-            
-            if (cat === 'Terceirizado') {
-                label.innerText = 'Valor do Metro (R$)';
-                tipoOrigem.value = 'terceirizado';
-            } else {
-                label.innerText = 'Valor da Diária (R$)';
-                tipoOrigem.value = 'equipe';
+            if (cat === 'Terceirizado') { label.innerText = 'Valor do Metro (R$)'; tipoOrigem.value = 'terceirizado'; }
+            else { label.innerText = 'Valor da Diária (R$)'; tipoOrigem.value = 'equipe'; }
+        }
+
+        // Calcula saldo pendente de diárias
+        function calcularSaldoPendenteFuncionario(funcId) {
+            let registros = STATE.ponto_diario.filter(p => p.funcionario_id === funcId && p.status === 'VALIDADO' && !p.pago_em_fechamento);
+            const porDia = new Map();
+            registros.forEach(p => {
+                const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+                if (!porDia.has(dataDia)) porDia.set(dataDia, []);
+                porDia.get(dataDia).push(p);
+            });
+            let totalDiarias = 0;
+            function diffMinutesUTC(a, b) { return (new Date(b) - new Date(a)) / (1000 * 60); }
+            function roundHalfDown(v) { if (v <= 0) return 0; if (v >= 1) return 1; let cents = v * 100; let dec = cents - Math.floor(cents); if (Math.abs(dec - 0.5) < 0.0001) return Math.floor(cents) / 100; return Math.round(cents) / 100; }
+            function calcularFracaoDiaPeriodo(regs) {
+                const entradas = regs.filter(r => r.tipo === 'ENTRADA').map(r => r.hora_registro);
+                const saidas = regs.filter(r => r.tipo === 'SAIDA').map(r => r.hora_registro);
+                const ajustes = regs.filter(r => r.tipo === 'AJUSTE_MANUAL').reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
+                if (entradas.length === 0 && saidas.length === 0) return Math.min(ajustes, 1);
+                const todosPontos = [...entradas.map(e => ({ tipo: 'E', hora: e })), ...saidas.map(s => ({ tipo: 'S', hora: s }))].sort((a, b) => new Date(a.hora) - new Date(b.hora));
+                let startManha = null, endManha = null, startTarde = null, endTarde = null;
+                for (const p of todosPontos) { const hour = new Date(p.hora).getUTCHours(); if (hour < 12) { if (p.tipo === 'E' && !startManha) startManha = p.hora; if (p.tipo === 'S') endManha = p.hora; } else { if (p.tipo === 'E' && !startTarde) startTarde = p.hora; if (p.tipo === 'S') endTarde = p.hora; } }
+                function calcMin(start, end, jornada) { if (!start || !end) return 0; let mins = diffMinutesUTC(start, end); const falta = jornada - mins; if (falta > 0 && falta <= 10) mins = jornada; return Math.min(jornada, Math.max(0, mins)); }
+                let baseFracao = (calcMin(startManha, endManha, 240) + calcMin(startTarde, endTarde, 240)) / 480;
+                baseFracao = Math.min(1, Math.max(0, baseFracao));
+                let fracao = baseFracao + ajustes; if (fracao > 1) fracao = 1;
+                return roundHalfDown(fracao);
             }
+            for (const regs of porDia.values()) { totalDiarias += calcularFracaoDiaPeriodo(regs); }
+            return { totalDiarias, registros };
+        }
+
+        // ====== RENDERIZAÇÃO DA EQUIPE ======
+        function renderEquipe() {
+            const term = document.getElementById('eqp-search').value.toLowerCase();
+            const filterObra = document.getElementById('eqp-filter-obra').value;
+            const filterStatus = document.getElementById('eqp-filter-status').value;
+            const filterTipo = document.getElementById('eqp-filter-tipo').value;
+            const colaboradores = getColaboradoresUnificados();
+            let fil = colaboradores.filter(c => (c.nome || '').toLowerCase().includes(term) || (c.categoria || '').toLowerCase().includes(term));
+            if(filterObra) fil = fil.filter(c => String(c.obra_atual_id) === String(filterObra));
+            if(filterStatus) { const isAtivoStatus = filterStatus === 'true'; fil = fil.filter(c => (c.ativo === true || c.ativo === 'true') === isAtivoStatus); }
+            if(filterTipo !== 'todos') fil = fil.filter(c => c.tipo === filterTipo);
+            fil.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+
+            document.getElementById('equipe-list').innerHTML = fil.map(c => {
+                const obra = STATE.obras.find(x => x.id == c.obra_atual_id);
+                const nomeObra = obra ? obra.nome : 'Sem obra alocada';
+                const isAtivo = c.ativo === true || c.ativo === 'true';
+                const tipoBadge = c.tipo === 'diaria' 
+                    ? '<span class="bg-blue-100 text-blue-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">DIÁRIA</span>'
+                    : '<span class="bg-purple-100 text-purple-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">METRO</span>';
+                const valorExibicao = c.tipo === 'diaria' ? formatMoney(c.valor_base) : `${formatMoney(c.valor_base)}/m`;
+
+                // Calcula saldo pendente para exibição no card
+                let saldoHtml = '';
+                if (c.tipo === 'diaria') {
+                    const saldo = calcularSaldoPendenteFuncionario(c.id);
+                    const diasPendentes = saldo.totalDiarias;
+                    const valorPendente = diasPendentes * c.valor_base;
+                    if (diasPendentes > 0) {
+                        saldoHtml = `<span class="text-[9px] font-black text-green-600 ml-2">(${diasPendentes.toFixed(2)} dias | <span class="text-green-700">${formatMoney(valorPendente)}</span> em aberto)</span>`;
+                    }
+                } else {
+                    const metrosPendentes = STATE.producao_terc.filter(p => p.terceirizado_id === c.id && p.status !== 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
+                    const valorPendente = metrosPendentes * c.valor_base;
+                    if (metrosPendentes > 0) {
+                        saldoHtml = `<span class="text-[9px] font-black text-green-600 ml-2">(${metrosPendentes.toFixed(2)} m | <span class="text-green-700">${formatMoney(valorPendente)}</span> em aberto)</span>`;
+                    }
+                }
+
+                let zapBtn = '';
+                if(c.telefone) { const numZap = c.telefone.replace(/\D/g, ''); if(numZap.length >= 10) { zapBtn = `<a href="https://wa.me/55${numZap}" target="_blank" class="p-1.5 bg-green-100 text-green-600 rounded-lg shrink-0 flex items-center justify-center"><i data-lucide="message-circle" class="w-4 h-4"></i></a>`; } }
+
+                let calcBtn = '', docBtn = '';
+                if (c.tipo === 'diaria') {
+                    calcBtn = `<button onclick="abrirModalSaldo('${c.id}')" class="p-1.5 bg-indigo-600 text-white rounded-lg shrink-0 flex items-center justify-center gap-1 text-[9px] font-bold px-2"><i data-lucide="calculator" class="w-3 h-3"></i> Calcular</button>`;
+                    docBtn = `<button onclick="abrirModalDocumentos('${c.id}')" class="p-1.5 bg-slate-800 text-white rounded-lg shrink-0 flex items-center justify-center gap-1 text-[9px] font-bold px-2"><i data-lucide="file-signature" class="w-3 h-3"></i> Contratos</button>`;
+                } else {
+                    calcBtn = `<button onclick="abrirModalSaldoMetros('${c.id}')" class="p-1.5 bg-indigo-600 text-white rounded-lg shrink-0 flex items-center justify-center gap-1 text-[9px] font-bold px-2"><i data-lucide="calculator" class="w-3 h-3"></i> Calcular</button>`;
+                    docBtn = `<button onclick="abrirModalDocumentos('${c.id}')" class="p-1.5 bg-slate-800 text-white rounded-lg shrink-0 flex items-center justify-center gap-1 text-[9px] font-bold px-2"><i data-lucide="file-signature" class="w-3 h-3"></i> Contratos</button>`;
+                }
+
+                const editBtn = c.tipo === 'diaria'
+                    ? `<button onclick="openEquipeForm('${c.id}')" class="p-1.5 bg-slate-100 text-blue-600 rounded-lg shrink-0 flex items-center justify-center"><i data-lucide="edit-3" class="w-4 h-4"></i></button>`
+                    : `<button onclick="openEquipeForm('${c.id}', 'terceirizado')" class="p-1.5 bg-slate-100 text-blue-600 rounded-lg shrink-0 flex items-center justify-center"><i data-lucide="edit-3" class="w-4 h-4"></i></button>`;
+
+                return `
+                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm relative">
+                    <div class="absolute top-2 right-2 flex gap-1 items-center">
+                        ${c.tipo === 'diaria' ? `<span class="bg-slate-100 text-slate-500 border border-slate-200 text-[8px] font-bold px-1.5 py-0.5 rounded">Mat: ${c.matricula || '-'}</span>` : ''}
+                        <span class="${isAtivo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} text-[8px] font-bold px-1.5 py-0.5 rounded">${isAtivo ? 'ATIVO' : 'INATIVO'}</span>
+                    </div>
+                    <div class="mb-1 pr-24">
+                        <h4 class="font-bold text-slate-800 text-xs flex items-center flex-wrap gap-1">
+                            ${c.nome || '-'} ${tipoBadge}
+                        </h4>
+                        <p class="text-[10px] text-slate-500 font-bold uppercase mt-1">${c.categoria || '-'} ${c.telefone ? ` | ${c.telefone}` : ''}</p>
+                        <p class="text-[9px] text-blue-600 mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${nomeObra}</p>
+                        <div class="flex items-center flex-wrap gap-1 mt-0.5">
+                            <p class="text-[9px] text-slate-500 font-bold">${valorExibicao}</p>
+                            ${saldoHtml}
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap justify-end gap-1.5 mt-2 pt-2 border-t border-slate-50">
+                        ${editBtn}
+                        ${zapBtn}
+                        ${calcBtn}
+                        ${docBtn}
+                    </div>
+                </div>`;
+            }).join('');
+            lucide.createIcons();
         }
 
         // Abre formulário unificado
         function openEquipeForm(id, tipoOrigem = 'equipe') {
-          document.getElementById('equipe-form-container').classList.remove('hidden');
-          const catSelect = document.getElementById('eqp-categoria');
-          const tipoHidden = document.getElementById('eqp-tipo-origem');
-          
-          if (id) {
-              if (tipoOrigem === 'terceirizado') {
-                  const t = STATE.terceirizados.find(x => x.id == id);
-                  if (t) {
-                      document.getElementById('eqp-id').value = t.id;
-                      document.getElementById('eqp-nome').value = t.nome || '';
-                      catSelect.value = 'Terceirizado';
-                      document.getElementById('eqp-telefone').value = t.telefone || '';
-                      document.getElementById('eqp-cpf').value = t.cpf_cnpj || '';
-                      document.getElementById('eqp-rg').value = t.rg || '';
-                      document.getElementById('eqp-endereco').value = t.endereco || '';
-                      document.getElementById('eqp-chave_pix').value = t.chave_pix || '';
-                      document.getElementById('eqp-obra_atual_id').value = t.obra_atual_id || '';
-                      document.getElementById('eqp-data_contrato').value = t.data_contrato || '';
-                      document.getElementById('eqp-valor_diaria').value = t.valor_metro || '';
-                      document.getElementById('eqp-ativo').value = (t.ativo === true || t.ativo === 'true') ? 'true' : 'false';
-                      tipoHidden.value = 'terceirizado';
-                      onCategoriaChange();
-                  }
-              } else {
-                  const e = STATE.equipe.find(x => x.id == id);
-                  if (e) {
-                      document.getElementById('eqp-id').value = e.id;
-                      document.getElementById('eqp-nome').value = e.nome || '';
-                      catSelect.value = e.categoria || 'Servente';
-                      document.getElementById('eqp-telefone').value = e.telefone || '';
-                      document.getElementById('eqp-cpf').value = e.cpf || '';
-                      document.getElementById('eqp-rg').value = e.rg || '';
-                      document.getElementById('eqp-endereco').value = e.endereco || '';
-                      document.getElementById('eqp-chave_pix').value = e.chave_pix || '';
-                      document.getElementById('eqp-obra_atual_id').value = e.obra_atual_id || '';
-                      document.getElementById('eqp-data_contrato').value = e.data_contrato || '';
-                      document.getElementById('eqp-valor_diaria').value = e.valor_diaria || '';
-                      document.getElementById('eqp-ativo').value = (e.ativo === true || e.ativo === 'true') ? 'true' : 'false';
-                      tipoHidden.value = 'equipe';
-                      onCategoriaChange();
-                  }
-              }
-          } else {
-              document.getElementById('equipe-form-container').querySelector('form').reset();
-              document.getElementById('eqp-id').value = '';
-              catSelect.value = 'Servente';
-              document.getElementById('eqp-ativo').value = 'true';
-              tipoHidden.value = 'equipe';
-              onCategoriaChange();
-          }
-          openOverlayForm('equipe-form-container');
-      }
-      
-        function gerarIdSeguro() {
-            if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-                return crypto.randomUUID();
+            document.getElementById('equipe-form-container').classList.remove('hidden');
+            const catSelect = document.getElementById('eqp-categoria');
+            const tipoHidden = document.getElementById('eqp-tipo-origem');
+            if (id) {
+                if (tipoOrigem === 'terceirizado') {
+                    const t = STATE.terceirizados.find(x => x.id == id);
+                    if (t) {
+                        document.getElementById('eqp-id').value = t.id;
+                        document.getElementById('eqp-nome').value = t.nome || '';
+                        catSelect.value = 'Terceirizado';
+                        document.getElementById('eqp-telefone').value = t.telefone || '';
+                        document.getElementById('eqp-cpf').value = t.cpf_cnpj || '';
+                        document.getElementById('eqp-rg').value = t.rg || '';
+                        document.getElementById('eqp-endereco').value = t.endereco || '';
+                        document.getElementById('eqp-chave_pix').value = t.chave_pix || '';
+                        document.getElementById('eqp-obra_atual_id').value = t.obra_atual_id || '';
+                        document.getElementById('eqp-data_contrato').value = t.data_contrato || '';
+                        document.getElementById('eqp-valor_diaria').value = t.valor_metro || '';
+                        document.getElementById('eqp-ativo').value = (t.ativo === true || t.ativo === 'true') ? 'true' : 'false';
+                        tipoHidden.value = 'terceirizado';
+                        onCategoriaChange();
+                    }
+                } else {
+                    const e = STATE.equipe.find(x => x.id == id);
+                    if (e) {
+                        document.getElementById('eqp-id').value = e.id;
+                        document.getElementById('eqp-nome').value = e.nome || '';
+                        catSelect.value = e.categoria || 'Servente';
+                        document.getElementById('eqp-telefone').value = e.telefone || '';
+                        document.getElementById('eqp-cpf').value = e.cpf || '';
+                        document.getElementById('eqp-rg').value = e.rg || '';
+                        document.getElementById('eqp-endereco').value = e.endereco || '';
+                        document.getElementById('eqp-chave_pix').value = e.chave_pix || '';
+                        document.getElementById('eqp-obra_atual_id').value = e.obra_atual_id || '';
+                        document.getElementById('eqp-data_contrato').value = e.data_contrato || '';
+                        document.getElementById('eqp-valor_diaria').value = e.valor_diaria || '';
+                        document.getElementById('eqp-ativo').value = (e.ativo === true || e.ativo === 'true') ? 'true' : 'false';
+                        tipoHidden.value = 'equipe';
+                        onCategoriaChange();
+                    }
+                }
+            } else {
+                document.getElementById('equipe-form-container').querySelector('form').reset();
+                document.getElementById('eqp-id').value = '';
+                catSelect.value = 'Servente';
+                document.getElementById('eqp-ativo').value = 'true';
+                tipoHidden.value = 'equipe';
+                onCategoriaChange();
             }
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
+            openOverlayForm('equipe-form-container');
+        }
+
+        function gerarIdSeguro() {
+            if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); });
         }
 
         async function saveEquipe(e) {
-            e.preventDefault(); 
-            showLoading(true);
-        
-            const getV = (id) => {
-                const el = document.getElementById(id);
-                return el ? el.value : '';
-            };
-        
+            e.preventDefault(); showLoading(true);
+            const getV = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
             const idAtual = getV('eqp-id');
             const isNew = !idAtual;
             const tipoOrigem = document.getElementById('eqp-tipo-origem').value;
-            
             const nome = getV('eqp-nome').trim();
             const categoria = getV('eqp-categoria');
             const telefone = getV('eqp-telefone').trim();
@@ -1814,75 +1680,27 @@ function calcularPendenteEquipe(c) {
             const valor_base = parseFloat(getV('eqp-valor_diaria')) || 0;
             const data_contrato = getV('eqp-data_contrato') || null;
             const ativo = getV('eqp-ativo') === 'true';
-        
             if (!nome) { showLoading(false); showToast("❌ Nome obrigatório.", true); return; }
             if (!cpf) { showLoading(false); showToast("❌ CPF obrigatório.", true); return; }
             if (!telefone) { showLoading(false); showToast("❌ Telefone obrigatório.", true); return; }
             if (!obra_id) { showLoading(false); showToast("❌ Selecione a obra.", true); return; }
             if (valor_base <= 0) { showLoading(false); showToast("❌ Valor inválido.", true); return; }
-        
             if (tipoOrigem === 'terceirizado') {
-                const payload = {
-                    nome,
-                    cpf_cnpj: cpf,
-                    rg,
-                    telefone,
-                    chave_pix,
-                    endereco,
-                    obra_atual_id: obra_id,
-                    valor_metro: valor_base,
-                    data_contrato,
-                    ativo
-                };
-                
-                if (!isNew) {
-                    payload.id = idAtual;
-                } else {
-                    payload.id = gerarIdSeguro();
-                }
-                
+                const payload = { nome, cpf_cnpj: cpf, rg, telefone, chave_pix, endereco, obra_atual_id: obra_id, valor_metro: valor_base, data_contrato, ativo };
+                if (!isNew) payload.id = idAtual; else payload.id = gerarIdSeguro();
                 const { error } = await sb.from('jsp_terceirizados').upsert(payload);
-                if (error) {
-                    showLoading(false);
-                    return showToast("Erro ao salvar terceirizado: " + error.message, true);
-                }
+                if (error) { showLoading(false); return showToast("Erro ao salvar terceirizado: " + error.message, true); }
             } else {
-                const payload = {
-                    nome,
-                    categoria,
-                    telefone,
-                    cpf,
-                    rg,
-                    endereco,
-                    chave_pix,
-                    obra_atual_id: obra_id,
-                    valor_diaria: valor_base,
-                    data_contrato,
-                    ativo
-                };
-                
-                if (!isNew) {
-                    payload.id = idAtual;
-                } else {
-                    payload.id = gerarIdSeguro();
-                    payload.contrato_assinado = false;
-                    
+                const payload = { nome, categoria, telefone, cpf, rg, endereco, chave_pix, obra_atual_id: obra_id, valor_diaria: valor_base, data_contrato, ativo };
+                if (!isNew) { payload.id = idAtual; }
+                else {
+                    payload.id = gerarIdSeguro(); payload.contrato_assinado = false;
                     let maxMat = 0;
-                    if (STATE.equipe && STATE.equipe.length > 0) {
-                        STATE.equipe.forEach(item => {
-                            let m = parseInt(item.matricula);
-                            if (!isNaN(m) && m > maxMat) maxMat = m;
-                        });
-                    }
+                    if (STATE.equipe && STATE.equipe.length > 0) { STATE.equipe.forEach(item => { let m = parseInt(item.matricula); if (!isNaN(m) && m > maxMat) maxMat = m; }); }
                     payload.matricula = maxMat > 0 ? maxMat + 1 : 133;
                 }
-                
                 const { error } = await sb.from('jsp_equipe').upsert(payload);
-                if (error) {
-                    showLoading(false);
-                    return showToast("Erro ao salvar membro: " + error.message, true);
-                }
-                
+                if (error) { showLoading(false); return showToast("Erro ao salvar membro: " + error.message, true); }
                 if (isNew) {
                     document.getElementById('sucesso-nome').innerText = payload.nome;
                     document.getElementById('sucesso-num-matricula').innerText = payload.matricula;
@@ -1890,17 +1708,488 @@ function calcularPendenteEquipe(c) {
                     lucide.createIcons();
                 }
             }
-            
             closeOverlayForm('equipe-form-container');
-            if (tipoOrigem !== 'terceirizado' && !isNew) {
-                showToast("✅ Atualizado com sucesso!");
-            } else if (tipoOrigem === 'terceirizado') {
-                showToast("✅ Terceirizado salvo!");
-            }
+            if (tipoOrigem !== 'terceirizado' && !isNew) showToast("✅ Atualizado com sucesso!");
+            else if (tipoOrigem === 'terceirizado') showToast("✅ Terceirizado salvo!");
             await loadData();
             navigate('equipe');
         }
-        
+
+        // ====== FUNÇÕES CALCULAR (SALDO DE PONTO - DIÁRIAS) ======
+        function abrirModalSaldo(equipeId) {
+            const colaborador = getColaboradoresUnificados().find(c => c.id === equipeId);
+            if (!colaborador) return;
+            if (colaborador.tipo === 'metro') { abrirModalSaldoMetros(equipeId); return; }
+            const func = STATE.equipe.find(e => e.id === equipeId);
+            if (!func) return;
+            document.getElementById('saldo-equipe-id').value = equipeId;
+            document.getElementById('saldo-modal-subtitle').innerText = `${func.nome} - Diária: ${formatMoney(func.valor_diaria || 0)}`;
+            const hoje = new Date();
+            const anoAtual = hoje.getFullYear();
+            const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
+            const primeiroDia = `${anoAtual}-01-01`;
+            const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
+            const ultimoDiaStr = `${anoAtual}-${mesAtual}-${String(ultimoDia).padStart(2, '0')}`;
+            document.getElementById('saldo-filtro-data-inicio').value = primeiroDia;
+            document.getElementById('saldo-filtro-data-fim').value = ultimoDiaStr;
+            document.getElementById('saldo-filtro-status').value = 'PENDENTE';
+            carregarTabelaSaldo();
+            document.getElementById('modal-saldo-ponto').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function fecharModalSaldo() {
+            document.getElementById('modal-saldo-ponto').classList.add('hidden');
+        }
+
+        function carregarTabelaSaldo() {
+            const funcId = document.getElementById('saldo-equipe-id').value;
+            const dataInicio = document.getElementById('saldo-filtro-data-inicio').value;
+            const dataFim = document.getElementById('saldo-filtro-data-fim').value;
+            const statusFiltro = document.getElementById('saldo-filtro-status').value;
+            const func = STATE.equipe.find(e => e.id === funcId);
+            if (!func) return;
+            let registros = STATE.ponto_diario.filter(p => p.funcionario_id === funcId && p.status === 'VALIDADO');
+            if (dataInicio) registros = registros.filter(p => p.hora_registro >= dataInicio + 'T00:00:00');
+            if (dataFim) registros = registros.filter(p => p.hora_registro <= dataFim + 'T23:59:59');
+            if (statusFiltro === 'PENDENTE') registros = registros.filter(p => !p.pago_em_fechamento);
+            else if (statusFiltro === 'PAGO') registros = registros.filter(p => p.pago_em_fechamento === true);
+            function formatHoraUTC(isoString) { if (!isoString) return '--:--'; const d = new Date(isoString); return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`; }
+            function diffMinutes(startIso, endIso) { return (new Date(endIso) - new Date(startIso)) / (1000 * 60); }
+            function roundFractionHalfDown(value) { if (value <= 0) return 0; if (value >= 1) return 1; let cents = value * 100; let decimalPart = cents - Math.floor(cents); if (Math.abs(decimalPart - 0.5) < 0.0001) return Math.floor(cents) / 100; return Math.round(cents) / 100; }
+            const porDia = {};
+            registros.forEach(p => {
+                const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+                if (!porDia[dataDia]) porDia[dataDia] = { entradas: [], saidas: [], ajustes: [], registros: [] };
+                porDia[dataDia].registros.push(p);
+                if (p.tipo === 'ENTRADA') porDia[dataDia].entradas.push(p.hora_registro);
+                else if (p.tipo === 'SAIDA') porDia[dataDia].saidas.push(p.hora_registro);
+                else if (p.tipo === 'AJUSTE_MANUAL') porDia[dataDia].ajustes.push(p);
+            });
+            const tbody = document.getElementById('saldo-tabela-body');
+            tbody.innerHTML = '';
+            let totalDiarias = 0;
+            const datasOrdenadas = Object.keys(porDia).sort((a,b) => { const [da,ma,aa] = a.split('/'); const [db,mb,ab] = b.split('/'); return new Date(aa,ma-1,da) - new Date(ab,mb-1,db); });
+            if (datasOrdenadas.length === 0) {
+                document.getElementById('saldo-sem-registros').classList.remove('hidden');
+                document.getElementById('saldo-total-diarias').innerText = '0.00';
+                document.getElementById('saldo-total-valor').innerText = formatMoney(0);
+                return;
+            }
+            document.getElementById('saldo-sem-registros').classList.add('hidden');
+            datasOrdenadas.forEach(dataDia => {
+                const pts = porDia[dataDia];
+                const todosPontos = [];
+                pts.entradas.forEach(e => todosPontos.push({ tipo: 'E', hora: e }));
+                pts.saidas.forEach(s => todosPontos.push({ tipo: 'S', hora: s }));
+                todosPontos.sort((a, b) => new Date(a.hora) - new Date(b.hora));
+                let startManha = null, endManha = null, startTarde = null, endTarde = null;
+                for (let i = 0; i < todosPontos.length; i++) { const ponto = todosPontos[i]; const hora = new Date(ponto.hora); const hour = hora.getUTCHours(); if (hour < 12) { if (ponto.tipo === 'E' && startManha === null) startManha = ponto.hora; if (ponto.tipo === 'S') endManha = ponto.hora; } else { if (ponto.tipo === 'E' && startTarde === null) startTarde = ponto.hora; if (ponto.tipo === 'S') endTarde = ponto.hora; } }
+                function calcularMinutosComTolerancia(start, end, jornadaMinutos) { if (!start || !end) return 0; let minutos = diffMinutes(start, end); const falta = jornadaMinutos - minutos; if (falta > 0 && falta <= 10) minutos = jornadaMinutos; return Math.min(jornadaMinutos, Math.max(0, minutos)); }
+                let minutosManha = calcularMinutosComTolerancia(startManha, endManha, 240);
+                let minutosTarde = calcularMinutosComTolerancia(startTarde, endTarde, 240);
+                let baseFracao = (minutosManha + minutosTarde) / 480;
+                baseFracao = Math.min(1, Math.max(0, baseFracao));
+                let somaAjustes = pts.ajustes.length > 0 ? pts.ajustes.reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0) : 0;
+                let fracao = baseFracao + somaAjustes; if (fracao > 1) fracao = 1;
+                fracao = roundFractionHalfDown(fracao);
+                let horariosStr = '';
+                if (pts.entradas.length > 0 || pts.saidas.length > 0) {
+                    const entradas = pts.entradas.sort(); const saidas = pts.saidas.sort(); const linhas = [];
+                    for (let i = 0; i < Math.max(entradas.length, saidas.length); i++) { const e = entradas[i]; const s = saidas[i]; if (e || s) linhas.push(`<span class="bg-green-100 text-green-700 px-1 py-0.5 rounded text-[9px]">${e ? formatHoraUTC(e) : '--:--'}</span>→<span class="bg-red-100 text-red-700 px-1 py-0.5 rounded text-[9px]">${s ? formatHoraUTC(s) : '--:--'}</span>`); }
+                    horariosStr = linhas.join('<br>');
+                }
+                if (pts.ajustes.length > 0) { const ajustesText = pts.ajustes.map(a => a.observacao || 'Ajuste manual').join(', '); horariosStr += (horariosStr ? '<br>' : '') + `<div class="text-indigo-600 text-[9px] mt-0.5">+Ajuste (${somaAjustes.toFixed(2)}d) - ${ajustesText}</div>`; }
+                if (!horariosStr) horariosStr = '<span class="text-slate-400 text-[9px]">Sem registro</span>';
+                totalDiarias += fracao;
+                const tr = document.createElement('tr');
+                tr.className = 'border-b hover:bg-slate-50';
+                tr.innerHTML = `<td class="p-2 font-bold text-slate-700 text-[10px]">${dataDia}</td><td class="p-2 text-[9px]">${horariosStr}</td><td class="p-2 text-center font-black text-[10px] ${fracao >= 1 ? 'text-green-600' : 'text-orange-600'}">${fracao.toFixed(2)}</td><td class="p-2 text-center"><span class="px-1.5 py-0.5 rounded text-[8px] font-bold ${pts.registros[0].pago_em_fechamento ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">${pts.registros[0].pago_em_fechamento ? 'PAGO' : 'PEND.'}</span></td>`;
+                tbody.appendChild(tr);
+            });
+            document.getElementById('saldo-total-diarias').innerText = totalDiarias.toFixed(2);
+            document.getElementById('saldo-total-valor').innerText = formatMoney(totalDiarias * parseFloat(func.valor_diaria || 0));
+            lucide.createIcons();
+        }
+
+        // Ajuste manual (ponto)
+        async function lancarAjusteManual() {
+            const funcId = document.getElementById('saldo-equipe-id').value;
+            const data = document.getElementById('ajuste-data').value;
+            const fracao = parseFloat(document.getElementById('ajuste-fracao').value);
+            const justificativa = document.getElementById('ajuste-justificativa').value;
+            if (!data || isNaN(fracao) || fracao <= 0) return showToast('Preencha data e fração válida.', true);
+            const func = STATE.equipe.find(e => e.id === funcId);
+            if (!func || !func.obra_atual_id) return showToast('Funcionário sem obra vinculada.', true);
+            showLoading(true);
+            let nextId = 1;
+            if (STATE.ponto_diario && STATE.ponto_diario.length > 0) { const maxId = Math.max(...STATE.ponto_diario.map(p => parseInt(p.id) || 0)); nextId = maxId + 1; }
+            const payload = { id: nextId, funcionario_id: funcId, obra_id: func.obra_atual_id, tipo: 'AJUSTE_MANUAL', status: 'VALIDADO', hora_registro: new Date(data + 'T12:00:00').toISOString(), fracao_diaria: fracao, observacao: justificativa || 'Ajuste manual', pago_em_fechamento: false, lat_registro: 'MANUAL', lng_registro: 'MANUAL' };
+            const { error } = await sb.from('jsp_ponto_diario').insert([payload]);
+            if (error) { showLoading(false); return showToast('Erro ao lançar ajuste: ' + error.message, true); }
+            await loadData(); carregarTabelaSaldo(); showToast('Ajuste lançado com sucesso!');
+        }
+
+        // Fecha pagamento de diárias
+        async function fecharPagamentoSaldo() {
+            const funcId = document.getElementById('saldo-equipe-id').value;
+            const dataInicio = document.getElementById('saldo-filtro-data-inicio').value;
+            const dataFim = document.getElementById('saldo-filtro-data-fim').value;
+            const func = STATE.equipe.find(e => e.id === funcId);
+            if (!func) return;
+            let registros = STATE.ponto_diario.filter(p => p.funcionario_id === funcId && p.status === 'VALIDADO' && !p.pago_em_fechamento);
+            if (dataInicio) registros = registros.filter(p => p.hora_registro >= dataInicio + 'T00:00:00');
+            if (dataFim) registros = registros.filter(p => p.hora_registro <= dataFim + 'T23:59:59');
+            if (registros.length === 0) return showToast('Nenhum registro pendente para fechar.', true);
+            const totalDiarias = calcularTotalDiariasDosRegistros(registros);
+            const valorTotal = totalDiarias * parseFloat(func.valor_diaria || 0);
+            const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+            const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+            const periodoDesc = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
+            if (!confirm(`Fechar pagamento de ${totalDiarias.toFixed(2)} diárias no valor de ${formatMoney(valorTotal)}?`)) return;
+            showLoading(true);
+            const descricao = `Pagamento de ponto - ${func.nome} - Período ${periodoDesc}`;
+            const { error: errFin } = await sb.from('jsp_logs').insert([{ id: getNextIdNum(STATE.logs).toString(), obra_id: func.obra_atual_id ? parseInt(func.obra_atual_id) : null, tipo: 'despesa', produto_nome: descricao, valor_total: valorTotal, data: new Date().toISOString(), vencimento: new Date().toISOString(), status_financeiro: 'PENDENTE', categoria: 'Mão de Obra', observacao: `Fechamento de ponto - Funcionário: ${func.nome} - Total diárias: ${totalDiarias.toFixed(2)}` }]);
+            if (errFin) { showLoading(false); return showToast('Erro ao gerar despesa: ' + errFin.message, true); }
+            const ids = registros.map(r => r.id);
+            const { error: errPonto } = await sb.from('jsp_ponto_diario').update({ pago_em_fechamento: true }).in('id', ids);
+            if (errPonto) { showLoading(false); return showToast('Erro ao atualizar registros: ' + errPonto.message, true); }
+            await loadData(); fecharModalSaldo(); renderEquipe(); showToast('Pagamento fechado! Despesa lançada como pendente.');
+        }
+
+        function calcularTotalDiariasDosRegistros(registros) {
+            const porDia = new Map();
+            registros.forEach(p => { const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'}); if (!porDia.has(dataDia)) porDia.set(dataDia, []); porDia.get(dataDia).push(p); });
+            let total = 0;
+            function diffMinutesUTC(a, b) { return (new Date(b) - new Date(a)) / (1000 * 60); }
+            function roundHalfDown(v) { if (v <= 0) return 0; if (v >= 1) return 1; let cents = v * 100; let dec = cents - Math.floor(cents); if (Math.abs(dec - 0.5) < 0.0001) return Math.floor(cents) / 100; return Math.round(cents) / 100; }
+            function calcularFracaoDiaPeriodo(regs) {
+                const entradas = regs.filter(r => r.tipo === 'ENTRADA').map(r => r.hora_registro);
+                const saidas = regs.filter(r => r.tipo === 'SAIDA').map(r => r.hora_registro);
+                const ajustes = regs.filter(r => r.tipo === 'AJUSTE_MANUAL').reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
+                if (entradas.length === 0 && saidas.length === 0) return Math.min(ajustes, 1);
+                const todosPontos = [...entradas.map(e => ({ tipo: 'E', hora: e })), ...saidas.map(s => ({ tipo: 'S', hora: s }))].sort((a, b) => new Date(a.hora) - new Date(b.hora));
+                let startManha = null, endManha = null, startTarde = null, endTarde = null;
+                for (const p of todosPontos) { const hour = new Date(p.hora).getUTCHours(); if (hour < 12) { if (p.tipo === 'E' && !startManha) startManha = p.hora; if (p.tipo === 'S') endManha = p.hora; } else { if (p.tipo === 'E' && !startTarde) startTarde = p.hora; if (p.tipo === 'S') endTarde = p.hora; } }
+                function calcMin(start, end, jornada) { if (!start || !end) return 0; let mins = diffMinutesUTC(start, end); const falta = jornada - mins; if (falta > 0 && falta <= 10) mins = jornada; return Math.min(jornada, Math.max(0, mins)); }
+                let baseFracao = (calcMin(startManha, endManha, 240) + calcMin(startTarde, endTarde, 240)) / 480;
+                baseFracao = Math.min(1, Math.max(0, baseFracao));
+                let fracao = baseFracao + ajustes; if (fracao > 1) fracao = 1;
+                return roundHalfDown(fracao);
+            }
+            for (const regs of porDia.values()) { total += calcularFracaoDiaPeriodo(regs); }
+            return total;
+        }
+
+        // Estornar último fechamento de ponto
+        async function estornarUltimoFechamento() {
+            const funcId = document.getElementById('saldo-equipe-id').value;
+            const func = STATE.equipe.find(e => e.id === funcId);
+            if (!func) return;
+            const despesas = STATE.logs.filter(l => l.tipo === 'despesa' && l.produto_nome && l.produto_nome.includes(`Pagamento de ponto - ${func.nome}`) && (l.status_financeiro === 'PENDENTE' || l.status_financeiro === 'PAGO')).sort((a, b) => new Date(b.data) - new Date(a.data));
+            if (despesas.length === 0) return showToast('Nenhum pagamento de ponto encontrado para estornar.', true);
+            const ultimaDespesa = despesas[0];
+            let mesAno = null;
+            const match = ultimaDespesa.produto_nome.match(/Período (\d{2})\/(\d{4})/);
+            if (match) mesAno = { mes: match[1], ano: match[2] };
+            let confirmMsg = `Estornar o pagamento de ${formatMoney(ultimaDespesa.valor_total)} (${ultimaDespesa.status_financeiro})?`;
+            if (mesAno) confirmMsg += `\nPeríodo: ${mesAno.mes}/${mesAno.ano}`;
+            confirmMsg += `\n\nOs registros de ponto voltarão a ficar pendentes.`;
+            if (!confirm(confirmMsg)) return;
+            showLoading(true);
+            const { error: errFin } = await sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }).eq('id', ultimaDespesa.id).eq('tipo', 'despesa');
+            if (errFin) { showLoading(false); return showToast('Erro ao cancelar despesa: ' + errFin.message, true); }
+            let query = sb.from('jsp_ponto_diario').update({ pago_em_fechamento: false }).eq('funcionario_id', funcId).eq('pago_em_fechamento', true);
+            if (mesAno) { const { mes, ano } = mesAno; const ultimoDia = new Date(ano, mes, 0).getDate(); query = query.gte('hora_registro', `${ano}-${mes}-01`).lte('hora_registro', `${ano}-${mes}-${String(ultimoDia).padStart(2, '0')}`); }
+            const { error: errPonto } = await query;
+            if (errPonto) { showLoading(false); return showToast('Erro ao reverter registros de ponto: ' + errPonto.message, true); }
+            await loadData(); carregarTabelaSaldo(); renderEquipe(); showToast('Estorno realizado com sucesso!');
+        }
+
+        // Impressão extrato ponto
+        function imprimirExtratoSaldo() {
+            const funcId = document.getElementById('saldo-equipe-id').value;
+            const func = STATE.equipe.find(e => e.id === funcId);
+            const dataInicio = document.getElementById('saldo-filtro-data-inicio').value;
+            const dataFim = document.getElementById('saldo-filtro-data-fim').value;
+            const statusFiltro = document.getElementById('saldo-filtro-status').value;
+            const totalDiarias = document.getElementById('saldo-total-diarias').innerText;
+            const valorTotal = document.getElementById('saldo-total-valor').innerText;
+            const tbody = document.getElementById('saldo-tabela-body');
+            const linhas = Array.from(tbody.querySelectorAll('tr')).map(tr => { const tds = tr.querySelectorAll('td'); return { data: tds[0]?.innerText || '', horarios: tds[1]?.innerText || '', fracao: tds[2]?.innerText || '', status: tds[3]?.innerText || '' }; });
+            const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : 'Início';
+            const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'Fim';
+            const periodoExibicao = `${dataIniFormatada} a ${dataFimFormatada}`;
+            const hoje = new Date().toLocaleDateString('pt-BR');
+            let html = `<div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; padding: 30px;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 15px; margin-bottom: 25px;"><img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 70px;" /><div style="text-align: right;"><h1 style="margin: 0; font-size: 24px; font-weight: 900;">EXTRATO DE PONTO</h1><p style="margin: 5px 0 0 0; font-size: 14px; color: #1d4ed8; font-weight: bold;">${func.nome}</p><p style="margin: 2px 0 0 0; font-size: 12px;">Período: ${periodoExibicao} | Diária: ${formatMoney(func.valor_diaria)}</p><p style="margin: 2px 0 0 0; font-size: 11px;">Status: ${statusFiltro}</p></div></div><table width="100%" style="border-collapse: collapse; margin-bottom: 30px; font-size: 13px;"><thead><tr style="background-color: #f1f5f9;"><th style="padding: 12px; border: 1px solid #cbd5e1;">Data</th><th style="padding: 12px; border: 1px solid #cbd5e1;">Horários</th><th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Diária</th><th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Status</th></tr></thead><tbody>`;
+            linhas.forEach(l => { html += `<tr><td style="padding: 10px; border: 1px solid #cbd5e1;">${l.data}</td><td style="padding: 10px; border: 1px solid #cbd5e1;">${l.horarios}</td><td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold;">${l.fracao}</td><td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center;">${l.status}</td></tr>`; });
+            html += `</tbody></table><div style="display: flex; justify-content: flex-end; margin-bottom: 40px;"><div style="width: 300px; background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px;"><div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span style="font-weight: bold;">Total de Diárias:</span><span style="font-weight: 900; font-size: 16px;">${totalDiarias}</span></div><div style="display: flex; justify-content: space-between; border-top: 1px solid #e2e8f0; padding-top: 8px;"><span style="font-weight: bold;">Valor a Pagar:</span><span style="font-weight: 900; color: #1d4ed8; font-size: 18px;">${valorTotal}</span></div></div></div><div style="display: flex; justify-content: space-between; margin-top: 60px;"><div style="text-align: center; width: 40%;"><div style="border-top: 1px solid #94a3b8; padding-top: 10px;"><strong>RV NEGÓCIOS E COMPANHIA</strong><br><span style="font-size: 11px;">Contratante</span></div></div><div style="text-align: center; width: 40%;"><div style="border-top: 1px solid #94a3b8; padding-top: 10px;"><strong>${func.nome.toUpperCase()}</strong><br><span style="font-size: 11px;">Profissional</span></div></div></div><div style="text-align: center; font-size: 10px; color: #94a3b8; margin-top: 40px; border-top: 1px dashed #e2e8f0; padding-top: 15px;">Emitido em ${hoje} - RV Negócios</div></div>`;
+            document.getElementById('print-area').innerHTML = html;
+            setTimeout(() => window.print(), 300);
+        }
+
+        // Recibo do modal de ponto
+        function imprimirReciboDoModal() {
+            const funcId = document.getElementById('saldo-equipe-id').value;
+            const func = STATE.equipe.find(e => e.id === funcId);
+            if (!func) return;
+            const totalDiarias = document.getElementById('saldo-total-diarias').innerText;
+            const valorTotal = document.getElementById('saldo-total-valor').innerText;
+            const dataInicio = document.getElementById('saldo-filtro-data-inicio').value;
+            const dataFim = document.getElementById('saldo-filtro-data-fim').value;
+            const hoje = new Date().toLocaleDateString('pt-BR');
+            const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+            const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+            const periodo = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
+            const html = `<div style="font-family: 'Segoe UI', Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;"><img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" /><div style="text-align: right;"><h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO SOBRE DIÁRIAS</h1><p style="margin: 5px 0 0 0; font-size: 18px; color: #1d4ed8; font-weight: bold;">VALOR: ${valorTotal}</p></div></div><div style="font-size: 14px; line-height: 1.8; text-align: justify; margin-bottom: 40px;">Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA</strong> (CNPJ: 61.893.912/0001-24), a importância de <strong>${valorTotal}</strong>, referente ao pagamento de diárias trabalhadas no período de <strong>${periodo}</strong>, totalizando <strong>${totalDiarias} dias</strong> com a diária acordada em <strong>${formatMoney(func.valor_diaria)}</strong>.</div><div style="font-size: 14px; margin-bottom: 40px;">Para maior clareza, firmo(amos) o presente recibo para que produza os seus efeitos legais.</div><div style="text-align: center; margin-bottom: 30px; font-size: 14px;">Jataí - GO, ${hoje}.</div><div style="margin-top: 60px; display: flex; justify-content: center;"><div style="text-align: center; width: 60%; border-top: 1px solid #000; padding-top: 10px;"><strong>${func.nome.toUpperCase()}</strong><br><span style="font-size: 12px; color: #64748b;">CPF: ${func.cpf || '_______________________'} | RG: ${func.rg || '_______________________'}</span></div></div></div>`;
+            document.getElementById('print-area').innerHTML = html;
+            setTimeout(() => window.print(), 300);
+        }
+
+        // ====== FUNÇÕES CALCULAR (SALDO DE METROS - TERCEIRIZADOS) ======
+        function abrirModalSaldoMetros(tercId) {
+            const terc = STATE.terceirizados.find(t => t.id === tercId);
+            if (!terc) return;
+            document.getElementById('saldo-terc-id').value = tercId;
+            document.getElementById('saldo-metros-subtitle').innerText = `${terc.nome} - Valor do Metro: ${formatMoney(terc.valor_metro || 0)}`;
+            const hoje = new Date();
+            const anoAtual = hoje.getFullYear();
+            const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
+            const primeiroDia = `${anoAtual}-01-01`;
+            const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
+            const ultimoDiaStr = `${anoAtual}-${mesAtual}-${String(ultimoDia).padStart(2, '0')}`;
+            document.getElementById('saldo-metros-data-inicio').value = primeiroDia;
+            document.getElementById('saldo-metros-data-fim').value = ultimoDiaStr;
+            document.getElementById('saldo-metros-filtro-status').value = 'PENDENTE';
+            carregarTabelaSaldoMetros();
+            document.getElementById('modal-saldo-metros').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function fecharModalSaldoMetros() {
+            document.getElementById('modal-saldo-metros').classList.add('hidden');
+        }
+
+        function carregarTabelaSaldoMetros() {
+            const tercId = document.getElementById('saldo-terc-id').value;
+            const dataInicio = document.getElementById('saldo-metros-data-inicio').value;
+            const dataFim = document.getElementById('saldo-metros-data-fim').value;
+            const statusFiltro = document.getElementById('saldo-metros-filtro-status').value;
+            const terc = STATE.terceirizados.find(t => t.id === tercId);
+            if (!terc) return;
+            let registros = STATE.producao_terc.filter(p => p.terceirizado_id === tercId);
+            if (dataInicio) registros = registros.filter(p => p.data_registro >= dataInicio);
+            if (dataFim) registros = registros.filter(p => p.data_registro <= dataFim);
+            if (statusFiltro === 'PENDENTE') registros = registros.filter(p => p.status !== 'PAGO');
+            else if (statusFiltro === 'PAGO') registros = registros.filter(p => p.status === 'PAGO');
+            const tbody = document.getElementById('saldo-metros-tabela-body');
+            tbody.innerHTML = '';
+            let totalMetros = 0;
+            const registrosOrdenados = registros.sort((a,b) => new Date(a.data_registro) - new Date(b.data_registro));
+            if (registrosOrdenados.length === 0) {
+                document.getElementById('saldo-metros-sem-registros').classList.remove('hidden');
+                document.getElementById('saldo-metros-total-metros').innerText = '0.00';
+                document.getElementById('saldo-metros-total-valor').innerText = formatMoney(0);
+                return;
+            }
+            document.getElementById('saldo-metros-sem-registros').classList.add('hidden');
+            registrosOrdenados.forEach(prod => {
+                const metros = parseFloat(prod.metros) || 0;
+                totalMetros += metros;
+                const dataStr = new Date(prod.data_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+                const status = prod.status === 'PAGO' ? 'PAGO' : 'PENDENTE';
+                const tr = document.createElement('tr');
+                tr.className = 'border-b hover:bg-slate-50';
+                tr.innerHTML = `<td class="p-2 font-bold text-slate-700 text-[10px]">${dataStr}</td><td class="p-2 text-center font-black text-[10px] text-indigo-600">${metros.toFixed(2)} m</td><td class="p-2 text-center"><span class="px-1.5 py-0.5 rounded text-[8px] font-bold ${status === 'PAGO' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">${status}</span></td>`;
+                tbody.appendChild(tr);
+            });
+            document.getElementById('saldo-metros-total-metros').innerText = totalMetros.toFixed(2);
+            document.getElementById('saldo-metros-total-valor').innerText = formatMoney(totalMetros * parseFloat(terc.valor_metro || 0));
+            lucide.createIcons();
+        }
+
+        // Ajuste manual metros
+        async function lancarAjusteManualMetros() {
+            const tercId = document.getElementById('saldo-terc-id').value;
+            const data = document.getElementById('ajuste-metros-data').value;
+            const metros = parseFloat(document.getElementById('ajuste-metros-valor').value);
+            const justificativa = document.getElementById('ajuste-metros-justificativa').value;
+            if (!data || isNaN(metros) || metros <= 0) return showToast('Preencha data e metragem válida.', true);
+            const terc = STATE.terceirizados.find(t => t.id === tercId);
+            if (!terc || !terc.obra_atual_id) return showToast('Terceirizado sem obra vinculada.', true);
+            showLoading(true);
+            const payload = { id: crypto.randomUUID(), terceirizado_id: tercId, obra_id: terc.obra_atual_id, data_registro: data, metros: metros, status: 'PENDENTE', observacao: justificativa || 'Ajuste manual' };
+            const { error } = await sb.from('jsp_producao_terc').insert([payload]);
+            if (error) { showLoading(false); return showToast('Erro ao lançar ajuste: ' + error.message, true); }
+            await loadData(); carregarTabelaSaldoMetros(); showToast('Ajuste lançado com sucesso!');
+        }
+
+        // Fecha pagamento de metros
+        async function fecharPagamentoSaldoMetros() {
+            const tercId = document.getElementById('saldo-terc-id').value;
+            const dataInicio = document.getElementById('saldo-metros-data-inicio').value;
+            const dataFim = document.getElementById('saldo-metros-data-fim').value;
+            const terc = STATE.terceirizados.find(t => t.id === tercId);
+            if (!terc) return;
+            let registros = STATE.producao_terc.filter(p => p.terceirizado_id === tercId && p.status !== 'PAGO');
+            if (dataInicio) registros = registros.filter(p => p.data_registro >= dataInicio);
+            if (dataFim) registros = registros.filter(p => p.data_registro <= dataFim);
+            if (registros.length === 0) return showToast('Nenhum registro pendente para fechar.', true);
+            const totalMetros = registros.reduce((sum, r) => sum + parseFloat(r.metros), 0);
+            const valorTotal = totalMetros * parseFloat(terc.valor_metro || 0);
+            const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+            const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+            const periodoDesc = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
+            if (!confirm(`Fechar pagamento de ${totalMetros.toFixed(2)} metros no valor de ${formatMoney(valorTotal)}?`)) return;
+            showLoading(true);
+            const descricao = `Pagamento de metragem - ${terc.nome} - Período ${periodoDesc}`;
+            const { error: errFin } = await sb.from('jsp_logs').insert([{ id: getNextIdNum(STATE.logs).toString(), obra_id: terc.obra_atual_id ? parseInt(terc.obra_atual_id) : null, tipo: 'despesa', produto_nome: descricao, valor_total: valorTotal, data: new Date().toISOString(), vencimento: new Date().toISOString(), status_financeiro: 'PENDENTE', categoria: 'Mão de Obra (Terceirizado)', observacao: `Fechamento de metragem - Terceirizado: ${terc.nome} - Total metros: ${totalMetros.toFixed(2)}` }]);
+            if (errFin) { showLoading(false); return showToast('Erro ao gerar despesa: ' + errFin.message, true); }
+            const ids = registros.map(r => r.id);
+            const { error: errProd } = await sb.from('jsp_producao_terc').update({ status: 'PAGO' }).in('id', ids);
+            if (errProd) { showLoading(false); return showToast('Erro ao atualizar registros: ' + errProd.message, true); }
+            await loadData(); fecharModalSaldoMetros(); renderEquipe(); showToast('Pagamento fechado! Despesa lançada como pendente.');
+        }
+
+        // Estornar último fechamento de metros
+        async function estornarUltimoFechamentoMetros() {
+            const tercId = document.getElementById('saldo-terc-id').value;
+            const terc = STATE.terceirizados.find(t => t.id === tercId);
+            if (!terc) return;
+            const despesas = STATE.logs.filter(l => l.tipo === 'despesa' && l.produto_nome && l.produto_nome.includes(`Pagamento de metragem - ${terc.nome}`) && (l.status_financeiro === 'PENDENTE' || l.status_financeiro === 'PAGO')).sort((a, b) => new Date(b.data) - new Date(a.data));
+            if (despesas.length === 0) return showToast('Nenhum pagamento de metragem encontrado para estornar.', true);
+            const ultimaDespesa = despesas[0];
+            let periodo = null;
+            const match = ultimaDespesa.produto_nome.match(/Período (.*)$/);
+            if (match) periodo = match[1];
+            let confirmMsg = `Estornar o pagamento de ${formatMoney(ultimaDespesa.valor_total)} (${ultimaDespesa.status_financeiro})?`;
+            if (periodo) confirmMsg += `\nPeríodo: ${periodo}`;
+            confirmMsg += `\n\nOs registros de metragem voltarão a ficar pendentes.`;
+            if (!confirm(confirmMsg)) return;
+            showLoading(true);
+            const { error: errFin } = await sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }).eq('id', ultimaDespesa.id).eq('tipo', 'despesa');
+            if (errFin) { showLoading(false); return showToast('Erro ao cancelar despesa: ' + errFin.message, true); }
+            let query = sb.from('jsp_producao_terc').update({ status: 'PENDENTE' }).eq('terceirizado_id', tercId).eq('status', 'PAGO');
+            if (periodo) { const partes = periodo.split(' a '); if (partes.length === 2) { const dataInicio = partes[0].split('/').reverse().join('-'); const dataFim = partes[1].split('/').reverse().join('-'); query = query.gte('data_registro', dataInicio).lte('data_registro', dataFim); } }
+            const { error: errProd } = await query;
+            if (errProd) { showLoading(false); return showToast('Erro ao reverter registros de metragem: ' + errProd.message, true); }
+            await loadData(); carregarTabelaSaldoMetros(); renderEquipe(); showToast('Estorno realizado com sucesso!');
+        }
+
+        // Impressão extrato metros
+        function imprimirExtratoSaldoMetros() {
+            const tercId = document.getElementById('saldo-terc-id').value;
+            const terc = STATE.terceirizados.find(t => t.id === tercId);
+            const dataInicio = document.getElementById('saldo-metros-data-inicio').value;
+            const dataFim = document.getElementById('saldo-metros-data-fim').value;
+            const statusFiltro = document.getElementById('saldo-metros-filtro-status').value;
+            const totalMetros = document.getElementById('saldo-metros-total-metros').innerText;
+            const valorTotal = document.getElementById('saldo-metros-total-valor').innerText;
+            const tbody = document.getElementById('saldo-metros-tabela-body');
+            const linhas = Array.from(tbody.querySelectorAll('tr')).map(tr => { const tds = tr.querySelectorAll('td'); return { data: tds[0]?.innerText || '', metros: tds[1]?.innerText || '', status: tds[2]?.innerText || '' }; });
+            const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : 'Início';
+            const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'Fim';
+            const periodoExibicao = `${dataIniFormatada} a ${dataFimFormatada}`;
+            const hoje = new Date().toLocaleDateString('pt-BR');
+            let html = `<div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; padding: 30px;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 15px; margin-bottom: 25px;"><img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 70px;" /><div style="text-align: right;"><h1 style="margin: 0; font-size: 24px; font-weight: 900;">EXTRATO DE METRAGEM</h1><p style="margin: 5px 0 0 0; font-size: 14px; color: #1d4ed8; font-weight: bold;">${terc.nome}</p><p style="margin: 2px 0 0 0; font-size: 12px;">Período: ${periodoExibicao} | Valor Metro: ${formatMoney(terc.valor_metro)}</p><p style="margin: 2px 0 0 0; font-size: 11px;">Status: ${statusFiltro}</p></div></div><table width="100%" style="border-collapse: collapse; margin-bottom: 30px; font-size: 13px;"><thead><tr style="background-color: #f1f5f9;"><th style="padding: 12px; border: 1px solid #cbd5e1;">Data</th><th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Metros</th><th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Status</th></tr></thead><tbody>`;
+            linhas.forEach(l => { html += `<tr><td style="padding: 10px; border: 1px solid #cbd5e1;">${l.data}</td><td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold;">${l.metros}</td><td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center;">${l.status}</td></tr>`; });
+            html += `</tbody></table><div style="display: flex; justify-content: flex-end; margin-bottom: 40px;"><div style="width: 300px; background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px;"><div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span style="font-weight: bold;">Total de Metros:</span><span style="font-weight: 900; font-size: 16px;">${totalMetros}</span></div><div style="display: flex; justify-content: space-between; border-top: 1px solid #e2e8f0; padding-top: 8px;"><span style="font-weight: bold;">Valor a Pagar:</span><span style="font-weight: 900; color: #1d4ed8; font-size: 18px;">${valorTotal}</span></div></div></div><div style="display: flex; justify-content: space-between; margin-top: 60px;"><div style="text-align: center; width: 40%;"><div style="border-top: 1px solid #94a3b8; padding-top: 10px;"><strong>RV NEGÓCIOS E COMPANHIA</strong><br><span style="font-size: 11px;">Contratante</span></div></div><div style="text-align: center; width: 40%;"><div style="border-top: 1px solid #94a3b8; padding-top: 10px;"><strong>${terc.nome.toUpperCase()}</strong><br><span style="font-size: 11px;">Profissional</span></div></div></div><div style="text-align: center; font-size: 10px; color: #94a3b8; margin-top: 40px; border-top: 1px dashed #e2e8f0; padding-top: 15px;">Emitido em ${hoje} - RV Negócios</div></div>`;
+            document.getElementById('print-area').innerHTML = html;
+            setTimeout(() => window.print(), 300);
+        }
+
+        // Recibo do modal de metros
+        function imprimirReciboMetrosDoModal() {
+            const tercId = document.getElementById('saldo-terc-id').value;
+            const terc = STATE.terceirizados.find(t => t.id === tercId);
+            if (!terc) return;
+            const totalMetros = document.getElementById('saldo-metros-total-metros').innerText;
+            const valorTotal = document.getElementById('saldo-metros-total-valor').innerText;
+            const dataInicio = document.getElementById('saldo-metros-data-inicio').value;
+            const dataFim = document.getElementById('saldo-metros-data-fim').value;
+            const hoje = new Date().toLocaleDateString('pt-BR');
+            const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+            const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+            const periodo = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
+            const html = `<div style="font-family: 'Segoe UI', Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;"><img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" /><div style="text-align: right;"><h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO DE METRAGEM</h1><p style="margin: 5px 0 0 0; font-size: 18px; color: #1d4ed8; font-weight: bold;">VALOR: ${valorTotal}</p></div></div><div style="font-size: 14px; line-height: 1.8; text-align: justify; margin-bottom: 40px;">Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA</strong> (CNPJ: 61.893.912/0001-24), a importância de <strong>${valorTotal}</strong>, referente ao pagamento de produção por metragem no período de <strong>${periodo}</strong>, totalizando <strong>${totalMetros} metros</strong> com o valor acordado de <strong>${formatMoney(terc.valor_metro)} por metro</strong>.</div><div style="font-size: 14px; margin-bottom: 40px;">Para maior clareza, firmo(amos) o presente recibo para que produza os seus efeitos legais.</div><div style="text-align: center; margin-bottom: 30px; font-size: 14px;">Jataí - GO, ${hoje}.</div><div style="margin-top: 60px; display: flex; justify-content: center;"><div style="text-align: center; width: 60%; border-top: 1px solid #000; padding-top: 10px;"><strong>${terc.nome.toUpperCase()}</strong><br><span style="font-size: 12px; color: #64748b;">CPF/CNPJ: ${terc.cpf_cnpj || '_______________________'} | RG: ${terc.rg || '_______________________'}</span></div></div></div>`;
+            document.getElementById('print-area').innerHTML = html;
+            setTimeout(() => window.print(), 300);
+        }
+
+        // ====== FUNÇÕES CONTRATOS / DOCUMENTOS ======
+        function abrirModalDocumentos(equipe_id) {
+            let pessoa = STATE.equipe.find(x => x.id == equipe_id);
+            let isTerc = false;
+            if (!pessoa) { pessoa = STATE.terceirizados.find(x => x.id == equipe_id); isTerc = true; }
+            if (!pessoa) return showToast('Colaborador não encontrado.', true);
+            document.getElementById('doc-equipe-id').value = equipe_id;
+            document.getElementById('doc-equipe-nome').innerText = `Colaborador: ${pessoa.nome}`;
+            const btnAssinar = document.getElementById('btn-assinar-doc');
+            if(pessoa.contrato_assinado) {
+                btnAssinar.innerHTML = `<i data-lucide="check-double" class="w-4 h-4"></i> Contrato Já Assinado`;
+                btnAssinar.classList.remove('bg-green-600'); btnAssinar.classList.add('bg-emerald-700');
+            } else {
+                btnAssinar.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i> Marcar como Assinado`;
+                btnAssinar.classList.remove('bg-emerald-700'); btnAssinar.classList.add('bg-green-600');
+            }
+            document.getElementById('modal-docs-equipe').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        async function marcarContratoAssinado() {
+            const id = document.getElementById('doc-equipe-id').value;
+            const isTerc = STATE.terceirizados.some(t => t.id == id);
+            if (isTerc) { showToast("Contrato de terceirizado em desenvolvimento.", false); document.getElementById('modal-docs-equipe').classList.add('hidden'); return; }
+            showLoading(true);
+            const { error } = await sb.from('jsp_equipe').update({ contrato_assinado: true }).eq('id', id);
+            if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
+            showToast("Contrato marcado como assinado com sucesso!");
+            document.getElementById('modal-docs-equipe').classList.add('hidden');
+            loadData();
+        }
+
+        function imprimirDocumento() {
+            const id = document.getElementById('doc-equipe-id').value;
+            const tipo = document.getElementById('doc-tipo-select').value;
+            if (!tipo) { alert("Por favor, selecione um documento na lista antes de imprimir."); return; }
+            let pessoa = STATE.equipe.find(x => x.id == id);
+            let isTerc = false;
+            if (!pessoa) { pessoa = STATE.terceirizados.find(x => x.id == id); isTerc = true; }
+            if (!pessoa) { alert("Erro ao encontrar os dados do colaborador."); return; }
+            const e = { nome: pessoa.nome || '', cpf: isTerc ? (pessoa.cpf_cnpj || '') : (pessoa.cpf || ''), rg: pessoa.rg || '', endereco: pessoa.endereco || '', categoria: isTerc ? 'TERCEIRIZADO (METRO)' : (pessoa.categoria || 'Geral'), valor_diaria: isTerc ? parseFloat(pessoa.valor_metro || 0) : parseFloat(pessoa.valor_diaria || 0), matricula: isTerc ? 'TERC' : (pessoa.matricula || '000'), obra_atual_id: pessoa.obra_atual_id, data_contrato: !isTerc ? pessoa.data_contrato : null, contrato_assinado: pessoa.contrato_assinado || false };
+            const dataAtual = new Date(); const dia = dataAtual.getDate(); const meses = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"]; const mes = meses[dataAtual.getMonth()]; const ano = dataAtual.getFullYear(); const dataExtenso = `${dia} de ${mes} de ${ano}`; const hojeCurto = dataAtual.toLocaleDateString('pt-BR');
+            const obraVinculada = STATE.obras.find(o => o.id == e.obra_atual_id);
+            const enderecoObra = obraVinculada ? (obraVinculada.endereco || obraVinculada.nome) : 'Endereço não informado / Obra não definida';
+            const diariaTexto = formatMoney(e.valor_diaria || 0);
+            const matricula = parseFloat(e.matricula || 0);
+            let dataTerminoContrato = "____/____/______";
+            if (obraVinculada && obraVinculada.data_termino) { const partes = obraVinculada.data_termino.split('-'); dataTerminoContrato = `${partes[2]}/${partes[1]}/${partes[0]}`; }
+            let dataInicioContrato = "____/____/______";
+            if (e.data_contrato) { const p = e.data_contrato.split('-'); dataInicioContrato = `${p[2]}/${p[1]}/${p[0]}`; }
+            let titulo = ""; let corpoTexto = ""; let nomeContratanteAssinatura = "";
+            if (tipo === 'epi') {
+                titulo = "FICHA DE EPI / TERMO DE RECEBIMENTO"; nomeContratanteAssinatura = "RV NEGÓCIOS E COMPANHIA LTDA";
+                corpoTexto = `<div style="font-size: 12pt; line-height: 1.5; text-align: justify;"><p style="margin-bottom: 5px;"><strong>Nome do Prestador de Serviços:</strong> ${(e.nome || '').toUpperCase()}</p><p style="margin-bottom: 15px;"><strong>Atividade a ser desenvolvida:</strong> ${(e.categoria || 'Geral').toUpperCase()}</p><p style="margin-bottom: 20px;">"Declaro ter recebido orientação sobre o uso correto dos Equipamentos de Segurança, bem como, estou ciente de que sou obrigado a usá-los sob pena de SUSPENSÃO ou CANCELAMENTO do contrato de prestação dos serviços de autônomo."</p><h3 style="text-align: center; font-size: 12pt; margin-bottom: 10px; font-weight: bold;">RECEBIMENTO</h3><table style="width: 100%; border-collapse: collapse; text-align: center; border: 1px solid #000; font-size: 10pt; margin-bottom: 20px;"><thead><tr style="background-color: #f1f5f9;"><th style="border: 1px solid #000; padding: 6px;">DATA</th><th style="border: 1px solid #000; padding: 6px;">EPI (Descrição)</th><th style="border: 1px solid #000; padding: 6px;">C.A.</th><th style="border: 1px solid #000; padding: 6px;">QUANT.</th><th style="border: 1px solid #000; padding: 6px;">Motivo da retirada</th><th style="border: 1px solid #000; padding: 6px;">Assinatura</th></tr></thead><tbody><tr><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;">Capacete</td><td style="border: 1px solid #000; padding: 6px;">21420</td><td style="border: 1px solid #000; padding: 6px;">1</td><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;"></td></tr><tr><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;">Sapato de segurança</td><td style="border: 1px solid #000; padding: 6px;">24312</td><td style="border: 1px solid #000; padding: 6px;">1</td><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;"></td></tr><tr><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;">Óculos</td><td style="border: 1px solid #000; padding: 6px;">07732</td><td style="border: 1px solid #000; padding: 6px;">1</td><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;"></td></tr><tr><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;">Protetor Auricular</td><td style="border: 1px solid #000; padding: 6px;">07790</td><td style="border: 1px solid #000; padding: 6px;">1</td><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;"></td></tr><tr><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;">Luva</td><td style="border: 1px solid #000; padding: 6px;">00501</td><td style="border: 1px solid #000; padding: 6px;">1</td><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;"></td></tr></tbody></table><p style="margin-bottom: 10px;">Eu, <strong>${(e.nome || '').toUpperCase()}</strong>, declaro ter recebido os equipamentos de proteção necessários para execução da função ao qual irei exercer COMO <strong>${(e.categoria || 'SERVENTE').toUpperCase()}</strong> POR OBRA CERTA OU PRAZO DETERMINADO, bem como, o treinamento de utilização da forma correta.</p><p>Por fim, estando ciente e de acordo assino este termo de compromisso em duas vias.</p></div>`;
+            } else {
+                const isMetragem = tipo === 'metragem';
+                const isContrato2 = tipo === 'contrato2';
+                titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE FORNECIMENTO DE MÃO DE OBRA QUALIFICADA PARA SERVIÇOS DE CONSTRUÇÃO CIVIL <br> SEM VÍNCULO EMPREGATÍCIO <br><br> Nº ${matricula}/2026 | JATAÍ – GOIÁS`;
+                nomeContratanteAssinatura = "RV NEGOCIOS E COMPANHIA LTDA";
+                const atividadeDesc = (isMetragem || isContrato2)
+                    ? `Coordenação, supervisão e organização das atividades de obra no local de execução dos serviços; orientação e distribuição das tarefas à equipe operacional conforme cronograma definido pela CONTRATANTE; acompanhamento do abastecimento, conferência e correta utilização dos materiais nos pontos indicados; apoio à adequação do espaço para início da obra, incluindo impluração e organização de áreas de almoxarifado, engenharia e administrativo; fiscalização da limpeza e organização da área de trabalho, garantindo a correta destinação dos resíduos e materiais excedentes; acompanhamento das atividades de demolição, desde a cobertura até as fundações, assegurando a execução conforme orientações técnicas; supervisão da implantação de gabarito, locação da obra, escavação, compactação e execução das fundações; acompanhamento das etapas de concretagem de blocos, vigas baldrames, pilares, vigas superiores, lajes e demais elementos estruturais; verificação da correta desforma de caixarias e aplicação de impermeabilizações; controle da produção, transporte e aplicação de argamassas para alvenaria, chapisco, reboco e emboço; orientação quanto à separação, transporte e instalação de materiais hidráulicos e elétricos; supervisão da preparação de superfícies para acabamento, incluindo lixamento, preparo para pintura, execução de pisos e contrapisos; acompanhamento das marcações e cortes em alvenaria para passagem de eletrodutos; controle da limpeza geral do canteiro de obras; apoio à quantificação de materiais e acompanhamento da produção de argamassa para assentamento de pisos cerâmicos e revestimentos, sempre conforme as diretrizes técnicas e orientações da CONTRATANTE.`
+                    : `Transporte de materiais entre ambientes de descarga até o local de utilização; abastecimento de materiais nos postos indicados pela CONTRATANTE; adequação de espaço para início da obra; auxílio na execução de galpão de almoxarifado, galpão de engenharia e administrativo; limpeza da área de trabalho com destinação adequada dos materiais; demolição de salas desde a cobertura até as fundações; implantação de gabarito; locação de obra; escavação e compactação de fundação; concretagem de blocos de fundação; concretagem de vigas baldrames; concretagem de pilares e vigas superiores; concretagem de laje; desforma de caixarias; impermeabilização de estruturas; produção e transporte de argamassa para alvenaria, chapisco, reboco e emboço; separação e transporte de materiais hidráulicos e elétricos; lixamento de paredes; preparação de áreas para pintura; execução de concreto dosado para pisos e contrapisos; marcação e cortes em alvenaria para passagem de eletrodutos; limpeza do canteiro de obras; quantificação de materiais; produção de argamassa para assentamento de pisos cerâmicos e revestimentos de parede, conforme indicação da CONTRATANTE.`;
+                const clausulaValor = isMetragem
+                    ? `<strong>4.1.</strong> O valor será de <strong>${diariaTexto}</strong> por metragem diária entregue.`
+                    : `<strong>4.1.</strong> O valor será de <strong>${diariaTexto}</strong> por entrega diária completa.`;
+                const cnpjContratante = isContrato2 || isMetragem ? '61.893.912-0001-24' : '61.893.912/0001-24';
+                const endContratante = isContrato2 || isMetragem ? 'Rua Mineiros, sn - Vila Santa Maria, CEP: 75.800-094' : 'Rua Mineiros, S/N - QD 09 LT 12  - CEP 75.800-094, Santa Maria';
+                corpoTexto = `<div style="text-align: justify; font-size: 12pt; line-height: 1.6;"><p style="text-indent: 40px; margin-bottom: 20px;">Contrato de Prestação de Serviços celebrado entre as seguintes partes:</p><p style="margin-bottom: 5px;"><strong>CONTRATANTE</strong></p><p style="text-indent: 40px; margin-bottom: 15px;"><strong>RV NEGOCIOS E COMPANHIA LTDA</strong>, pessoa jurídica de direito privado, inscrita no CNPJ nº ${cnpjContratante}, com sede na ${endContratante} - no Município de Jataí, Estado de Goiás, neste ato representada por seu titular NÚBIA LAFAIETE APARECIDA DA SILVA, brasileiro, portador do CPF nº 320.993.981-00, residente e domiciliado na ${endContratante}, Município de Jataí, Estado de Goiás, doravante denominado(a) simplesmente <strong>CONTRATANTE</strong>.</p><p style="margin-bottom: 5px;"><strong>CONTRATADO</strong></p><p style="text-indent: 40px; margin-bottom: 15px;"><strong>${(e.nome || '').toUpperCase()}</strong>, portador do RG ${e.rg || '______________'}, inscrito no CPF nº ${e.cpf || '______________'} residente e domiciliado na ${e.endereco || '____________________________________________________'}, no Município de Jataí, Estado de Goiás, doravante denominado simplesmente <strong>CONTRATADO</strong>.</p><p style="text-indent: 40px; margin-bottom: 30px;">As partes acima identificadas, tendo em vista o interesse mútuo, resolvem celebrar o presente contrato de prestação de serviços, que se regerá pelas cláusulas e condições seguintes:</p><p style="margin-bottom: 15px;"><strong>CLÁUSULA PRIMEIRA – DO OBJETO</strong></p><p style="text-indent: 40px; margin-bottom: 10px;">O presente contrato tem como objeto a prestação de serviços com o fornecimento de mão de obra qualificada para execução de obra de construção civil, a serem executados pelo CONTRATADO, compreendendo as atividades descritas no item 1.3.1, conforme:</p><div style="margin-left: 40px; margin-bottom: 15px;"><div style="margin-bottom: 8px;"><strong>1.1.</strong> O CONTRATADO realizará os serviços com sua própria mão de obra, ou mediante disponibilização de profissional integrante de sua equipe, com qualificações iguais ou superiores às exigidas.</div><div style="margin-bottom: 8px;"><strong>1.2.</strong> No caso de envio de subcontratado, os dados do(s) colaborador(es) deverão ser encaminhados com antecedência mínima de 48 (quarenta e oito) horas, acompanhados de documentos pessoais, comprovação de qualificação e programação dos períodos de atuação na obra.</div><div style="margin-bottom: 8px;"><strong>1.3.</strong> Na execução das atividades, o(s) profissional(is) deverá(ão) realizar os serviços conforme o objeto contratual abaixo:</div><div style="margin-left: 20px; margin-bottom: 8px; text-align: justify;"><strong>1.3.1.</strong> ${atividadeDesc}</div></div><p style="text-indent: 40px; margin-bottom: 10px;"><strong>Parágrafo Primeiro:</strong> As atividades serão executadas na obra localizada na <strong>${enderecoObra}</strong>.</p><p style="text-indent: 40px; margin-bottom: 30px;"><strong>Parágrafo Segundo:</strong> O CONTRATADO declara possuir capacidade técnica, experiência e disponibilidade para execução direta ou por meio de profissionais de sua equipe, responsabilizando-se pela qualidade e segurança dos serviços.</p><p style="margin-bottom: 15px;"><strong>CLÁUSULA SEGUNDA – DAS OBRIGAÇÕES DO CONTRATADO</strong></p><div style="margin-left: 40px; margin-bottom: 30px;"><div style="margin-bottom: 5px;"><strong>2.1.</strong> Executar os serviços com qualidade, presteza e diligência, observando normas técnicas e orientações da CONTRATANTE.</div><div style="margin-bottom: 5px;"><strong>2.2.</strong> Utilizar e exigir o uso de Equipamentos de Proteção Individual (EPIs), responsabilizando-se por sua correta utilização.</div><div style="margin-bottom: 5px;"><strong>2.3.</strong> Responsabilizar-se por danos causados a terceiros ou à CONTRATANTE por dolo ou culpa.</div><div style="margin-bottom: 5px;"><strong>2.4.</strong> Manter disciplina e ordem no local de trabalho.</div><div style="margin-bottom: 5px;"><strong>2.5.</strong> Emitir recibos de pagamento pelos serviços prestados.</div><div style="margin-bottom: 5px;"><strong>2.6.</strong> Arcar com despesas de deslocamento, alimentação e vestuário.</div><div style="margin-bottom: 5px;"><strong>2.7.</strong> Responsabilizar-se pelo recolhimento de todos os tributos incidentes (ISS, IR, INSS, entre outros).</div><div style="margin-bottom: 5px;"><strong>2.8.</strong> Cumprir rigorosamente os prazos estabelecidos.</div><div style="margin-bottom: 5px;"><strong>2.9.</strong> Manter todas as condições de habilitação durante a vigência do contrato.</div></div><p style="margin-bottom: 15px;"><strong>CLÁUSULA TERCEIRA – DAS OBRIGAÇÕES DO CONTRATANTE</strong></p><div style="margin-left: 40px; margin-bottom: 30px;"><div style="margin-bottom: 5px;"><strong>3.1.</strong> Fornecer informações e materiais necessários à execução dos serviços.</div><div style="margin-bottom: 5px;"><strong>3.2.</strong> Fiscalizar a execução dos serviços.</div><div style="margin-bottom: 5px;"><strong>3.3.</strong> Efetuar os pagamentos conforme estabelecido.</div><div style="margin-bottom: 5px;"><strong>3.4.</strong> Disponibilizar ambiente de trabalho seguro.</div><div style="margin-bottom: 5px;"><strong>3.5.</strong> Disponibilizar treinamentos obrigatórios, quando necessário, conforme normas regulamentadoras.</div></div><p style="margin-bottom: 15px;"><strong>CLÁUSULA QUARTA – DO VALOR E DA FORMA DE PAGAMENTO</strong></p><div style="margin-left: 40px; margin-bottom: 30px;"><div style="margin-bottom: 5px;">${clausulaValor}</div><div style="margin-bottom: 5px;"><strong>4.2.</strong> O pagamento será efetuado a cada 18 (dezoito) dias corridos, com medição quinzenal.</div><div style="margin-bottom: 5px;"><strong>4.3.</strong> O pagamento será realizado via transferência bancária para a conta indicada pelo CONTRATADO.</div></div><p style="margin-bottom: 15px;"><strong>CLÁUSULA QUINTA – DO PRAZO</strong></p><p style="text-indent: 40px; margin-bottom: 30px;">O contrato terá início em <strong>${dataInicioContrato}</strong> e término em <strong>${dataTerminoContrato}</strong>, podendo ser prorrogado até o limite de 24 (vinte e quatro) meses.</p><br><p style="margin-bottom: 15px;"><strong>CLÁUSULA SEXTA – DA RESCISÃO</strong></p><p style="text-indent: 40px; margin-bottom: 30px;">O contrato poderá ser rescindido por qualquer das partes mediante aviso prévio de 5 (cinco) dias, ou de forma imediata nos casos previstos neste instrumento.</p><br><p style="margin-bottom: 15px;"><strong>CLÁUSULA SÉTIMA – DA NATUREZA DO CONTRATO</strong></p><p style="text-indent: 40px; margin-bottom: 30px;">O presente contrato possui natureza civil, não gerando vínculo empregatício, sendo o CONTRATADO integralmente responsável por obrigações fiscais, previdenciárias e trabalhistas.</p><br><p style="margin-bottom: 15px;"><strong>CLÁUSULA OITAVA – DO SIGILO</strong></p><p style="text-indent: 40px; margin-bottom: 30px;">O CONTRATADO compromete-se a manter sigilo sobre informações da CONTRATANTE.</p><br><p style="margin-bottom: 15px;"><strong>CLÁUSULA NONA – DO ABANDONO DA OBRA</strong></p><p style="text-indent: 40px; margin-bottom: 30px;">Em caso de abandono injustificado, valores pendentes somente serão pagos após conclusão da etapa por terceiros e recebimento integral pela CONTRATANTE.</p><br><p style="margin-bottom: 15px;"><strong>CLÁUSULA DÉCIMA – DAS DISPOSIÇÕES GERAIS</strong></p><p style="text-indent: 40px; margin-bottom: 10px;">O contrato obriga as partes e seus sucessores.</p><div style="margin-left: 40px; margin-bottom: 10px;"><div style="margin-bottom: 5px;"><strong>10.1.</strong> Alterações somente por escrito.</div></div><p style="text-indent: 40px; margin-bottom: 30px;">Fica eleito o foro da comarca de Jataí-GO, para dirimir quaisquer controvérsias.</p></div>`;
+            }
+            const htmlDoc = `<div style="font-family: 'Times New Roman', Times, serif; width: 100%; padding: 20px 40px; box-sizing: border-box; color: #000;"><div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 30px;"><img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="display: block; margin: 0 auto; height: 70px;"><br><br><h2 style="margin: 0; font-size: 13pt; font-weight: bold; line-height: 1.3;">${titulo}</h2></div><div style="margin-bottom: 40px;">${corpoTexto}<br></div><div style="text-align: right; margin-bottom: 80px; font-size: 13pt;">Jataí – GO, ____/____/______.<br></div><div style="margin-top: 50px; display: flex; justify-content: space-between; font-size: 10pt;"><div style="text-align: center; width: 45%; border-top: 1px solid #000; padding-top: 10px;"><strong>${nomeContratanteAssinatura}</strong><br>CONTRATANTE</div><div style="text-align: center; width: 45%; border-top: 1px solid #000; padding-top: 10px;"><strong>${(e.nome || '').toUpperCase()}</strong><br>CONTRATADO(A)</div></div></div>`;
+            document.getElementById('print-area').innerHTML = htmlDoc;
+            setTimeout(() => { requestAnimationFrame(() => { window.print(); }); }, 800);
+        }
+
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
   </body>
