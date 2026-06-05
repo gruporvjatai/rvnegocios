@@ -7320,117 +7320,117 @@ function getColaboradoresUnificados() {
       }
 
       function imprimirChecagem() {
-  // Obtém os mesmos filtros da tela
-      const dataInicio = document.getElementById('eqp-filter-data-inicio').value;
-      const dataFim = document.getElementById('eqp-filter-data-fim').value;
-      const obraFiltro = document.getElementById('eqp-obra-filter').value;
-      const statusFiltro = document.getElementById('eqp-filter-status').value;
-      const tipoFiltro = document.getElementById('eqp-filter-tipo').value;
-    
-      const colaboradores = getColaboradoresUnificados();
-      
-      // Aplica os mesmos filtros da função renderEquipe
-      let fil = colaboradores.filter(c => {
+    // Obtém os mesmos filtros da tela
+    const dataInicio = document.getElementById('eqp-filter-data-inicio').value;
+    const dataFim = document.getElementById('eqp-filter-data-fim').value;
+    const obraFiltro = document.getElementById('eqp-obra-filter').value;
+    const statusFiltro = document.getElementById('eqp-filter-status').value;
+    const tipoFiltro = document.getElementById('eqp-filter-tipo').value;
+
+    const colaboradores = getColaboradoresUnificados();
+
+    // Aplica os mesmos filtros da função renderEquipe
+    let fil = colaboradores.filter(c => {
         if (obraFiltro && c.obra_atual_id != obraFiltro) return false;
         if (statusFiltro !== "todos") {
-          const isAtivo = statusFiltro === "true";
-          if ((c.ativo === true || c.ativo === 'true') !== isAtivo) return false;
+            const isAtivo = statusFiltro === "true";
+            if ((c.ativo === true || c.ativo === 'true') !== isAtivo) return false;
         }
         if (tipoFiltro !== 'todos' && c.tipo !== tipoFiltro) return false;
         return true;
-      });
-    
-      // Calcula os valores (diárias ou metros) conforme o período
-      const dados = [];
-      fil.forEach(c => {
+    });
+
+    // Calcula os valores (diárias ou metros) conforme o período
+    const dados = [];
+    fil.forEach(c => {
         let quantidade = 0;
         if (c.tipo === 'diaria') {
-          const saldo = calcularSaldoPendenteFuncionarioPorPeriodo(c.id, dataInicio, dataFim);
-          quantidade = saldo.totalDiarias;
+            const saldo = calcularSaldoPendenteFuncionarioPorPeriodo(c.id, dataInicio, dataFim);
+            quantidade = saldo.totalDiarias;
         } else {
-          const producao = STATE.producao_terc.filter(p => {
-            if (p.terceirizado_id !== c.id) return false;
-            if (dataInicio && p.data_registro < dataInicio) return false;
-            if (dataFim && p.data_registro > dataFim) return false;
-            return true;
-          });
-          // Para checagem, normalmente interessa o total produzido (pendente + pago)
-          const metrosPendentes = producao.filter(p => p.status !== 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros), 0);
-          const metrosPagos = producao.filter(p => p.status === 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros), 0);
-          quantidade = metrosPendentes + metrosPagos;
+            // Para terceirizados: considera APENAS a produção ainda PENDENTE (não paga)
+            const producao = STATE.producao_terc.filter(p => {
+                if (p.terceirizado_id !== c.id) return false;
+                if (dataInicio && p.data_registro < dataInicio) return false;
+                if (dataFim && p.data_registro > dataFim) return false;
+                return true;
+            });
+            // Soma apenas os metros com status diferente de 'PAGO' (ou seja, pendentes)
+            const metrosPendentes = producao.filter(p => p.status !== 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros), 0);
+            quantidade = metrosPendentes;
         }
-        if (quantidade > 0 || statusFiltro !== 'true') { // mostra mesmo se zero, mas filtro de ativos pode esconder
-          const obra = STATE.obras.find(o => o.id == c.obra_atual_id);
-          dados.push({
-            nome: c.nome,
-            quantidade: quantidade,
-            unidade: c.tipo === 'diaria' ? 'diárias' : 'm',
-            obra: obra ? obra.nome : 'Sem obra'
-          });
+        if (quantidade > 0 || statusFiltro !== 'true') {
+            const obra = STATE.obras.find(o => o.id == c.obra_atual_id);
+            dados.push({
+                nome: c.nome,
+                quantidade: quantidade,
+                unidade: c.tipo === 'diaria' ? 'diárias' : 'm',
+                obra: obra ? obra.nome : 'Sem obra'
+            });
         }
-      });
-    
-      // Ordena por nome
-      dados.sort((a, b) => a.nome.localeCompare(b.nome));
-    
-      if (dados.length === 0) {
+    });
+
+    // Ordena por nome
+    dados.sort((a, b) => a.nome.localeCompare(b.nome));
+
+    if (dados.length === 0) {
         showToast('Nenhum dado para exibir.', true);
         return;
-      }
-    
-      // Monta o HTML de impressão no mesmo padrão profissional
-      const hoje = new Date().toLocaleDateString('pt-BR');
-      const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : 'Início';
-      const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'Fim';
-      const periodoExibicao = (dataInicio || dataFim) ? `${dataIniFormatada} a ${dataFimFormatada}` : 'Todo o período';
-    
-      let html = `
-        <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; padding: 30px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 15px; margin-bottom: 25px;">
-            <div>
-              <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 70px;" />
-              <div style="font-size: 12px; color: #475569; margin-top: 5px;">CNPJ: 61.893.912/0001-24</div>
-              <div style="font-size: 12px; color: #475569;">Rua Mineiros, 530 | Jataí - GO | (64) 99981-5852</div>
-            </div>
-            <div style="text-align: right;">
-              <h2 style="margin: 0; font-size: 24px; font-weight: 900; color: #0f172a;">PLANILHA DE CHECAGEM</h2>
-              <p style="margin: 5px 0 0 0; font-size: 14px; color: #1d4ed8; font-weight: bold;">Período: ${periodoExibicao}</p>
-            </div>
-          </div>
-    
-          <table width="100%" style="border-collapse: collapse; font-size: 13px; margin-top: 20px;">
-            <thead>
-              <tr style="background-color: #f1f5f9;">
-                <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: left;">Nome</th>
-                <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: center;">Qtd. Diárias / Metros</th>
-                <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: left;">Obra</th>
-              </tr>
-            </thead>
-            <tbody>
-      `;
-    
-      dados.forEach(d => {
-        html += `<tr>
-          <td style="padding: 8px; border: 1px solid #cbd5e1;">${d.nome.toUpperCase()}</td>
-          <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${d.quantidade.toFixed(2)} ${d.unidade}</td>
-          <td style="padding: 8px; border: 1px solid #cbd5e1;">${d.obra}</td>
-        </tr>`;
-      });
-    
-      html += `
-            </tbody>
-          </table>
-    
-          <div style="text-align: center; margin-top: 50px; font-size: 11px; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 15px;">
-            Documento gerado em ${hoje} pela RV Negócios.<br>
-            Esta planilha é uma checagem rápida e não substitui a folha de pagamento oficial.
-          </div>
-        </div>
-      `;
-    
-      document.getElementById('print-area').innerHTML = html;
-      setTimeout(() => window.print(), 300);
     }
+
+    // Monta o HTML de impressão
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : 'Início';
+    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'Fim';
+    const periodoExibicao = (dataInicio || dataFim) ? `${dataIniFormatada} a ${dataFimFormatada}` : 'Todo o período';
+
+    let html = `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; padding: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 15px; margin-bottom: 25px;">
+                <div>
+                    <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 70px;" />
+                    <div style="font-size: 12px; color: #475569; margin-top: 5px;">CNPJ: 61.893.912/0001-24</div>
+                    <div style="font-size: 12px; color: #475569;">Rua Mineiros, 530 | Jataí - GO | (64) 99981-5852</div>
+                </div>
+                <div style="text-align: right;">
+                    <h2 style="margin: 0; font-size: 24px; font-weight: 900; color: #0f172a;">PLANILHA DE CHECAGEM</h2>
+                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #1d4ed8; font-weight: bold;">Período: ${periodoExibicao}</p>
+                </div>
+            </div>
+
+            <table width="100%" style="border-collapse: collapse; font-size: 13px; margin-top: 20px;">
+                <thead>
+                    <tr style="background-color: #f1f5f9;">
+                        <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: left;">Nome</th>
+                        <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: center;">Qtd. Diárias / Metros</th>
+                        <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: left;">Obra</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    dados.forEach(d => {
+        html += `<tr>
+            <td style="padding: 8px; border: 1px solid #cbd5e1;">${d.nome.toUpperCase()}</td>
+            <td style="padding: 8px; border: 1px solid #cbd5e1; text-align: center;">${d.quantidade.toFixed(2)} ${d.unidade}</td>
+            <td style="padding: 8px; border: 1px solid #cbd5e1;">${d.obra}</td>
+        </tr>`;
+    });
+
+    html += `
+                </tbody>
+            </table>
+
+            <div style="text-align: center; margin-top: 50px; font-size: 11px; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 15px;">
+                Documento gerado em ${hoje} pela RV Negócios.<br>
+                Esta planilha é uma checagem rápida e não substitui a folha de pagamento oficial.
+            </div>
+        </div>
+    `;
+
+    document.getElementById('print-area').innerHTML = html;
+    setTimeout(() => window.print(), 300);
+}
       
       
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
