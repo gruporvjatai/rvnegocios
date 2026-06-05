@@ -4118,6 +4118,7 @@ function executarImpressaoFolha() {
         let quantidade = 0;
         
         if (c.tipo === 'diaria') {
+            // Lógica original para diaristas (baseada em despesas financeiras)
             const despesasPonto = STATE.logs.filter(l => 
                 l.tipo === 'despesa' &&
                 l.produto_nome && l.produto_nome.includes(`Pagamento de ponto - ${c.nome}`) &&
@@ -4156,31 +4157,49 @@ function executarImpressaoFolha() {
                 });
             }
         } else {
-            const producao = STATE.producao_terc.filter(p => {
-                if (p.terceirizado_id !== c.id) return false;
-                if (dataInicio && p.data_registro < dataInicio) return false;
-                if (dataFim && p.data_registro > dataFim) return false;
-                return true;
+            // ========== NOVA LÓGICA PARA METRAGEM (TERCEIRIZADOS) ==========
+            // Agora também busca nas despesas financeiras, igual aos diaristas
+            
+            // Busca todas as despesas relacionadas a este terceirizado
+            const despesasTerc = STATE.logs.filter(l => 
+                l.tipo === 'despesa' &&
+                l.categoria === 'Mão de Obra (Terceirizado)' &&
+                l.observacao && l.observacao.includes(`Terceirizado: ${c.nome}`) &&
+                (statusFinanceiro === 'TODOS' || l.status_financeiro === statusFinanceiro)
+            );
+            
+            let despesasFiltradas = despesasTerc;
+            if (dataInicio || dataFim) {
+                despesasFiltradas = despesasTerc.filter(d => {
+                    const dataDesp = d.data ? d.data.split('T')[0] : '';
+                    if (dataInicio && dataDesp < dataInicio) return false;
+                    if (dataFim && dataDesp > dataFim) return false;
+                    return true;
+                });
+            }
+            
+            if (despesasFiltradas.length === 0) return;
+            
+            let totalValor = 0;
+            let totalMetros = 0;
+            despesasFiltradas.forEach(d => {
+                totalValor += parseFloat(d.valor_total);
+                // Extrai a metragem salva na observação (padrão: "Metragem: 150.00 m")
+                const metrosMatch = d.observacao?.match(/Metragem:\s*([\d\.]+)/);
+                if (metrosMatch) totalMetros += parseFloat(metrosMatch[1]);
             });
             
-            const metros = statusFinanceiro === 'PAGO' 
-                ? producao.filter(p => p.status === 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros), 0)
-                : (statusFinanceiro === 'PENDENTE' 
-                    ? producao.filter(p => p.status !== 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros), 0)
-                    : producao.reduce((acc, p) => acc + parseFloat(p.metros), 0));
-            
-            if (metros === 0) return;
-            
-            const valorTotalMetro = metros * c.valor_base;
-            dadosFolha.push({
-                nome: c.nome,
-                pix: c.chave_pix || 'Não informado',
-                tipo: 'Metro',
-                unidade: 'm',
-                quantidade: metros,
-                valor_unitario: c.valor_base,
-                valor_total: valorTotalMetro
-            });
+            if (totalValor > 0) {
+                dadosFolha.push({
+                    nome: c.nome,
+                    pix: c.chave_pix || 'Não informado',
+                    tipo: 'Metro',
+                    unidade: 'm',
+                    quantidade: totalMetros,
+                    valor_unitario: c.valor_base, // valor por metro do cadastro
+                    valor_total: totalValor
+                });
+            }
         }
     });
     
