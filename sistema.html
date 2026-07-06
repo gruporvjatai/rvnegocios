@@ -7431,6 +7431,26 @@ function getColaboradoresUnificados() {
     document.getElementById('print-area').innerHTML = html;
     setTimeout(() => window.print(), 300);
 }      
+
+
+        async function toggleStatusEquipe(id, isAtivo) {
+          const acao = isAtivo ? "DESATIVAR" : "REATIVAR";
+          if (!confirm(`Tem certeza que deseja ${acao} este colaborador?`)) return;
+          
+          showLoading(true);
+          try {
+              const { error } = await sb.from('jsp_equipe')
+                  .update({ ativo: !isAtivo })
+                  .eq('id', id);
+              if (error) throw error;
+              showToast(`Status atualizado com sucesso!`);
+              await loadData(); // recarrega a lista e atualiza a tela
+          } catch (err) {
+              showToast("Erro: " + err.message, true);
+          } finally {
+              showLoading(false);
+          }
+}
       
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
