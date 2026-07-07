@@ -4869,9 +4869,8 @@ function executarImpressaoFolha() {
             <div style="text-align: right; margin-bottom: 80px; font-size: 13pt;">
                 Jataí – GO, ____/____/______.<br><br>
             </div>
-            
-            <div style="margin-top: 50px; display: flex; justify-content: space-between; font-size: 10pt;">
-              <img src="https://i.ibb.co/N6zJPR8J/ASSINATURA-NUBIA.png" style="height: 50px; margin-bottom: 5px;"><br>  
+            <!-- =================================================================================================== -->
+            <!--<div style="margin-top: 50px; display: flex; justify-content: space-between; font-size: 10pt;">               
                 <div style="text-align: center; width: 45%; border-top: 1px solid #000; padding-top: 10px;">      
                     <strong>${nomeContratanteAssinatura}</strong><br>
                     CONTRATANTE
@@ -4880,7 +4879,29 @@ function executarImpressaoFolha() {
                     <strong>${(e.nome || '').toUpperCase()}</strong><br>
                     CONTRATADO(A)
                 </div>
-            </div>        
+            </div>-->
+            <!-- =================================================================================================== -->
+
+            <div style="text-align: center; width: 45%;">
+              <!-- Linha da assinatura -->
+              <div style="border-top: 1px solid #000; margin-top: 40px; position: relative;">
+                <!-- Imagem sobre a linha (sobreposta) -->
+                <img src="https://i.ibb.co/N6zJPR8J/ASSINATURA-NUBIA.png" 
+                     style="height: 50px; 
+                            position: absolute; 
+                            top: -25px; 
+                            left: 50%; 
+                            transform: translateX(-50%);
+                            background: white; 
+                            padding: 0 10px;">
+              </div>
+              <div style="margin-top: 10px;">
+                <strong>${nomeContratanteAssinatura}</strong><br>
+                CONTRATANTE
+              </div>
+            </div>
+
+            
         </div>
     `;
     
