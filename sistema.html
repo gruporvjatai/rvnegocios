@@ -4419,17 +4419,30 @@ function executarImpressaoFolha() {
     const matricula = parseFloat(e.matricula || 0);
 
     // Data de término (da obra)
-    let dataTerminoContrato = "____/____/______";
+    /*let dataTerminoContrato = "____/____/______";
     if (obraVinculada && obraVinculada.data_termino) {
         const partes = obraVinculada.data_termino.split('-');
         dataTerminoContrato = `${partes[2]}/${partes[1]}/${partes[0]}`;
-    }
+    }*/
 
     // Data de início (apenas equipe tem data_contrato)
     let dataInicioContrato = "____/____/______";
     if (e.data_contrato) {
         const p = e.data_contrato.split('-');
         dataInicioContrato = `${p[2]}/${p[1]}/${p[0]}`;
+
+
+      let dataTerminoContrato = "____/____/______";
+      // Calcula 120 dias após a data de início do contrato do funcionário
+      if (e.data_contrato) {
+          const partes = e.data_contrato.split('-');
+          const dataInicio = new Date(partes[0], partes[1] - 1, partes[2]);
+          dataInicio.setDate(dataInicio.getDate() + 120);
+          const dia = String(dataInicio.getDate()).padStart(2, '0');
+          const mes = String(dataInicio.getMonth() + 1).padStart(2, '0');
+          const ano = dataInicio.getFullYear();
+          dataTerminoContrato = `${dia}/${mes}/${ano}`;
+      }
     }    // ---------------------------------------------------------
     
     let titulo = "";
@@ -4480,7 +4493,7 @@ function executarImpressaoFolha() {
         
         corpoTexto = `
         <div style="text-align: justify; font-size: 12pt; line-height: 1.6;">
-            <p style="text-indent: 40px; margin-bottom: 20px;">Contrato de Prestação de Serviços celebrado entre as seguintes partes:</p>
+            <p style="text-indent: 40px; margin-bottom: 5px;">Contrato de Prestação de Serviços celebrado entre as seguintes partes:</p>
 
             <p style="margin-bottom: 5px;"><strong>CONTRATANTE</strong></p>
             <p style="text-indent: 40px; margin-bottom: 15px;"><strong>RV NEGOCIOS E COMPRANHIA LTDA</strong>, pessoa jurídica de direito privado, inscrita no CNPJ nº 61.893.912/0001-24, com sede na Rua Mineiros, S/N - QD 09 LT 12  - CEP 75.800-094, Santa Maria, no Município de Jataí, Estado de Goiás, neste ato representada por seu titular NÚBIA LAFAIETE APARECIDA DA SILVA, brasileiro, portador do CPF nº 320.993.981-00, residente e domiciliado na Rua Mineiros, S/N - QD 09 LT 12  - CEP 75.800-094, Santa Maria, Município de Jataí, Estado de Goiás, doravante denominado(a) simplesmente <strong>CONTRATANTE</strong>.</p>
@@ -4579,7 +4592,6 @@ function executarImpressaoFolha() {
 
 
             <br>
-            <br>
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA DÉCIMA – DAS DISPOSIÇÕES GERAIS</strong></p>
             <p style="text-indent: 40px; margin-bottom: 10px;"><strong>10.</strong>O presente contrato obriga as partes e seus sucessores.</p>
             <div style="margin-left: 40px; margin-bottom: 10px;">
@@ -4589,7 +4601,6 @@ function executarImpressaoFolha() {
             <br>
             <br>
             <p style="text-indent: 40px; margin-bottom: 30px;">Fica eleito o foro da comarca de Jataí, estado de Goiás, para dirimir quaisquer dúvidas ou litígios decorrentes do presente contrato, renunciando as partes a qualquer outro, por mais privilegiado que seja.</p>
-            <br>
             <p style="text-indent: 40px; margin-bottom: 30px;">Por estarem assim justos e contratados, as partes assinam o presente termo contratual em 2 (duas) vias de igual teor e forma.</p>
         </div>`;
     
@@ -4809,7 +4820,7 @@ function executarImpressaoFolha() {
             </div>
             
             <div style="text-align: right; margin-bottom: 80px; font-size: 13pt;">
-                Jataí – GO, ____/____/______.<br>
+                Jataí – GO, ____/____/______.<br><br>
             </div>
             
             <div style="margin-top: 50px; display: flex; justify-content: space-between; font-size: 10pt;">
