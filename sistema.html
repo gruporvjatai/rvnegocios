@@ -4444,6 +4444,7 @@ function executarImpressaoFolha() {
           const ano = dataInicio.getFullYear();
           dataTerminoContrato = `${dia}/${mes}/${ano}`;
       }
+      
 
 
     // ---------------------------------------------------------
@@ -4491,7 +4492,7 @@ function executarImpressaoFolha() {
         </div>
         `;
     } else if (tipo === 'contrato1') {
-        titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS POR EMPREITADA PARA EXECUÇÃO DE ETAPAS DE OBRA SEM VÍNCULO EMPREGATÍCIO <br><br> Nº ${matricula}/2026 | JATAÍ – GOIÁS`;
+        titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS POR EMPREITADA PARA EXECUÇÃO DE ETAPAS DE OBRA SEM VÍNCULO EMPREGATÍCIO <br><br> Nº ${matricula}/${ano} | JATAÍ – GOIÁS`;
         nomeContratanteAssinatura = "RV NEGOCIOS E COMPANHIA LTDA";
         
         corpoTexto = `
@@ -4507,13 +4508,13 @@ function executarImpressaoFolha() {
             <p style="text-indent: 40px; margin-bottom: 30px;">As partes acima identificadas, tendo em vista o interesse mútuo, resolvem celebrar o presente contrato de prestação de serviços, que se regerá pelas cláusulas e condições seguintes:</p>
 
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA PRIMEIRA – DO OBJETO</strong></p>
-            <p style="text-indent: 30px; margin-bottom: 10px;"><strong>1.</strong> O presente contrato tem como objeto a prestação de serviços para execução integral do FORNECIMENTO DE MÃO DE OBRA PARA - EXECUÇÃO DE FECHAMENTO DE REBOCO INTERNO, EXECUÇÃO DE CAIXAS PLUVIAIS DE ALVENARIA, ALVENARIA DE PLATIMBANDA, REVESTIMENTO DE BANHEIRO, REVESTIMENTO DE PAREDE INTERNA E EXTERNA, EXECUÇÃO DE PASSEIO E EXECUÇÃO PISO DE CONCRETO, em obra de construção da <strong>${enderecoObra}</strong> situada na cidade de Jataí no estado de Goiás, a serem executados pelo CONTRATADO, conforme os termos que se determinam a seguir:</p>
+            <p style="text-indent: 30px; margin-bottom: 10px;"><strong>1.</strong> O presente contrato tem como objeto a prestação de serviços para execução integral do <strong>FORNECIMENTO DE MÃO DE OBRA PARA - EXECUÇÃO DE FECHAMENTO DE REBOCO INTERNO, EXECUÇÃO DE CAIXAS PLUVIAIS DE ALVENARIA, ALVENARIA DE PLATIMBANDA, REVESTIMENTO DE BANHEIRO, REVESTIMENTO DE PAREDE INTERNA E EXTERNA, EXECUÇÃO DE PASSEIO E EXECUÇÃO PISO DE CONCRETO</strong>, em obra de construção da <strong>${enderecoObra}</strong> situada na cidade de Jataí no estado de Goiás, a serem executados pelo CONTRATADO, conforme os termos que se determinam a seguir:</p>
             
             <div style="margin-left: 50px; margin-bottom: 15px;">
                 <div style="margin-bottom: 5px;"><strong>1.1.</strong> O contratado executará os serviços com autonomia técnica, observando as diretrizes do projeto, sem subordinação hierárquica conforme levantamentos realizados, projetos disponibilizados e com a devida atenção aos requisitos estabelecidos em normas técnicas e certificações de qualidade para garantir a integralidade e eficiência na execução do objeto;</div>
                 <div style="margin-bottom: 5px;"><strong>1.2.</strong> É permitido a subcontratação de até 70% dos serviços, desde que, seja encaminhado intenção de subcontratação para verificação da qualificação e análise de perfil do executor subcontratado com antecedência mínima de 72h, deverão ser encaminhados os documentos pessoais e qualificações técnicas, bem como, a programação de quais etapas/períodos o subcontratado estará disposto (s) no local da obra; </div>
                 <div style="margin-bottom: 5px;"><strong>1.3.</strong> Após aceitação da subcontratação, deverá ser encaminhado além dos documentos pessoais de contratação, as certidões de regularidade com os órgãos governamentais (municipal, estadual, federal, trabalhista e do FGTS);</div>
-                <div style="margin-bottom: 5px;"><strong>1.4.</strong> Na execução das atividades, o contratado deverá realizar a execução dos serviços conforme objeto contratual– detalhamento do objeto:</div>
+                <div style="margin-bottom: 5px;"><strong>1.4.</strong> Na execução das atividades, o contratado deverá realizar a execução dos serviços conforme objeto contratual – <strong>detalhamento do objeto:</strong></div>
                 <div style="margin-left: 20px; margin-bottom: 11px;"><strong>1.4.1.</strong> FORNECIMENTO DE MÃO DE OBRA PARA - EXECUÇÃO DE FECHAMENTO DE REBOCO INTERNO, EXECUÇÃO DE CAIXAS PLUVIAIS DE ALVENARIA, ALVENARIA DE PLATIMBANDA, REVESTIMENTO DE BANHEIRO, REVESTIMENTO DE PAREDE INTERNA E EXTERNA, EXECUÇÃO DE PASSEIO E EXECUÇÃO PISO DE CONCRETO, conforme projetos, memoriais descritivos, caderno de encargos e orientações técnicas. Os serviços deverão ser executados em sua totalidade conforme os levantamentos disponibilizados em campo..</div>
             </div>
 
@@ -4547,7 +4548,7 @@ function executarImpressaoFolha() {
             </div>
 
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA QUARTA – DO VALOR E DA FORMA DE PAGAMENTO</strong></p>
-            <p style="text-indent: 30px; margin-bottom: 10px;"><strong>4.</strong> Os serviços serão remunerados conforme entregas executadas e aprovadas pelo gestor de obra designado pela ${nomeContratanteAssinatura}, mediante apresentação de Recibo de Prestação de Serviços:</p>
+            <p style="text-indent: 30px; margin-bottom: 10px;"><strong>4.</strong> Os serviços serão remunerados conforme entregas executadas e <strong>aprovadas pelo gestor de obra</strong> designado pela <strong>${nomeContratanteAssinatura}</strong>, mediante apresentação de Recibo de Prestação de Serviços:</p>
             <div style="margin-left: 50px; margin-bottom: 30px;">
                 <div style="margin-bottom: 5px;"><strong>4.1.</strong> O valor dos serviços será de <strong>R$ 7.200,00 (sete mil e duzentos reais)</strong>, devendo ser pago através de medição conforme entrega dos serviços, estimando a duração de vigência contratual para <strong>120 (cento e vinte) dias</strong> úteis a partir da assinatura deste instrumento.</div>
                 <div style="margin-bottom: 5px;"><strong>4.2.</strong> O pagamento será efetuado em até 15 (quinze) dias corridos após execução de cada etapa de serviço; </div>
@@ -4556,7 +4557,7 @@ function executarImpressaoFolha() {
             </div>    
 
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA QUINTA – DO PRAZO</strong></p>
-            <p style="text-indent: 30px; margin-bottom: 30px;"><strong>5.</strong> O presente contrato terá início <strong> ${dataInicioContrato}</strong> e término em <strong>${dataTerminoContrato}</strong>, podendo ser prorrogado por igual período até o limite de 3 (três) aditivos conforme parâmetros internos da Contratante através da prerrogativa de continuidade dos serviços autorizados.</p>
+            <p style="text-indent: 30px; margin-bottom: 30px;"><strong>5.</strong> O presente contrato terá início <strong> ${dataInicioContrato}</strong> e término em <strong>${dataTerminoContrato}</strong>, podendo ser prorrogado por igual período até o limite de 3 (três) aditivos conforme parâmetros internos da Contratante através da prerrogativa de <strong>continuidade dos serviços</strong> autorizados.</p>
             <p style="text-indent: 50px; margin-bottom: 10px;"><strong>Parágrafo Primeiro:</strong> Caso o CONTRATADO não cumpra os prazos estabelecidos, após análise e exame dos fatos, poderá ser aplicado multa de 2 % (dois por cento) sobre o valor total dos serviços acumulados por dia de atraso, até o limite de 20 % (vinte por cento) sobre o valor total acumulado desde o último pagamento efetuado.</p> 
               
 
@@ -4569,9 +4570,9 @@ function executarImpressaoFolha() {
 
             <br>
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA SÉTIMA – DA NATUREZA DO CONTRATO</strong></p>
-            <p style="text-indent: 30px; margin-bottom: 30px;"><strong>7.</strong> As partes declaram expressamente que o presente contrato é de NATUREZA CIVIL, não gerando qualquer vínculo empregatício entre o CONTRATANTE e o CONTRATADO, diante disso, o CONTRATADO declara estar CIENTE que é responsável por todas as obrigações fiscais, previdenciárias e trabalhistas decorrentes de sua atividade exercida.</p>
+            <p style="text-indent: 30px; margin-bottom: 30px;"><strong>7.</strong> As partes declaram expressamente que o presente contrato é de <strong>NATUREZA CIVIL, não gerando qualquer vínculo empregatício entre o CONTRATANTE e o CONTRATADO</strong>, diante disso, o CONTRATADO declara estar CIENTE que é responsável por todas as obrigações fiscais, previdenciárias e trabalhistas decorrentes de sua atividade exercida.</p>
             <div style="margin-left: 50px; margin-bottom: 30px;">
-            <div style="margin-bottom: 5px;"><strong>7.1.</strong> As partes reconhecem expressamente que este contrato tem natureza de prestação de serviços por empreitada, divididas por etapas, e que, o CONTRATADO possui o livre direito prestar serviços à terceiros sem ônus para esta CONTRATANTE; </div>
+            <div style="margin-bottom: 5px;"><strong>7.1.</strong> As partes reconhecem expressamente que este contrato tem natureza de <strong>prestação de serviços por empreitada</strong>, divididas por etapas, e que, o CONTRATADO possui o livre direito prestar serviços à terceiros sem ônus para esta CONTRATANTE; </div>
             <div style="margin-bottom: 5px;"><strong>7.2.</strong> O CONTRATADO declara que realiza seus serviços de forma autônoma e independente, sem subordinação, e NÃO POSSUI VÍNCULO TRABALHISTA com esta CONTRATANTE, declara estar ciente de que o acesso ao canteiro deverá estar compatibilizado com o funcionamento da obra, sem controle de jornada ou subordinação, sendo este, o responsável pela escala de trabalho sem prejuízos aos prazos estabelecidos em cronograma para entrega do objeto; </div>
             <div style="margin-bottom: 5px;"><strong>7.3.</strong> O CONTRATADO poderá prestar serviços a terceiros, não havendo exclusividade com a CONTRATANTE; </div>
             <div style="margin-bottom: 5px;"><strong>7.4.</strong> O CONTRATADO poderá executar os serviços por meio de equipe própria, não havendo exigência de pessoalidade; </div>
@@ -4582,7 +4583,7 @@ function executarImpressaoFolha() {
 
             <br>
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA OITAVA – DO SIGILO</strong></p>
-            <p style="text-indent: 30px; margin-bottom: 30px;"><strong>8.</strong> CONTRATADO compromete-se a manter sigilo sobre informações relacionadas aos serviços e à CONTRATANTE, salvo autorização expressa ou exigência legal, NÃO sendo, neste momento, autorizado nenhum repasse de projetos, memoriais, cadernos técnicos, imagens fotográficas e quaisquer informações relacionadas ao objeto deste instrumento, passível de aplicação de sansão no percentual de 5% (cinco por cento) sobre o saldo em aberto através da retenção fixada no pagamento posterior ao ato de infração comprovado e notificado.</p>
+            <p style="text-indent: 30px; margin-bottom: 30px;"><strong>8.</strong> CONTRATADO compromete-se a manter <strong>sigilo sobre informações relacionadas aos serviços e à CONTRATANTE</strong>, salvo autorização expressa ou exigência legal, NÃO sendo, neste momento, autorizado nenhum repasse de projetos, memoriais, cadernos técnicos, imagens fotográficas e quaisquer informações relacionadas ao objeto deste instrumento, passível de aplicação de sansão no percentual de 5% (cinco por cento) sobre o saldo em aberto através da retenção fixada no pagamento posterior ao ato de infração comprovado e notificado.</p>
 
 
             <br>
@@ -4611,7 +4612,7 @@ function executarImpressaoFolha() {
         </div>`;
     
     } else if (tipo === 'contrato2') {
-        titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS POR EMPREITADA PARA EXECUÇÃO DE ETAPAS DE OBRA SEM VÍNCULO EMPREGATÍCIO <br><br> Nº ${matricula}/2026 | JATAÍ – GOIÁS`;
+        titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS POR EMPREITADA PARA EXECUÇÃO DE ETAPAS DE OBRA SEM VÍNCULO EMPREGATÍCIO <br><br> Nº ${matricula}/${ano} | JATAÍ – GOIÁS`;
         nomeContratanteAssinatura = "RV NEGOCIOS E COMPANHIA LTDA";
         
         corpoTexto = `
