@@ -4433,6 +4433,18 @@ function executarImpressaoFolha() {
 
     }
 
+      /* let dataTerminoContrato = "____/____/______";
+      // Calcula 120 dias após a data de início do contrato do funcionário
+      if (e.data_contrato) {
+          const partes = e.data_contrato.split('-');
+          const dataInicio = new Date(partes[0], partes[1] - 1, partes[2]);
+          dataInicio.setDate(dataInicio.getDate() + 120);
+          const dia = String(dataInicio.getDate()).padStart(2, '0');
+          const mes = String(dataInicio.getMonth() + 1).padStart(2, '0');
+          const ano = dataInicio.getFullYear();
+          dataTerminoContrato = `${dia}/${mes}/${ano}`;
+      }*/
+
 
     // ---------------------------------------------------------
     
@@ -4495,7 +4507,7 @@ function executarImpressaoFolha() {
             <p style="text-indent: 40px; margin-bottom: 30px;">As partes acima identificadas, tendo em vista o interesse mútuo, resolvem celebrar o presente contrato de prestação de serviços, que se regerá pelas cláusulas e condições seguintes:</p>
 
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA PRIMEIRA – DO OBJETO</strong></p>
-            <p style="text-indent: 40px; margin-bottom: 10px;"><strong>1.</strong> O presente contrato tem como objeto a prestação de serviços para execução integral do FORNECIMENTO DE MÃO DE OBRA PARA - EXECUÇÃO DE FECHAMENTO DE REBOCO INTERNO, EXECUÇÃO DE CAIXAS PLUVIAIS DE ALVENARIA, ALVENARIA DE PLATIMBANDA, REVESTIMENTO DE BANHEIRO, REVESTIMENTO DE PAREDE INTERNA E EXTERNA, EXECUÇÃO DE PASSEIO E EXECUÇÃO PISO DE CONCRETO, em obra de construção da <strong>${enderecoObra}</strong> situada na cidade de Jataí no estado de Goiás, a serem executados pelo CONTRATADO, conforme os termos que se determinam a seguir:</p>
+            <p style="text-indent: 40px; margin-bottom: 8px;"><strong>1.</strong> O presente contrato tem como objeto a prestação de serviços para execução integral do FORNECIMENTO DE MÃO DE OBRA PARA - EXECUÇÃO DE FECHAMENTO DE REBOCO INTERNO, EXECUÇÃO DE CAIXAS PLUVIAIS DE ALVENARIA, ALVENARIA DE PLATIMBANDA, REVESTIMENTO DE BANHEIRO, REVESTIMENTO DE PAREDE INTERNA E EXTERNA, EXECUÇÃO DE PASSEIO E EXECUÇÃO PISO DE CONCRETO, em obra de construção da <strong>${enderecoObra}</strong> situada na cidade de Jataí no estado de Goiás, a serem executados pelo CONTRATADO, conforme os termos que se determinam a seguir:</p>
             
             <div style="margin-left: 40px; margin-bottom: 15px;">
                 <div style="margin-bottom: 5px;"><strong>1.1.</strong> O contratado executará os serviços com autonomia técnica, observando as diretrizes do projeto, sem subordinação hierárquica conforme levantamentos realizados, projetos disponibilizados e com a devida atenção aos requisitos estabelecidos em normas técnicas e certificações de qualidade para garantir a integralidade e eficiência na execução do objeto;</div>
@@ -4571,6 +4583,8 @@ function executarImpressaoFolha() {
             <p style="text-indent: 40px; margin-bottom: 30px;"><strong>8.</strong> CONTRATADO compromete-se a manter sigilo sobre informações relacionadas aos serviços e à CONTRATANTE, salvo autorização expressa ou exigência legal, NÃO sendo, neste momento, autorizado nenhum repasse de projetos, memoriais, cadernos técnicos, imagens fotográficas e quaisquer informações relacionadas ao objeto deste instrumento, passível de aplicação de sansão no percentual de 5% (cinco por cento) sobre o saldo em aberto através da retenção fixada no pagamento posterior ao ato de infração comprovado e notificado.</p>
 
 
+            <br>
+            <br>
             <br>
             <br>
             <br>
