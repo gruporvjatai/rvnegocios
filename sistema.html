@@ -4416,7 +4416,7 @@ function executarImpressaoFolha() {
     const obraVinculada = STATE.obras.find(o => o.id == e.obra_atual_id);
     const enderecoObra = obraVinculada ? (obraVinculada.endereco || obraVinculada.nome) : 'Endereço não informado / Obra não definida';
     const diariaTexto = formatMoney(e.valor_diaria || 0);
-    const matricula = parseFloat(e.matricula || 0);
+    const matricula = parseFloat(e.matricula || '_____' );
 
     // Data de término (da obra)
     /*let dataTerminoContrato = "____/____/______";
