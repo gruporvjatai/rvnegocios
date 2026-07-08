@@ -484,7 +484,7 @@
             </div>
             
             <div style="margin-bottom: 40px;">
-                ${corpoTexto}<br>
+                ${corpoTexto}
             </div>
             
             <div style="text-align: right; margin-bottom: 80px; font-size: 13pt;">
