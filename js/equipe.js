@@ -5,6 +5,307 @@
  * com base nos registros da tabela jsp_ponto_diario (status = 'VALIDADO' e ainda não incluídas em fechamento).
  * Retorna um objeto: { totalDiarias: number, registros: array }
  */
+  // ====== CRUD EQUIPE E PONTO ======
+      function renderEquipe() {
+            const term = document.getElementById('eqp-search').value.toLowerCase();
+            const obraFiltro = document.getElementById('eqp-obra-filter').value;
+            const dataInicio = document.getElementById('eqp-filter-data-inicio').value;
+            const dataFim = document.getElementById('eqp-filter-data-fim').value;
+            const statusFiltro = document.getElementById('eqp-filter-status').value;
+            const tipoFiltro = document.getElementById('eqp-filter-tipo').value;
+            
+            const list = document.getElementById('equipe-list');
+            const colaboradores = getColaboradoresUnificados();
+            
+            let fil = colaboradores.filter(c => 
+                (c.nome || '').toLowerCase().includes(term) || 
+                (c.categoria || '').toLowerCase().includes(term)
+            );
+            
+            if (obraFiltro) {
+                fil = fil.filter(c => c.obra_atual_id == obraFiltro);
+            }
+            
+            if (statusFiltro !== "todos") {
+                const isAtivo = statusFiltro === "true";
+                fil = fil.filter(c => (c.ativo === true || c.ativo === 'true') === isAtivo);
+            }
+            
+            if (tipoFiltro !== 'todos') {
+                fil = fil.filter(c => c.tipo === tipoFiltro);
+            }
+            
+            fil.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+            
+            // Pré-calcula produção e valores para cada colaborador (usando intervalo de datas)
+            fil.forEach(c => {
+                if (c.tipo === 'diaria') {
+                    const saldo = calcularSaldoPendenteFuncionarioPorPeriodo(c.id, dataInicio, dataFim);
+                    c.producao_mes = saldo.totalDiarias;
+                    c.valor_total = c.producao_mes * c.valor_base;
+                    c.status_pagamento = saldo.totalDiarias > 0 ? 'PENDENTE' : 'EM DIA';
+                } else {
+                    const producao = STATE.producao_terc.filter(p => {
+                        if (p.terceirizado_id !== c.id) return false;
+                        if (dataInicio && p.data_registro < dataInicio) return false;
+                        if (dataFim && p.data_registro > dataFim) return false;
+                        return true;
+                    });
+                    const metrosPendentes = producao.filter(p => p.status !== 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros), 0);
+                    const metrosPagos = producao.filter(p => p.status === 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros), 0);
+                    c.metros_pendentes = metrosPendentes;
+                    c.metros_pagos = metrosPagos;
+                    c.producao_mes = metrosPendentes;
+                    c.valor_total = metrosPendentes * c.valor_base;
+                    c.status_pagamento = metrosPendentes > 0 ? 'PENDENTE' : 'EM DIA';
+                }
+            });
+            
+            list.innerHTML = '';
+            
+            fil.forEach(c => {
+                const phoneClean = (c.telefone || '').replace(/\D/g, '');
+                const wppBtn = phoneClean ? `<a href="https://wa.me/55${phoneClean}" target="_blank" class="p-1.5 border border-green-200 text-green-600 hover:bg-green-50 rounded bg-green-50/50" title="WhatsApp"><i data-lucide="message-circle" width="14"></i></a>` : '';
+                
+                const obraAtual = STATE.obras.find(o => o.id == c.obra_atual_id);
+                const nomeObra = obraAtual ? obraAtual.nome : '<span class="text-slate-400 italic">Sem obra fixa</span>';
+                const diariaOuMetro = c.tipo === 'diaria' ? formatMoney(c.valor_base) : `${formatMoney(c.valor_base)}/m`;
+                    
+                const isPendente = c.status_pagamento === 'PENDENTE';
+                const valorExibicao = c.valor_total || 0;
+                
+                let botoesAcao = '';
+                if (c.tipo === 'diaria') {
+                    botoesAcao = `
+                        <button onclick="abrirModalSaldo('${c.id}')" class="p-1.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded shadow font-bold text-[10px] flex items-center gap-1">
+                            <i data-lucide="calculator" width="12"></i> CALCULAR
+                        </button>
+                        <button onclick="abrirModalDocumentos('${c.id}')" class="p-1.5 bg-slate-800 text-white rounded shadow" title="Contratos">
+                            <i data-lucide="file-signature" width="14"></i>
+                        </button>
+                        <button onclick="openEquipeForm('${c.id}')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar">
+                            <i data-lucide="edit-3" width="14"></i>
+                        </button>
+                        <button onclick="toggleStatusEquipe('${c.id}', ${c.ativo !== false})" class="p-1.5 border ${c.ativo !== false ? 'border-red-200 text-red-500 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'} rounded" title="${c.ativo !== false ? 'Desativar / Demitir' : 'Reativar'}">
+                            <i data-lucide="power" width="14"></i>
+                        </button>
+                        ${wppBtn}
+                    `;
+                } else {
+                    botoesAcao = `
+                        <button onclick="abrirModalSaldoMetros('${c.id}')" class="px-2 py-1.5 bg-slate-800 text-white hover:bg-black rounded shadow font-bold text-[10px] flex items-center gap-1">
+                            <i data-lucide="calculator" width="12"></i> CALCULAR
+                        </button>
+                        <button onclick="abrirModalDocumentosTerc('${c.id}')" class="p-1.5 bg-slate-800 text-white rounded shadow" title="Contratos">
+                            <i data-lucide="file-signature" width="14"></i>
+                        </button>
+                        <button onclick="openEquipeForm('${c.id}', 'terceirizado')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar">
+                            <i data-lucide="edit-3" width="14"></i>
+                        </button>
+                        <button onclick="toggleStatusTerceirizado('${c.id}', ${c.ativo !== false})" class="p-1.5 border ${c.ativo !== false ? 'border-red-200 text-red-500 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'} rounded" title="${c.ativo !== false ? 'Desativar' : 'Reativar'}">
+                            <i data-lucide="power" width="14"></i>
+                        </button>
+                        ${wppBtn}
+                    `;
+                }
+                
+                const row = document.createElement('tr');
+                row.className = `border-b hover:bg-slate-50 transition ${c.ativo === false ? 'opacity-60 bg-red-50' : ''}`;
+                row.innerHTML = `
+                    <td class="p-2">
+                        <div class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                            ${c.nome} 
+                            ${c.ativo === false ? '<span class="text-[9px] text-red-500 font-bold">(DESATIVADO)</span>' : ''}                    
+                        </div>
+                        <div class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded uppercase font-bold inline-block mt-0.5">${c.categoria || 'Geral'}</div>
+                    </td>
+                    <td class="p-2 text-xs font-bold text-blue-700"><i data-lucide="building" class="w-3 h-3 inline"></i> ${nomeObra}</td>
+                    <td class="p-2 text-center">
+                        <div class="font-bold text-slate-700 text-xs">${diariaOuMetro}</div>
+                    </td>
+                    <td class="p-2 text-center">
+                        <div class="text-xs font-black ${c.producao_mes > 0 ? 'text-indigo-600' : 'text-slate-400'}">
+                            ${c.tipo === 'diaria' ? c.producao_mes.toFixed(2) + ' dias' : c.producao_mes.toFixed(2) + ' m'}
+                        </div>
+                    </td>
+                    <td class="p-2 text-right">
+                        <div class="font-black text-sm ${isPendente ? 'text-green-700' : 'text-slate-400'}">${formatMoney(valorExibicao)}</div>
+                    </td>
+                    <td class="p-2 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            <span class="px-2 py-1 rounded text-[9px] font-bold ${isPendente ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}">${c.status_pagamento}</span>
+                        </div>
+                    </td>
+                    <td class="p-2 text-center">
+                        <div class="flex items-center justify-start gap-1">
+                            ${botoesAcao}
+                        </div>
+                    </td>
+                `;
+                list.appendChild(row);
+            });
+        
+                // Após o fechamento do forEach e antes do lucide.createIcons()
+                let somaGeral = 0;
+                fil.forEach(c => { somaGeral += (c.valor_total || 0); });
+                const totalEl = document.getElementById('equipe-total-geral');
+                if (totalEl) {
+                    totalEl.innerHTML = `Total geral (filtro): <span class="font-bold text-slate-700">${formatMoney(somaGeral)}</span>`;
+                }
+                    
+                    lucide.createIcons();
+                }
+
+
+
+      function calcularSaldoPendenteFuncionarioPorPeriodo(funcId, dataInicio, dataFim) {
+            const registros = STATE.ponto_diario.filter(p => 
+                p.funcionario_id === funcId && 
+                p.status === 'VALIDADO' &&
+                p.pago_em_fechamento === false
+            );
+            
+            let registrosFiltrados = registros;
+            if (dataInicio) {
+                registrosFiltrados = registrosFiltrados.filter(p => p.hora_registro >= dataInicio + 'T00:00:00');
+            }
+            if (dataFim) {
+                registrosFiltrados = registrosFiltrados.filter(p => p.hora_registro <= dataFim + 'T23:59:59');
+            }
+            
+            // Agrupa por dia
+            const porDia = new Map();
+            registrosFiltrados.forEach(p => {
+                const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+                if (!porDia.has(dataDia)) porDia.set(dataDia, []);
+                porDia.get(dataDia).push(p);
+            });
+            
+            let totalDiarias = 0;
+            
+            function diffMinutesUTC(startIso, endIso) {
+                return (new Date(endIso) - new Date(startIso)) / (1000 * 60);
+            }
+            
+            function calcularFracaoDiaPeriodo(registrosDoDia) {
+                const entradas = registrosDoDia.filter(r => r.tipo === 'ENTRADA').map(r => r.hora_registro);
+                const saidas   = registrosDoDia.filter(r => r.tipo === 'SAIDA').map(r => r.hora_registro);
+                const ajustes  = registrosDoDia.filter(r => r.tipo === 'AJUSTE_MANUAL')
+                                        .reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
+                
+                if (entradas.length === 0 && saidas.length === 0) return Math.min(ajustes, 1);
+                
+                const todosPontos = [
+                    ...entradas.map(e => ({ tipo: 'E', hora: e })),
+                    ...saidas.map(s => ({ tipo: 'S', hora: s }))
+                ].sort((a, b) => new Date(a.hora) - new Date(b.hora));
+                
+                let startManha = null, endManha = null;
+                let startTarde = null, endTarde = null;
+                
+                for (const p of todosPontos) {
+                    const hour = new Date(p.hora).getUTCHours();
+                    if (hour < 12) {
+                        if (p.tipo === 'E' && !startManha) startManha = p.hora;
+                        if (p.tipo === 'S') endManha = p.hora;
+                    } else {
+                        if (p.tipo === 'E' && !startTarde) startTarde = p.hora;
+                        if (p.tipo === 'S') endTarde = p.hora;
+                    }
+                }
+                
+                function calcMin(start, end, jornada) {
+                    if (!start || !end) return 0;
+                    let mins = diffMinutesUTC(start, end);
+                    const falta = jornada - mins;
+                    if (falta > 0 && falta <= 10) mins = jornada;
+                    return Math.min(jornada, Math.max(0, mins));
+                }
+                
+                let minutosManha = calcMin(startManha, endManha, 240);
+                let minutosTarde = calcMin(startTarde, endTarde, 240);
+                let baseFracao = (minutosManha + minutosTarde) / 480;
+                baseFracao = Math.min(1, Math.max(0, baseFracao));
+                
+                let fracao = baseFracao + ajustes;
+                if (fracao > 1) fracao = 1;
+                
+                // arredondamento half-down
+                function roundHalfDown(v) {
+                    if (v <= 0) return 0;
+                    if (v >= 1) return 1;
+                    let cents = v * 100;
+                    let dec = cents - Math.floor(cents);
+                    if (Math.abs(dec - 0.5) < 0.0001) return Math.floor(cents) / 100;
+                    return Math.round(cents) / 100;
+                }
+                return roundHalfDown(fracao);
+            }
+            
+            for (const registrosDoDia of porDia.values()) {
+                totalDiarias += calcularFracaoDiaPeriodo(registrosDoDia);
+            }
+            
+            return { totalDiarias, registros: registrosFiltrados };
+        }
+
+
+      
+      function imprimirReciboDoModal() {
+            const funcId = document.getElementById('saldo-equipe-id').value;
+            const func = STATE.equipe.find(e => e.id === funcId);
+            if (!func) return;
+            
+            const totalDiarias = document.getElementById('saldo-total-diarias').innerText;
+            const valorTotal = document.getElementById('saldo-total-valor').innerText;
+            const dataInicio = document.getElementById('saldo-filtro-data-inicio').value;
+            const dataFim = document.getElementById('saldo-filtro-data-fim').value;
+            const hoje = new Date().toLocaleDateString('pt-BR');
+            
+            const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+            const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+            const periodo = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
+            
+            const html = `
+                <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
+                        <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
+                        <div style="text-align: right;">
+                            <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO SOBRE DIÁRIAS</h1>
+                            <p style="margin: 5px 0 0 0; font-size: 18px; color: #1d4ed8; font-weight: bold;">VALOR: ${valorTotal}</p>
+                        </div>
+                    </div>
+                    
+                    <div style="font-size: 14px; line-height: 1.8; text-align: justify; margin-bottom: 40px;">
+                        Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA LTDA</strong> (CNPJ: 61.893.912/0001-24), a importância de <strong>${valorTotal}</strong>, 
+                        referente ao pagamento de diárias <!--trabalhadas no período de <strong>${periodo}</strong>--> em aberto, conforme registro diário de presença da obra. Totalizando <strong>${totalDiarias} dias</strong> 
+                        com a diária acordada em <strong>${formatMoney(func.valor_diaria)}</strong>.
+                    </div>
+                    
+                    <div style="font-size: 14px; margin-bottom: 40px;">
+                        Para maior clareza, firmo(amos) o presente recibo para que produza os seus efeitos legais.
+                    </div>
+                    
+                    <div style="text-align: center; margin-bottom: 30px; font-size: 14px;">
+                        Jataí - GO, ${hoje}.
+                    </div>
+                    
+                    <div style="margin-top: 60px; display: flex; justify-content: center;">
+                        <div style="text-align: center; width: 60%; border-top: 1px solid #000; padding-top: 10px;">
+                            <strong>${func.nome.toUpperCase()}</strong><br>
+                            <span style="font-size: 12px; color: #64748b;">CPF: ${func.cpf || '_______________________'} <!--| RG: ${func.rg || '_______________________'}--></span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('print-area').innerHTML = html;
+            setTimeout(() => window.print(), 300);
+        }
+
+
+
+
 function calcularSaldoPendenteFuncionario(funcId, mesFiltro = null, anoFiltro = null) {
     let registros = STATE.ponto_diario.filter(p => 
         p.funcionario_id === funcId && 
