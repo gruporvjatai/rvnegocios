@@ -78,10 +78,10 @@
         titulo = "FICHA DE EPI <br> TERMO DE RECEBIMENTO";
         nomeContratanteAssinatura = "RV NEGÓCIOS E COMPANHIA LTDA";
         
-        corpoTexto = `
+         corpoTexto = `
         <div style="font-size: 12pt; line-height: 1.5; text-align: justify;">
-            <p style="margin-bottom: 5px;"><strong>Nome do Prestador de Serviços:</strong> ${(e.nome || '').toUpperCase()}</p>
-            <p style="margin-bottom: 15px;"><strong>Atividade a ser desenvolvida:</strong> ${(e.categoria || 'Geral').toUpperCase()}</p>
+            <p style="margin-bottom: 5px;">Nome do Prestador de Serviços: <strong>${(e.nome || '').toUpperCase()}</strong></p>
+            <p style="margin-bottom: 15px;">Atividade a ser desenvolvida: <strong>${(e.categoria || 'Geral').toUpperCase()}</strong></p>
             
             <p style="margin-bottom: 20px;">"Declaro ter recebido orientação sobre o uso correto dos Equipamentos de Segurança, bem como, estou ciente de que sou obrigado a usá-los sob pena de SUSPENSÃO ou CANCELAMENTO do contrato de prestação dos serviços de autônomo."</p>
             
@@ -107,7 +107,7 @@
                 </tbody>
             </table>
 
-            <p style="margin-bottom: 10px;">Eu, <strong>${(e.nome || '').toUpperCase()}</strong>, declaro ter recebido os equipamentos de proteção necessários para execução da função ao qual irei exercer COMO <strong>${(e.categoria || 'SERVENTE').toUpperCase()}</strong> POR OBRA CERTA OU PRAZO DETERMINADO, bem como, o treinamento de utilização da forma correta.</p>
+            <p style="margin-bottom: 10px;">Eu, <strong>${(e.nome || '').toUpperCase()}</strong>, declaro ter recebido os equipamentos de proteção necessários para execução da função ao qual irei exercer como <strong>${(e.categoria || 'descrito em contrato').toUpperCase()}</strong> na obra do endereço <strong>${enderecoObra}</strong> e com prazo determinado pelo contrato, bem como, o treinamento de utilização da forma correta.</p>
             
             <p>Por fim, estando ciente e de acordo assino este termo de compromisso em duas vias.</p>
         </div>
