@@ -1,4 +1,4 @@
-        // ========== NOVAS FUNÇÕES PARA SALDO DE PONTO ==========
+// ============================================================== JS PARA USO VINCULADO DAS FUNÇÕES NO SISTEMA.HTML ==================================================================
 
 /**
  * Calcula o saldo de diárias pendentes (não pagas) para um funcionário específico
