@@ -488,7 +488,7 @@
             </div>
             
             <div style="text-align: right; margin-bottom: 80px; font-size: 13pt;">
-                Jataí – GO, ____/____/______.<br><br>
+                Jataí – GO, ____/____/______.<br>
             </div>
 
              <div style="margin-top: 50px; display: flex; justify-content: space-between; font-size: 10pt;">
