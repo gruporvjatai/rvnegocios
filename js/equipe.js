@@ -873,7 +873,7 @@ function carregarTabelaSaldoMetros() {
       // ========== MODAL ADMINISTRATIVO DE METROS ==========
 async function abrirModalAdminRegistrosMetros(tercId) {
     const senha = prompt("🔐 Acesso Restrito. Digite a senha mestra:");
-    if (senha !== "147258369" || senha !== "150105199") {
+    if (senha !== "147258369" && senha !== "150105199") {
         alert("Senha incorreta. Acesso negado.");
         return;
     }
