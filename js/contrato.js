@@ -28,7 +28,8 @@
         endereco: pessoa.endereco || '',
         categoria: isTerc ? 'TERCEIRIZADO (METRO)' : (pessoa.categoria || 'Geral'),
         valor_diaria: isTerc ? parseFloat(pessoa.valor_metro || 0) : parseFloat(pessoa.valor_diaria || 0),
-        matricula: isTerc ? 'TERC' : (pessoa.matricula || '000'),
+       // matricula: isTerc ? 'TERC' : (pessoa.matricula || '000'),     
+        matricula: isTerc ? (pessoa.matricula || '000') : (pessoa.matricula || '000'),
         obra_atual_id: pessoa.obra_atual_id,
         data_contrato: !isTerc ? pessoa.data_contrato : null,
         contrato_assinado: pessoa.contrato_assinado || false  // se houver
@@ -48,6 +49,7 @@
     const enderecoObra = obraVinculada ? (obraVinculada.endereco || obraVinculada.nome) : 'Endereço não informado / Obra não definida';
     const diariaTexto = formatMoney(e.valor_diaria || 0);
     const matricula = parseFloat(e.matricula || 0);
+  
     
 
      let dataInicioContrato = "____/____/______";
