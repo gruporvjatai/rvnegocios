@@ -562,24 +562,19 @@
             <div style="margin-bottom: 5px;"><strong>7.7.</strong> A reparação ou indenização por danos deverá ser providenciada imediatamente pelo CONTRATADO, sob pena de rescisão contratual e responsabilização financeira e judicial. </div>
             </div>
 
-            <br>
+           
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA OITAVA – DO SIGILO</strong></p>
             <p style="text-indent: 30px; margin-bottom: 30px;"><strong>8.</strong> CONTRATADO compromete-se a manter <strong>sigilo sobre informações relacionadas aos serviços e à CONTRATANTE</strong>, salvo autorização expressa ou exigência legal, NÃO sendo, neste momento, autorizado nenhum repasse de projetos, memoriais, cadernos técnicos, imagens fotográficas e quaisquer informações relacionadas ao objeto deste instrumento, passível de aplicação de sansão no percentual de 5% (cinco por cento) sobre o saldo em aberto através da retenção fixada no pagamento posterior ao ato de infração comprovado e notificado.</p>
-
-            
-            <br>            
+                                  
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA NONA – DO ABANDONO DA OBRA</strong></p>
             <p style="text-indent: 30px; margin-bottom: 30px;"><strong>9.</strong> Caso o CONTRATADO abandone o os serviços ou, deixe de realizar a conclusão do objeto em sua integralidade, sem aviso prévio ou comunicação formal, o valor que ainda lhe for devido, será pago somente após a CONTRATANTE finalizar completamente a execução dos serviços deixados pela CONTRATADA e realizar levantamento de custo e equalização de valores conforme este instrumento, com repasse do saldo que for devido à CONTRATADA no prazo de até 30 (trinta) dias.</p>
-
-
-            <br>
+            
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA DÉCIMA – DAS DISPOSIÇÕES GERAIS</strong></p>
             <p style="text-indent: 30px; margin-bottom: 10px;"><strong>10.</strong> O presente contrato obriga as partes e seus sucessores.</p>
             <div style="margin-left: 50px; margin-bottom: 10px;">
                 <div style="margin-bottom: 5px;"><strong>10.1.</strong> Qualquer alteração neste contrato deverá ser feita por escrito e assinada pelas partes.</div>
             </div>
 
-            <br>
             <br>
             <p style="text-indent: 40px; margin-bottom: 30px;">Fica eleito o foro da comarca de Jataí, estado de Goiás, para dirimir quaisquer dúvidas ou litígios decorrentes do presente contrato, renunciando as partes a qualquer outro, por mais privilegiado que seja.</p>
             <p style="text-indent: 40px; margin-bottom: 30px;">Por estarem assim justos e contratados, as partes assinam o presente termo contratual em 2 (duas) vias de igual teor e forma.</p>
