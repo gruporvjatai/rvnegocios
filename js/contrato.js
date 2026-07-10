@@ -418,7 +418,7 @@
                 <div style="margin-bottom: 5px;"><strong>4.1.</strong> O valor total dos serviços será de <strong>R$ 382.485,72  (Trezentos e oitenta e dois mil quatrocentos e oitenta e cinco reais e setenta e dois centavos)</strong>, devendo ser pago recorrentemente através de medição mensal, conforme entrega dos serviços, estimando a duração de vigência contratual para <strong>120 (cento e vinte)</strong> dias úteis a partir da assinatura deste instrumento.</div>
                 <div style="margin-bottom: 5px;"><strong>4.2.</strong> A Medição dos serviços concluidos será realizada pelo profissional indicado da Prefeitira de Jataí todo dia 1º do mês;
                 <div style="margin-bottom: 5px;"><strong>4.3.</strong> A Aprovação do pagamento ocorrerá após a conferência da medição, e a devida aprovação pelo responsável designado pela CONTRATANTE</div>
-                <div style="margin-bottom: 5px;"><strong>4.4.</strong> O pagamento será efetuado pontualmente entre os dias 15 (quinze) e 20 (vinte) de cada mês, via transferência bancária para a conta indicada pelo CONTRATADO.          
+                <div style="margin-bottom: 5px;"><strong>4.4.</strong> O pagamento será efetuado pontualmente entre os dias 10 (dez) e 15 (quinze) de cada mês, via transferência bancária para a conta indicada pelo CONTRATADO.          
             </div>    
 
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA QUINTA – DO PRAZO</strong></p>
@@ -531,8 +531,8 @@
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA QUARTA – DO VALOR E DA FORMA DE PAGAMENTO</strong></p>
             <p style="text-indent: 30px; margin-bottom: 10px;"><strong>4.</strong> Os serviços serão remunerados conforme entregas executadas, medidas e aprovadas pelo gestor de obra designado pela <strong>${nomeContratanteAssinatura}</strong>, mediante apresentação de Recibo de Prestação de Serviços:</p>
             <div style="margin-left: 50px; margin-bottom: 30px;">
-                <div style="margin-bottom: 5px;"><strong>4.1.</strong> O valor total dos serviços será de <strong>R$ 382.485,72  (Trezentos e oitenta e dois mil quatrocentos e oitenta e cinco reais e setenta e dois centavos)</strong>, devendo ser pago recorrentemente através de medição mensal, conforme entrega dos serviços, estimando a duração de vigência contratual para <strong>120 (cento e vinte)</strong> dias úteis a partir da assinatura deste instrumento.</div>
-                <div style="margin-bottom: 5px;"><strong>4.2.</strong> A Medição dos serviços concluidos será realizada pelo profissional indicado da Prefeitira de Jataí todo dia 1º do mês;
+                <div style="margin-bottom: 5px;"><strong>4.1.</strong> O valor total dos serviços será de <strong>R$ 382.485,72  (Trezentos e oitenta e dois mil quatrocentos e oitenta e cinco reais e setenta e dois centavos)</strong>, devendo ser pago recorrentemente através de medição mensal, conforme entrega dos serviços, estimando a duração de vigência contratual mencionadas neste instrumento.</div>
+                <div style="margin-bottom: 5px;"><strong>4.2.</strong> A Medição dos serviços concluidos será realizada pelo profissional indicado da Prefeitira de Jataí todo dia 7 do mês;
                 <div style="margin-bottom: 5px;"><strong>4.3.</strong> A Aprovação do pagamento ocorrerá após a conferência da medição, e a devida aprovação pelo responsável designado pela CONTRATANTE</div>
                 <div style="margin-bottom: 5px;"><strong>4.4.</strong> O pagamento será efetuado pontualmente entre os dias 15 (quinze) e 20 (vinte) de cada mês, via transferência bancária para a conta indicada pelo CONTRATADO.          
             </div>    
