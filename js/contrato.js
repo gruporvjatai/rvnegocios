@@ -466,7 +466,7 @@
             <p style="text-indent: 40px; margin-bottom: 30px;">Por estarem assim justos e contratados, as partes assinam o presente termo contratual em 2 (duas) vias de igual teor e forma.</p>
         </div>`;
 
-  else if (tipo === 'empreita2') {
+ } else if (tipo === 'empreita2') {
         titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS POR EMPREITADA PARA EXECUÇÃO DE ETAPAS DE OBRA SEM VÍNCULO EMPREGATÍCIO <br><br> Nº ${matricula}/${ano} | JATAÍ – GOIÁS`;
         nomeContratanteAssinatura = "RV NEGOCIOS E COMPANHIA LTDA";
         
