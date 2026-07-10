@@ -75,7 +75,7 @@
     let corpoTexto = "";
     let nomeContratanteAssinatura = "";
     let localVL = "";
-    let locaCP = "";
+    let localCP = "";
 
  if (tipo === 'epi') {
         titulo = "FICHA DE EPI <br> TERMO DE RECEBIMENTO";
@@ -357,7 +357,7 @@
         titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS POR EMPREITADA PARA EXECUÇÃO DE ETAPAS DE OBRA SEM VÍNCULO EMPREGATÍCIO <br><br> Nº ${matricula}/${ano} | JATAÍ – GOIÁS`;
         nomeContratanteAssinatura = "RV NEGOCIOS E COMPANHIA LTDA";
         localVL = "Rua C-5, QD07 LT01 - Vila Luiza";
-        locaCP = "Av. Ribas Marques, 447 - Colméia Park";
+        localCP = "Av. Ribas Marques, 447 - Colméia Park";
         
         corpoTexto = `
         <div style="text-align: justify; font-size: 12pt; line-height: 1.6;">
@@ -473,7 +473,7 @@
         titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS POR EMPREITADA PARA EXECUÇÃO DE ETAPAS DE OBRA SEM VÍNCULO EMPREGATÍCIO <br><br> Nº ${matricula}/${ano} | JATAÍ – GOIÁS`;
         nomeContratanteAssinatura = "RV NEGOCIOS E COMPANHIA LTDA";
         localVL = "Rua C-5, QD07 LT01 - Vila Luiza";
-        locaCP = "Av. Ribas Marques, 447 - Colméia Park";
+        localCP = "Av. Ribas Marques, 447 - Colméia Park";
         
         corpoTexto = `
         <div style="text-align: justify; font-size: 12pt; line-height: 1.6;">
