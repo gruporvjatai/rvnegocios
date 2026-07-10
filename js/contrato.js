@@ -48,8 +48,7 @@
     const enderecoObra = obraVinculada ? (obraVinculada.endereco || obraVinculada.nome) : 'Endereço não informado / Obra não definida';
     const diariaTexto = formatMoney(e.valor_diaria || 0);
     const matricula = parseFloat(e.matricula || 0);
-    const localVL = "Rua C-5, QD07 LT01 - Vila Luiza";
-    const locaCP = "Av. Ribas Marques, 447 - Colméia Park";
+    
 
      let dataInicioContrato = "____/____/______";
     if (e.data_contrato) {
@@ -75,6 +74,8 @@
     let titulo = "";
     let corpoTexto = "";
     let nomeContratanteAssinatura = "";
+    let localVL = "";
+    let locaCP = "";
 
  if (tipo === 'epi') {
         titulo = "FICHA DE EPI <br> TERMO DE RECEBIMENTO";
@@ -355,6 +356,8 @@
  } else if (tipo === 'empreita1') {
         titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS POR EMPREITADA PARA EXECUÇÃO DE ETAPAS DE OBRA SEM VÍNCULO EMPREGATÍCIO <br><br> Nº ${matricula}/${ano} | JATAÍ – GOIÁS`;
         nomeContratanteAssinatura = "RV NEGOCIOS E COMPANHIA LTDA";
+        localVL = "Rua C-5, QD07 LT01 - Vila Luiza";
+        locaCP = "Av. Ribas Marques, 447 - Colméia Park";
         
         corpoTexto = `
         <div style="text-align: justify; font-size: 12pt; line-height: 1.6;">
@@ -469,6 +472,8 @@
  } else if (tipo === 'empreita2') {
         titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS POR EMPREITADA PARA EXECUÇÃO DE ETAPAS DE OBRA SEM VÍNCULO EMPREGATÍCIO <br><br> Nº ${matricula}/${ano} | JATAÍ – GOIÁS`;
         nomeContratanteAssinatura = "RV NEGOCIOS E COMPANHIA LTDA";
+        localVL = "Rua C-5, QD07 LT01 - Vila Luiza";
+        locaCP = "Av. Ribas Marques, 447 - Colméia Park";
         
         corpoTexto = `
         <div style="text-align: justify; font-size: 12pt; line-height: 1.6;">
