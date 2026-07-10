@@ -415,7 +415,7 @@
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA QUARTA – DO VALOR E DA FORMA DE PAGAMENTO</strong></p>
             <p style="text-indent: 30px; margin-bottom: 10px;"><strong>4.</strong> Os serviços serão remunerados conforme entregas executadas, medidas e aprovadas pelo gestor de obra designado pela <strong>${nomeContratanteAssinatura}</strong>, mediante apresentação de Recibo de Prestação de Serviços:</p>
             <div style="margin-left: 50px; margin-bottom: 30px;">
-                <div style="margin-bottom: 5px;"><strong>4.1.</strong> O valor total dos serviços será de <strong>R$ 382.485,72  (Trezentos e oitenta e dois mil quatrocentos e oitenta e cinco reais e setenta e dois centavos)</strong>, devendo ser pago recorrentemente através de medição mensal, conforme entrega dos serviços, estimando a duração de vigência contratual para <strong>120 (cento e vinte)</strong> dias úteis a partir da assinatura deste instrumento.</div>
+                <div style="margin-bottom: 5px;"><strong>4.1.</strong> O valor total dos serviços será de <strong>R$ 382.485,72  (Trezentos e oitenta e dois mil quatrocentos e oitenta e cinco reais e setenta e dois centavos)</strong>, devendo ser pago recorrentemente através de medição mensal, conforme entrega dos serviços, estimando a duração de vigência contratual presentes neste instrumento.</div>
                 <div style="margin-bottom: 5px;"><strong>4.2.</strong> A Medição dos serviços concluidos será realizada pelo profissional indicado da Prefeitira de Jataí todo dia 1º do mês;
                 <div style="margin-bottom: 5px;"><strong>4.3.</strong> A Aprovação do pagamento ocorrerá após a conferência da medição, e a devida aprovação pelo responsável designado pela CONTRATANTE</div>
                 <div style="margin-bottom: 5px;"><strong>4.4.</strong> O pagamento será efetuado pontualmente entre os dias 10 (dez) e 15 (quinze) de cada mês, via transferência bancária para a conta indicada pelo CONTRATADO.          
@@ -426,14 +426,12 @@
             <p style="text-indent: 50px; margin-bottom: 10px;"><strong>Parágrafo Primeiro:</strong> Caso o CONTRATADO não cumpra os prazos estabelecidos, após análise e exame dos fatos, poderá ser aplicado multa de 2 % (dois por cento) sobre o valor total dos serviços acumulados por dia de atraso, até o limite de 20 % (vinte por cento) sobre o valor total acumulado desde o último pagamento efetuado.</p> 
               
 
-            <br>
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA SEXTA – DA RESCISÃO</strong></p>
             <p style="text-indent: 30px; margin-bottom: 10px;"><strong>6.</strong> O presente contrato poderá ser rescindido por qualquer das partes, mediante notificação prévia com antecedência mínima de 5 (cinco) dias, sem prejuízo das perdas e danos comprovadamente sofridos pela parte inocente. </p>
             <p style="text-indent: 50px; margin-bottom: 10px;"><strong>Parágrafo Primeiro:</strong> O CONTRATANTE poderá rescindir o contrato de imediato, sem aviso prévio, caso o CONTRATADO descumpra qualquer das cláusulas contratuais, ou, caso haja infração a qualquer legislação vigente, seja no âmbito profissional, seja no âmbito cívil ou criminal; </p>
             <p style="text-indent: 50px; margin-bottom: 10px;"><strong>Parágrafo Segundo:</strong> O CONTRATADO poderá rescindir o contrato de imediato, caso o CONTRATANTE atrase o pagamento dos serviços prestados por mais de 10 (dez) dias úteis ou cometa qualquer infração diante da legislação vigente, seja no âmbito profissional, civil ou criminal;</p>
+           
             
-
-            <br>
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA SÉTIMA – DA NATUREZA DO CONTRATO</strong></p>
             <p style="text-indent: 30px; margin-bottom: 30px;"><strong>7.</strong> As partes declaram expressamente que o presente contrato é de <strong>NATUREZA CIVIL, não gerando qualquer vínculo empregatício entre o CONTRATANTE e o CONTRATADO</strong>, diante disso, o CONTRATADO declara estar CIENTE que é responsável por todas as obrigações fiscais, previdenciárias e trabalhistas decorrentes de sua atividade exercida.</p>
             <div style="margin-left: 50px; margin-bottom: 30px;">
@@ -445,25 +443,20 @@
             <div style="margin-bottom: 5px;"><strong>7.6.</strong> O CONTRATADO é responsável por quaisquer danos causados a terceiros ou ao patrimônio da CONTRATANTE, por si ou por seus colaboradores, decorrentes de dolo ou culpa; </div>
             <div style="margin-bottom: 5px;"><strong>7.7.</strong> A reparação ou indenização por danos deverá ser providenciada imediatamente pelo CONTRATADO, sob pena de rescisão contratual e responsabilização financeira e judicial. </div>
             </div>
-
-            <br>
+           
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA OITAVA – DO SIGILO</strong></p>
             <p style="text-indent: 30px; margin-bottom: 30px;"><strong>8.</strong> CONTRATADO compromete-se a manter <strong>sigilo sobre informações relacionadas aos serviços e à CONTRATANTE</strong>, salvo autorização expressa ou exigência legal, NÃO sendo, neste momento, autorizado nenhum repasse de projetos, memoriais, cadernos técnicos, imagens fotográficas e quaisquer informações relacionadas ao objeto deste instrumento, passível de aplicação de sansão no percentual de 5% (cinco por cento) sobre o saldo em aberto através da retenção fixada no pagamento posterior ao ato de infração comprovado e notificado.</p>
-
-            
-            <br>            
+           
+                       
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA NONA – DO ABANDONO DA OBRA</strong></p>
             <p style="text-indent: 30px; margin-bottom: 30px;"><strong>9.</strong> Caso o CONTRATADO abandone o os serviços ou, deixe de realizar a conclusão do objeto em sua integralidade, sem aviso prévio ou comunicação formal, o valor que ainda lhe for devido, será pago somente após a CONTRATANTE finalizar completamente a execução dos serviços deixados pela CONTRATADA e realizar levantamento de custo e equalização de valores conforme este instrumento, com repasse do saldo que for devido à CONTRATADA no prazo de até 30 (trinta) dias.</p>
-
-
-            <br>
+           
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA DÉCIMA – DAS DISPOSIÇÕES GERAIS</strong></p>
             <p style="text-indent: 30px; margin-bottom: 10px;"><strong>10.</strong> O presente contrato obriga as partes e seus sucessores.</p>
             <div style="margin-left: 50px; margin-bottom: 10px;">
                 <div style="margin-bottom: 5px;"><strong>10.1.</strong> Qualquer alteração neste contrato deverá ser feita por escrito e assinada pelas partes.</div>
             </div>
 
-            <br>
             <br>
             <p style="text-indent: 40px; margin-bottom: 30px;">Fica eleito o foro da comarca de Jataí, estado de Goiás, para dirimir quaisquer dúvidas ou litígios decorrentes do presente contrato, renunciando as partes a qualquer outro, por mais privilegiado que seja.</p>
             <p style="text-indent: 40px; margin-bottom: 30px;">Por estarem assim justos e contratados, as partes assinam o presente termo contratual em 2 (duas) vias de igual teor e forma.</p>
@@ -542,14 +535,13 @@
             <p style="text-indent: 50px; margin-bottom: 10px;"><strong>Parágrafo Primeiro:</strong> Caso o CONTRATADO não cumpra os prazos estabelecidos, após análise e exame dos fatos, poderá ser aplicado multa de 2 % (dois por cento) sobre o valor total dos serviços acumulados por dia de atraso, até o limite de 20 % (vinte por cento) sobre o valor total acumulado desde o último pagamento efetuado.</p> 
               
 
-            <br>
+            
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA SEXTA – DA RESCISÃO</strong></p>
             <p style="text-indent: 30px; margin-bottom: 10px;"><strong>6.</strong> O presente contrato poderá ser rescindido por qualquer das partes, mediante notificação prévia com antecedência mínima de 5 (cinco) dias, sem prejuízo das perdas e danos comprovadamente sofridos pela parte inocente. </p>
             <p style="text-indent: 50px; margin-bottom: 10px;"><strong>Parágrafo Primeiro:</strong> O CONTRATANTE poderá rescindir o contrato de imediato, sem aviso prévio, caso o CONTRATADO descumpra qualquer das cláusulas contratuais, ou, caso haja infração a qualquer legislação vigente, seja no âmbito profissional, seja no âmbito cívil ou criminal; </p>
             <p style="text-indent: 50px; margin-bottom: 10px;"><strong>Parágrafo Segundo:</strong> O CONTRATADO poderá rescindir o contrato de imediato, caso o CONTRATANTE atrase o pagamento dos serviços prestados por mais de 10 (dez) dias úteis ou cometa qualquer infração diante da legislação vigente, seja no âmbito profissional, civil ou criminal;</p>
             
 
-            <br>
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA SÉTIMA – DA NATUREZA DO CONTRATO</strong></p>
             <p style="text-indent: 30px; margin-bottom: 30px;"><strong>7.</strong> As partes declaram expressamente que o presente contrato é de <strong>NATUREZA CIVIL, não gerando qualquer vínculo empregatício entre o CONTRATANTE e o CONTRATADO</strong>, diante disso, o CONTRATADO declara estar CIENTE que é responsável por todas as obrigações fiscais, previdenciárias e trabalhistas decorrentes de sua atividade exercida.</p>
             <div style="margin-left: 50px; margin-bottom: 30px;">
@@ -561,7 +553,6 @@
             <div style="margin-bottom: 5px;"><strong>7.6.</strong> O CONTRATADO é responsável por quaisquer danos causados a terceiros ou ao patrimônio da CONTRATANTE, por si ou por seus colaboradores, decorrentes de dolo ou culpa; </div>
             <div style="margin-bottom: 5px;"><strong>7.7.</strong> A reparação ou indenização por danos deverá ser providenciada imediatamente pelo CONTRATADO, sob pena de rescisão contratual e responsabilização financeira e judicial. </div>
             </div>
-
            
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA OITAVA – DO SIGILO</strong></p>
             <p style="text-indent: 30px; margin-bottom: 30px;"><strong>8.</strong> CONTRATADO compromete-se a manter <strong>sigilo sobre informações relacionadas aos serviços e à CONTRATANTE</strong>, salvo autorização expressa ou exigência legal, NÃO sendo, neste momento, autorizado nenhum repasse de projetos, memoriais, cadernos técnicos, imagens fotográficas e quaisquer informações relacionadas ao objeto deste instrumento, passível de aplicação de sansão no percentual de 5% (cinco por cento) sobre o saldo em aberto através da retenção fixada no pagamento posterior ao ato de infração comprovado e notificado.</p>
@@ -574,8 +565,7 @@
             <div style="margin-left: 50px; margin-bottom: 10px;">
                 <div style="margin-bottom: 5px;"><strong>10.1.</strong> Qualquer alteração neste contrato deverá ser feita por escrito e assinada pelas partes.</div>
             </div>
-
-            <br>
+            
             <p style="text-indent: 40px; margin-bottom: 30px;">Fica eleito o foro da comarca de Jataí, estado de Goiás, para dirimir quaisquer dúvidas ou litígios decorrentes do presente contrato, renunciando as partes a qualquer outro, por mais privilegiado que seja.</p>
             <p style="text-indent: 40px; margin-bottom: 30px;">Por estarem assim justos e contratados, as partes assinam o presente termo contratual em 2 (duas) vias de igual teor e forma.</p>
         </div>`;
