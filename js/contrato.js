@@ -407,12 +407,12 @@
             </div>
 
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA QUARTA – DO VALOR E DA FORMA DE PAGAMENTO</strong></p>
-            <p style="text-indent: 30px; margin-bottom: 10px;"><strong>4.</strong> Os serviços serão remunerados conforme entregas executadas e aprovadas pelo gestor de obra designado pela <strong>${nomeContratanteAssinatura}</strong>, mediante apresentação de Recibo de Prestação de Serviços:</p>
+            <p style="text-indent: 30px; margin-bottom: 10px;"><strong>4.</strong> Os serviços serão remunerados conforme entregas executadas, medidas e aprovadas pelo gestor de obra designado pela <strong>${nomeContratanteAssinatura}</strong>, mediante apresentação de Recibo de Prestação de Serviços:</p>
             <div style="margin-left: 50px; margin-bottom: 30px;">
-                <div style="margin-bottom: 5px;"><strong>4.1.</strong> O valor total dos serviços será de <strong>R$ 382.485,72  (Trezentos e oitenta e dois mil quatrocentos e oitenta e cinco reais e setenta e dois centavos)</strong>, devendo ser pago através de medição conforme entrega dos serviços, estimando a duração de vigência contratual para <strong>120 (cento e vinte)</strong> dias úteis a partir da assinatura deste instrumento.</div>
-                <div style="margin-bottom: 5px;"><strong>4.2.</strong> O pagamento será efetuado em até 15 (quinze) dias corridos após execução de cada etapa de serviço; </div>
-                <div style="margin-bottom: 5px;"><strong>4.3.</strong> Os pagamentos ocorrerão após conferência e medição dos serviços e a devida aprovação pelo responsável designado pela CONTRATANTE, que ocorrerá a cada 15 (quinze) dias.</div>
-                <div style="margin-bottom: 5px;"><strong>4.4.</strong> Os pagamentos deverão ser realizados por meio de transferência bancária para a conta indicada pelo CONTRATADO.</div>
+                <div style="margin-bottom: 5px;"><strong>4.1.</strong> O valor total dos serviços será de <strong>R$ 382.485,72  (Trezentos e oitenta e dois mil quatrocentos e oitenta e cinco reais e setenta e dois centavos)</strong>, devendo ser pago recorrentemente através de medição mensal, conforme entrega dos serviços, estimando a duração de vigência contratual para <strong>120 (cento e vinte)</strong> dias úteis a partir da assinatura deste instrumento.</div>
+                <div style="margin-bottom: 5px;"><strong>4.2.</strong> A Medição dos serviços concluidos será realizada pelo profissional indicado da Prefeitira de Jataí todo dia 1º do mês;
+                <div style="margin-bottom: 5px;"><strong>4.3.</strong> A Aprovação do pagamento ocorrerá após a conferência da medição, e a devida aprovação pelo responsável designado pela CONTRATANTE</div>
+                <div style="margin-bottom: 5px;"><strong>4.4.</strong> O pagamento será efetuado pontualmente entre os dias 15 (quinze) e 20 (vinte) de cada mês, via transferência bancária para a conta indicada pelo CONTRATADO.          
             </div>    
 
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA QUINTA – DO PRAZO</strong></p>
