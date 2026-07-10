@@ -358,7 +358,7 @@
             <p style="text-indent: 5px; margin-bottom: 8px;">Contrato de Prestação de Serviços celebrado entre as seguintes partes:</p>
 
             <p style="margin-bottom: 5px;"><strong>CONTRATANTE</strong></p>
-            <p style="text-indent: 40px; margin-bottom: 15px;"><strong>RV NEGOCIOS E COMPRANHIA LTDA</strong>, pessoa jurídica de direito privado, inscrita no CNPJ nº 61.893.912/0001-24, com sede na Rua Mineiros, S/N - QD 09 LT 12  - CEP 75.800-094, Santa Maria, no Município de Jataí, Estado de Goiás, neste ato representada por seu titular NÚBIA LAFAIETE APARECIDA DA SILVA, brasileiro, portador do CPF nº 320.993.981-00, residente e domiciliado na Rua Mineiros, S/N - QD 09 LT 12  - CEP 75.800-094, Santa Maria, Município de Jataí, Estado de Goiás, doravante denominado(a) simplesmente <strong>CONTRATANTE</strong>.</p>
+            <p style="text-indent: 40px; margin-bottom: 15px;"><strong>RV NEGOCIOS E COMPRANHIA LTDA</strong>, pessoa jurídica de direito privado, inscrita no <strong>CNPJ nº 61.893.912/0001-24</strong>, com sede na <strong>Rua Mineiros, S/N - QD 09 LT 12  - CEP 75.800-094, Santa Maria, no Município de Jataí, Estado de Goiás</strong>, neste ato representada por seu titular NÚBIA LAFAIETE APARECIDA DA SILVA, brasileiro, portador do CPF nº 320.993.981-00, residente e domiciliado na Rua Mineiros, S/N - QD 09 LT 12  - CEP 75.800-094, Santa Maria, Município de Jataí, Estado de Goiás, doravante denominado(a) simplesmente <strong>CONTRATANTE</strong>.</p>
 
             <p style="margin-bottom: 5px;"><strong>CONTRATADO</strong></p>
             <p style="text-indent: 40px; margin-bottom: 15px;"><strong>${(e.nome || '').toUpperCase()}</strong>, portador do <strong>CPF nº ${e.cpf || '______________'}</strong> residente e domiciliado na <strong>${e.endereco || '____________________________________________________'}</strong>, no Município de Jataí, Estado de Goiás, doravante denominado simplesmente <strong>CONTRATADO</strong>.</p>
@@ -377,7 +377,7 @@
           </div>
 
             <br>
-            <p style="text-indent: 40px; margin-bottom: 8px;"><strong>Parágrafo Primeiro:</strong> As atividades serão executadas na obra localizada na <strong>${enderecoObra}</strong>.</p>
+            <p style="text-indent: 40px; margin-bottom: 8px;"><strong>Parágrafo Primeiro:</strong> As atividades serão executadas na obra localizada na <strong>${enderecoObra}, nomeada ${obraVinculada.nome}</strong>.</p>
             <p style="text-indent: 40px; margin-bottom: 10px;"><strong>Parágrafo Segundo:</strong> O CONTRATADO declara possuir capacidade técnica, experiência e disponibilidade para execução direta ou por meio de profissionais de sua equipe, responsabilizando-se pela qualidade e segurança dos serviços.</p>
 
 
@@ -444,15 +444,7 @@
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA OITAVA – DO SIGILO</strong></p>
             <p style="text-indent: 30px; margin-bottom: 30px;"><strong>8.</strong> CONTRATADO compromete-se a manter <strong>sigilo sobre informações relacionadas aos serviços e à CONTRATANTE</strong>, salvo autorização expressa ou exigência legal, NÃO sendo, neste momento, autorizado nenhum repasse de projetos, memoriais, cadernos técnicos, imagens fotográficas e quaisquer informações relacionadas ao objeto deste instrumento, passível de aplicação de sansão no percentual de 5% (cinco por cento) sobre o saldo em aberto através da retenção fixada no pagamento posterior ao ato de infração comprovado e notificado.</p>
 
-
-            <br>
-            <br>
-            <br>
-            <br>
-            <br>
-            <br>
-            <br>
-            <br>
+            
             <br>            
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA NONA – DO ABANDONO DA OBRA</strong></p>
             <p style="text-indent: 30px; margin-bottom: 30px;"><strong>9.</strong> Caso o CONTRATADO abandone o os serviços ou, deixe de realizar a conclusão do objeto em sua integralidade, sem aviso prévio ou comunicação formal, o valor que ainda lhe for devido, será pago somente após a CONTRATANTE finalizar completamente a execução dos serviços deixados pela CONTRATADA e realizar levantamento de custo e equalização de valores conforme este instrumento, com repasse do saldo que for devido à CONTRATADA no prazo de até 30 (trinta) dias.</p>
