@@ -88,13 +88,15 @@
         <button onclick="navigate('dash')" id="nav-dash" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="layout-dashboard"></i> <span class="font-medium text-sm">Visão Geral</span></button>
         <button onclick="navigate('oc')" id="nav-oc" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="folder-open"></i> <span class="font-medium text-sm">Ordens de Compra</span></button>
         <button onclick="navigate('pos')" id="nav-pos" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="shopping-cart"></i> <span class="font-medium text-sm">Nova O.C.</span></button>
-        <button onclick="navigate('fin')" id="nav-fin" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="bar-chart-3"></i> <span class="font-medium text-sm">Financeiro Obras</span></button>
         <div class="border-t border-slate-800 my-2 pt-2"></div>
+        <button onclick="navigate('fin')" id="nav-fin" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="bar-chart-3"></i> <span class="font-medium text-sm">Financeiro Obras</span></button>
         <button onclick="navigate('equipe')" id="nav-equipe" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="users"></i> <span class="font-medium text-sm">Equipe</span></button>
         <!--<button id="nav-terc" onclick="navigate('terc')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition font-medium"><i data-lucide="hard-hat" width="20"></i> Terceirizados </button>-->
+        <div class="border-t border-slate-800 my-2 pt-2"></div>
         <button onclick="navigate('fornecedores')" id="nav-fornecedores" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="truck"></i> <span class="font-medium text-sm">Fornecedores</span></button>
         <button onclick="navigate('prod')" id="nav-prod" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="package"></i> <span class="font-medium text-sm">Produtos</span></button>
         <button onclick="navigate('fases')" id="nav-fases" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="layers"></i> <span class="font-medium text-sm">Fases de Obra</span></button>
+        <div class="border-t border-slate-800 my-2 pt-2"></div>
         <button onclick="navigate('reports')" id="nav-reports" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="pie-chart"></i> <span class="font-medium text-sm">Relatórios</span></button>
         <button onclick="navigate('precos')" id="nav-precos" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="trending-up"></i> <span class="font-medium text-sm">Histórico de Preços</span></button>
         <div class="border-t border-slate-800 my-2 pt-2"></div>
@@ -1151,8 +1153,9 @@
                         <option value="contrato2">Contrato de Trabalho - Pedreiro</option>
                          <option value="metragem">Contrato de Trabalho - Metragem (M²)</option>
                         <option value="epi">Comprovante de Entrega de EPI's</option>
-                        <option value="empreita1">EMPREITA VILA LUIZA</option>
-                      <option value="empreita2">EMPREITA COLMEIA PARK</option>
+                        <!--<option value="empreita1">EMPREITA VILA LUIZA</option>-->
+                        <!--<option value="empreita2">EMPREITA COLMEIA PARK</option>-->
+                        <option value="empreita3"> EMPREITA (AZM)</option>
                     </select>
                 </div>
 
@@ -1803,36 +1806,58 @@
 
         // ====== CARRINHO (NOVA O.C.) ======
         function renderCart() {
-            const box = document.getElementById('pos-cart-items');
-            if(!CART.length) { 
-                box.innerHTML='<div class="flex flex-col items-center justify-center h-full text-slate-400 mt-10"><i data-lucide="shopping-basket" class="w-16 h-16 mb-4 opacity-50"></i><p class="text-sm">Nenhum item adicionado.</p></div>'; 
-                document.getElementById('pos-total-display').innerText=formatMoney(0); 
-                document.getElementById('cart-count').innerText='0'; 
-                lucide.createIcons();
-                return; 
-            }
-            let sub = 0;
-            box.innerHTML = CART.map((i,idx) => {
-                const totalItem = i.qty * i.price; sub += totalItem;
-                return `
-                <div class="bg-white p-3 border border-slate-200 rounded-xl mb-2 flex items-center justify-between gap-4 shadow-sm hover:border-blue-300 hover:shadow-md transition">
-                    <div class="flex-1 min-w-0">
-                        <div class="text-sm font-bold text-slate-700 truncate">${i.name}</div>
-                        <div class="text-[10px] text-slate-400 uppercase font-bold">${i.cat || 'Geral'}</div>
-                    </div>
-                    <div class="flex items-center gap-2 shrink-0">
-                        <input type="number" value="${i.qty}" onchange="updateCart(${idx}, 'qty', this.value)" class="w-16 p-2 border rounded-lg bg-slate-50 text-center text-sm font-bold focus:border-blue-500 outline-none">
-                        <span class="text-slate-400 text-xs font-bold">x</span>
-                        <input type="number" step="0.01" value="${i.price}" onchange="updateCart(${idx}, 'price', this.value)" class="w-24 p-2 border rounded-lg bg-slate-50 text-center text-sm font-bold focus:border-blue-500 outline-none">
-                    </div>
-                    <div class="font-black text-slate-800 w-24 text-right shrink-0 text-sm">${formatMoney(totalItem)}</div>
-                    <button onclick="CART.splice(${idx},1);renderCart()" class="text-red-400 hover:text-red-600 shrink-0 p-2 rounded-lg hover:bg-red-50"><i data-lucide="x-circle" width="18"></i></button>
-                </div>`;
-            }).join('');
-            document.getElementById('pos-total-display').innerText = formatMoney(sub);
-            document.getElementById('cart-count').innerText = CART.length;
-            lucide.createIcons();
-        }
+          const box = document.getElementById('pos-cart-items');
+          const totalDisplay = document.getElementById('pos-total-display');
+          const countDisplay = document.getElementById('cart-count');
+          
+          if(!CART.length) { 
+              box.innerHTML = '<div class="flex flex-col items-center justify-center h-full text-slate-400 mt-10"><i data-lucide="shopping-basket" class="w-16 h-16 mb-4 opacity-50"></i><p class="text-sm">Nenhum item adicionado.</p></div>';
+              totalDisplay.innerText = formatMoney(0);
+              countDisplay.innerText = '0';
+              lucide.createIcons();
+              return; 
+          }
+      
+          let sub = 0;
+          box.innerHTML = CART.map((i, idx) => {
+              const fixedPrice = i.fixedPrice || i.price;
+              const unitPrice = i.price;
+              const qty = i.qty;
+              const totalItem = qty * unitPrice;
+              sub += totalItem;
+      
+              let descontoPercentual = 0;
+              if (fixedPrice > 0) {
+                  descontoPercentual = ((fixedPrice - unitPrice) / fixedPrice) * 100;
+              }
+              const isDescontoAlto = descontoPercentual > 30;
+              const descontoStr = descontoPercentual > 0 ? `${descontoPercentual.toFixed(1)}% off` : '';
+      
+              return `
+              <div class="bg-white p-3 border rounded-xl mb-2 flex items-start justify-between gap-4 shadow-sm hover:border-blue-300 hover:shadow-md transition ${isDescontoAlto ? 'border-l-4 border-l-red-500 bg-red-50/30' : ''}">
+                  <div class="flex-1 min-w-0">
+                      <div class="text-sm font-bold text-slate-700 truncate">${i.name}</div>
+                      <div class="text-[10px] text-slate-400 uppercase font-bold">${i.cat || 'Geral'}</div>
+                      <div class="flex flex-wrap items-center gap-2 mt-1 text-xs">
+                          <span class="text-slate-500 font-medium">Preço base: <span class="font-bold text-slate-700">${formatMoney(fixedPrice)}</span></span>
+                          ${descontoStr ? `<span class="text-orange-600 font-bold ${isDescontoAlto ? 'text-red-600 animate-pulse' : ''}">${descontoStr}</span>` : ''}
+                          ${isDescontoAlto ? `<span class="text-[10px] text-red-500 font-bold bg-red-100 px-1.5 py-0.5 rounded">⚠️ Desconto elevado!</span>` : ''}
+                      </div>
+                  </div>
+                  <div class="flex items-center gap-2 shrink-0">
+                      <input type="number" value="${qty}" onchange="updateCart(${idx}, 'qty', this.value)" class="w-16 p-2 border rounded-lg bg-slate-50 text-center text-sm font-bold focus:border-blue-500 outline-none">
+                      <span class="text-slate-400 text-xs font-bold">x</span>
+                      <input type="number" step="0.01" value="${unitPrice}" onchange="updateCart(${idx}, 'price', this.value)" class="w-24 p-2 border rounded-lg bg-slate-50 text-center text-sm font-bold focus:border-blue-500 outline-none">
+                  </div>
+                  <div class="font-black text-slate-800 w-24 text-right shrink-0 text-sm">${formatMoney(totalItem)}</div>
+                  <button onclick="CART.splice(${idx},1);renderCart()" class="text-red-400 hover:text-red-600 shrink-0 p-2 rounded-lg hover:bg-red-50"><i data-lucide="x-circle" width="18"></i></button>
+              </div>`;
+          }).join('');
+      
+          totalDisplay.innerText = formatMoney(sub);
+          countDisplay.innerText = CART.length;
+          lucide.createIcons();
+      }
         function updateCart(idx, field, value) { CART[idx][field] = parseFloat(value)||0; renderCart(); }
         function clearCart() { 
             CART=[]; 
@@ -1867,9 +1892,23 @@
         function addCartModal(id, name, price) {
             const p = STATE.produtos.find(x => x.id == id);
             const cat = p ? p.categoria : 'Geral';
+            const fixedPrice = p ? p.preco : price; // preço fixo cadastrado
             const exist = CART.find(x => x.id == id);
-            if(exist) exist.qty += 1; else CART.push({id, name, price, qty: 1, cat: cat});
-            showToast(`${name} adicionado!`); renderCart();
+            if(exist) {
+                exist.qty += 1;
+                // se o preço atual for igual ao preço de cadastro, mantém; senão não sobrescreve
+            } else {
+                CART.push({
+                    id: id,
+                    name: name,
+                    price: fixedPrice,        // preço inicial = preço fixo
+                    fixedPrice: fixedPrice,  // guarda o original
+                    qty: 1,
+                    cat: cat
+                });
+            }
+            showToast(`${name} adicionado!`);
+            renderCart();
         }
 
         function openPosFornecedorModal() { document.getElementById('pos-fornecedor-modal').classList.remove('hidden'); renderPosFornecedorModal(); }
@@ -1991,7 +2030,19 @@
             const itemsLog = STATE.logs.filter(l => String(l.id) === String(id) && l.tipo === 'oc_pendente');
             if(!itemsLog.length) return;
 
-            CART = itemsLog.map(i => ({ name: i.produto_nome, qty: parseFloat(i.quantidade), price: (parseFloat(i.valor_total)/parseFloat(i.quantidade)), total: parseFloat(i.valor_total), cat: i.categoria }));
+            CART = itemsLog.map(i => {
+                const prod = STATE.produtos.find(p => p.nome === i.produto_nome);
+                const priceAtual = parseFloat(i.valor_total) / parseFloat(i.quantidade);
+                const fixedPrice = prod ? prod.preco : priceAtual; // se não achar, usa o atual
+                return {
+                    name: i.produto_nome,
+                    qty: parseFloat(i.quantidade),
+                    price: priceAtual,
+                    fixedPrice: fixedPrice,
+                    total: parseFloat(i.valor_total),
+                    cat: i.categoria || 'Geral'
+                };
+            });
             CURRENT_OC_ID = id;
             
             document.getElementById('pos-obra').value = itemsLog[0].obra_id || '';
@@ -3316,12 +3367,9 @@
               containerReceber.classList.remove('hidden');
               containerPagar.classList.add('hidden');
           }
-      }
-
-
-     
+      }     
       
-       // function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
+      
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.href = "index.html?t=" + Date.now();  }
     </script>
     <script src="js/precos.js"></script>
