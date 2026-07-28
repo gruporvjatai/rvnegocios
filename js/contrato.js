@@ -571,6 +571,136 @@
             <p style="text-indent: 40px; margin-bottom: 30px;">Fica eleito o foro da comarca de Jataí, estado de Goiás, para dirimir quaisquer dúvidas ou litígios decorrentes do presente contrato, renunciando as partes a qualquer outro, por mais privilegiado que seja.</p>
             <p style="text-indent: 40px; margin-bottom: 30px;">Por estarem assim justos e contratados, as partes assinam o presente termo contratual em 2 (duas) vias de igual teor e forma.</p>
         </div>`;
+
+
+
+        } else if (tipo === 'empreita3') {
+        titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS POR EMPREITADA PARA EXECUÇÃO DE ETAPAS DE OBRA SEM VÍNCULO EMPREGATÍCIO <br><br> Nº ${matricula}/${ano} | JATAÍ – GOIÁS`;
+        nomeContratanteAssinatura = "RV NEGOCIOS E COMPANHIA LTDA";
+        localVL = "UBS COLMEIA PARK – JATAÍ - GO";
+        
+        corpoTexto = `
+        <div style="text-align: justify; font-size: 12pt; line-height: 1.6;">
+            <p style="text-indent: 5px; margin-bottom: 8px;">Contrato de Prestação de Serviços celebrado entre as seguintes partes:</p>
+
+            <p style="margin-bottom: 5px;"><strong>CONTRATANTE</strong></p>
+            <p style="text-indent: 40px; margin-bottom: 15px;"><strong>RV NEGOCIOS E COMPANHIA LTDA</strong>, pessoa jurídica de direito privado, inscrita no <strong>CNPJ nº 61.893.912/0001-24</strong>, com sede na <strong>Rua Mineiros, S/N - QD 09 LT 12  - CEP 75.800-094, Santa Maria, no Município de Jataí, Estado de Goiás</strong>, neste ato representada por seu titular NÚBIA LAFAIETE APARECIDA DA SILVA, brasileiro, portador do CPF nº 320.993.981-00, residente e domiciliado na Rua Mineiros, S/N - QD 09 LT 12  - CEP 75.800-094, Santa Maria, Município de Jataí, Estado de Goiás, doravante denominado(a) simplesmente <strong>CONTRATANTE</strong>.</p>
+
+            <p style="margin-bottom: 5px;"><strong>CONTRATADO</strong></p>
+            <p style="text-indent: 40px; margin-bottom: 15px;"><strong>${(e.nome || '').toUpperCase()}</strong>, portador do <strong>CPF nº ${e.cpf || '______________'}</strong> residente e domiciliado na <strong>${e.endereco || '____________________________________________________'}</strong>, no Município de Jataí, Estado de Goiás, doravante denominado simplesmente <strong>CONTRATADO</strong>.</p>
+
+            <p style="text-indent: 40px; margin-bottom: 30px;">As partes acima identificadas, tendo em vista o interesse mútuo, resolvem celebrar o presente contrato de prestação de serviços, que se regerá pelas cláusulas e condições seguintes:</p>
+
+            <p style="margin-bottom: 15px;"><strong>CLÁUSULA PRIMEIRA - DO OBJETO</strong></p>
+            <p style="text-indent: 30px; margin-bottom: 10px;"><strong>1.</strong> O presente contrato tem como objeto o FORNECIMENTO MÃO DE OBRA ESPECIALIZADA EM CONSTRUÇÃO CIVIL PARA EXECUÇÃO DA OBRA DE CONCLUSÃO DA UBS DENOMINADA COMO COLMEIA PARK DE FORMA SUBEMPREITADA CONFORME ESPECIFICAÇÕES TÉCNICAS, PLANILHA ORÇAMENTÁRIA, QUANTITATIVOS E CRONOGRAMA FÍSICO E FINANCEIRO DE CONHECIMENTO PARA ASSINATURA DESTE TERMO, na cidade de Jataí no estado de Goiás, a serem executados pelo CONTRATADO, conforme os termos que se determinam a seguir:</p>
+            
+            <div style="margin-left: 50px; margin-bottom: 15px;">
+                <div style="margin-bottom: 5px;"><strong>1.1.</strong> O contratado executará os serviços com autonomia técnica, observando as diretrizes do projeto, sem subordinação hierárquica conforme levantamentos realizados, projetos disponibilizados e com a devida atenção aos requisitos estabelecidos em normas técnicas e certificações de qualidade para garantir a integralidade e eficiência na execução do objeto;</div>
+                <div style="margin-bottom: 5px;"><strong>1.2.</strong> Não é permitido a subcontratação dos serviços, sendo necessário disposição de equipe de profissionais, com as devidas qualificações técnicas, bem como, garantir o cumprimento da programação de etapas/períodos objeto deste instrumento contratual;</div>
+                <div style="margin-bottom: 5px;"><strong>1.3.</strong> Após aceitação mobilização de equipe para o canteiro, deverá ser encaminhado além dos documentos pessoais da equipe disponibilizada, garantir mensalmente o envio das certidões de regularidade com os órgãos governamentais (municipal, estadual, federal, trabalhista e do FGTS), critério para pagamento das medições de serviços;</div>
+                <div style="margin-bottom: 5px;"><strong>1.4.</strong> Na execução das atividades, o contratado deverá realizar a execução dos serviços conforme objeto contratual - detalhamento do objeto:</div>
+                <div style="margin-left: 20px; margin-bottom: 11px;"><strong>1.4.1.</strong> Execução das etapas de concretagem de pilares, vigas superiores, lajes e demais elementos estruturais; desforma de caixarias e aplicação de impermeabilizações; controle de produção, transporte e aplicação de argamassas para alvenaria, chapisco, reboco e emboço; separação, transporte e instalação de materiais hidráulicos e elétricos; preparação de superfícies para acabamento, incluindo lixamento, preparo para pintura, execução de pisos e contrapisos; acompanhamento das marcações e cortes em alvenaria para passagem de eletrodutos; limpeza geral do canteiro de obras; lista de pedidos e controle de materiais, assentamento de pisos cerâmicos e revestimentos conforme as diretrizes técnicas e orientações da CONTRATANTE.</div>
+            </div>
+
+            <br>
+            <p style="text-indent: 40px; margin-bottom: 8px;"><strong>Parágrafo Primeiro:</strong> As atividades serão executadas na obra localizada na <strong>${localVL}</strong>.</p>
+            <p style="text-indent: 40px; margin-bottom: 10px;"><strong>Parágrafo Segundo:</strong> O CONTRATADO declara possuir capacidade técnica, experiência e disponibilidade para execução direta com fornecimento de profissionais qualificados e aptos a execução dos serviços, responsabilizando-se pela qualidade e segurança durante às execuções.</p>
+
+            <br>
+            <p style="margin-bottom: 15px;"><strong>CLÁUSULA SEGUNDA - DAS OBRIGAÇÕES DO CONTRATADO</strong></p>
+            <p style="text-indent: 30px; margin-bottom: 10px;"><strong>2.</strong> Além das obrigações implícitas, o CONTRATADO se obriga a:</p>
+            <div style="margin-left: 50px; margin-bottom: 40px;">
+                <div style="margin-bottom: 5px;"><strong>2.1.</strong> Executar os serviços com qualidade, presteza e diligência, observando as normas técnicas aplicáveis, observando diretrizes técnicas do projeto, sem ingerência direta na forma de execução.</div>
+                <div style="margin-bottom: 5px;"><strong>2.2.</strong> Garantir fornecimento e uso adequado de equipamentos de proteção individual (EPIs) conforme necessidade para cada um dos riscos das atividades, se responsabilizando pela sua correta utilização e conservação, e garantindo que durante o período no interior do canteiro, será sempre utilizado os EPI's.</div>
+                <div style="margin-bottom: 5px;"><strong>2.3.</strong> Responsabilizar-se por quaisquer danos causados a terceiros ou ao CONTRATANTE, decorrentes de sua atuação, por dolo ou culpa.</div>
+                <div style="margin-bottom: 5px;"><strong>2.4.</strong> Realizar o cumprimento de normas técnicas e de segurança de trabalho, respeitando as diretrizes técnicas e normas aplicáveis ao projeto repassadas pela CONTRATANTE.</div>
+                <div style="margin-bottom: 5px;"><strong>2.5.</strong> Arcar com todas as despesas relativas ao seu deslocamento, alimentação e vestuário;</div>
+                <div style="margin-bottom: 5px;"><strong>2.6.</strong> Arcar e reparar às suas exclusivas expensas, os danos e infortunísticas que possam ocorrer durante a prestação dos serviços e por quaisquer danos que vier a causar a CONTRATANTE ou a terceiros, por si, seus empregados ou prepostos, por ação ou omissão, em razão de dolo, imprudência, imperícia ou negligência</div>
+                <div style="margin-bottom: 5px;"><strong>2.7.</strong> O CONTRATADO é responsável pelo recolhimento de todos os tributos incidentes sobre os serviços prestados (ISS, IR, INSS etc.), não sendo responsabilidade da CONTRATANTE realizar pagamento de taxas para o CONTRATADO ou mesmo de sua equipe.</div>
+                <div style="margin-bottom: 5px;"><strong>2.8.</strong> Cumprir rigorosamente os prazos estabelecidos para a execução dos serviços, sob pena de multa contratual.</div>
+                <div style="margin-bottom: 5px;"><strong>2.9.</strong> Manter, durante toda a execução do contrato, todas as condições de habilitação e qualificação exigidas, e quando necessário um comunicado formal sempre que houver quaisquer impedimentos para o bom andamento deste instrumento.</div>
+                <div style="margin-bottom: 5px;"><strong>2.10.</strong> O CONTRATADO é responsável pela comunicação antecipada sobre necessidade de materiais ou insumos a serem usados na obra.</div>
+                <div style="margin-bottom: 5px;"><strong>2.11.</strong> Refazer os trabalhos sem custo à CONTRATANTE caso os trabalhos tenham ocorrido fora do escopo/proposta, com vícios/defeitos na execução ou haja questionamentos e adequações advindas dos órgãos legais. Nestas hipóteses ficará a CONTRATADA obrigada a refazer, desfazer ou ressarcir os serviços fora de escopo ou não requisitados, no prazo de 24 (vinte e quatro) horas após solicitação expressa da CONTRATANTE.</div>
+            </div>
+
+            <p style="margin-bottom: 15px;"><strong>CLÁUSULA TERCEIRA – DAS OBRIGAÇÕES DO CONTRATANTE</strong></p>
+            <p style="text-indent: 30px; margin-bottom: 10px;"><strong>3.</strong> O CONTRANTE se obriga a:</p>
+            <div style="margin-left: 50px; margin-bottom: 30px;">
+                <div style="margin-bottom: 5px;"><strong>3.1.</strong> Fornecer as informações e os materiais de responsabilidade da Contratante para a execução dos serviços, dentro dos prazos estabelecidos e acordados;</div>
+                <div style="margin-bottom: 5px;"><strong>3.2.</strong> Fiscalizar, aferir e atestar os serviços executados, sem interferência na autonomia técnica do contratado, garantindo o cumprimento das especificações técnicas e das normas de segurança, bem como, fidelidade ao projeto e memoriais de execução fornecidos;</div>
+                <div style="margin-bottom: 5px;"><strong>3.3.</strong> Efetuar o pagamento pelos serviços prestados, conforme o valor e a forma de pagamento estabelecidos neste contrato conforme medições e aferições atestadas;</div>
+                <div style="margin-bottom: 5px;"><strong>3.4.</strong> Disponibilizar um ambiente de trabalho seguro e adequado para a execução dos serviços;</div>
+                <div style="margin-bottom: 5px;"><strong>3.5.</strong> Havendo necessidade, a pedido da Contratada, a Contratante poderá disponibilizar treinamentos para os serviços em altura conforme padrões normativos (NR's), sabendo-se que, treinamentos de caráter institucional e segurança normativa, não configurando subordinação ou vínculo, sendo de livre escolha da Contratada aderir o treinamento pela Contratante, ou, apresentar as devidas comprovações realizadas a tempo e modo que lhe couber.</div>
+            </div>
+
+            <p style="margin-bottom: 15px;"><strong>CLÁUSULA QUARTA - DO VALOR E DA FORMA DE PAGAMENTO</strong></p>
+            <p style="text-indent: 30px; margin-bottom: 10px;"><strong>4.</strong> Os serviços serão remunerados conforme entregas executadas, medidas e aprovadas pelo gestor de obra designado pelos CONTRATANTES EM EPÍGRAFE, mediante apresentação de Recibo de Prestação de Serviços:</p>
+            <div style="margin-left: 50px; margin-bottom: 30px;">
+                <div style="margin-bottom: 5px;"><strong>4.1.</strong> O valor total dos serviços será de <strong>R$ 382.485,72 (Trezentos e oitenta e dois mil quatrocentos e oitenta e cinco reais e setenta e dois centavos)</strong>, devendo ser pago recorrentemente através de medição mensal, conforme entrega dos serviços, estimando a duração de vigência contratual presentes nesse instrumento.</div>
+                <div style="margin-bottom: 5px;"><strong>4.2.</strong> A Medição dos serviços concluídos será realizada pelo profissional indicado da CONTRATANTE todo dia 7 (sétimo dia) útil do mês;</div>
+                <div style="margin-bottom: 5px;"><strong>4.3.</strong> A Aprovação do pagamento ocorrerá após a conferência da medição, atestado da fiscalização da obra juntamente com a devida aprovação pelo responsável designado pela CONTRATANTE;</div>
+                <div style="margin-bottom: 5px;"><strong>4.4.</strong> O pagamento será efetuado pontualmente entre os dias 15 (quinze) e 20 (vinte) de cada mês, via transferência bancária para a conta indicada pelo CONTRATADO.</div>
+            </div>    
+
+            <p style="margin-bottom: 15px;"><strong>CLÁUSULA QUINTA – DAS ALTERAÇÕES CONTRATUAIS, SERVIÇOS EXTRAORDINÁRIOS E REEQUILÍBRIO</strong></p>
+            <p style="text-indent: 30px; margin-bottom: 10px;"><strong>5.1 Alterações do objeto</strong></p>
+            <p style="text-indent: 40px; margin-bottom: 10px;">Os quantitativos previstos na planilha orçamentária poderão sofrer acréscimos ou supressões em razão de alterações técnicas, necessidade da obra ou determinação do contratante principal, desde que previamente formalizados entre as partes.</p>
+            <p style="text-indent: 40px; margin-bottom: 10px;"><strong>Parágrafo único.</strong> Nenhuma alteração de quantitativo produzirá efeitos financeiros sem a correspondente formalização entre CONTRATANTE e CONTRATADO.</p>
+
+            <p style="text-indent: 30px; margin-bottom: 10px;"><strong>5.2 Serviços extraordinários</strong></p>
+            <p style="text-indent: 40px; margin-bottom: 10px;">Os serviços não contemplados na planilha orçamentária, memorial descritivo ou cronograma físico-financeiro serão considerados serviços extraordinários.</p>
+            <p style="text-indent: 40px; margin-bottom: 10px;">Sua execução dependerá de autorização prévia e expressa da CONTRATANTE, contendo descrição, quantitativos, prazo e valor correspondente.</p>
+            <p style="text-indent: 40px; margin-bottom: 10px;">Na ausência de autorização formal, a CONTRATANTE ficará desobrigada ao pagamento dos serviços executados além do objeto originalmente contratado.</p>
+
+            <p style="text-indent: 30px; margin-bottom: 10px;"><strong>5.3 Termo Aditivo</strong></p>
+            <p style="text-indent: 40px; margin-bottom: 10px;">Qualquer alteração referente a: valor; prazo; escopo; quantitativos; cronograma; metodologia executiva; Deverá ser formalizada mediante Termo Aditivo ou Ordem de Serviço assinada pelas partes, passando a integrar este contrato.</p>
+
+            <p style="text-indent: 30px; margin-bottom: 10px;"><strong>5.4 Caso fortuito e força maior</strong></p>
+            <p style="text-indent: 40px; margin-bottom: 10px;">Os atrasos decorrentes de caso fortuito ou força maior, nos termos do artigo 393 do Código Civil, devidamente comprovados, não caracterizarão inadimplemento contratual. Consideram-se exemplificativamente: chuvas excepcionais; enchentes; vendavais; embargos administrativos; paralisações determinadas por órgãos públicos; indisponibilidade comprovada do local de execução; fatos imprevisíveis e inevitáveis que impeçam a continuidade normal dos serviços.</p>
+            <p style="text-indent: 40px; margin-bottom: 10px;">Ocorrendo tais hipóteses, os prazos contratuais serão revistos proporcionalmente mediante comunicação formal entre as partes.</p>
+
+            <p style="text-indent: 30px; margin-bottom: 10px;"><strong>5.5 Reequilíbrio econômico-financeiro</strong></p>
+            <p style="text-indent: 40px; margin-bottom: 10px;">Ocorrendo fato superveniente, imprevisível ou de consequências incalculáveis que altere substancialmente os custos da execução dos serviços, as partes poderão negociar o reequilíbrio econômico-financeiro deste contrato, mediante demonstração documental da efetiva variação dos custos e formalização por instrumento próprio.</p>
+
+            <br>
+            <p style="margin-bottom: 15px;"><strong>CLÁUSULA SEXTA - DA RESCISÃO</strong></p>
+            <p style="text-indent: 30px; margin-bottom: 10px;"><strong>6.</strong> O presente contrato poderá ser rescindido por qualquer das partes, mediante notificação prévia com antecedência mínima de 5 (cinco) dias, sem prejuízo das perdas e danos comprovadamente sofridos pela parte inocente.</p>
+            <p style="text-indent: 50px; margin-bottom: 10px;"><strong>Parágrafo Primeiro:</strong> O CONTRATANTE poderá rescindir o contrato de imediato, sem aviso prévio, caso o CONTRATADO descumpra qualquer das cláusulas contratuais, ou, caso haja infração a qualquer legislação vigente, seja no âmbito profissional, seja no âmbito civil ou criminal;</p>
+            <p style="text-indent: 50px; margin-bottom: 10px;"><strong>Parágrafo Segundo:</strong> O CONTRATADO poderá rescindir o contrato de imediato, caso o CONTRATANTE atrase o pagamento dos serviços prestados por mais de 10 (dez) dias úteis ou cometa qualquer infração diante da legislação vigente, seja no âmbito profissional, civil ou criminal;</p>
+
+            <br>
+            <p style="margin-bottom: 15px;"><strong>CLÁUSULA SÉTIMA – DA NATUREZA DO CONTRATO</strong></p>
+            <p style="text-indent: 30px; margin-bottom: 30px;"><strong>7.</strong> As partes declaram expressamente que o presente contrato é de <strong>NATUREZA CIVIL, não gerando qualquer vínculo empregatício entre o CONTRATANTE e o CONTRATADO</strong>, diante disso, o CONTRATADO declara estar CIENTE que é responsável por todas as obrigações fiscais, previdenciárias e trabalhistas decorrentes de sua atividade exercida.</p>
+            <div style="margin-left: 50px; margin-bottom: 30px;">
+                <div style="margin-bottom: 5px;"><strong>7.1.</strong> As partes reconhecem expressamente que este contrato tem natureza de prestação com a Execução de serviços especializados por equipe própria da contratada, divididas por etapas, e que, o CONTRATADO possui o livre direito prestar serviços à terceiros sem ônus para esta CONTRATANTE;</div>
+                <div style="margin-bottom: 5px;"><strong>7.2.</strong> O CONTRATADO declara que realiza seus serviços de forma autônoma e independente, sem subordinação, e NÃO POSSUI VÍNCULO TRABALHISTA com esta CONTRATANTE, e declara estar ciente de que o acesso ao canteiro deverá estar compatibilizado com o funcionamento da obra, sem controle de jornada ou subordinação, sendo este, o responsável pela escala de trabalho sem prejuízos aos prazos estabelecidos em cronograma para entrega do objeto;</div>
+                <div style="margin-bottom: 5px;"><strong>7.3.</strong> O CONTRATADO poderá prestar serviços a terceiros, não havendo exclusividade com a CONTRATANTE;</div>
+                <div style="margin-bottom: 5px;"><strong>7.4.</strong> O CONTRATADO poderá executar os serviços por meio de equipe própria, não havendo exigência de pessoalidade;</div>
+                <div style="margin-bottom: 5px;"><strong>7.5.</strong> Fica expressamente firmado que o Contratado só poderá adentrar os locais dos serviços após autorização, pois, para fins de segurança, compliance e qualificação técnica, sem ingerência na gestão da equipe, a Contratante possui o livre direito de analisar previamente as documentações da equipe disponibilizada para canteiro e, caso entenda necessário, posteriormente rejeitar a indicação de algum membro indicado para os serviços;</div>
+                <div style="margin-bottom: 5px;"><strong>7.6.</strong> O CONTRATADO é responsável por quaisquer danos causados a terceiros ou ao patrimônio da CONTRATANTE, por si ou por seus colaboradores, decorrentes de dolo ou culpa;</div>
+                <div style="margin-bottom: 5px;"><strong>7.7.</strong> A reparação ou indenização por danos deverá ser providenciada imediatamente pelo CONTRATADO, sob pena de rescisão contratual e responsabilização financeira e judicial.</div>
+                <div style="margin-bottom: 5px;"><strong>7.8.</strong> Toda orientação técnica, solicitação de serviços, comunicação operacional, programação de atividades ou ajuste de cronograma será realizada exclusivamente entre os representantes indicados pelas partes, sendo vedada a emissão de ordens diretas aos empregados, colaboradores ou prepostos da CONTRATADA, ressalvadas situações relacionadas exclusivamente à segurança do trabalho, emergência ou preservação da integridade física das pessoas.</div>
+            </div>
+
+            <br>
+            <p style="margin-bottom: 15px;"><strong>CLÁUSULA OITAVA – DO SIGILO</strong></p>
+            <p style="text-indent: 30px; margin-bottom: 30px;"><strong>8.</strong> CONTRATADO compromete-se a manter <strong>sigilo sobre informações relacionadas aos serviços e à CONTRATANTE</strong>, salvo autorização expressa ou exigência legal, NÃO sendo, neste momento, autorizado nenhum repasse de projetos, memoriais, cadernos técnicos, imagens fotográficas e quaisquer informações relacionadas ao objeto deste instrumento, passível de aplicação de sanção no percentual de 5% (cinco por cento) sobre o saldo em aberto através da retenção fixada no pagamento posterior ao ato de infração comprovado e notificado.</p>
+
+            <br>
+            <p style="margin-bottom: 15px;"><strong>CLÁUSULA NONA - DO ABANDONO DA OBRA</strong></p>
+            <p style="text-indent: 30px; margin-bottom: 30px;"><strong>9.</strong> Caso o CONTRATADO abandone os serviços ou, deixe de realizar a conclusão do objeto em sua integralidade, sem aviso prévio ou comunicação formal, o valor que ainda lhe for devido, será pago somente após a CONTRATANTE finalizar completamente a execução dos serviços deixados pela CONTRATADA e realizar levantamento de custo e equalização de valores conforme este instrumento, com repasse do saldo que for devido à CONTRADA no prazo de até 30 (trinta) dias.</p>
+
+            <br>
+            <p style="margin-bottom: 15px;"><strong>CLÁUSULA DÉCIMA – DAS DISPOSIÇÕES GERAIS</strong></p>
+            <p style="text-indent: 30px; margin-bottom: 10px;"><strong>10.</strong> O presente contrato obriga as partes e seus sucessores.</p>
+            <div style="margin-left: 50px; margin-bottom: 10px;">
+                <div style="margin-bottom: 5px;"><strong>10.1.</strong> Qualquer alteração neste contrato deverá ser feita por escrito e assinada pelas partes.</div>
+            </div>
+
+            <br>
+            <p style="text-indent: 40px; margin-bottom: 30px;">Fica eleito o foro da comarca de Jataí, estado de Goiás, para dirimir quaisquer dúvidas ou litígios decorrentes do presente contrato, renunciando as partes a qualquer outro, por mais privilegiado que seja.</p>
+            <p style="text-indent: 40px; margin-bottom: 30px;">Por estarem assim justos e contratados, as partes assinam o presente termo contratual em 2 (duas) vias de igual teor e forma.</p>
+        </div>`;
   
   
 
