@@ -1079,7 +1079,7 @@
     // 🔥 Definição da logo com base no tipo do contrato (apenas az1servente ou az2pedreiro)
     let logoSrc = "https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png";
     if (tipo === 'az1servente' || tipo === 'az2pedreiro') {
-        logoSrc = "https://i.postimg.cc/R6r8fNny/Gemini-Generated-Image-ob3zwcob3zwcob3z.png";
+        logoSrc = "https://i.postimg.cc/v1bRS0z3/AZCONSTRUCOES.png";
     }
 
     const htmlDoc = `
