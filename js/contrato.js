@@ -1076,10 +1076,16 @@
         <strong>CONTRATADO(A):</strong> ${e.nome}, portador do CPF nº ${e.cpf || '____'}, RG nº ${e.rg || '____'}, residente em ${e.endereco || '____'}.`;
     }
 
+    // 🔥 Definição da logo com base no tipo do contrato (apenas az1servente ou az2pedreiro)
+    let logoSrc = "https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png";
+    if (tipo === 'az1servente' || tipo === 'az2pedreiro') {
+        logoSrc = "https://i.postimg.cc/R6r8fNny/Gemini-Generated-Image-ob3zwcob3zwcob3z.png";
+    }
+
     const htmlDoc = `
         <div style="font-family: 'Times New Roman', Times, serif; width: 100%; padding: 20px 40px; box-sizing: border-box; color: #000;">
             <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 30px;">                
-                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="display: block; margin: 0 auto; height: 70px;"><br><br>
+                <img src="${logoSrc}" style="display: block; margin: 0 auto; height: 70px;"><br><br>
                 <h2 style="margin: 0; font-size: 13pt; font-weight: bold; line-height: 1.3;">${titulo}</h2>
             </div>
             
