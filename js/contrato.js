@@ -359,7 +359,7 @@
   } else if (tipo === 'az1servente') {
         titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS POR EMPREITADA PARA EXECUÇÃO DE ETAPAS DE OBRA SEM VÍNCULO EMPREGATÍCIO <br><br> Nº ${matricula}/${ano} | JATAÍ – GOIÁS`;
         nomeContratanteAssinatura = "AZ CONSTRUÇÃO E REFORMA LTDA";
-        enderecoaz = "Av. Rio verde, S/N, QD 97 LT 04/04A - Edif. E-Bussines - Sala 1906";
+        enderecoaz = "Av. Rio verde, S/N, QD 97 LT 04/04A - Edif. E-Bussines Rio Verde - Sala 1906, Vila São Tomaz - Aparecida de Goiânia - GO";
   
         
         corpoTexto = `
@@ -367,7 +367,7 @@
             <p style="text-indent: 5px; margin-bottom: 8px;">Contrato de Prestação de Serviços celebrado entre as seguintes partes:</p>
 
             <p style="margin-bottom: 5px;"><strong>CONTRATANTE</strong></p>
-            <p style="text-indent: 40px; margin-bottom: 15px;"><strong>${nomeContratanteAssinatura}</strong>, pessoa jurídica de direito privado, inscrita no CNPJ nº <strong>49.015.601/0001-67</strong>, ${enderecoaz} no Município de Rio Verde, Estado de Goiás, neste ato representada por seu titular AMARO GOMES DA SILVA e JOSE AMARO DA SILVA, doravante denominado(a) simplesmente <strong>CONTRATANTE</strong>.</p>
+            <p style="text-indent: 40px; margin-bottom: 15px;"><strong>${nomeContratanteAssinatura}</strong>, pessoa jurídica de direito privado, inscrita no CNPJ nº <strong>49.015.601/0001-67</strong>, situado em ${enderecoaz}, neste ato representada por seu titular AMARO GOMES DA SILVA e JOSE AMARO DA SILVA, doravante denominado(a) simplesmente CONTRATANTE.</p>
 
             <p style="margin-bottom: 5px;"><strong>CONTRATADO</strong></p>
             <p style="text-indent: 40px; margin-bottom: 15px;"><strong>${(e.nome || '').toUpperCase()}</strong>, portador do <!--RG ${e.rg || '______________'}, inscrito no--> CPF nº <strong>${e.cpf || '______________'}</strong> residente e domiciliado na <strong>${e.endereco || '____________________________________________________'}</strong>, no Município de Jataí, Estado de Goiás, doravante denominado simplesmente <strong>CONTRATADO</strong>.</p>
@@ -477,14 +477,14 @@
     } else if (tipo === 'az2pedreiro') {
         titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS POR EMPREITADA PARA EXECUÇÃO DE ETAPAS DE OBRA SEM VÍNCULO EMPREGATÍCIO <br><br> Nº ${matricula}/${ano} | JATAÍ – GOIÁS`;        
         nomeContratanteAssinatura = "AZ CONSTRUÇÃO E REFORMA LTDA";
-        enderecoaz = "Av. Rio verde, S/N, QD 97 LT 04/04A - Edif. E-Bussines - Sala 1906";
+         enderecoaz = "Av. Rio verde, S/N, QD 97 LT 04/04A - Edif. E-Bussines Rio Verde - Sala 1906, Vila São Tomaz - Aparecida de Goiânia - GO";
         
         corpoTexto = `
         <div style="text-align: justify; font-size: 12pt; line-height: 1.6;">
             <p style="text-indent: 5px; margin-bottom: 8px;">Contrato de Prestação de Serviços celebrado entre as seguintes partes:</p>
 
             <p style="margin-bottom: 5px;"><strong>CONTRATANTE</strong></p>
-            <p style="text-indent: 40px; margin-bottom: 15px;"><strong>${nomeContratanteAssinatura}</strong>, pessoa jurídica de direito privado, inscrita no CNPJ nº <strong>49.015.601/0001-67</strong>, ${enderecoaz} no Município de Rio Verde, Estado de Goiás, neste ato representada por seu titular AMARO GOMES DA SILVA e JOSE AMARO DA SILVA, doravante denominado(a) simplesmente <strong>CONTRATANTE</strong>.</p>
+            <p style="text-indent: 40px; margin-bottom: 15px;"><strong>${nomeContratanteAssinatura}</strong>, pessoa jurídica de direito privado, inscrita no CNPJ nº <strong>49.015.601/0001-67</strong>, situdao em ${enderecoaz}, neste ato representada por seu titular AMARO GOMES DA SILVA e JOSE AMARO DA SILVA, doravante denominado(a) simplesmente <strong>CONTRATANTE</strong>.</p>
 
             <p style="margin-bottom: 5px;"><strong>CONTRATADO</strong></p>
             <p style="text-indent: 40px; margin-bottom: 15px;"><strong>${(e.nome || '').toUpperCase()}</strong>, portador do <!--RG ${e.rg || '______________'}, inscrito no--> <strong>CPF nº ${e.cpf || '______________'}</strong> residente e domiciliado na <strong>${e.endereco || '____________________________________________________'}</strong>, no Município de Jataí, Estado de Goiás, doravante denominado simplesmente <strong>CONTRATADO</strong>.</p>
