@@ -484,7 +484,7 @@
             <p style="text-indent: 5px; margin-bottom: 8px;">Contrato de Prestação de Serviços celebrado entre as seguintes partes:</p>
 
             <p style="margin-bottom: 5px;"><strong>CONTRATANTE</strong></p>
-            <p style="text-indent: 40px; margin-bottom: 15px;"><strong>${nomeContratanteAssinatura}</strong>, pessoa jurídica de direito privado, inscrita no CNPJ nº <strong>49.015.601/0001-67</strong>, situdao em ${enderecoaz}, neste ato representada por seu titular AMARO GOMES DA SILVA e JOSE AMARO DA SILVA, doravante denominado(a) simplesmente <strong>CONTRATANTE</strong>.</p>
+            <p style="text-indent: 40px; margin-bottom: 15px;"><strong>${nomeContratanteAssinatura}</strong>, pessoa jurídica de direito privado, inscrita no CNPJ nº <strong>49.015.601/0001-67</strong>, situdao em ${enderecoaz}, neste ato representada por seu titular AMARO GOMES DA SILVA e JOSE AMARO DA SILVA, doravante denominado(a) simplesmente CONTRATANTE.</p>
 
             <p style="margin-bottom: 5px;"><strong>CONTRATADO</strong></p>
             <p style="text-indent: 40px; margin-bottom: 15px;"><strong>${(e.nome || '').toUpperCase()}</strong>, portador do <!--RG ${e.rg || '______________'}, inscrito no--> <strong>CPF nº ${e.cpf || '______________'}</strong> residente e domiciliado na <strong>${e.endereco || '____________________________________________________'}</strong>, no Município de Jataí, Estado de Goiás, doravante denominado simplesmente <strong>CONTRATADO</strong>.</p>
