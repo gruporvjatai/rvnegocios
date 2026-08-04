@@ -475,8 +475,7 @@
         </div>`;
     
     } else if (tipo === 'az2pedreiro') {
-        titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS POR EMPREITADA PARA EXECUÇÃO DE ETAPAS DE OBRA SEM VÍNCULO EMPREGATÍCIO <br><br> Nº ${matricula}/${ano} | JATAÍ – GOIÁS`;
-        nomeContratanteAssinatura = "AZ CONSTRUÇÃO E REFORMA LTDA";
+        titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS POR EMPREITADA PARA EXECUÇÃO DE ETAPAS DE OBRA SEM VÍNCULO EMPREGATÍCIO <br><br> Nº ${matricula}/${ano} | JATAÍ – GOIÁS`;        
         nomeContratanteAssinatura = "AZ CONSTRUÇÃO E REFORMA LTDA";
         enderecoaz = "Av. Rio verde, S/N, QD 97 LT 04/04A - Edif. E-Bussines - Sala 1906";
         
