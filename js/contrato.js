@@ -596,6 +596,46 @@
             <p style="text-indent: 40px; margin-bottom: 30px;">Por estarem assim justos e contratados, as partes assinam o presente termo contratual em 2 (duas) vias de igual teor e forma.</p>
         </div>`;
 
+  } else if (tipo === 'azepi') {
+        titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS POR EMPREITADA PARA EXECUÇÃO DE ETAPAS DE OBRA SEM VÍNCULO EMPREGATÍCIO <br><br> Nº ${matricula}/${ano} | JATAÍ – GOIÁS`;
+        nomeContratanteAssinatura = "AZ CONSTRUÇÃO E REFORMA LTDA";
+        enderecoaz = "Av. Rio verde, S/N, QD 97 LT 04/04A - Edif. E-Bussines Rio Verde - Sala 1906, Vila São Tomaz - Aparecida de Goiânia - GO";
+
+        corpoTexto = `
+        <div style="font-size: 12pt; line-height: 1.5; text-align: justify;">
+            <p style="margin-bottom: 5px;">Nome do Prestador de Serviços: <strong>${(e.nome || '').toUpperCase()}</strong></p>
+            <p style="margin-bottom: 15px;">Atividade a ser desenvolvida: <strong>${(e.categoria || 'Geral').toUpperCase()}</strong></p>
+            
+            <p style="margin-bottom: 20px;">"Declaro ter recebido orientação sobre o uso correto dos Equipamentos de Segurança, bem como, estou ciente de que sou obrigado a usá-los sob pena de SUSPENSÃO ou CANCELAMENTO do contrato de prestação dos serviços de autônomo."</p>
+            
+            <h3 style="text-align: center; font-size: 12pt; margin-bottom: 10px; font-weight: bold;">RECEBIMENTO</h3>
+            
+            <table style="width: 100%; border-collapse: collapse; text-align: center; border: 1px solid #000; font-size: 10pt; margin-bottom: 20px;">
+                <thead>
+                    <tr style="background-color: #f1f5f9;">
+                        <th style="border: 1px solid #000; padding: 6px;">DATA</th>
+                        <th style="border: 1px solid #000; padding: 6px;">EPI (Descrição)</th>
+                        <th style="border: 1px solid #000; padding: 6px;">C.A.</th>
+                        <th style="border: 1px solid #000; padding: 6px;">QUANT.</th>
+                        <!--<th style="border: 1px solid #000; padding: 6px;">Motivo da retirada</th>-->
+                        <th style="border: 1px solid #000; padding: 6px;">Assinatura</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;">Capacete</td><td style="border: 1px solid #000; padding: 6px;">21420</td><td style="border: 1px solid #000; padding: 6px;">1</td><td style="border: 1px solid #000; padding: 6px;"></td><!--<td style="border: 1px solid #000; padding: 6px;"></td>--></tr>
+                    <tr><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;">Sapato de segurança</td><td style="border: 1px solid #000; padding: 6px;">24312</td><td style="border: 1px solid #000; padding: 6px;">1</td><td style="border: 1px solid #000; padding: 6px;"></td><!--<td style="border: 1px solid #000; padding: 6px;"></td>--></tr>
+                    <tr><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;">Óculos</td><td style="border: 1px solid #000; padding: 6px;">07732</td><td style="border: 1px solid #000; padding: 6px;">1</td><td style="border: 1px solid #000; padding: 6px;"></td><!--<td style="border: 1px solid #000; padding: 6px;"></td>--></tr>
+                    <tr><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;">Protetor Auricular</td><td style="border: 1px solid #000; padding: 6px;">07790</td><td style="border: 1px solid #000; padding: 6px;">1</td><td style="border: 1px solid #000; padding: 6px;"></td><!--<td style="border: 1px solid #000; padding: 6px;"></td>--></tr>
+                    <tr><td style="border: 1px solid #000; padding: 6px;"></td><td style="border: 1px solid #000; padding: 6px;">Luva</td><td style="border: 1px solid #000; padding: 6px;">00501</td><td style="border: 1px solid #000; padding: 6px;">1</td><td style="border: 1px solid #000; padding: 6px;"></td><!--<td style="border: 1px solid #000; padding: 6px;"></td>--></tr>
+                </tbody>
+            </table>
+
+            <p style="margin-bottom: 10px;">Eu, <strong>${(e.nome || '').toUpperCase()}</strong>, declaro ter recebido os equipamentos de proteção necessários para execução da função ao qual irei exercer como <strong>${(e.categoria || 'descrito em contrato').toUpperCase()}</strong> na obra do endereço <strong>${enderecoObra}</strong> e com prazo determinado pelo contrato, bem como, o treinamento de utilização da forma correta.</p>
+            
+            <p>Por fim, estando ciente e de acordo assino este termo de compromisso em duas vias.</p>
+        </div>
+        `;
+
  } else if (tipo === 'empreita1') {
         titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS POR EMPREITADA PARA EXECUÇÃO DE ETAPAS DE OBRA SEM VÍNCULO EMPREGATÍCIO <br><br> Nº ${matricula}/${ano} | JATAÍ – GOIÁS`;
         nomeContratanteAssinatura = "RV NEGOCIOS E COMPANHIA LTDA";
@@ -943,8 +983,6 @@
             <p style="text-indent: 40px; margin-bottom: 30px;">Por estarem assim justos e contratados, as partes assinam o presente termo contratual em 2 (duas) vias de igual teor e forma.</p>
         </div>`;
 
-
-
       
   
   
@@ -1078,7 +1116,7 @@
 
     // 🔥 Definição da logo com base no tipo do contrato (apenas az1servente ou az2pedreiro)
     let logoSrc = "https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png";
-    if (tipo === 'az1servente' || tipo === 'az2pedreiro') {
+    if (tipo === 'az1servente' || tipo === 'az2pedreiro' || tipo === 'azepi') {
         logoSrc = "https://i.postimg.cc/dLB7Dxxb/AZCONSTRUCOES.png";
     }
 
