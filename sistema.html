@@ -3057,7 +3057,7 @@
             justObs = parts[0] + '\n' + parts[1];
         }
     
-        // Monta a tabela de itens
+        // Monta a tabela de itens com fonte menor e margens reduzidas
         const bodyTabela = [
             [
                 { text: 'OK', style: 'headerRomaneio', alignment: 'center' },
@@ -3069,9 +3069,9 @@
         logsOC.forEach((item, index) => {
             const bgColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
             bodyTabela.push([
-                { text: '', alignment: 'center', fillColor: bgColor, margin: [4, 6, 4, 6] },
-                { text: item.quantidade.toString(), alignment: 'center', fillColor: bgColor, margin: [4, 6, 4, 6] },
-                { text: item.produto_nome, alignment: 'left', fillColor: bgColor, margin: [4, 6, 4, 6] }
+                { text: '', alignment: 'center', fillColor: bgColor, margin: [4, 4, 4, 4], fontSize: 9 },
+                { text: item.quantidade.toString(), alignment: 'center', fillColor: bgColor, margin: [4, 4, 4, 4], fontSize: 9 },
+                { text: item.produto_nome, alignment: 'left', fillColor: bgColor, margin: [4, 4, 4, 4], fontSize: 9 }
             ]);
         });
     
@@ -3080,7 +3080,6 @@
             pageMargins: [40, 40, 40, 40],
             defaultStyle: { font: 'Roboto' },
     
-            // Moldura externa (opcional, mas mantida para ficar igual ao HTML)
             background: function (currentPage, pageCount) {
                 return {
                     canvas: [
@@ -3156,7 +3155,7 @@
                     margin: [0, 0, 0, 20]
                 },
     
-                // --- TABELA DE ITENS ---
+                // --- TABELA DE ITENS (com linha final) ---
                 {
                     table: {
                         headerRows: 1,
@@ -3164,7 +3163,10 @@
                         body: bodyTabela
                     },
                     layout: {
-                        hLineWidth: function (i, node) { return (i === 0 || i === node.table.body.length) ? 0 : 1; },
+                        hLineWidth: function (i, node) {
+                            // Desenha linha em todas as bordas, inclusive no final
+                            return 1;
+                        },
                         vLineWidth: function () { return 1; },
                         hLineColor: function () { return '#000'; },
                         vLineColor: function () { return '#000'; },
@@ -3224,7 +3226,7 @@
                     fontSize: 10,
                     color: 'white',
                     fillColor: '#0f172a',
-                    margin: [4, 6, 4, 6]
+                    margin: [4, 4, 4, 4]
                 },
                 tituloRomaneio: {
                     fontSize: 18,
