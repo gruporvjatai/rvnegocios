@@ -1992,7 +1992,7 @@
                             <button onclick="printOC('${o.id}')" class="p-2 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Imprimir"><i data-lucide="printer" width="14"></i></button>
                             <button onclick="printRomaneio('${o.id}')" class="p-2 border border-teal-200 text-teal-700 hover:bg-teal-50 rounded bg-teal-50/50" title="Imprimir Romaneio p/ Motorista (Sem Valores)"><i data-lucide="truck" width="14"></i></button>
                             <button onclick="downloadOCPDF('${o.id}')" class="p-2 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Baixar PDF"><i data-lucide="download" width="14"></i></button>
-                            <button onclick="abrirModalTransferencia('${o.id}')" class="p-2 border border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded bg-indigo-50/50 font-bold flex items-center gap-1" title="Gerar Orçamento RV Portal"><i data-lucide="send" width="14"></i></button>
+                            <!--<button onclick="abrirModalTransferencia('${o.id}')" class="p-2 border border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded bg-indigo-50/50 font-bold flex items-center gap-1" title="Gerar Orçamento RV Portal"><i data-lucide="send" width="14"></i></button>-->
                             ${o.tipo === 'oc_pendente' ? `
                                 <button onclick="deleteOC('${o.id}')" class="p-2 border border-red-200 text-red-500 hover:bg-red-50 rounded" title="Excluir"><i data-lucide="trash-2" width="14"></i></button>
                             ` : ''}
@@ -3040,212 +3040,206 @@
             setTimeout(() => window.print(), 300);
         }*/
 
-      function printRomaneio(id) {
-          const logsOC = STATE.logs.filter(l => String(l.id) === String(id) && (l.tipo === 'oc_pendente' || l.tipo === 'compra'));
-          if (!logsOC.length) {
-              showToast("O.C. não encontrada para gerar o romaneio.", true);
-              return;
-          }
-      
-          const o = logsOC[0];
-          const obra = STATE.obras.find(x => x.id == o.obra_id) || { nome: 'Sem Obra', endereco: '-' };
-          const forn = STATE.fornecedores.find(x => x.id == o.fornecedor_id) || { nome: 'A Definir', documento: '', telefone: '' };
-      
-          let justObs = o.observacao || 'Nenhuma observação informada.';
-          if (justObs.includes(' | Obs: ')) {
-              const parts = justObs.split(' | Obs: ');
-              justObs = parts[0] + '\n' + parts[1];
-          }
-      
-          // Monta as linhas da tabela de materiais
-          const bodyTabela = [
-              [
-                  { text: 'OK', style: 'headerRomaneio', alignment: 'center' },
-                  { text: 'Qtd', style: 'headerRomaneio', alignment: 'center' },
-                  { text: 'Descrição do Material', style: 'headerRomaneio', alignment: 'left' }
-              ]
-          ];
-      
-          logsOC.forEach((item, index) => {
-              const bgColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
-              bodyTabela.push([
-                  { text: '', alignment: 'center', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 },
-                  { text: item.quantidade.toString(), alignment: 'center', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 },
-                  { text: item.produto_nome, alignment: 'left', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 }
-              ]);
-          });
-      
-          // Definição do documento PDF
-          const docDefinition = {
-              pageSize: 'A4',
-              pageMargins: [40, 40, 40, 40],
-              defaultStyle: { font: 'Roboto' },
-      
-              // Moldura externa (opcional, igual ao HTML)
-              background: function (currentPage, pageCount) {
-                  return {
-                      canvas: [
-                          {
-                              type: 'rect',
-                              x: 25, y: 25, w: 545.28, h: 791.89,
-                              lineWidth: 1, lineColor: '#000000'
-                          }
-                      ]
-                  };
-              },
-      
-              content: [
-                  // Cabeçalho centralizado com título e informações da OC
-                  {
-                      text: [
-                          { text: 'MATERIAIS PARA OBRAS\n', style: 'tituloRomaneio' },
-                          {
-                              text: [
-                                  `O.C. Referência Nº: ${o.id}  |  Emissão: ${formatDate(o.data)}  |  Fase: ${o.fase_obra || '-'}`
-                              ],
-                              style: 'infoRomaneio'
-                          }
-                      ],
-                      alignment: 'center',
-                      margin: [0, 0, 0, 20]
-                  },
-                  { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 2 }], margin: [0, 0, 0, 20] },
-      
-                  // Dados do fornecedor (retirada) e obra (entrega) lado a lado
-                  {
-                      columns: [
-                          {
-                              width: '48%',
-                              table: {
-                                  widths: ['*'],
-                                  body: [
-                                      [{ text: 'RETIRAR MATERIAL EM:', fillColor: '#f1f5f9', bold: true, fontSize: 8, margin: [4, 4, 4, 4] }],
-                                      [{ text: `${forn.nome}\nDoc: ${forn.documento || '-'}\nTel: ${forn.telefone || '-'}`, fontSize: 9, margin: [6, 8, 6, 8] }]
-                                  ]
-                              },
-                              layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000000', vLineColor: () => '#000000' }
-                          },
-                          { width: '4%', text: '' },
-                          {
-                              width: '48%',
-                              table: {
-                                  widths: ['*'],
-                                  body: [
-                                      [{ text: 'ENTREGAR MATERIAL EM:', fillColor: '#f1f5f9', bold: true, fontSize: 8, margin: [4, 4, 4, 4] }],
-                                      [{ text: `${obra.nome}\nEndereço: ${obra.endereco || '-'}`, fontSize: 9, margin: [6, 8, 6, 8] }]
-                                  ]
-                              },
-                              layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000000', vLineColor: () => '#000000' }
-                          }
-                      ],
-                      margin: [0, 0, 0, 20]
-                  },
-      
-                  // Tabela de itens
-                  {
-                      table: {
-                          headerRows: 1,
-                          widths: ['auto', 'auto', '*'],
-                          body: bodyTabela
-                      },
-                      layout: {
-                          hLineWidth: function (i, node) { return (i === 0 || i === node.table.body.length) ? 0 : 1; },
-                          vLineWidth: function () { return 1; },
-                          hLineColor: function () { return '#000000'; },
-                          vLineColor: function () { return '#000000'; },
-                          paddingLeft: function () { return 4; },
-                          paddingRight: function () { return 4; }
-                      },
-                      margin: [0, 0, 0, 20]
-                  },
-      
-                  // Observações (caixa tracejada)
-                  {
-                      table: {
-                          widths: ['*'],
-                          body: [
-                              [
-                                  {
-                                      text: 'Observações da Cotação:',
-                                      bold: true,
-                                      fontSize: 9,
-                                      margin: [4, 4, 4, 4]
-                                  }
-                              ],
-                              [
-                                  {
-                                      text: justObs,
-                                      fontSize: 9,
-                                      margin: [4, 8, 4, 12]
-                                  }
-                              ]
-                          ]
-                      },
-                      layout: {
-                          hLineWidth: function (i) { return 1; },
-                          vLineWidth: function () { return 1; },
-                          hLineColor: function () { return '#000000'; },
-                          vLineColor: function () { return '#000000'; },
-                          hLineStyle: function (i) { return { dash: { length: 4, space: 4 } }; },
-                          vLineStyle: function () { return { dash: { length: 4, space: 4 } }; }
-                      },
-                      margin: [0, 0, 0, 40]
-                  },
-      
-                  // Assinaturas
-                  {
-                      columns: [
-                          {
-                              width: '45%',
-                              alignment: 'center',
-                              text: '_________________________________________________\nASSINATURA MOTORISTA / RETIRADA',
-                              fontSize: 9,
-                              bold: true,
-                              margin: [0, 60, 0, 0]
-                          },
-                          { width: '10%', text: '' },
-                          {
-                              width: '45%',
-                              alignment: 'center',
-                              text: '_________________________________________________\nASSINATURA RECEBIMENTO (OBRA)',
-                              fontSize: 9,
-                              bold: true,
-                              margin: [0, 60, 0, 0]
-                          }
-                      ]
-                  }
-              ],
-      
-              styles: {
-                  headerRomaneio: {
-                      bold: true,
-                      fontSize: 10,
-                      color: 'white',
-                      fillColor: '#0f172a',
-                      margin: [4, 6, 4, 6]
-                  },
-                  tituloRomaneio: {
-                      fontSize: 18,
-                      bold: true,
-                      color: 'white',
-                      fillColor: '#0f172a',
-                      margin: [0, 0, 0, 6],
-                      alignment: 'center',
-                      padding: [8, 4, 8, 4]
-                  },
-                  infoRomaneio: {
-                      fontSize: 11,
-                      bold: true,
-                      color: '#1e293b',
-                      alignment: 'center'
-                  }
-              }
-          };
-      
-          // Gera e baixa o PDF
-          pdfMake.createPdf(docDefinition).download(`Materiais_OC_${id}.pdf`);
-          showToast("Romaneio baixado com sucesso!");
-      }
+     function printRomaneio(id) {
+        const logsOC = STATE.logs.filter(l => String(l.id) === String(id) && (l.tipo === 'oc_pendente' || l.tipo === 'compra'));
+        if (!logsOC.length) {
+            showToast("O.C. não encontrada para gerar o romaneio.", true);
+            return;
+        }
+    
+        const o = logsOC[0];
+        const obra = STATE.obras.find(x => x.id == o.obra_id) || { nome: 'Sem Obra', endereco: '-' };
+        const forn = STATE.fornecedores.find(x => x.id == o.fornecedor_id) || { nome: 'A Definir', documento: '', telefone: '' };
+    
+        let justObs = o.observacao || 'Nenhuma observação informada.';
+        if (justObs.includes(' | Obs: ')) {
+            const parts = justObs.split(' | Obs: ');
+            justObs = parts[0] + '\n' + parts[1];
+        }
+    
+        // Monta a tabela de itens
+        const bodyTabela = [
+            [
+                { text: 'OK', style: 'headerRomaneio', alignment: 'center' },
+                { text: 'Qtd', style: 'headerRomaneio', alignment: 'center' },
+                { text: 'Descrição do Material', style: 'headerRomaneio', alignment: 'left' }
+            ]
+        ];
+    
+        logsOC.forEach((item, index) => {
+            const bgColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+            bodyTabela.push([
+                { text: '', alignment: 'center', fillColor: bgColor, margin: [4, 6, 4, 6] },
+                { text: item.quantidade.toString(), alignment: 'center', fillColor: bgColor, margin: [4, 6, 4, 6] },
+                { text: item.produto_nome, alignment: 'left', fillColor: bgColor, margin: [4, 6, 4, 6] }
+            ]);
+        });
+    
+        const docDefinition = {
+            pageSize: 'A4',
+            pageMargins: [40, 40, 40, 40],
+            defaultStyle: { font: 'Roboto' },
+    
+            // Moldura externa (opcional, mas mantida para ficar igual ao HTML)
+            background: function (currentPage, pageCount) {
+                return {
+                    canvas: [
+                        {
+                            type: 'rect',
+                            x: 25, y: 25, w: 545.28, h: 791.89,
+                            lineWidth: 1, lineColor: '#000000'
+                        }
+                    ]
+                };
+            },
+    
+            content: [
+                // --- TÍTULO E INFORMAÇÕES DA OC ---
+                {
+                    table: {
+                        widths: ['*'],
+                        body: [
+                            [
+                                {
+                                    text: 'MATERIAIS PARA OBRAS',
+                                    style: 'tituloRomaneio',
+                                    alignment: 'center',
+                                    margin: [0, 4, 0, 4]
+                                }
+                            ],
+                            [
+                                {
+                                    text: `O.C. Referência Nº: ${o.id}  |  Emissão: ${formatDate(o.data)}  |  Fase: ${o.fase_obra || '-'}`,
+                                    alignment: 'center',
+                                    fontSize: 11,
+                                    bold: true,
+                                    color: '#1e293b',
+                                    margin: [0, 6, 0, 6]
+                                }
+                            ]
+                        ]
+                    },
+                    layout: 'noBorders',
+                    margin: [0, 0, 0, 15]
+                },
+    
+                // Linha separadora
+                { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 2 }], margin: [0, 0, 0, 20] },
+    
+                // --- FORNECEDOR E OBRA (lado a lado) ---
+                {
+                    columns: [
+                        {
+                            width: '48%',
+                            table: {
+                                widths: ['*'],
+                                body: [
+                                    [{ text: 'RETIRAR MATERIAL EM:', fillColor: '#f1f5f9', bold: true, fontSize: 8, margin: [4, 4, 4, 4] }],
+                                    [{ text: `${forn.nome}\nDoc: ${forn.documento || '-'}\nTel: ${forn.telefone || '-'}`, fontSize: 9, margin: [6, 8, 6, 8] }]
+                                ]
+                            },
+                            layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000', vLineColor: () => '#000' }
+                        },
+                        { width: '4%', text: '' },
+                        {
+                            width: '48%',
+                            table: {
+                                widths: ['*'],
+                                body: [
+                                    [{ text: 'ENTREGAR MATERIAL EM:', fillColor: '#f1f5f9', bold: true, fontSize: 8, margin: [4, 4, 4, 4] }],
+                                    [{ text: `${obra.nome}\nEndereço: ${obra.endereco || '-'}`, fontSize: 9, margin: [6, 8, 6, 8] }]
+                                ]
+                            },
+                            layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000', vLineColor: () => '#000' }
+                        }
+                    ],
+                    margin: [0, 0, 0, 20]
+                },
+    
+                // --- TABELA DE ITENS ---
+                {
+                    table: {
+                        headerRows: 1,
+                        widths: ['auto', 'auto', '*'],
+                        body: bodyTabela
+                    },
+                    layout: {
+                        hLineWidth: function (i, node) { return (i === 0 || i === node.table.body.length) ? 0 : 1; },
+                        vLineWidth: function () { return 1; },
+                        hLineColor: function () { return '#000'; },
+                        vLineColor: function () { return '#000'; },
+                        paddingLeft: function () { return 4; },
+                        paddingRight: function () { return 4; }
+                    },
+                    margin: [0, 0, 0, 20]
+                },
+    
+                // --- OBSERVAÇÕES (borda tracejada) ---
+                {
+                    table: {
+                        widths: ['*'],
+                        body: [
+                            [{ text: 'Observações da Cotação:', bold: true, fontSize: 9, margin: [4, 4, 4, 4] }],
+                            [{ text: justObs, fontSize: 9, margin: [4, 8, 4, 12] }]
+                        ]
+                    },
+                    layout: {
+                        hLineWidth: function (i) { return 1; },
+                        vLineWidth: function () { return 1; },
+                        hLineColor: function () { return '#000'; },
+                        vLineColor: function () { return '#000'; },
+                        hLineStyle: function () { return { dash: { length: 4, space: 4 } }; },
+                        vLineStyle: function () { return { dash: { length: 4, space: 4 } }; }
+                    },
+                    margin: [0, 0, 0, 40]
+                },
+    
+                // --- ASSINATURAS ---
+                {
+                    columns: [
+                        {
+                            width: '45%',
+                            alignment: 'center',
+                            text: '_________________________________________________\nASSINATURA MOTORISTA / RETIRADA',
+                            fontSize: 9,
+                            bold: true,
+                            margin: [0, 60, 0, 0]
+                        },
+                        { width: '10%', text: '' },
+                        {
+                            width: '45%',
+                            alignment: 'center',
+                            text: '_________________________________________________\nASSINATURA RECEBIMENTO (OBRA)',
+                            fontSize: 9,
+                            bold: true,
+                            margin: [0, 60, 0, 0]
+                        }
+                    ]
+                }
+            ],
+    
+            styles: {
+                headerRomaneio: {
+                    bold: true,
+                    fontSize: 10,
+                    color: 'white',
+                    fillColor: '#0f172a',
+                    margin: [4, 6, 4, 6]
+                },
+                tituloRomaneio: {
+                    fontSize: 18,
+                    bold: true,
+                    color: 'white',
+                    fillColor: '#0f172a',
+                    margin: [0, 0, 0, 0],
+                    padding: [8, 4, 8, 4]
+                }
+            }
+        };
+    
+        pdfMake.createPdf(docDefinition).download(`Romaneio_OC_${id}.pdf`);
+        showToast("Romaneio baixado com sucesso!");
+    }
 
         function renderProducts() {
             const term = document.getElementById('prod-search').value.toLowerCase();
