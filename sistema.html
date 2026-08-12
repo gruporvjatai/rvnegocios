@@ -1991,9 +1991,10 @@
                             ` : `
                                 <button onclick="estornarCompra('${o.id}')" class="p-2 border border-orange-300 text-orange-600 hover:bg-orange-50 rounded" title="Estornar Confirmação (Voltar para Pendente)"><i data-lucide="rotate-ccw" width="14"></i></button>
                             `}
+                            <button onclick="printRomaneio('${o.id}')" class="p-2 border border-teal-200 text-teal-700 hover:bg-teal-50 rounded bg-teal-50/50" title="Baixar Lista de Itens (Sem Valores)"><i data-lucide="truck" width="14"></i></button>
                             <button onclick="printOC('${o.id}')" class="p-2 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Imprimir"><i data-lucide="printer" width="14"></i></button>
-                            <button onclick="printRomaneio('${o.id}')" class="p-2 border border-teal-200 text-teal-700 hover:bg-teal-50 rounded bg-teal-50/50" title="Imprimir Romaneio p/ Motorista (Sem Valores)"><i data-lucide="truck" width="14"></i></button>
-                            <button onclick="downloadOCPDF('${o.id}')" class="p-2 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Baixar PDF"><i data-lucide="download" width="14"></i></button>
+                            <button onclick="downloadOCPDF('${o.id}')" class="p-2 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Baixar PDF"><i data-lucide="download" width="14"></i></button>                            
+                            <button onclick="duplicarOC('${o.id}')" class="p-2 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Duplicar O.C."><i data-lucide="copy" width="14"></i></button>
                             <!--<button onclick="abrirModalTransferencia('${o.id}')" class="p-2 border border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded bg-indigo-50/50 font-bold flex items-center gap-1" title="Gerar Orçamento RV Portal"><i data-lucide="send" width="14"></i></button>-->
                             ${o.tipo === 'oc_pendente' ? `
                                 <button onclick="deleteOC('${o.id}')" class="p-2 border border-red-200 text-red-500 hover:bg-red-50 rounded" title="Excluir"><i data-lucide="trash-2" width="14"></i></button>
@@ -3534,6 +3535,63 @@
               containerPagar.classList.add('hidden');
           }
       }     
+
+
+      async function duplicarOC(id) {
+          // Busca todos os itens da O.C. original (pendentes ou confirmadas)
+          const itensOriginais = STATE.logs.filter(l => 
+              String(l.id) === String(id) && 
+              (l.tipo === 'oc_pendente' || l.tipo === 'compra')
+          );
+      
+          if (!itensOriginais.length) {
+              showToast("O.C. não encontrada ou sem itens para duplicar.", true);
+              return;
+          }
+      
+          if (!confirm(`Deseja duplicar a Ordem de Compra #${id}? Uma nova O.C. será criada como pendente.`)) return;
+      
+          showLoading(true);
+      
+          // Gera um novo ID numérico para a nova O.C.
+          const novoId = getNextIdNum(STATE.logs);
+          const dataAtual = new Date().toISOString();
+      
+          // Monta os novos registros (um por item)
+          const novosItens = itensOriginais.map(item => {
+              const precoUnitario = parseFloat(item.valor_total) / parseFloat(item.quantidade) || 0;
+              return {
+                  id: novoId.toString(),                           // mesmo ID para todos os itens
+                  obra_id: item.obra_id,
+                  fornecedor_id: item.fornecedor_id,               // mantém o mesmo fornecedor
+                  tipo: 'oc_pendente',                             // sempre pendente
+                  produto_nome: item.produto_nome,
+                  quantidade: item.quantidade,
+                  valor_total: precoUnitario * parseFloat(item.quantidade),
+                  data: dataAtual,
+                  vencimento: dataAtual,
+                  status_financeiro: 'PENDENTE',
+                  fase_obra: item.fase_obra || '',
+                  categoria: item.categoria || 'Geral',
+                  observacao: item.observacao 
+                      ? `(Cópia da O.C. #${id}) - ${item.observacao}` 
+                      : `(Cópia da O.C. #${id})`
+              };
+          });
+      
+          // Insere todos os novos itens no banco
+          const { error } = await sb.from('jsp_logs').insert(novosItens);
+      
+          if (error) {
+              showLoading(false);
+              return showToast("Erro ao duplicar O.C.: " + error.message, true);
+          }
+      
+          showLoading(false);
+          showToast(`O.C. #${id} duplicada com sucesso! Nova O.C. #${novoId} criada.`);
+          await loadData();          // recarrega os dados e atualiza a lista
+          navigate('oc');           // vai para a lista de O.C. (opcional)
+      }
       
       
         function fazerLogout() { localStorage.removeItem('rv_user'); window.location.href = "index.html?t=" + Date.now();  }
