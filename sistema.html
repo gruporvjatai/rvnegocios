@@ -1521,33 +1521,61 @@
             // if(fMesTerc) fMesTerc.value = mesAtual;
             // if(fAnoTerc) fAnoTerc.value = anoAtual;
         
-            if (dadosUsuario) { showLoading(true); loadData(); }
+            //if (dadosUsuario) { showLoading(true); loadData(); }
+                 if (dadosUsuario) { 
+                showLoading(true); 
+                loadData().then(() => {
+                    aplicarPermissoes(); // ← adicione esta linha
+                });
+            }
         };
 
       
         function navigate(viewId) {
-            document.querySelectorAll('div[id^="view-"]').forEach(el => { el.classList.add('hidden-section'); el.classList.remove('active-section'); });
-            const target = document.getElementById('view-' + viewId);
-            if(target) { target.classList.remove('hidden-section'); target.classList.add('active-section'); }
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('bg-blue-800', 'text-white', 'shadow-lg'));
-            const activeBtn = document.getElementById('nav-' + viewId);
-            if(activeBtn) activeBtn.classList.add('bg-blue-800', 'text-white', 'shadow-lg');
-            
-            if(viewId === 'dash') renderDashboard();
-            if(viewId === 'pos') { updateSelects(); }
-            if(viewId === 'oc') renderOCList();
-           //if(viewId === 'fin') { updateSelects(); renderFinance(); }
-            if(viewId === 'fin') { updateSelects(); renderFinance(); switchFinTab('pagar'); }
-            if(viewId === 'equipe') renderEquipe();
-            if(viewId === 'fornecedores') renderFornecedores();
-            if(viewId === 'prod') renderProducts();
-            if(viewId === 'fases') renderFases();
-            if(viewId === 'reports') { updateSelects(); }
-            if(viewId === 'users') renderUsers();
-            if (viewId === 'precos') renderViewHistoricoPrecos();
-            if(viewId === 'terc') { updateSelects(); renderTerceirizados(); }
-            lucide.createIcons();
-        }
+          // ===== VERIFICA PERMISSÃO =====
+          const nivel = dadosUsuario?.nivel_acesso || 'comprador';
+          const permitidas = getPermissoes(nivel);
+          if (!permitidas.includes(viewId)) {
+              showToast("Acesso negado a esta área.", true);
+              const primeira = permitidas[0] || 'dash';
+              if (viewId !== primeira) {
+                  navigate(primeira);
+              }
+              return;
+          }
+      
+          // ===== NAVEGAÇÃO ORIGINAL =====
+          document.querySelectorAll('div[id^="view-"]').forEach(el => { 
+              el.classList.add('hidden-section'); 
+              el.classList.remove('active-section'); 
+          });
+          const target = document.getElementById('view-' + viewId);
+          if(target) { 
+              target.classList.remove('hidden-section'); 
+              target.classList.add('active-section'); 
+          }
+          document.querySelectorAll('.nav-btn').forEach(btn => {
+              btn.classList.remove('bg-blue-800', 'text-white', 'shadow-lg');
+          });
+          const activeBtn = document.getElementById('nav-' + viewId);
+          if(activeBtn) activeBtn.classList.add('bg-blue-800', 'text-white', 'shadow-lg');
+          
+          // ===== RENDERIZAÇÕES ESPECÍFICAS =====
+          if(viewId === 'dash') renderDashboard();
+          if(viewId === 'pos') { updateSelects(); }
+          if(viewId === 'oc') renderOCList();
+          if(viewId === 'fin') { updateSelects(); renderFinance(); switchFinTab('pagar'); }
+          if(viewId === 'equipe') renderEquipe();
+          if(viewId === 'fornecedores') renderFornecedores();
+          if(viewId === 'prod') renderProducts();
+          if(viewId === 'fases') renderFases();
+          if(viewId === 'reports') { updateSelects(); }
+          if(viewId === 'users') renderUsers();
+          if (viewId === 'precos') renderViewHistoricoPrecos();
+          if(viewId === 'terc') { updateSelects(); renderTerceirizados(); }
+          
+          lucide.createIcons();
+      }
 
         function formatMoney(val) { return parseFloat(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
         function formatDate(d) { try { return d ? new Date(d).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : '-'; } catch(e) { return '-'; } }
@@ -3556,6 +3584,50 @@
               containerPagar.classList.add('hidden');
           }
       }     
+
+      // ====== PERMISSÕES POR NÍVEL ======
+      function getPermissoes(nivel) {
+          // Views permitidas para cada perfil
+          const permissoes = {
+              admin: ['dash', 'oc', 'pos', 'fin', 'equipe', 'fornecedores', 'prod', 'fases', 'reports', 'precos', 'users', 'terc'],
+              comprador: ['oc', 'pos', 'equipe', 'fornecedores', 'prod', 'fases'],
+              registros: ['equipe', 'dash'] // exemplo, caso tenha
+          };
+          return permissoes[nivel] || permissoes.comprador; // fallback seguro
+      }
+      
+      function aplicarPermissoes() {
+          const nivel = dadosUsuario?.nivel_acesso || 'comprador';
+          const permitidas = getPermissoes(nivel);
+          
+          // Oculta/mostra as abas
+          document.querySelectorAll('.nav-btn').forEach(btn => {
+              const viewId = btn.id.replace('nav-', '');
+              if (permitidas.includes(viewId)) {
+                  btn.style.display = '';
+              } else {
+                  btn.style.display = 'none';
+              }
+          });
+      
+          // Verifica se a view atual é permitida
+          const viewAtual = document.querySelector('.active-section');
+          if (viewAtual) {
+              const currentView = viewAtual.id.replace('view-', '');
+              if (!permitidas.includes(currentView)) {
+                  // Redireciona para a primeira view permitida
+                  navegarParaPrimeiraPermitida(permitidas);
+              }
+          } else {
+              navegarParaPrimeiraPermitida(permitidas);
+          }
+      }
+      
+      function navegarParaPrimeiraPermitida(permitidas) {
+          if (permitidas && permitidas.length > 0) {
+              navigate(permitidas[0]);
+          }
+      }
 
 
       async function duplicarOC(id) {
