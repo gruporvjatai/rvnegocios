@@ -1526,11 +1526,11 @@
 
       
         function navigate(viewId) {
-                  if (dadosUsuario && dadosUsuario.nivel === 'comprador') {
-                const permitidas = ['oc', 'pos', 'equipe', 'fornecedores', 'prod', 'fases'];
-                if (!permitidas.includes(viewId)) {
-                    showToast("Acesso não permitido.", true);
-                    viewId = 'oc'; // redireciona para a primeira permitida
+            if (dadosUsuario && dadosUsuario.nivel === 'comprador') {
+               const permitidas = ['oc', 'pos', 'equipe', 'fornecedores', 'prod', 'fases'];
+               if (!permitidas.includes(viewId)) {
+                  showToast("Acesso não permitido.", true);
+                  viewId = 'oc'; // redireciona para a primeira permitida
                 }
             }
             document.querySelectorAll('div[id^="view-"]').forEach(el => { el.classList.add('hidden-section'); el.classList.remove('active-section'); });
@@ -1624,12 +1624,6 @@
           ...r,
           data_preco: typeof r.data_preco === 'string' ? r.data_preco : r.data_preco instanceof Date ? r.data_preco.toISOString().split('T')[0] : r.data_preco
         }));
-
-      
-  
- 
-
-
 
        if (dadosUsuario.nivel === 'admin') {
             const navUsersBtn = document.getElementById('nav-users');
