@@ -1652,12 +1652,12 @@
 
 
 
-        if (dadosUsuario.nivel === 'admin') {
+        /*if (dadosUsuario.nivel === 'admin') {
             const navUsersBtn = document.getElementById('nav-users');
             if (navUsersBtn) navUsersBtn.classList.remove('hidden');
             const resUsers = await fetchAllRecords('jsp_usuarios');
             STATE.users = resUsers.data || [];
-        }
+        }*/
 
         updateSelects();
         if(!document.querySelector('.active-section')) navigate('dash');
@@ -3597,31 +3597,30 @@
       }
       
       function aplicarPermissoes() {
-          const nivel = dadosUsuario?.nivel_acesso || 'comprador';
-          const permitidas = getPermissoes(nivel);
-          
-          // Oculta/mostra as abas
-          document.querySelectorAll('.nav-btn').forEach(btn => {
-              const viewId = btn.id.replace('nav-', '');
-              if (permitidas.includes(viewId)) {
-                  btn.style.display = '';
-              } else {
-                  btn.style.display = 'none';
-              }
-          });
-      
-          // Verifica se a view atual é permitida
-          const viewAtual = document.querySelector('.active-section');
-          if (viewAtual) {
-              const currentView = viewAtual.id.replace('view-', '');
-              if (!permitidas.includes(currentView)) {
-                  // Redireciona para a primeira view permitida
-                  navegarParaPrimeiraPermitida(permitidas);
-              }
-          } else {
-              navegarParaPrimeiraPermitida(permitidas);
-          }
-      }
+        const nivel = dadosUsuario?.nivel_acesso || 'comprador';
+        const permitidas = getPermissoes(nivel);
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            const viewId = btn.id.replace('nav-', '');
+            // Se a viewId estiver no array de permitidas, mostra, senão oculta
+            btn.style.display = permitidas.includes(viewId) ? '' : 'none';
+        });
+    
+        // Verifica se a view atual é permitida
+        const viewAtual = document.querySelector('.active-section');
+        if (viewAtual) {
+            const currentView = viewAtual.id.replace('view-', '');
+            if (!permitidas.includes(currentView)) {
+                // Se não for permitida, navega para a primeira permitida
+                const primeira = permitidas[0] || 'dash';
+                navigate(primeira);
+            }
+        } else {
+            // Se não houver view ativa, vai para a primeira permitida
+            const primeira = permitidas[0] || 'dash';
+            navigate(primeira);
+        }
+    }
       
       function navegarParaPrimeiraPermitida(permitidas) {
           if (permitidas && permitidas.length > 0) {
