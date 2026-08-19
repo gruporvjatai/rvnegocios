@@ -956,41 +956,42 @@
                   
               updateSelects();
 
-            // ===== APLICA PERMISSÕES =====
-            const nivel = dadosUsuario?.nivel || dadosUsuario?.nivel_acesso || 'comprador';
-            const isAdmin = nivel === 'admin';
-            
-            if (!isAdmin) {
-                // Oculta botões para comprador
-                ['btn-dash', 'btn-fin'].forEach(id => {
-                    const btn = document.getElementById(id);
-                    if (btn) btn.style.display = 'none';
-                });
-            } else {
-                // Mostra todos para admin
-                ['btn-dash', 'btn-fin'].forEach(id => {
-                    const btn = document.getElementById(id);
-                    if (btn) btn.style.display = '';
-                });
-            }
-            
-            // Navega para a primeira view permitida
-            const primeiraView = isAdmin ? 'dash' : 'oc';
-            const currentActive = document.querySelector('main > .active-section');
-            if (!currentActive) {
-                navigate(primeiraView);
-            } else {
-                const currentView = currentActive.id.replace('view-', '');
-                // Se a view atual não for permitida, redireciona
-                if (!isAdmin && !['oc', 'pos', 'equipe', 'fornecedores', 'prod', 'menu'].includes(currentView)) {
-                    navigate('oc');
-                } else {
-                    navigate(currentView);
-                }
-            }
-            showLoading(false);
-      }
+            updateSelects();
+
+        // ===== APLICA PERMISSÕES =====
+        const nivel = dadosUsuario?.nivel || dadosUsuario?.nivel_acesso || 'comprador';
+        const isAdmin = nivel === 'admin';
+        
+        if (!isAdmin) {
+            ['btn-dash', 'btn-fin'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.style.display = 'none';
+            });
+        } else {
+            ['btn-dash', 'btn-fin'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.style.display = '';
+            });
         }
+        
+        const primeiraView = isAdmin ? 'dash' : 'oc';
+        const currentActive = document.querySelector('main > .active-section');
+        if (!currentActive) {
+            navigate(primeiraView);
+        } else {
+            const currentView = currentActive.id.replace('view-', '');
+            if (!isAdmin && !['oc', 'pos', 'equipe', 'fornecedores', 'prod', 'menu'].includes(currentView)) {
+                navigate('oc');
+            } else {
+                navigate(currentView);
+            }
+        }
+        showLoading(false);
+    } catch (err) {
+        showLoading(false);
+        showToast("Erro banco: " + err.message, true);
+    }
+}
       
          function getNextIdNum(array) { let max=0; array.forEach(item=>{ const val=parseInt(item.id); if(!isNaN(val) && val>max) max=val; }); return max+1; }
          function updateSelects() {
