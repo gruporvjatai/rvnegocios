@@ -1652,12 +1652,12 @@
 
 
 
-        /*if (dadosUsuario.nivel === 'admin') {
+        if (dadosUsuario.nivel === 'admin') {
             const navUsersBtn = document.getElementById('nav-users');
             if (navUsersBtn) navUsersBtn.classList.remove('hidden');
             const resUsers = await fetchAllRecords('jsp_usuarios');
             STATE.users = resUsers.data || [];
-        }*/
+        }
 
         updateSelects();
         if(!document.querySelector('.active-section')) navigate('dash');
