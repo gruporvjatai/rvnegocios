@@ -3586,41 +3586,54 @@
       }     
 
       // ====== PERMISSÕES POR NÍVEL ======
-      function getPermissoes(nivel) {
-          // Views permitidas para cada perfil
-          const permissoes = {
-              admin: ['dash', 'oc', 'pos', 'fin', 'equipe', 'fornecedores', 'prod', 'fases', 'reports', 'precos', 'users', 'terc'],
-              comprador: ['oc', 'pos', 'equipe', 'fornecedores', 'prod', 'fases'],
-              registros: ['equipe', 'dash'] // exemplo, caso tenha
-          };
-          return permissoes[nivel] || permissoes.comprador; // fallback seguro
-      }
-      
-      function aplicarPermissoes() {
-        const nivel = dadosUsuario?.nivel_acesso || 'comprador';
-        const permitidas = getPermissoes(nivel);
-        
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            const viewId = btn.id.replace('nav-', '');
-            // Se a viewId estiver no array de permitidas, mostra, senão oculta
-            btn.style.display = permitidas.includes(viewId) ? '' : 'none';
-        });
+function getPermissoes(nivel) {
+    // Garante que admin tenha acesso a tudo
+    if (nivel === 'admin') {
+        return ['dash', 'oc', 'pos', 'fin', 'equipe', 'fornecedores', 'prod', 'fases', 'reports', 'precos', 'users', 'terc'];
+    }
     
-        // Verifica se a view atual é permitida
-        const viewAtual = document.querySelector('.active-section');
-        if (viewAtual) {
-            const currentView = viewAtual.id.replace('view-', '');
-            if (!permitidas.includes(currentView)) {
-                // Se não for permitida, navega para a primeira permitida
-                const primeira = permitidas[0] || 'dash';
-                navigate(primeira);
-            }
+    // Permissões para comprador
+    if (nivel === 'comprador') {
+        return ['oc', 'pos', 'equipe', 'fornecedores', 'prod', 'fases'];
+    }
+    
+    // Permissões para registros (se existir)
+    if (nivel === 'registros') {
+        return ['equipe', 'dash'];
+    }
+    
+    // Fallback: comprador
+    return ['oc', 'pos', 'equipe', 'fornecedores', 'prod', 'fases'];
+}
+
+function aplicarPermissoes() {
+    // Pega o nível do usuário logado
+    const nivel = dadosUsuario?.nivel || dadosUsuario?.nivel_acesso || 'comprador';
+    const permitidas = getPermissoes(nivel);
+    
+    // Oculta/mostra as abas
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        const viewId = btn.id.replace('nav-', '');
+        if (permitidas.includes(viewId)) {
+            btn.style.display = '';
         } else {
-            // Se não houver view ativa, vai para a primeira permitida
+            btn.style.display = 'none';
+        }
+    });
+
+    // Verifica se a view atual é permitida, senão redireciona
+    const viewAtual = document.querySelector('.active-section');
+    if (viewAtual) {
+        const currentView = viewAtual.id.replace('view-', '');
+        if (!permitidas.includes(currentView)) {
             const primeira = permitidas[0] || 'dash';
             navigate(primeira);
         }
+    } else {
+        const primeira = permitidas[0] || 'dash';
+        navigate(primeira);
     }
+}
       
       function navegarParaPrimeiraPermitida(permitidas) {
           if (permitidas && permitidas.length > 0) {
