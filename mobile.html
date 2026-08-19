@@ -878,7 +878,6 @@
 
 
       
-        // ====== NAVEGAÇÃO MOBILE ======
        function navigate(viewId) {
           // ===== BLOQUEIO PARA COMPRADOR =====
           const nivel = dadosUsuario?.nivel_acesso || 'comprador';
@@ -889,26 +888,26 @@
           }
       
           // ===== NAVEGAÇÃO ORIGINAL =====
-          document.querySelectorAll('main > div[id^="view-"]').forEach(el => { 
-              el.classList.add('hidden-section'); 
-              el.classList.remove('active-section'); 
+          document.querySelectorAll('main > div[id^="view-"]').forEach(el => {
+              el.classList.add('hidden-section');
+              el.classList.remove('active-section');
           });
           const target = document.getElementById('view-' + viewId);
-          if(target) { 
-              target.classList.remove('hidden-section'); 
-              target.classList.add('active-section'); 
+          if (target) {
+              target.classList.remove('hidden-section');
+              target.classList.add('active-section');
           }
           document.querySelectorAll('.nav-bottom-btn').forEach(btn => btn.classList.remove('nav-active', 'text-blue-700'));
           const activeBtn = document.getElementById('btn-' + viewId);
-          if(activeBtn && viewId !== 'pos') activeBtn.classList.add('nav-active');
-          if(viewId === 'dash') renderDashboard();
-          if(viewId === 'oc') { updateSelects(); renderOCList(); }
-          if(viewId === 'fin') { updateSelects(); renderFinance(); }
-          if(viewId === 'fornecedores') renderFornecedores();
-          if(viewId === 'prod') renderProducts();
-          if(viewId === 'equipe') { updateSelects(); renderEquipe(); }
+          if (activeBtn && viewId !== 'pos') activeBtn.classList.add('nav-active');
+          if (viewId === 'dash') renderDashboard();
+          if (viewId === 'oc') { updateSelects(); renderOCList(); }
+          if (viewId === 'fin') { updateSelects(); renderFinance(); }
+          if (viewId === 'fornecedores') renderFornecedores();
+          if (viewId === 'prod') renderProducts();
+          if (viewId === 'equipe') { updateSelects(); renderEquipe(); }
           lucide.createIcons();
-          window.scrollTo(0,0);
+          window.scrollTo(0, 0);
       }
 
         function openNovaOC() { document.getElementById('view-oc').classList.replace('active-section', 'hidden-section'); document.getElementById('view-pos').classList.replace('hidden-section', 'active-section'); updateSelects(); window.scrollTo(0,0); }
@@ -919,66 +918,69 @@
         async function fetchAllRecords(table) { let allRecords = []; let from=0; const step=1000; let keepFetching=true; while(keepFetching){ const {data,error}=await sb.from(table).select('*').range(from,from+step-1); if(error) throw error; if(data && data.length>0){ allRecords.push(...data); if(data.length<step) keepFetching=false; else from+=step; } else keepFetching=false; } return {data: allRecords}; }
 
         async function loadData() {
-    try {
-        const [
-            resObras,
-            resForn,
-            resProd,
-            resLog,
-            resFases,
-            resEquipe,
-            resTerceirizados,
-            resPonto,
-            resProducaoTerc   // NOVO: carrega a produção por metragem
-        ] = await Promise.all([
-            fetchAllRecords('jsp_obras'),
-            fetchAllRecords('jsp_fornecedores'),
-            fetchAllRecords('jsp_produtos'),
-            fetchAllRecords('jsp_logs'),
-            fetchAllRecords('jsp_fase'),
-            fetchAllRecords('jsp_equipe'),
-            fetchAllRecords('jsp_terceirizados'),
-            fetchAllRecords('jsp_ponto_diario').catch(() => ({ data: [] })),
-            fetchAllRecords('jsp_producao_terc').catch(() => ({ data: [] })) // NOVO
-        ]);
-
-        STATE.obras = resObras.data || [];
-        STATE.fornecedores = resForn.data || [];
-        STATE.produtos = resProd.data || [];
-        STATE.logs = resLog.data || [];
-        STATE.fases = (resFases.data || []).sort((a, b) => a.ordem - b.ordem);
-        STATE.equipe = resEquipe.data || [];
-        STATE.terceirizados = resTerceirizados.data || [];
-        STATE.ponto_diario = resPonto.data || [];
-        STATE.producao_terc = resProducaoTerc.data || []; // NOVO
-
-        updateSelects();
-
-        // ===== APLICA PERMISSÕES (OCULTA BOTÕES) =====
-        const nivel = dadosUsuario?.nivel_acesso || 'comprador';
-        if (nivel === 'comprador') {
-            ['btn-dash', 'btn-fin'].forEach(id => {
-                const btn = document.getElementById(id);
-                if (btn) btn.style.display = 'none';
-            });
-        } else {
-            // Garante que admin veja tudo
-            ['btn-dash', 'btn-fin'].forEach(id => {
-                const btn = document.getElementById(id);
-                if (btn) btn.style.display = '';
-            });
-        }
-        
-        // Navega para a primeira view permitida
-        const primeiraView = (nivel === 'admin') ? 'dash' : 'oc';
-        if (!document.querySelector('main > .active-section')) {
-            navigate(primeiraView);
-        } else {
-            const currentView = document.querySelector('main > .active-section').id.replace('view-', '');
-            navigate(currentView);
-        }
-        showLoading(false);
-  }
+          try {
+              const [
+                  resObras,
+                  resForn,
+                  resProd,
+                  resLog,
+                  resFases,
+                  resEquipe,
+                  resTerceirizados,
+                  resPonto,
+                  resProducaoTerc
+              ] = await Promise.all([
+                  fetchAllRecords('jsp_obras'),
+                  fetchAllRecords('jsp_fornecedores'),
+                  fetchAllRecords('jsp_produtos'),
+                  fetchAllRecords('jsp_logs'),
+                  fetchAllRecords('jsp_fase'),
+                  fetchAllRecords('jsp_equipe'),
+                  fetchAllRecords('jsp_terceirizados'),
+                  fetchAllRecords('jsp_ponto_diario').catch(() => ({ data: [] })),
+                  fetchAllRecords('jsp_producao_terc').catch(() => ({ data: [] }))
+              ]);
+      
+              STATE.obras = resObras.data || [];
+              STATE.fornecedores = resForn.data || [];
+              STATE.produtos = resProd.data || [];
+              STATE.logs = resLog.data || [];
+              STATE.fases = (resFases.data || []).sort((a, b) => a.ordem - b.ordem);
+              STATE.equipe = resEquipe.data || [];
+              STATE.terceirizados = resTerceirizados.data || [];
+              STATE.ponto_diario = resPonto.data || [];
+              STATE.producao_terc = resProducaoTerc.data || [];
+      
+              updateSelects();
+      
+              // ===== APLICA PERMISSÕES =====
+              const nivel = dadosUsuario?.nivel_acesso || 'comprador';
+              if (nivel === 'comprador') {
+                  ['btn-dash', 'btn-fin'].forEach(id => {
+                      const btn = document.getElementById(id);
+                      if (btn) btn.style.display = 'none';
+                  });
+              } else {
+                  ['btn-dash', 'btn-fin'].forEach(id => {
+                      const btn = document.getElementById(id);
+                      if (btn) btn.style.display = '';
+                  });
+              }
+      
+              const primeiraView = (nivel === 'admin') ? 'dash' : 'oc';
+              if (!document.querySelector('main > .active-section')) {
+                  navigate(primeiraView);
+              } else {
+                  const currentView = document.querySelector('main > .active-section').id.replace('view-', '');
+                  navigate(currentView);
+              }
+              showLoading(false);
+          } catch (err) {
+              showLoading(false);
+              showToast("Erro banco: " + err.message, true);
+              console.error(err);
+          }
+      }
       
          function getNextIdNum(array) { let max=0; array.forEach(item=>{ const val=parseInt(item.id); if(!isNaN(val) && val>max) max=val; }); return max+1; }
          function updateSelects() {
