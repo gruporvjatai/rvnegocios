@@ -878,36 +878,38 @@
 
 
       
-       function navigate(viewId) {
-          // ===== BLOQUEIO PARA COMPRADOR =====
-          const nivel = dadosUsuario?.nivel_acesso || 'comprador';
+      function navigate(viewId) {
+          // ===== VERIFICA PERMISSÃO =====
+          const nivel = dadosUsuario?.nivel || dadosUsuario?.nivel_acesso || 'comprador';
+          const isAdmin = nivel === 'admin';
           const permitidas = ['oc', 'pos', 'equipe', 'fornecedores', 'prod', 'menu'];
-          if (nivel === 'comprador' && !permitidas.includes(viewId)) {
+          
+          if (!isAdmin && !permitidas.includes(viewId)) {
               showToast("Acesso não permitido.", true);
               viewId = 'oc';
           }
       
           // ===== NAVEGAÇÃO ORIGINAL =====
-          document.querySelectorAll('main > div[id^="view-"]').forEach(el => {
-              el.classList.add('hidden-section');
-              el.classList.remove('active-section');
+          document.querySelectorAll('main > div[id^="view-"]').forEach(el => { 
+              el.classList.add('hidden-section'); 
+              el.classList.remove('active-section'); 
           });
           const target = document.getElementById('view-' + viewId);
-          if (target) {
-              target.classList.remove('hidden-section');
-              target.classList.add('active-section');
+          if(target) { 
+              target.classList.remove('hidden-section'); 
+              target.classList.add('active-section'); 
           }
           document.querySelectorAll('.nav-bottom-btn').forEach(btn => btn.classList.remove('nav-active', 'text-blue-700'));
           const activeBtn = document.getElementById('btn-' + viewId);
-          if (activeBtn && viewId !== 'pos') activeBtn.classList.add('nav-active');
-          if (viewId === 'dash') renderDashboard();
-          if (viewId === 'oc') { updateSelects(); renderOCList(); }
-          if (viewId === 'fin') { updateSelects(); renderFinance(); }
-          if (viewId === 'fornecedores') renderFornecedores();
-          if (viewId === 'prod') renderProducts();
-          if (viewId === 'equipe') { updateSelects(); renderEquipe(); }
+          if(activeBtn && viewId !== 'pos') activeBtn.classList.add('nav-active');
+          if(viewId === 'dash') renderDashboard();
+          if(viewId === 'oc') { updateSelects(); renderOCList(); }
+          if(viewId === 'fin') { updateSelects(); renderFinance(); }
+          if(viewId === 'fornecedores') renderFornecedores();
+          if(viewId === 'prod') renderProducts();
+          if(viewId === 'equipe') { updateSelects(); renderEquipe(); }
           lucide.createIcons();
-          window.scrollTo(0, 0);
+          window.scrollTo(0,0);
       }
 
         function openNovaOC() { document.getElementById('view-oc').classList.replace('active-section', 'hidden-section'); document.getElementById('view-pos').classList.replace('hidden-section', 'active-section'); updateSelects(); window.scrollTo(0,0); }
@@ -951,35 +953,42 @@
               STATE.ponto_diario = resPonto.data || [];
               STATE.producao_terc = resProducaoTerc.data || [];
       
+                  
               updateSelects();
-      
-              // ===== APLICA PERMISSÕES =====
-              const nivel = dadosUsuario?.nivel_acesso || 'comprador';
-              if (nivel === 'comprador') {
-                  ['btn-dash', 'btn-fin'].forEach(id => {
-                      const btn = document.getElementById(id);
-                      if (btn) btn.style.display = 'none';
-                  });
-              } else {
-                  ['btn-dash', 'btn-fin'].forEach(id => {
-                      const btn = document.getElementById(id);
-                      if (btn) btn.style.display = '';
-                  });
-              }
-      
-              const primeiraView = (nivel === 'admin') ? 'dash' : 'oc';
-              if (!document.querySelector('main > .active-section')) {
-                  navigate(primeiraView);
-              } else {
-                  const currentView = document.querySelector('main > .active-section').id.replace('view-', '');
-                  navigate(currentView);
-              }
-              showLoading(false);
-          } catch (err) {
-              showLoading(false);
-              showToast("Erro banco: " + err.message, true);
-              console.error(err);
-          }
+
+            // ===== APLICA PERMISSÕES =====
+            const nivel = dadosUsuario?.nivel || dadosUsuario?.nivel_acesso || 'comprador';
+            const isAdmin = nivel === 'admin';
+            
+            if (!isAdmin) {
+                // Oculta botões para comprador
+                ['btn-dash', 'btn-fin'].forEach(id => {
+                    const btn = document.getElementById(id);
+                    if (btn) btn.style.display = 'none';
+                });
+            } else {
+                // Mostra todos para admin
+                ['btn-dash', 'btn-fin'].forEach(id => {
+                    const btn = document.getElementById(id);
+                    if (btn) btn.style.display = '';
+                });
+            }
+            
+            // Navega para a primeira view permitida
+            const primeiraView = isAdmin ? 'dash' : 'oc';
+            const currentActive = document.querySelector('main > .active-section');
+            if (!currentActive) {
+                navigate(primeiraView);
+            } else {
+                const currentView = currentActive.id.replace('view-', '');
+                // Se a view atual não for permitida, redireciona
+                if (!isAdmin && !['oc', 'pos', 'equipe', 'fornecedores', 'prod', 'menu'].includes(currentView)) {
+                    navigate('oc');
+                } else {
+                    navigate(currentView);
+                }
+            }
+            showLoading(false);
       }
       
          function getNextIdNum(array) { let max=0; array.forEach(item=>{ const val=parseInt(item.id); if(!isNaN(val) && val>max) max=val; }); return max+1; }
