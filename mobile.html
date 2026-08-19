@@ -868,8 +868,24 @@
         function fecharModalSaldo() { closeModal('modal-saldo-ponto'); }
         function fecharModalDocs() { closeModal('modal-docs-equipe'); }
 
+
+
+        function getPrimeiraViewPermitida() {
+            const nivel = dadosUsuario?.nivel_acesso || 'comprador';
+            if (nivel === 'admin') return 'dash';
+            return 'oc'; // comprador começa na lista de O.C.
+        }
+
+
+      
         // ====== NAVEGAÇÃO MOBILE ======
         function navigate(viewId) {
+           const nivel = dadosUsuario?.nivel_acesso || 'comprador';
+            const permitidas = ['oc', 'pos', 'equipe', 'fornecedores', 'prod', 'menu'];
+            if (nivel === 'comprador' && !permitidas.includes(viewId)) {
+                showToast("Acesso não permitido.", true);
+                viewId = 'oc';
+            }
             document.querySelectorAll('main > div[id^="view-"]').forEach(el => { el.classList.add('hidden-section'); el.classList.remove('active-section'); });
             const target = document.getElementById('view-' + viewId);
             if(target) { target.classList.remove('hidden-section'); target.classList.add('active-section'); }
@@ -928,13 +944,33 @@
         STATE.producao_terc = resProducaoTerc.data || []; // NOVO
 
         updateSelects();
-        if (!document.querySelector('main > .active-section')) navigate('dash');
-        else navigate(document.querySelector('main > .active-section').id.replace('view-', ''));
+
+        // ===== APLICA PERMISSÕES (OCULTA BOTÕES) =====
+        const nivel = dadosUsuario?.nivel_acesso || 'comprador';
+        if (nivel === 'comprador') {
+            // Esconde os botões de navegação que não são permitidos
+            const botoesOcultar = ['btn-dash', 'btn-fin'];
+            botoesOcultar.forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.style.display = 'none';
+            });
+        } else if (nivel === 'admin') {
+            // Garante que todos os botões estejam visíveis (caso tenham sido ocultados antes)
+            ['btn-dash', 'btn-fin'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.style.display = '';
+            });
+        }
+        
+        // Navega para a primeira view permitida
+        const primeiraView = getPrimeiraViewPermitida();
+        if (!document.querySelector('main > .active-section')) {
+            navigate(primeiraView);
+        } else {
+            const currentView = document.querySelector('main > .active-section').id.replace('view-', '');
+            navigate(currentView);
+        }
         showLoading(false);
-    } catch (err) {
-        showLoading(false);
-        showToast("Erro banco: " + err.message, true);
-    }
 }
       
          function getNextIdNum(array) { let max=0; array.forEach(item=>{ const val=parseInt(item.id); if(!isNaN(val) && val>max) max=val; }); return max+1; }
