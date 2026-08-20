@@ -1529,7 +1529,7 @@
             if (dadosUsuario && dadosUsuario.nivel === 'comprador') {
                const permitidas = ['oc', 'pos', 'equipe', 'fornecedores', 'prod', 'fases'];
                if (!permitidas.includes(viewId)) {
-                  showToast("Acesso não permitido.", true);
+                  //showToast("Acesso não permitido.", true);
                   viewId = 'oc'; // redireciona para a primeira permitida
                 }
             }
