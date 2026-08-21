@@ -1647,6 +1647,7 @@
         showLoading(false);
         showToast("Erro ao conectar no banco: " + err.message, true);
     }
+        startInactivityMonitoring();
 }
 
       function refresh() {
@@ -3620,6 +3621,15 @@
           showToast(`O.C. #${id} duplicada com sucesso! Nova O.C. #${novoId} criada.`);
           await loadData();          // recarrega os dados e atualiza a lista
           navigate('oc');           // vai para a lista de O.C. (opcional)
+      }
+
+      // Adiciona listeners para reiniciar o timer
+      function startInactivityMonitoring() {
+          const events = ['mousedown', 'keydown', 'touchstart', 'scroll', 'click'];
+          events.forEach(event => {
+              document.addEventListener(event, resetInactivityTimer);
+          });
+          resetInactivityTimer(); // inicia o timer imediatamente
       }
             
       
