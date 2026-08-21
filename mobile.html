@@ -2867,28 +2867,37 @@ function executarImpressaoFolha() {
             };
     
             pdfMake.createPdf(docDefinition).getBlob(async (blob) => {
-                const filename = `OC_${id}.pdf`;
-                const file = new File([blob], filename, { type: 'application/pdf' });
-                showLoading(false);
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    try {
-                        await navigator.share({ title: `OC #${id}`, files: [file] });
-                    } catch (e) {}
-                } else {
-                    const url = URL.createObjectURL(file);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = filename;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                    showToast("PDF baixado!");
-                }
-            });
-        } catch (e) {
-            showLoading(false);
-            showToast("Erro ao gerar PDF: " + e.message, true);
-        }
-    }
+              const filename = `OC_${id}.pdf`;
+              const file = new File([blob], filename, { type: 'application/pdf' });
+              showLoading(false);
+              
+              if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                  try {
+                      await navigator.share({ title: `OC #${id}`, files: [file] });
+                  } catch (e) {
+                      // Se o usuário cancelou, não faz nada (ignora silenciosamente)
+                      if (e.name !== 'AbortError') {
+                          // Fallback: baixar o PDF em caso de erro inesperado
+                          const url = URL.createObjectURL(file);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = filename;
+                          a.click();
+                          URL.revokeObjectURL(url);
+                          showToast("PDF baixado!");
+                      }
+                  }
+              } else {
+                  // Fallback para navegadores que não suportam compartilhamento
+                  const url = URL.createObjectURL(file);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = filename;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  showToast("PDF baixado!");
+              }
+          });
 
       async function compartilharRomaneio(id) {
         showLoading(true);
@@ -3060,27 +3069,40 @@ function executarImpressaoFolha() {
             };
     
             pdfMake.createPdf(docDefinition).getBlob(async (blob) => {
-                const filename = `Romaneio_${id}.pdf`;
-                const file = new File([blob], filename, { type: 'application/pdf' });
-                showLoading(false);
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    try {
-                        await navigator.share({ title: `Romaneio OC #${id}`, files: [file] });
-                    } catch (e) {}
-                } else {
-                    const url = URL.createObjectURL(file);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = filename;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                    showToast("PDF baixado!");
-                }
-            });
-        } catch (e) {
+            const filename = `Romaneio_${id}.pdf`;
+            const file = new File([blob], filename, { type: 'application/pdf' });
             showLoading(false);
-            showToast("Erro ao gerar Romaneio: " + e.message, true);
-        }
+            
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({ title: `Romaneio OC #${id}`, files: [file] });
+                    // Compartilhamento bem-sucedido, nada mais a fazer
+                } catch (e) {
+                    // Se o usuário cancelou (AbortError), não mostra erro
+                    if (e.name !== 'AbortError') {
+                        console.warn("Erro no compartilhamento:", e);
+                        // Fallback: baixar o PDF
+                        const url = URL.createObjectURL(file);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        showToast("PDF baixado (fallback)!");
+                    }
+                    // Se for AbortError, não faz nada (usuário cancelou)
+                }
+            } else {
+                // Fallback para navegadores que não suportam compartilhamento
+                const url = URL.createObjectURL(file);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+                showToast("PDF baixado!");
+            }
+        });
     }
       
 
