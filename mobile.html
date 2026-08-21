@@ -3076,13 +3076,13 @@ async function compartilharRomaneio(id) {
         };
 
         pdfMake.createPdf(docDefinition).getBlob(async (blob) => {
-            const filename = `Romaneio_${id}.pdf`;
+            const filename = `#${id}.pdf`;
             const file = new File([blob], filename, { type: 'application/pdf' });
             showLoading(false);
 
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 try {
-                    await navigator.share({ title: `Romaneio OC #${id}`, files: [file] });
+                    await navigator.share({ title: `Lista de Materiais #${id}`, files: [file] });
                 } catch (e) {
                     // Se o usuário cancelou (AbortError), ignora silenciosamente
                     if (e.name !== 'AbortError') {
