@@ -2355,8 +2355,236 @@ function executarImpressaoFolha() {
 
         function verOC(id){ document.getElementById('modal-view-oc-content').innerHTML=buildHTMLOC(id,false); openModal('modal-view-oc'); }
         function buildHTMLOC(id,isRomaneio){ const logsOC=STATE.logs.filter(l=>String(l.id)===String(id)&&(l.tipo==='oc_pendente'||l.tipo==='compra')); if(!logsOC.length) return ''; const o=logsOC[0]; const obra=STATE.obras.find(x=>x.id==o.obra_id)||{nome:'Sem Obra',endereco:'-'}; const forn=STATE.fornecedores.find(x=>x.id==o.fornecedor_id)||{nome:'A Definir',documento:'',telefone:''}; let total=0; const linhas=logsOC.map((i,index)=>{ const valor=parseFloat(i.valor_total); total+=valor; const price=valor/parseFloat(i.quantidade); const bg=index%2===0?'#ffffff':'#f8fafc'; const colPreco=isRomaneio?'':`<td align="right" style="border-bottom:1px solid #000; padding:6px;">${formatMoney(price)}</td><td align="right" style="border-bottom:1px solid #000; padding:6px;">${formatMoney(valor)}</td>`; return `<tr style="background-color:${bg};"><td style="border-bottom:1px solid #000; padding:6px;">${i.produto_nome}</td><td align="center" style="border-bottom:1px solid #000; padding:6px;">${i.quantidade}</td>${colPreco}</tr>`; }).join(''); const cabecalhoPreco=isRomaneio?'':`<th align="right" style="background:#0f172a; color:#fff; padding:6px;">Unit. Estimado</th><th align="right" style="background:#0f172a; color:#fff; padding:6px;">Total Estimado</th>`; const rodapePreco=isRomaneio?'':`<table width="100%"><tr><td style="padding:10px 0; font-weight:900;">TOTAL ESTIMADO:</td><td align="right" style="font-size:13px;">${formatMoney(total)}</td></tr></table>`; const docTitle=isRomaneio?'ROMANEIO DE ENTREGA':'ORDEM DE COMPRA'; return `<div style="padding:10px;"><div style="display:flex; justify-content:space-between; border-bottom:2px solid #000; margin-bottom:15px;"><div><img src="logo.png" style="height:60px;"></div><div><h2>${docTitle}</h2><div>Nº: ${o.id}</div><div>Emissão: ${formatDate(o.data)}</div></div></div><div style="border:1px solid #000; margin-bottom:15px;"><div style="background:#f1f5f9; padding:4px;"><strong>FORNECEDOR</strong></div><div>${forn.nome}<br>Doc: ${forn.documento||'-'}<br>Tel: ${forn.telefone||'-'}</div></div><div style="border:1px solid #000; margin-bottom:15px;"><div style="background:#f1f5f9;"><strong>DESTINO</strong></div><div>${obra.nome}<br>Endereço: ${obra.endereco||'-'}<br>Solicitante: ${o.solicitante||'-'}</div></div><table style="width:100%; border-collapse:collapse; margin-bottom:15px;"><thead><tr style="background:#0f172a; color:#fff;"><th>Descrição</th><th>Qtd</th>${cabecalhoPreco}</tr></thead><tbody>${linhas}</tbody></table>${rodapePreco}<div><strong>Observações:</strong> ${o.observacao||'Nenhuma'}</div><div style="margin-top:40px; text-align:center;"><div style="border-top:1px solid #000; padding-top:5px;">ASSINATURA RESPONSÁVEL</div></div></div>`; }
-        async function compartilharNative(id,isRomaneio){ showLoading(true); try{ const logsOC=STATE.logs.filter(l=>String(l.id)===String(id)&&(l.tipo==='oc_pendente'||l.tipo==='compra')); if(!logsOC.length){ showLoading(false); return showToast("O.C. não encontrada",true); } const o=logsOC[0]; const obra=STATE.obras.find(x=>x.id==o.obra_id)||{nome:'Sem Obra',endereco:'-'}; const forn=STATE.fornecedores.find(x=>x.id==o.fornecedor_id)||{nome:'A Definir',documento:'',telefone:''}; let justObs=o.observacao||'Nenhuma'; if(justObs.includes(' | Obs: ')) justObs=justObs.split(' | Obs: ')[0]+'\n'+justObs.split(' | Obs: ')[1]; let total=0; const bodyTabela=[]; const headerRow=[{text:'Descrição',style:'tableHeader',alignment:'left'},{text:'Qtd',style:'tableHeader',alignment:'center'}]; if(!isRomaneio) headerRow.push({text:'Unit. Estimado',style:'tableHeader',alignment:'right'},{text:'Total Estimado',style:'tableHeader',alignment:'right'}); bodyTabela.push(headerRow); logsOC.forEach((i,index)=>{ const valor=parseFloat(i.valor_total); total+=valor; const price=valor/parseFloat(i.quantidade); const bgColor=index%2===0?'#ffffff':'#f8fafc'; const row=[{text:i.produto_nome,fillColor:bgColor,margin:[4,6,4,6],fontSize:10},{text:i.quantidade.toString(),alignment:'center',fillColor:bgColor,margin:[4,6,4,6],fontSize:10}]; if(!isRomaneio) row.push({text:formatMoney(price),alignment:'right',fillColor:bgColor,margin:[4,6,4,6],fontSize:10},{text:formatMoney(valor),alignment:'right',fillColor:bgColor,margin:[4,6,4,6],fontSize:10}); bodyTabela.push(row); }); async function getLogoBase64(url){ return new Promise((resolve)=>{ const img=new Image(); img.crossOrigin='Anonymous'; img.onload=()=>{ const canvas=document.createElement('canvas'); canvas.width=img.width; canvas.height=img.height; const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0); resolve(canvas.toDataURL('image/png')); }; img.onerror=()=>resolve(null); img.src=url; }); } const logoBase64=await getLogoBase64("https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png"); const docDefinition={ pageSize:'A4', pageMargins:[40,40,40,40], defaultStyle:{font:'Roboto'}, background:()=>({canvas:[{type:'rect',x:25,y:25,w:545.28,h:791.89,lineWidth:1,lineColor:'#000000'}]}), content:[{ table:{ widths:[90,'*','auto'], body:[[ logoBase64?{image:logoBase64,width:80,alignment:'center',margin:[0,0,10,0]}:'', { text:[{text:'RV NEGÓCIOS E COMPANHIA\n',fontSize:16,bold:true,color:'#1d4ed8'},{text:'CNPJ: 61.893.912/0001-24\n',fontSize:9,color:'#475569',lineHeight:1.3},{text:'Rua Mineiros, 530 | Jataí - GO | (64) 99981-5852',fontSize:9,color:'#475569',lineHeight:1.3}], margin:[0,10,0,0] }, { text:[{text:isRomaneio?'ROMANEIO DE ENTREGA\n':'ORDEM DE COMPRA\n',fontSize:13,bold:true},{text:`Nº: ${o.id}\n`,fontSize:9},{text:`Emissão: ${formatDate(o.data)}\n`,fontSize:9},{text:`Fase: ${o.fase_obra||'-'}`,fontSize:9}], alignment:'right', margin:[0,10,0,0] } ]] }, layout:'noBorders', margin:[0,0,0,10] }, { canvas:[{type:'line',x1:0,y1:0,x2:515,y2:0,lineWidth:2}], margin:[0,0,0,20] }, { columns:[ { width:'48%', table:{ widths:['*'], body:[[{text:'DADOS DO FORNECEDOR',fillColor:'#f1f5f9',bold:true,fontSize:8,margin:[4,4,4,4]}],[{text:`${forn.nome}\nDoc: ${forn.documento||'-'}\nTel: ${forn.telefone||'-'}`,fontSize:9,margin:[6,8,6,8]}]] }, layout:{hLineWidth:()=>1,vLineWidth:()=>1,hLineColor:()=>'#000000',vLineColor:()=>'#000000'} }, { width:'4%', text:'' }, { width:'48%', table:{ widths:['*'], body:[[{text:'DESTINO (OBRA)',fillColor:'#f1f5f9',bold:true,fontSize:8,margin:[4,4,4,4]}],[{text:`${obra.nome}\nEndereço: ${obra.endereco||'-'}\nSolicitante: ${o.solicitante||obra.solicitante||'-'} | Fase: ${o.fase_obra||'-'}`,fontSize:9,margin:[6,8,6,8]}]] }, layout:{hLineWidth:()=>1,vLineWidth:()=>1,hLineColor:()=>'#000000',vLineColor:()=>'#000000'} } ], margin:[0,0,0,20] }, { table:{ headerRows:1, widths:isRomaneio?['*','auto']:['*','auto','auto','auto'], body:bodyTabela }, layout:{ hLineWidth:(i,node)=>(i===0||i===node.table.body.length)?0:1, vLineWidth:()=>0, hLineColor:()=>'#000000', paddingLeft:()=>4, paddingRight:()=>4 }, margin:[0,0,0,20] }, { columns:[ { width:isRomaneio?'100%':'60%', table:{ widths:['*'], body:[[{ text:[{text:'Observações:\n',fontSize:9,bold:true},{text:justObs,fontSize:9}], margin:[6,6,6,25] }]] }, layout:{ hLineWidth:()=>1, vLineWidth:()=>1, hLineColor:()=>'#cbd5e1', vLineColor:()=>'#cbd5e1', hLineStyle:()=>({dash:{length:4,space:4}}), vLineStyle:()=>({dash:{length:4,space:4}}) } }, isRomaneio?'':{ width:'40%', alignment:'right', margin:[0,10,0,0], text:[{text:'TOTAL ESTIMADO:   ',bold:true,fontSize:10},{text:formatMoney(total),bold:true,fontSize:13}] } ], margin:[0,0,0,60] }, { text:'_________________________________________________\nASSINATURA RESPONSÁVEL', alignment:'center', fontSize:9, bold:true } ], styles:{ tableHeader:{ bold:true, fontSize:10, color:'white', fillColor:'#0f172a', margin:[4,6,4,6] } } }; pdfMake.createPdf(docDefinition).getBlob(async (blob)=>{ const filename=`Documento_${id}.pdf`; const file=new File([blob],filename,{type:'application/pdf'}); showLoading(false); if(navigator.canShare && navigator.canShare({files:[file]})){ try{ await navigator.share({ title:isRomaneio?`Romaneio OC #${id}`:`OC #${id}`, files:[file] }); } catch(e){} } else { const url=URL.createObjectURL(file); const a=document.createElement('a'); a.href=url; a.download=filename; a.click(); URL.revokeObjectURL(url); showToast("PDF baixado!"); } }); } catch(e){ showLoading(false); showToast("Erro ao gerar PDF",true); } }
+        //async function compartilharNative(id,isRomaneio){ showLoading(true); try{ const logsOC=STATE.logs.filter(l=>String(l.id)===String(id)&&(l.tipo==='oc_pendente'||l.tipo==='compra')); if(!logsOC.length){ showLoading(false); return showToast("O.C. não encontrada",true); } const o=logsOC[0]; const obra=STATE.obras.find(x=>x.id==o.obra_id)||{nome:'Sem Obra',endereco:'-'}; const forn=STATE.fornecedores.find(x=>x.id==o.fornecedor_id)||{nome:'A Definir',documento:'',telefone:''}; let justObs=o.observacao||'Nenhuma'; if(justObs.includes(' | Obs: ')) justObs=justObs.split(' | Obs: ')[0]+'\n'+justObs.split(' | Obs: ')[1]; let total=0; const bodyTabela=[]; const headerRow=[{text:'Descrição',style:'tableHeader',alignment:'left'},{text:'Qtd',style:'tableHeader',alignment:'center'}]; if(!isRomaneio) headerRow.push({text:'Unit. Estimado',style:'tableHeader',alignment:'right'},{text:'Total Estimado',style:'tableHeader',alignment:'right'}); bodyTabela.push(headerRow); logsOC.forEach((i,index)=>{ const valor=parseFloat(i.valor_total); total+=valor; const price=valor/parseFloat(i.quantidade); const bgColor=index%2===0?'#ffffff':'#f8fafc'; const row=[{text:i.produto_nome,fillColor:bgColor,margin:[4,6,4,6],fontSize:10},{text:i.quantidade.toString(),alignment:'center',fillColor:bgColor,margin:[4,6,4,6],fontSize:10}]; if(!isRomaneio) row.push({text:formatMoney(price),alignment:'right',fillColor:bgColor,margin:[4,6,4,6],fontSize:10},{text:formatMoney(valor),alignment:'right',fillColor:bgColor,margin:[4,6,4,6],fontSize:10}); bodyTabela.push(row); }); async function getLogoBase64(url){ return new Promise((resolve)=>{ const img=new Image(); img.crossOrigin='Anonymous'; img.onload=()=>{ const canvas=document.createElement('canvas'); canvas.width=img.width; canvas.height=img.height; const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0); resolve(canvas.toDataURL('image/png')); }; img.onerror=()=>resolve(null); img.src=url; }); } const logoBase64=await getLogoBase64("https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png"); const docDefinition={ pageSize:'A4', pageMargins:[40,40,40,40], defaultStyle:{font:'Roboto'}, background:()=>({canvas:[{type:'rect',x:25,y:25,w:545.28,h:791.89,lineWidth:1,lineColor:'#000000'}]}), content:[{ table:{ widths:[90,'*','auto'], body:[[ logoBase64?{image:logoBase64,width:80,alignment:'center',margin:[0,0,10,0]}:'', { text:[{text:'RV NEGÓCIOS E COMPANHIA\n',fontSize:16,bold:true,color:'#1d4ed8'},{text:'CNPJ: 61.893.912/0001-24\n',fontSize:9,color:'#475569',lineHeight:1.3},{text:'Rua Mineiros, 530 | Jataí - GO | (64) 99981-5852',fontSize:9,color:'#475569',lineHeight:1.3}], margin:[0,10,0,0] }, { text:[{text:isRomaneio?'ROMANEIO DE ENTREGA\n':'ORDEM DE COMPRA\n',fontSize:13,bold:true},{text:`Nº: ${o.id}\n`,fontSize:9},{text:`Emissão: ${formatDate(o.data)}\n`,fontSize:9},{text:`Fase: ${o.fase_obra||'-'}`,fontSize:9}], alignment:'right', margin:[0,10,0,0] } ]] }, layout:'noBorders', margin:[0,0,0,10] }, { canvas:[{type:'line',x1:0,y1:0,x2:515,y2:0,lineWidth:2}], margin:[0,0,0,20] }, { columns:[ { width:'48%', table:{ widths:['*'], body:[[{text:'DADOS DO FORNECEDOR',fillColor:'#f1f5f9',bold:true,fontSize:8,margin:[4,4,4,4]}],[{text:`${forn.nome}\nDoc: ${forn.documento||'-'}\nTel: ${forn.telefone||'-'}`,fontSize:9,margin:[6,8,6,8]}]] }, layout:{hLineWidth:()=>1,vLineWidth:()=>1,hLineColor:()=>'#000000',vLineColor:()=>'#000000'} }, { width:'4%', text:'' }, { width:'48%', table:{ widths:['*'], body:[[{text:'DESTINO (OBRA)',fillColor:'#f1f5f9',bold:true,fontSize:8,margin:[4,4,4,4]}],[{text:`${obra.nome}\nEndereço: ${obra.endereco||'-'}\nSolicitante: ${o.solicitante||obra.solicitante||'-'} | Fase: ${o.fase_obra||'-'}`,fontSize:9,margin:[6,8,6,8]}]] }, layout:{hLineWidth:()=>1,vLineWidth:()=>1,hLineColor:()=>'#000000',vLineColor:()=>'#000000'} } ], margin:[0,0,0,20] }, { table:{ headerRows:1, widths:isRomaneio?['*','auto']:['*','auto','auto','auto'], body:bodyTabela }, layout:{ hLineWidth:(i,node)=>(i===0||i===node.table.body.length)?0:1, vLineWidth:()=>0, hLineColor:()=>'#000000', paddingLeft:()=>4, paddingRight:()=>4 }, margin:[0,0,0,20] }, { columns:[ { width:isRomaneio?'100%':'60%', table:{ widths:['*'], body:[[{ text:[{text:'Observações:\n',fontSize:9,bold:true},{text:justObs,fontSize:9}], margin:[6,6,6,25] }]] }, layout:{ hLineWidth:()=>1, vLineWidth:()=>1, hLineColor:()=>'#cbd5e1', vLineColor:()=>'#cbd5e1', hLineStyle:()=>({dash:{length:4,space:4}}), vLineStyle:()=>({dash:{length:4,space:4}}) } }, isRomaneio?'':{ width:'40%', alignment:'right', margin:[0,10,0,0], text:[{text:'TOTAL ESTIMADO:   ',bold:true,fontSize:10},{text:formatMoney(total),bold:true,fontSize:13}] } ], margin:[0,0,0,60] }, { text:'_________________________________________________\nASSINATURA RESPONSÁVEL', alignment:'center', fontSize:9, bold:true } ], styles:{ tableHeader:{ bold:true, fontSize:10, color:'white', fillColor:'#0f172a', margin:[4,6,4,6] } } }; pdfMake.createPdf(docDefinition).getBlob(async (blob)=>{ const filename=`Documento_${id}.pdf`; const file=new File([blob],filename,{type:'application/pdf'}); showLoading(false); if(navigator.canShare && navigator.canShare({files:[file]})){ try{ await navigator.share({ title:isRomaneio?`Romaneio OC #${id}`:`OC #${id}`, files:[file] }); } catch(e){} } else { const url=URL.createObjectURL(file); const a=document.createElement('a'); a.href=url; a.download=filename; a.click(); URL.revokeObjectURL(url); showToast("PDF baixado!"); } }); } catch(e){ showLoading(false); showToast("Erro ao gerar PDF",true); } }
 
+
+
+      async function compartilharNative(id, isRomaneio){ 
+          showLoading(true); 
+          try{ 
+              const logsOC=STATE.logs.filter(l=>String(l.id)===String(id)&&(l.tipo==='oc_pendente'||l.tipo==='compra')); 
+              if(!logsOC.length){ showLoading(false); return showToast("O.C. não encontrada",true); } 
+              const o=logsOC[0]; 
+              const obra=STATE.obras.find(x=>x.id==o.obra_id)||{nome:'Sem Obra',endereco:'-'}; 
+              const forn=STATE.fornecedores.find(x=>x.id==o.fornecedor_id)||{nome:'A Definir',documento:'',telefone:''}; 
+              let justObs=o.observacao||'Nenhuma'; 
+              if(justObs.includes(' | Obs: ')) justObs=justObs.split(' | Obs: ')[0]+'\n'+justObs.split(' | Obs: ')[1]; 
+              let total=0; 
+              const bodyTabela=[]; 
+              let headerRow;
+              if (isRomaneio) {
+                  headerRow = [
+                      {text: 'OK', style: 'tableHeader', alignment: 'center'},
+                      {text: 'Qtd', style: 'tableHeader', alignment: 'center'},
+                      {text: 'Descrição do Material', style: 'tableHeader', alignment: 'left'}
+                  ];
+              } else {
+                  headerRow = [
+                      {text: 'Descrição', style: 'tableHeader', alignment: 'left'},
+                      {text: 'Qtd', style: 'tableHeader', alignment: 'center'},
+                      {text: 'Unit. Estimado', style: 'tableHeader', alignment: 'right'},
+                      {text: 'Total Estimado', style: 'tableHeader', alignment: 'right'}
+                  ];
+              }
+              bodyTabela.push(headerRow); 
+              logsOC.forEach((i,index)=>{ 
+                  const valor=parseFloat(i.valor_total); 
+                  total+=valor; 
+                  const price=valor/parseFloat(i.quantidade); 
+                  const bgColor=index%2===0?'#ffffff':'#f8fafc'; 
+                  let row;
+                  if (isRomaneio) {
+                      row = [
+                          {text: '☐', alignment: 'center', fillColor: bgColor, margin: [4,4,4,4], fontSize: 10},
+                          {text: i.quantidade.toString(), alignment: 'center', fillColor: bgColor, margin: [4,4,4,4], fontSize: 10},
+                          {text: i.produto_nome, alignment: 'left', fillColor: bgColor, margin: [4,4,4,4], fontSize: 10}
+                      ];
+                  } else {
+                      row = [
+                          {text: i.produto_nome, fillColor: bgColor, margin: [4,6,4,6], fontSize: 10},
+                          {text: i.quantidade.toString(), alignment: 'center', fillColor: bgColor, margin: [4,6,4,6], fontSize: 10},
+                          {text: formatMoney(price), alignment: 'right', fillColor: bgColor, margin: [4,6,4,6], fontSize: 10},
+                          {text: formatMoney(valor), alignment: 'right', fillColor: bgColor, margin: [4,6,4,6], fontSize: 10}
+                      ];
+                  }
+                  bodyTabela.push(row); 
+              }); 
+              async function getLogoBase64(url){ 
+                  return new Promise((resolve)=>{ 
+                      const img=new Image(); 
+                      img.crossOrigin='Anonymous'; 
+                      img.onload=()=>{ 
+                          const canvas=document.createElement('canvas'); 
+                          canvas.width=img.width; 
+                          canvas.height=img.height; 
+                          const ctx=canvas.getContext('2d'); 
+                          ctx.drawImage(img,0,0); 
+                          resolve(canvas.toDataURL('image/png')); 
+                      }; 
+                      img.onerror=()=>resolve(null); 
+                      img.src=url; 
+                  }); 
+              } 
+              const logoBase64=await getLogoBase64("https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png"); 
+              const docDefinition={ 
+                  pageSize:'A4', 
+                  pageMargins:[40,40,40,40], 
+                  defaultStyle:{font:'Roboto'}, 
+                  background:()=>({canvas:[{type:'rect',x:25,y:25,w:545.28,h:791.89,lineWidth:1,lineColor:'#000000'}]}), 
+                  content:[
+                      { 
+                          table:{ 
+                              widths:[90,'*','auto'], 
+                              body:[[ 
+                                  logoBase64?{image:logoBase64,width:80,alignment:'center',margin:[0,0,10,0]}:'', 
+                                  { 
+                                      text:[
+                                          {text:'RV NEGÓCIOS E COMPANHIA\n',fontSize:16,bold:true,color:'#1d4ed8'},
+                                          {text:'CNPJ: 61.893.912/0001-24\n',fontSize:9,color:'#475569',lineHeight:1.3},
+                                          {text:'Rua Mineiros, 530 | Jataí - GO | (64) 99981-5852',fontSize:9,color:'#475569',lineHeight:1.3}
+                                      ], 
+                                      margin:[0,10,0,0] 
+                                  }, 
+                                  { 
+                                      text:[
+                                          {text:isRomaneio?'ROMANEIO DE RETIRADA\n':'ORDEM DE COMPRA\n',fontSize:13,bold:true},
+                                          {text:`Nº: ${o.id}\n`,fontSize:9},
+                                          {text:`Emissão: ${formatDate(o.data)}\n`,fontSize:9},
+                                          {text:`Fase: ${o.fase_obra||'-'}`,fontSize:9}
+                                      ], 
+                                      alignment:'right', 
+                                      margin:[0,10,0,0] 
+                                  } 
+                              ]] 
+                          }, 
+                          layout:'noBorders', 
+                          margin:[0,0,0,10] 
+                      }, 
+                      { canvas:[{type:'line',x1:0,y1:0,x2:515,y2:0,lineWidth:2}], margin:[0,0,0,20] }, 
+                      { 
+                          columns:[ 
+                              { 
+                                  width:'48%', 
+                                  table:{ 
+                                      widths:['*'], 
+                                      body:[
+                                          [{text:'DADOS DO FORNECEDOR',fillColor:'#f1f5f9',bold:true,fontSize:8,margin:[4,4,4,4]}],
+                                          [{text:`${forn.nome}\nDoc: ${forn.documento||'-'}\nTel: ${forn.telefone||'-'}`,fontSize:9,margin:[6,8,6,8]}]
+                                      ] 
+                                  }, 
+                                  layout:{hLineWidth:()=>1,vLineWidth:()=>1,hLineColor:()=>'#000000',vLineColor:()=>'#000000'} 
+                              }, 
+                              { width:'4%', text:'' }, 
+                              { 
+                                  width:'48%', 
+                                  table:{ 
+                                      widths:['*'], 
+                                      body:[
+                                          [{text:'DESTINO (OBRA)',fillColor:'#f1f5f9',bold:true,fontSize:8,margin:[4,4,4,4]}],
+                                          [{text:`${obra.nome}\nEndereço: ${obra.endereco||'-'}\nSolicitante: ${o.solicitante||obra.solicitante||'-'} | Fase: ${o.fase_obra||'-'}`,fontSize:9,margin:[6,8,6,8]}]
+                                      ] 
+                                  }, 
+                                  layout:{hLineWidth:()=>1,vLineWidth:()=>1,hLineColor:()=>'#000000',vLineColor:()=>'#000000'} 
+                              } 
+                          ], 
+                          margin:[0,0,0,20] 
+                      }, 
+                      { 
+                          table:{ 
+                              headerRows:1, 
+                              widths: isRomaneio ? ['auto', 'auto', '*'] : ['*','auto','auto','auto'], 
+                              body:bodyTabela 
+                          }, 
+                          layout:{ 
+                              hLineWidth:(i,node)=>(i===0||i===node.table.body.length)?0:1, 
+                              vLineWidth:()=>0, 
+                              hLineColor:()=>'#000000', 
+                              paddingLeft:()=>4, 
+                              paddingRight:()=>4 
+                          }, 
+                          margin:[0,0,0,20] 
+                      }, 
+                      // Observações
+                      { 
+                          columns:[ 
+                              { 
+                                  width: isRomaneio ? '100%' : '60%', 
+                                  table:{ 
+                                      widths:['*'], 
+                                      body:[[{ 
+                                          text:[{text:'Observações:\n',fontSize:9,bold:true},{text:justObs,fontSize:9}], 
+                                          margin:[6,6,6,25] 
+                                      }]] 
+                                  }, 
+                                  layout:{ 
+                                      hLineWidth:()=>1, 
+                                      vLineWidth:()=>1, 
+                                      hLineColor:()=>'#cbd5e1', 
+                                      vLineColor:()=>'#cbd5e1', 
+                                      hLineStyle:()=>({dash:{length:4,space:4}}), 
+                                      vLineStyle:()=>({dash:{length:4,space:4}}) 
+                                  } 
+                              }, 
+                              isRomaneio ? '' : { 
+                                  width:'40%', 
+                                  alignment:'right', 
+                                  margin:[0,10,0,0], 
+                                  text:[{text:'TOTAL ESTIMADO:   ',bold:true,fontSize:10},{text:formatMoney(total),bold:true,fontSize:13}] 
+                              } 
+                          ], 
+                          margin:[0,0,0,40] 
+                      },
+                      // Assinaturas para romaneio
+                      ...(isRomaneio ? [{
+                          columns: [
+                              { width: '45%', alignment: 'center', text: '_________________________________________________\nASSINATURA MOTORISTA / RETIRADA', fontSize: 9, bold: true, margin: [0, 60, 0, 0] },
+                              { width: '10%', text: '' },
+                              { width: '45%', alignment: 'center', text: '_________________________________________________\nASSINATURA RECEBIMENTO (OBRA)', fontSize: 9, bold: true, margin: [0, 60, 0, 0] }
+                          ]
+                      }] : [
+                          { text:'_________________________________________________\nASSINATURA RESPONSÁVEL', alignment:'center', fontSize:9, bold:true }
+                      ])
+                  ], 
+                  styles:{ 
+                      tableHeader:{ 
+                          bold:true, 
+                          fontSize:10, 
+                          color:'white', 
+                          fillColor:'#0f172a', 
+                          margin:[4,6,4,6] 
+                      } 
+                  } 
+              }; 
+              pdfMake.createPdf(docDefinition).getBlob(async (blob)=>{ 
+                  const filename=`Documento_${id}.pdf`; 
+                  const file=new File([blob],filename,{type:'application/pdf'}); 
+                  showLoading(false); 
+                  if(navigator.canShare && navigator.canShare({files:[file]})){ 
+                      try{ 
+                          await navigator.share({ 
+                              title:isRomaneio?`Romaneio OC #${id}`:`OC #${id}`, 
+                              files:[file] 
+                          }); 
+                      } catch(e){} 
+                  } else { 
+                      const url=URL.createObjectURL(file); 
+                      const a=document.createElement('a'); 
+                      a.href=url; 
+                      a.download=filename; 
+                      a.click(); 
+                      URL.revokeObjectURL(url); 
+                      showToast("PDF baixado!"); 
+                  } 
+              }); 
+          } catch(e){ 
+              showLoading(false); 
+              showToast("Erro ao gerar PDF",true); 
+          } 
+      }
+      
+
+      
+      
         function fazerLogout(){ localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
      <script src="js/contrato.js"></script>
