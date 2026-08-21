@@ -304,6 +304,11 @@
               </select>
           </div>
 
+              <!-- NOVO: total geral aqui -->
+      <div id="equipe-total-geral-mobile" class="text-right text-xs font-bold text-slate-600 mb-2 px-1">
+          Total geral: R$ 0,00
+      </div>
+
           <div id="equipe-list" class="flex flex-col gap-2 pb-16"></div>
       </div>
 
@@ -320,6 +325,7 @@
     <div id="pos-product-modal" class="fixed inset-0 bg-white z-50 flex flex-col mobile-modal modal-hidden no-print">
         <div class="p-3 border-b flex justify-between items-center bg-slate-50 pt-safe">
             <h3 class="font-bold text-base">Buscar Material</h3>
+            <button onclick="openProductForm()" class="bg-blue-700 text-white px-3 py-2 rounded-xl text-sm font-bold shadow"><i data-lucide="plus" class="w-4 h-4"></i></button>
             <button onclick="closeModal('pos-product-modal')" class="p-1.5 text-slate-500 bg-slate-200 rounded-full"><i data-lucide="x" class="w-4 h-4"></i></button>
         </div>
         <div class="p-3 border-b shadow-sm">
@@ -863,23 +869,49 @@
         function fecharModalSaldo() { closeModal('modal-saldo-ponto'); }
         function fecharModalDocs() { closeModal('modal-docs-equipe'); }
 
-        // ====== NAVEGAÇÃO MOBILE ======
-        function navigate(viewId) {
-            document.querySelectorAll('main > div[id^="view-"]').forEach(el => { el.classList.add('hidden-section'); el.classList.remove('active-section'); });
-            const target = document.getElementById('view-' + viewId);
-            if(target) { target.classList.remove('hidden-section'); target.classList.add('active-section'); }
-            document.querySelectorAll('.nav-bottom-btn').forEach(btn => btn.classList.remove('nav-active', 'text-blue-700'));
-            const activeBtn = document.getElementById('btn-' + viewId);
-            if(activeBtn && viewId !== 'pos') activeBtn.classList.add('nav-active');
-            if(viewId === 'dash') renderDashboard();
-            if(viewId === 'oc') { updateSelects(); renderOCList(); }
-            if(viewId === 'fin') { updateSelects(); renderFinance(); }
-            if(viewId === 'fornecedores') renderFornecedores();
-            if(viewId === 'prod') renderProducts();
-            if(viewId === 'equipe') { updateSelects(); renderEquipe(); }
-            lucide.createIcons();
-            window.scrollTo(0,0);
+
+
+        function getPrimeiraViewPermitida() {
+            const nivel = dadosUsuario?.nivel_acesso || 'comprador';
+            if (nivel === 'admin') return 'dash';
+            return 'oc'; // comprador começa na lista de O.C.
         }
+
+
+      
+      function navigate(viewId) {
+          // ===== VERIFICA PERMISSÃO =====
+          const nivel = dadosUsuario?.nivel || dadosUsuario?.nivel_acesso || 'comprador';
+          const isAdmin = nivel === 'admin';
+          const permitidas = ['oc', 'pos', 'equipe', 'fornecedores', 'prod', 'menu'];
+          
+          if (!isAdmin && !permitidas.includes(viewId)) {
+              //showToast("Acesso não permitido.", true);
+              viewId = 'oc';
+          }
+      
+          // ===== NAVEGAÇÃO ORIGINAL =====
+          document.querySelectorAll('main > div[id^="view-"]').forEach(el => { 
+              el.classList.add('hidden-section'); 
+              el.classList.remove('active-section'); 
+          });
+          const target = document.getElementById('view-' + viewId);
+          if(target) { 
+              target.classList.remove('hidden-section'); 
+              target.classList.add('active-section'); 
+          }
+          document.querySelectorAll('.nav-bottom-btn').forEach(btn => btn.classList.remove('nav-active', 'text-blue-700'));
+          const activeBtn = document.getElementById('btn-' + viewId);
+          if(activeBtn && viewId !== 'pos') activeBtn.classList.add('nav-active');
+          if(viewId === 'dash') renderDashboard();
+          if(viewId === 'oc') { updateSelects(); renderOCList(); }
+          if(viewId === 'fin') { updateSelects(); renderFinance(); }
+          if(viewId === 'fornecedores') renderFornecedores();
+          if(viewId === 'prod') renderProducts();
+          if(viewId === 'equipe') { updateSelects(); renderEquipe(); }
+          lucide.createIcons();
+          window.scrollTo(0,0);
+      }
 
         function openNovaOC() { document.getElementById('view-oc').classList.replace('active-section', 'hidden-section'); document.getElementById('view-pos').classList.replace('hidden-section', 'active-section'); updateSelects(); window.scrollTo(0,0); }
         function closeNovaOC() { document.getElementById('view-pos').classList.replace('active-section', 'hidden-section'); document.getElementById('view-oc').classList.replace('hidden-section', 'active-section'); clearCart(); renderOCList(); }
@@ -889,42 +921,72 @@
         async function fetchAllRecords(table) { let allRecords = []; let from=0; const step=1000; let keepFetching=true; while(keepFetching){ const {data,error}=await sb.from(table).select('*').range(from,from+step-1); if(error) throw error; if(data && data.length>0){ allRecords.push(...data); if(data.length<step) keepFetching=false; else from+=step; } else keepFetching=false; } return {data: allRecords}; }
 
         async function loadData() {
-    try {
-        const [
-            resObras,
-            resForn,
-            resProd,
-            resLog,
-            resFases,
-            resEquipe,
-            resTerceirizados,
-            resPonto,
-            resProducaoTerc   // NOVO: carrega a produção por metragem
-        ] = await Promise.all([
-            fetchAllRecords('jsp_obras'),
-            fetchAllRecords('jsp_fornecedores'),
-            fetchAllRecords('jsp_produtos'),
-            fetchAllRecords('jsp_logs'),
-            fetchAllRecords('jsp_fase'),
-            fetchAllRecords('jsp_equipe'),
-            fetchAllRecords('jsp_terceirizados'),
-            fetchAllRecords('jsp_ponto_diario').catch(() => ({ data: [] })),
-            fetchAllRecords('jsp_producao_terc').catch(() => ({ data: [] })) // NOVO
-        ]);
+          try {
+              const [
+                  resObras,
+                  resForn,
+                  resProd,
+                  resLog,
+                  resFases,
+                  resEquipe,
+                  resTerceirizados,
+                  resPonto,
+                  resProducaoTerc
+              ] = await Promise.all([
+                  fetchAllRecords('jsp_obras'),
+                  fetchAllRecords('jsp_fornecedores'),
+                  fetchAllRecords('jsp_produtos'),
+                  fetchAllRecords('jsp_logs'),
+                  fetchAllRecords('jsp_fase'),
+                  fetchAllRecords('jsp_equipe'),
+                  fetchAllRecords('jsp_terceirizados'),
+                  fetchAllRecords('jsp_ponto_diario').catch(() => ({ data: [] })),
+                  fetchAllRecords('jsp_producao_terc').catch(() => ({ data: [] }))
+              ]);
+      
+              STATE.obras = resObras.data || [];
+              STATE.fornecedores = resForn.data || [];
+              STATE.produtos = resProd.data || [];
+              STATE.logs = resLog.data || [];
+              STATE.fases = (resFases.data || []).sort((a, b) => a.ordem - b.ordem);
+              STATE.equipe = resEquipe.data || [];
+              STATE.terceirizados = resTerceirizados.data || [];
+              STATE.ponto_diario = resPonto.data || [];
+              STATE.producao_terc = resProducaoTerc.data || [];
+      
+                  
+              updateSelects();
 
-        STATE.obras = resObras.data || [];
-        STATE.fornecedores = resForn.data || [];
-        STATE.produtos = resProd.data || [];
-        STATE.logs = resLog.data || [];
-        STATE.fases = (resFases.data || []).sort((a, b) => a.ordem - b.ordem);
-        STATE.equipe = resEquipe.data || [];
-        STATE.terceirizados = resTerceirizados.data || [];
-        STATE.ponto_diario = resPonto.data || [];
-        STATE.producao_terc = resProducaoTerc.data || []; // NOVO
+            updateSelects();
 
-        updateSelects();
-        if (!document.querySelector('main > .active-section')) navigate('dash');
-        else navigate(document.querySelector('main > .active-section').id.replace('view-', ''));
+        // ===== APLICA PERMISSÕES =====
+        const nivel = dadosUsuario?.nivel || dadosUsuario?.nivel_acesso || 'comprador';
+        const isAdmin = nivel === 'admin';
+        
+        if (!isAdmin) {
+            ['btn-dash', 'btn-fin'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.style.display = 'none';
+            });
+        } else {
+            ['btn-dash', 'btn-fin'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.style.display = '';
+            });
+        }
+        
+        const primeiraView = isAdmin ? 'dash' : 'oc';
+        const currentActive = document.querySelector('main > .active-section');
+        if (!currentActive) {
+            navigate(primeiraView);
+        } else {
+            const currentView = currentActive.id.replace('view-', '');
+            if (!isAdmin && !['oc', 'pos', 'equipe', 'fornecedores', 'prod', 'menu'].includes(currentView)) {
+                navigate('oc');
+            } else {
+                navigate(currentView);
+            }
+        }
         showLoading(false);
     } catch (err) {
         showLoading(false);
@@ -969,12 +1031,103 @@
         function openPosFornecedorModal(){ openModal('pos-fornecedor-modal'); renderPosFornecedorModal(); }
         function renderPosFornecedorModal(){ const term=document.getElementById('pos-fornecedor-modal-search').value.toLowerCase(); const fil=STATE.fornecedores.filter(f=>f.nome.toLowerCase().includes(term)); document.getElementById('pos-fornecedor-modal-grid').innerHTML=fil.map(f=>`<div class="p-3 bg-white border border-slate-200 rounded-lg mb-2 flex items-center justify-between shadow-sm" onclick="selectPosFornecedor(${f.id}, '${f.nome.replace(/'/g,"")}')"><div><h4 class="font-bold text-xs">${f.nome}</h4><span class="text-[9px] text-slate-500">Doc: ${f.documento||'-'}</span></div><div class="text-slate-300"><i data-lucide="chevron-right" class="w-4 h-4"></i></div></div>`).join(''); lucide.createIcons(); }
         function selectPosFornecedor(id,name){ document.getElementById('pos-fornecedor').value=id; document.getElementById('pos-fornecedor-btn').querySelector('span').innerText=name; closeModal('pos-fornecedor-modal'); }
-        async function saveOC(){ if(!CART.length) return showToast("Adicione itens à O.C.",true); const obraId=document.getElementById('pos-obra').value; if(!obraId) return showToast("Selecione a Obra!",true); showLoading(true); const fornId=document.getElementById('pos-fornecedor').value||null; const fase=document.getElementById('pos-fase').value; const solic=document.getElementById('pos-solicitante').value; const obsPag=document.getElementById('pos-cond-pagamento').value.trim(); const obsGeral=document.getElementById('pos-obs-geral').value.trim(); let observacaoFinal=""; if(obsPag) observacaoFinal+="Condições de Pagamento:\n"+obsPag+"\n\n"; if(obsGeral) observacaoFinal+="Observações Gerais:\n"+obsGeral; const newId=CURRENT_OC_ID||getNextIdNum(STATE.logs); const dt=new Date().toISOString(); if(CURRENT_OC_ID) await sb.from('jsp_logs').delete().eq('id',CURRENT_OC_ID); const inserts=CART.map(i=>({ id:newId.toString(), obra_id:parseInt(obraId), fornecedor_id:fornId?parseInt(fornId):null, tipo:'oc_pendente', produto_nome:i.name, quantidade:i.qty, valor_total:(i.qty*i.price), data:dt, vencimento:dt, status_financeiro:'PENDENTE', observacao:observacaoFinal.trim(), fase_obra:fase, solicitante:solic })); const {error}=await sb.from('jsp_logs').insert(inserts); if(error){ showLoading(false); return showToast("Erro: "+error.message,true); } clearCart(); showToast("O.C. Salva!"); await loadData(); closeNovaOC(); }
-
-        // ====== O.C. ======
-        function renderOCList(){ const list=document.getElementById('oc-list'); const term=document.getElementById('oc-search').value.toLowerCase(); const obraFilt=document.getElementById('oc-obra-filter').value; const ocs={}; STATE.logs.filter(l=>(l.tipo==='oc_pendente'||l.tipo==='compra')&&l.status_financeiro!=='CANCELADO').forEach(l=>{ if(obraFilt&&String(l.obra_id)!==String(obraFilt)) return; if(!ocs[l.id]) ocs[l.id]={id:l.id,data:l.data,itemsText:[],total:0,obra_id:l.obra_id,forn_id:l.fornecedor_id,status:l.tipo==='compra'?'CONFIRMADA':'PENDENTE'}; ocs[l.id].itemsText.push(l.produto_nome); ocs[l.id].total+=parseFloat(l.valor_total); if(l.tipo==='compra') ocs[l.id].status='CONFIRMADA'; }); let arr=Object.values(ocs).sort((a,b)=>Number(b.id)-Number(a.id)); if(arr.length===0){ list.innerHTML='<p class="text-center text-slate-400 mt-10 text-xs">Nenhuma O.C. encontrada.</p>'; return; } list.innerHTML=arr.map(o=>{ const obra=STATE.obras.find(x=>x.id==o.obra_id); const forn=STATE.fornecedores.find(x=>x.id==o.forn_id); const txt=(obra?.nome||'')+' '+(forn?.nome||'')+' '+o.id; if(term&&!txt.toLowerCase().includes(term)) return ''; const isConfirmada=o.status==='CONFIRMADA'; return `<div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm relative"><div class="absolute top-2 right-2 text-[8px] font-bold px-1.5 py-0.5 rounded ${isConfirmada?'bg-green-100 text-green-700':'bg-orange-100 text-orange-700'}">${isConfirmada?'EFETIVADA':'PENDENTE'}</div><div class="flex justify-between items-start mb-1 pr-14"><div><span class="bg-blue-100 text-blue-800 text-[9px] font-bold px-1.5 py-0.5 rounded">#${o.id}</span><h4 class="font-bold text-slate-800 mt-1 text-xs">${forn?.nome||'Forn. A Definir'}</h4><div class="text-[9px] text-blue-600 font-bold uppercase truncate mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Sem Obra'}</div></div></div><div class="font-black text-sm text-slate-800 mb-1">${formatMoney(o.total)}</div><p class="text-[9px] text-slate-500 truncate mb-2 bg-slate-50 p-1 rounded">${o.itemsText.join(', ')}</p><div class="flex justify-between gap-1 pt-2 items-center">${!isConfirmada?`<button onclick="openConfirmOC('${o.id}')" class="flex-1 bg-green-600 active:bg-green-700 text-white py-1.5 rounded-lg text-[10px] font-bold shadow-sm">Comprar</button>`:`<span class="flex-1 text-slate-400 text-[10px] font-bold">Lançado Caixa</span>`}<div class="flex gap-1 shrink-0"><button onclick="verOC('${o.id}')" class="p-1.5 border border-slate-200 text-slate-500 rounded-lg"><i data-lucide="eye" class="w-4 h-4"></i></button>${!isConfirmada?`<button onclick="loadOCToCart('${o.id}')" class="p-1.5 border border-slate-200 text-slate-500 rounded-lg"><i data-lucide="edit-3" class="w-4 h-4"></i></button>`:''}${isConfirmada?`<button onclick="estornarOC('${o.id}')" class="p-1.5 border border-orange-200 text-orange-500 rounded-lg" title="Estornar"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>`:''}<button onclick="compartilharNative('${o.id}',false)" class="p-1.5 border border-blue-200 text-blue-600 rounded-lg"><i data-lucide="share-2" class="w-4 h-4"></i></button><button onclick="compartilharNative('${o.id}',true)" class="p-1.5 border border-indigo-200 text-indigo-600 rounded-lg"><i data-lucide="truck" class="w-4 h-4"></i></button>${!isConfirmada?`<button onclick="deleteOC('${o.id}')" class="p-1.5 border border-red-200 text-red-500 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`:''}</div></div></div>`; }).join(''); lucide.createIcons(); }
-        function loadOCToCart(id){ const itemsLog=STATE.logs.filter(l=>String(l.id)===String(id)&&l.tipo==='oc_pendente'); if(!itemsLog.length) return; CART=itemsLog.map(i=>({name:i.produto_nome,qty:parseFloat(i.quantidade),price:(parseFloat(i.valor_total)/parseFloat(i.quantidade)),total:parseFloat(i.valor_total)})); CURRENT_OC_ID=id; document.getElementById('pos-obra').value=itemsLog[0].obra_id||''; document.getElementById('pos-fase').value=itemsLog[0].fase_obra||''; document.getElementById('pos-solicitante').value=itemsLog[0].solicitante||''; const fornObj=STATE.fornecedores.find(f=>f.id==itemsLog[0].fornecedor_id); if(fornObj){ document.getElementById('pos-fornecedor').value=fornObj.id; document.getElementById('pos-fornecedor-btn').querySelector('span').innerText=fornObj.nome; } else { document.getElementById('pos-fornecedor').value=''; document.getElementById('pos-fornecedor-btn').querySelector('span').innerText='Selecionar...'; } document.getElementById('pos-cond-pagamento').value=''; document.getElementById('pos-obs-geral').value=itemsLog[0].observacao||''; openNovaOC(); renderCart(); showToast(`Editando O.C. #${id}`); }
-        async function estornarOC(id){ if(!confirm("Estornar O.C. para PENDENTE?")) return; showLoading(true); await sb.from('jsp_logs').update({ tipo:'oc_pendente', status_financeiro:'PENDENTE', forma_pagamento:null }).eq('id',id).eq('tipo','compra'); showToast("O.C. Estornada!"); loadData(); }
+       // async function saveOC(){ if(!CART.length) return showToast("Adicione itens à O.C.",true); const obraId=document.getElementById('pos-obra').value; if(!obraId) return showToast("Selecione a Obra!",true); showLoading(true); const fornId=document.getElementById('pos-fornecedor').value||null; const fase=document.getElementById('pos-fase').value; const solic=document.getElementById('pos-solicitante').value; const obsPag=document.getElementById('pos-cond-pagamento').value.trim(); const obsGeral=document.getElementById('pos-obs-geral').value.trim(); let observacaoFinal=""; if(obsPag) observacaoFinal+="Condições de Pagamento:\n"+obsPag+"\n\n"; if(obsGeral) observacaoFinal+="Observações Gerais:\n"+obsGeral; const newId=CURRENT_OC_ID||getNextIdNum(STATE.logs); const dt=new Date().toISOString(); if(CURRENT_OC_ID) await sb.from('jsp_logs').delete().eq('id',CURRENT_OC_ID); const inserts=CART.map(i=>({ id:newId.toString(), obra_id:parseInt(obraId), fornecedor_id:fornId?parseInt(fornId):null, tipo:'oc_pendente', produto_nome:i.name, quantidade:i.qty, valor_total:(i.qty*i.price), data:dt, vencimento:dt, status_financeiro:'PENDENTE', observacao:observacaoFinal.trim(), fase_obra:fase, solicitante:solic })); const {error}=await sb.from('jsp_logs').insert(inserts); if(error){ showLoading(false); return showToast("Erro: "+error.message,true); } clearCart(); showToast("O.C. Salva!"); await loadData(); closeNovaOC(); }
+        async function saveOC(){ 
+          if(!CART.length) return showToast("Adicione itens à O.C.",true); 
+          const obraId=document.getElementById('pos-obra').value; 
+          if(!obraId) return showToast("Selecione a Obra!",true); 
+          showLoading(true); 
+          const fornId=document.getElementById('pos-fornecedor').value||null; 
+          const fase=document.getElementById('pos-fase').value; 
+          const solicitante = document.getElementById('pos-solicitante').value; 
+          const obsPag=document.getElementById('pos-cond-pagamento').value.trim(); 
+          const obsGeral=document.getElementById('pos-obs-geral').value.trim(); 
+          
+          // Monta a observacao final com todas as informações
+          let observacaoFinal = "";
+          if(solicitante) observacaoFinal += `Solicitante: ${solicitante}\n`;
+          if(obsPag) observacaoFinal += `Condições de Pagamento: ${obsPag}\n`;
+          if(obsGeral) observacaoFinal += `Observações Gerais: ${obsGeral}`;
+          observacaoFinal = observacaoFinal.trim();
+          
+          const newId = CURRENT_OC_ID || getNextIdNum(STATE.logs); 
+          const dt = new Date().toISOString(); 
+          
+          if(CURRENT_OC_ID) await sb.from('jsp_logs').delete().eq('id', CURRENT_OC_ID); 
+          
+          const inserts = CART.map(i => ({ 
+              id: newId.toString(), 
+              obra_id: parseInt(obraId), 
+              fornecedor_id: fornId ? parseInt(fornId) : null, 
+              tipo: 'oc_pendente', 
+              produto_nome: i.name, 
+              quantidade: i.qty, 
+              valor_total: (i.qty * i.price), 
+              data: dt, 
+              vencimento: dt, 
+              status_financeiro: 'PENDENTE', 
+              observacao: observacaoFinal,   // ⚠️ Não use campo 'solicitante'
+              fase_obra: fase
+          })); 
+          
+          const {error} = await sb.from('jsp_logs').insert(inserts); 
+          if(error){ 
+              showLoading(false); 
+              return showToast("Erro: "+error.message, true); 
+          } 
+          clearCart(); 
+          showToast("O.C. Salva!"); 
+          await loadData(); 
+          closeNovaOC(); 
+      }
+        
+          // ====== O.C. ======
+          function renderOCList(){ const list=document.getElementById('oc-list'); const term=document.getElementById('oc-search').value.toLowerCase(); const obraFilt=document.getElementById('oc-obra-filter').value; const ocs={}; STATE.logs.filter(l=>(l.tipo==='oc_pendente'||l.tipo==='compra')&&l.status_financeiro!=='CANCELADO').forEach(l=>{ if(obraFilt&&String(l.obra_id)!==String(obraFilt)) return; if(!ocs[l.id]) ocs[l.id]={id:l.id,data:l.data,itemsText:[],total:0,obra_id:l.obra_id,forn_id:l.fornecedor_id,status:l.tipo==='compra'?'CONFIRMADA':'PENDENTE'}; ocs[l.id].itemsText.push(l.produto_nome); ocs[l.id].total+=parseFloat(l.valor_total); if(l.tipo==='compra') ocs[l.id].status='CONFIRMADA'; }); let arr=Object.values(ocs).sort((a,b)=>Number(b.id)-Number(a.id)); if(arr.length===0){ list.innerHTML='<p class="text-center text-slate-400 mt-10 text-xs">Nenhuma O.C. encontrada.</p>'; return; } list.innerHTML=arr.map(o=>{ const obra=STATE.obras.find(x=>x.id==o.obra_id); const forn=STATE.fornecedores.find(x=>x.id==o.forn_id); const txt=(obra?.nome||'')+' '+(forn?.nome||'')+' '+o.id; if(term&&!txt.toLowerCase().includes(term)) return ''; const isConfirmada=o.status==='CONFIRMADA'; return `<div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm relative"><div class="absolute top-2 right-2 text-[8px] font-bold px-1.5 py-0.5 rounded ${isConfirmada?'bg-green-100 text-green-700':'bg-orange-100 text-orange-700'}">${isConfirmada?'EFETIVADA':'PENDENTE'}</div><div class="flex justify-between items-start mb-1 pr-14"><div><span class="bg-blue-100 text-blue-800 text-[9px] font-bold px-1.5 py-0.5 rounded">#${o.id}</span><h4 class="font-bold text-slate-800 mt-1 text-xs">${forn?.nome||'Forn. A Definir'}</h4><div class="text-[9px] text-blue-600 font-bold uppercase truncate mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Sem Obra'}</div></div></div><div class="font-black text-sm text-slate-800 mb-1">${formatMoney(o.total)}</div><p class="text-[9px] text-slate-500 truncate mb-2 bg-slate-50 p-1 rounded">${o.itemsText.join(', ')}</p><div class="flex justify-between gap-1 pt-2 items-center">${!isConfirmada?`<button onclick="openConfirmOC('${o.id}')" class="flex-1 bg-green-600 active:bg-green-700 text-white py-1.5 rounded-lg text-[10px] font-bold shadow-sm">Comprar</button>`:`<span class="flex-1 text-slate-400 text-[10px] font-bold">Lançado Caixa</span>`}<div class="flex gap-1 shrink-0"><button onclick="verOC('${o.id}')" class="p-1.5 border border-slate-200 text-slate-500 rounded-lg"><i data-lucide="eye" class="w-4 h-4"></i></button>${!isConfirmada?`<button onclick="loadOCToCart('${o.id}')" class="p-1.5 border border-slate-200 text-slate-500 rounded-lg"><i data-lucide="edit-3" class="w-4 h-4"></i></button>`:''}${isConfirmada?`<button onclick="estornarOC('${o.id}')" class="p-1.5 border border-orange-200 text-orange-500 rounded-lg" title="Estornar"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>`:''}<button onclick="compartilharOC('${o.id}')" class="p-1.5 border border-blue-200 text-blue-600 rounded-lg"><i data-lucide="share-2" class="w-4 h-4"></i></button><button onclick="compartilharRomaneio('${o.id}')" class="p-1.5 border border-indigo-200 text-indigo-600 rounded-lg"><i data-lucide="truck" class="w-4 h-4"></i></button>${!isConfirmada?`<button onclick="deleteOC('${o.id}')" class="p-1.5 border border-red-200 text-red-500 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`:''}</div></div></div>`; }).join(''); lucide.createIcons(); }
+        //  function loadOCToCart(id){ const itemsLog=STATE.logs.filter(l=>String(l.id)===String(id)&&l.tipo==='oc_pendente'); if(!itemsLog.length) return; CART=itemsLog.map(i=>({name:i.produto_nome,qty:parseFloat(i.quantidade),price:(parseFloat(i.valor_total)/parseFloat(i.quantidade)),total:parseFloat(i.valor_total)})); CURRENT_OC_ID=id; document.getElementById('pos-obra').value=itemsLog[0].obra_id||''; document.getElementById('pos-fase').value=itemsLog[0].fase_obra||''; document.getElementById('pos-solicitante').value=itemsLog[0].solicitante||''; const fornObj=STATE.fornecedores.find(f=>f.id==itemsLog[0].fornecedor_id); if(fornObj){ document.getElementById('pos-fornecedor').value=fornObj.id; document.getElementById('pos-fornecedor-btn').querySelector('span').innerText=fornObj.nome; } else { document.getElementById('pos-fornecedor').value=''; document.getElementById('pos-fornecedor-btn').querySelector('span').innerText='Selecionar...'; } document.getElementById('pos-cond-pagamento').value=''; document.getElementById('pos-obs-geral').value=itemsLog[0].observacao||''; openNovaOC(); renderCart(); showToast(`Editando O.C. #${id}`); }
+         function loadOCToCart(id){ 
+            const itemsLog = STATE.logs.filter(l => String(l.id) === String(id) && l.tipo === 'oc_pendente'); 
+            if(!itemsLog.length) return; 
+            
+            CART = itemsLog.map(i => ({ 
+                name: i.produto_nome, 
+                qty: parseFloat(i.quantidade), 
+                price: (parseFloat(i.valor_total) / parseFloat(i.quantidade)), 
+                total: parseFloat(i.valor_total)
+            })); 
+            CURRENT_OC_ID = id; 
+            
+            document.getElementById('pos-obra').value = itemsLog[0].obra_id || ''; 
+            document.getElementById('pos-fase').value = itemsLog[0].fase_obra || ''; 
+            
+            // Extrai o solicitante da observacao (se existir)
+            const obs = itemsLog[0].observacao || '';
+            const solicitanteMatch = obs.match(/Solicitante:\s*([^\n]+)/);
+            if(solicitanteMatch) {
+                document.getElementById('pos-solicitante').value = solicitanteMatch[1];
+            } else {
+                document.getElementById('pos-solicitante').value = '';
+            }
+            
+            // Extrai condições de pagamento e obs gerais (opcional, para não sobrescrever)
+            const pagamentoMatch = obs.match(/Condições de Pagamento:\s*([^\n]+)/);
+            const obsGeralMatch = obs.match(/Observações Gerais:\s*([\s\S]*)$/);
+            document.getElementById('pos-cond-pagamento').value = pagamentoMatch ? pagamentoMatch[1] : '';
+            document.getElementById('pos-obs-geral').value = obsGeralMatch ? obsGeralMatch[1] : '';
+            
+            const fornObj = STATE.fornecedores.find(f => f.id == itemsLog[0].fornecedor_id); 
+            if(fornObj){ 
+                document.getElementById('pos-fornecedor').value = fornObj.id; 
+                document.getElementById('pos-fornecedor-btn').querySelector('span').innerText = fornObj.nome; 
+            } else { 
+                document.getElementById('pos-fornecedor').value = ''; 
+                document.getElementById('pos-fornecedor-btn').querySelector('span').innerText = 'Selecionar...'; 
+            } 
+            
+            openNovaOC(); 
+            renderCart(); 
+            showToast(`Editando O.C. #${id}`); 
+        }
+      async function estornarOC(id){ if(!confirm("Estornar O.C. para PENDENTE?")) return; showLoading(true); await sb.from('jsp_logs').update({ tipo:'oc_pendente', status_financeiro:'PENDENTE', forma_pagamento:null }).eq('id',id).eq('tipo','compra'); showToast("O.C. Estornada!"); loadData(); }
         async function deleteOC(id){ if(!confirm("Excluir esta O.C.?")) return; showLoading(true); await sb.from('jsp_logs').delete().eq('id',id).eq('tipo','oc_pendente'); showToast("O.C. Excluída!"); loadData(); }
         function openConfirmOC(id){ document.getElementById('confirm-oc-id').value=id; openOverlayForm('modal-confirm-oc'); }
         async function executeConfirmOC(){ const id=document.getElementById('confirm-oc-id').value; const formPagto=document.getElementById('confirm-oc-payment').value; showLoading(true); let statusFinal=formPagto==='PIX'?'PAGO':'PENDENTE'; let dataVenc=new Date(); if(formPagto!=='PIX') dataVenc.setDate(dataVenc.getDate()+30); const {error}=await sb.from('jsp_logs').update({ tipo:'compra', forma_pagamento:formPagto, status_financeiro:statusFinal, data:new Date().toISOString(), vencimento:dataVenc.toISOString() }).eq('id',id).eq('tipo','oc_pendente'); if(error){ showLoading(false); return showToast("Erro: "+error.message,true); } closeOverlayForm('modal-confirm-oc'); showToast("Compra efetivada!"); loadData(); }
@@ -1029,58 +1182,107 @@
 
         // ====== RENDER EQUIPE COM SALDO E BOTÕES ======
         function renderEquipe() {
-            const term = document.getElementById('eqp-search').value.toLowerCase();
-            const filterObra = document.getElementById('eqp-filter-obra').value;
-            const filterStatus = document.getElementById('eqp-filter-status').value;
-            const filterTipo = document.getElementById('eqp-filter-tipo').value;
-            const colaboradores = getColaboradoresUnificados();
-            let fil = colaboradores.filter(c=>(c.nome||'').toLowerCase().includes(term));
-            if(filterObra) fil = fil.filter(c=>String(c.obra_atual_id)===String(filterObra));
-            if(filterStatus) { const isAtivo = filterStatus==='true'; fil = fil.filter(c=>(c.ativo===true||c.ativo==='true')===isAtivo); }
-            if(filterTipo!=='todos') fil = fil.filter(c=>c.tipo===filterTipo);
-            fil.sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
-            document.getElementById('equipe-list').innerHTML = fil.map(c => {
-                const obra = STATE.obras.find(x=>x.id==c.obra_atual_id);
-                const nomeObra = obra ? obra.nome : 'Sem obra alocada';
-                const tipoBadge = c.tipo==='diaria'?'<span class="bg-blue-100 text-blue-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">DIÁRIA</span>':'<span class="bg-purple-100 text-purple-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">METRO</span>';
-                const valorExibicao = c.tipo==='diaria' ? formatMoney(c.valor_base) : `${formatMoney(c.valor_base)}/m`;
-                const isAtivo = c.ativo===true||c.ativo==='true';
-                
-                // Cálculo do saldo pendente para diárias
-                let saldoDiarias = 0, valorPendente = 0, diasTrabalhados = 0;
-                if(c.tipo === 'diaria') {
-                    const dataInicio = document.getElementById('eqp-filter-data-inicio')?.value || (new Date().getFullYear()+'-01-01');
-                    const dataFim = document.getElementById('eqp-filter-data-fim')?.value || new Date().toISOString().split('T')[0];
-                    const saldo = calcularSaldoPendenteFuncionarioPorPeriodo(c.id, dataInicio, dataFim);
-                    diasTrabalhados = saldo.totalDiarias;
-                    valorPendente = diasTrabalhados * c.valor_base;
-                }
-                let zapBtn = '';
-                if(c.telefone){
-                    const numZap = c.telefone.replace(/\D/g,'');
-                    if(numZap.length>=10) zapBtn = `<a href="https://wa.me/55${numZap}" target="_blank" class="p-1.5 bg-green-100 text-green-600 rounded-lg"><i data-lucide="message-circle" class="w-4 h-4"></i></a>`;
-                }
-                 const acoes = `<div class="flex justify-end gap-2 mt-2 pt-2 border-t border-slate-100">
-                      ${c.tipo==='diaria' ? `<button onclick="abrirModalSaldo('${c.id}')" class="p-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-1"><i data-lucide="calculator" class="w-3 h-3"></i> Calcular</button>` : 
-                        c.tipo==='metro' ? `<button onclick="abrirModalSaldoMetros('${c.id}')" class="p-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-1"><i data-lucide="calculator" class="w-3 h-3"></i> Calcular</button>` : ``}
-                      <button onclick="abrirModalDocumentos('${c.id}')" class="p-1.5 bg-slate-800 text-white rounded-lg text-[10px] font-bold flex items-center gap-1"><i data-lucide="file-signature" class="w-3 h-3"></i> Contratos</button>
-                      <button onclick="openEquipeForm('${c.id}')" class="p-1.5 bg-slate-100 text-blue-600 rounded-lg"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                      ${zapBtn}
-                  </div>`;            
+          const term = document.getElementById('eqp-search').value.toLowerCase();
+          const filterObra = document.getElementById('eqp-filter-obra').value;
+          const filterStatus = document.getElementById('eqp-filter-status').value;
+          const filterTipo = document.getElementById('eqp-filter-tipo').value;
+          const dataInicio = document.getElementById('eqp-filter-data-inicio')?.value || '';
+          const dataFim = document.getElementById('eqp-filter-data-fim')?.value || '';
+      
+          const colaboradores = getColaboradoresUnificados();
+      
+          let fil = colaboradores.filter(c => (c.nome || '').toLowerCase().includes(term));
+          if (filterObra) fil = fil.filter(c => String(c.obra_atual_id) === String(filterObra));
+          if (filterStatus) {
+              const isAtivo = filterStatus === 'true';
+              fil = fil.filter(c => (c.ativo === true || c.ativo === 'true') === isAtivo);
+          }
+          if (filterTipo !== 'todos') fil = fil.filter(c => c.tipo === filterTipo);
+      
+          fil.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+      
+          let somaGeral = 0;  // ← acumulador do total pendente
+      
+          const listHtml = fil.map(c => {
+              const obra = STATE.obras.find(x => x.id == c.obra_atual_id);
+              const nomeObra = obra ? obra.nome : 'Sem obra alocada';
+              const tipoBadge = c.tipo === 'diaria'
+                  ? '<span class="bg-blue-100 text-blue-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">DIÁRIA</span>'
+                  : '<span class="bg-purple-100 text-purple-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">METRO</span>';
+              const valorExibicao = c.tipo === 'diaria'
+                  ? formatMoney(c.valor_base)
+                  : `${formatMoney(c.valor_base)}/m`;
+              const isAtivo = c.ativo === true || c.ativo === 'true';
+      
+              let saldoDiarias = 0, valorPendente = 0, diasTrabalhados = 0;
+              let metrosPendentes = 0;
+      
+              if (c.tipo === 'diaria') {
+                  const saldo = calcularSaldoPendenteFuncionarioPorPeriodo(c.id, dataInicio, dataFim);
+                  diasTrabalhados = saldo.totalDiarias;
+                  valorPendente = diasTrabalhados * c.valor_base;
+                  somaGeral += valorPendente;   // ← soma
+              } else if (c.tipo === 'metro') {
+                  let producoes = (STATE.producao_terc || []).filter(p => p.terceirizado_id === c.id);
+                  if (dataInicio) producoes = producoes.filter(p => p.data_registro >= dataInicio);
+                  if (dataFim) producoes = producoes.filter(p => p.data_registro <= dataFim);
+                  metrosPendentes = producoes.filter(p => p.status !== 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
+                  valorPendente = metrosPendentes * c.valor_base;
+                  somaGeral += valorPendente;   // ← soma
+              }
+      
+              let zapBtn = '';
+              if (c.telefone) {
+                  const numZap = c.telefone.replace(/\D/g, '');
+                  if (numZap.length >= 10) {
+                      zapBtn = `<a href="https://wa.me/55${numZap}" target="_blank" class="p-1.5 bg-green-100 text-green-600 rounded-lg"><i data-lucide="message-circle" class="w-4 h-4"></i></a>`;
+                  }
+              }
+      
+              const acoes = `<div class="flex justify-end gap-2 mt-2 pt-2 border-t border-slate-100">
+                  ${c.tipo === 'diaria'
+                      ? `<button onclick="abrirModalSaldo('${c.id}')" class="p-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-1"><i data-lucide="calculator" class="w-3 h-3"></i> Calcular</button>`
+                      : `<button onclick="abrirModalSaldoMetros('${c.id}')" class="p-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-1"><i data-lucide="calculator" class="w-3 h-3"></i> Calcular</button>`
+                  }
+                  <button onclick="abrirModalDocumentos('${c.id}')" class="p-1.5 bg-slate-800 text-white rounded-lg text-[10px] font-bold flex items-center gap-1"><i data-lucide="file-signature" class="w-3 h-3"></i> Contratos</button>
+                  <button onclick="openEquipeForm('${c.id}')" class="p-1.5 bg-slate-100 text-blue-600 rounded-lg"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                  ${zapBtn}
+              </div>`;
+      
               return `<div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm relative">
-                    <div class="absolute top-2 right-2 flex gap-1"><span class="${isAtivo?'bg-green-100 text-green-700':'bg-red-100 text-red-700'} text-[8px] font-bold px-1.5 py-0.5 rounded">${isAtivo?'ATIVO':'INATIVO'}</span></div>
-                    <div class="flex justify-between items-start mb-1 pr-20">
-                        <div><h4 class="font-bold text-slate-800 text-xs flex items-center">${c.nome||'-'} ${tipoBadge}</h4>
-                        <p class="text-[10px] text-slate-500 font-bold uppercase mt-1">${c.categoria||'-'} ${c.telefone?`| ${c.telefone}`:''}</p>
-                        <p class="text-[9px] text-blue-600 mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${nomeObra}</p>
-                        <div class="flex items-center gap-3 mt-1"><span class="font-black text-sm text-slate-700">${valorExibicao}</span>
-                        ${c.tipo==='diaria' && diasTrabalhados>0?`<span class="text-[9px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">Saldo: ${formatMoney(valorPendente)} (${diasTrabalhados.toFixed(2)} dias)</span>`:``}
-                        </div></div>
-                    </div>
-                    ${acoes}
-                </div>`;
-            }).join(''); lucide.createIcons();
-        }
+                  <div class="absolute top-2 right-2 flex gap-1">
+                      <span class="${isAtivo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} text-[8px] font-bold px-1.5 py-0.5 rounded">${isAtivo ? 'ATIVO' : 'INATIVO'}</span>
+                  </div>
+                  <div class="flex justify-between items-start mb-1 pr-20">
+                      <div>
+                          <h4 class="font-bold text-slate-800 text-xs flex items-center">${c.nome || '-'} ${tipoBadge}</h4>
+                          <p class="text-[10px] text-slate-500 font-bold uppercase mt-1">${c.categoria || '-'} ${c.telefone ? `| ${c.telefone}` : ''}</p>
+                          <p class="text-[9px] text-blue-600 mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${nomeObra}</p>
+                          <div class="flex items-center gap-3 mt-1">
+                              <span class="font-black text-sm text-slate-700">${valorExibicao}</span>
+                              ${c.tipo === 'diaria' && diasTrabalhados > 0
+                                  ? `<span class="text-[9px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">Saldo: ${formatMoney(valorPendente)} (${diasTrabalhados.toFixed(2)} dias)</span>`
+                                  : (c.tipo === 'metro' && metrosPendentes > 0
+                                      ? `<span class="text-[9px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">Saldo: ${formatMoney(valorPendente)} (${metrosPendentes.toFixed(2)} m)</span>`
+                                      : '')
+                              }
+                          </div>
+                      </div>
+                  </div>
+                  ${acoes}
+              </div>`;
+          }).join('');
+      
+          document.getElementById('equipe-list').innerHTML = listHtml || '<p class="text-center text-slate-400 text-xs mt-4">Nenhum colaborador encontrado.</p>';
+          
+          // Atualiza o total geral
+          const totalEl = document.getElementById('equipe-total-geral-mobile');
+          if (totalEl) {
+              totalEl.innerHTML = `Total geral: ${formatMoney(somaGeral)}`;
+          }
+          
+          lucide.createIcons();
+      }
 
         // ====== MODAL DE SALDO PONTO ======
         function abrirModalSaldo(equipeId){
@@ -1690,8 +1892,8 @@ function imprimirReciboDoModal() {
             </div>
             
             <div style="font-size: 14px; line-height: 1.8; text-align: justify; margin-bottom: 40px;">
-                Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA</strong> (CNPJ: 61.893.912/0001-24), a importância de <strong>${valorTotal}</strong>, 
-                referente ao pagamento de diárias trabalhadas no período de <strong>${periodo}</strong>, totalizando <strong>${totalDiarias} dias</strong> 
+                Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA LTDA</strong> (CNPJ: 61.893.912/0001-24), a importância de <strong>${valorTotal}</strong>, 
+                referente ao pagamento de diárias <!--trabalhadas no período de <strong>${periodo}</strong>--> em aberto, conforme registro diário de presença da obra. Totalizando <strong>${totalDiarias} dias</strong> 
                 com a diária acordada em <strong>${formatMoney(func.valor_diaria)}</strong>.
             </div>
             
@@ -1706,7 +1908,7 @@ function imprimirReciboDoModal() {
             <div style="margin-top: 60px; display: flex; justify-content: center;">
                 <div style="text-align: center; width: 60%; border-top: 1px solid #000; padding-top: 10px;">
                     <strong>${func.nome.toUpperCase()}</strong><br>
-                    <span style="font-size: 12px; color: #64748b;">CPF: ${func.cpf || '_______________________'} | RG: ${func.rg || '_______________________'}</span>
+                    <span style="font-size: 12px; color: #64748b;">CPF: ${func.cpf || '_______________________'} <!--| RG: ${func.rg || '_______________________'}--></span>
                 </div>
             </div>
         </div>
@@ -2153,8 +2355,788 @@ function executarImpressaoFolha() {
 
         function verOC(id){ document.getElementById('modal-view-oc-content').innerHTML=buildHTMLOC(id,false); openModal('modal-view-oc'); }
         function buildHTMLOC(id,isRomaneio){ const logsOC=STATE.logs.filter(l=>String(l.id)===String(id)&&(l.tipo==='oc_pendente'||l.tipo==='compra')); if(!logsOC.length) return ''; const o=logsOC[0]; const obra=STATE.obras.find(x=>x.id==o.obra_id)||{nome:'Sem Obra',endereco:'-'}; const forn=STATE.fornecedores.find(x=>x.id==o.fornecedor_id)||{nome:'A Definir',documento:'',telefone:''}; let total=0; const linhas=logsOC.map((i,index)=>{ const valor=parseFloat(i.valor_total); total+=valor; const price=valor/parseFloat(i.quantidade); const bg=index%2===0?'#ffffff':'#f8fafc'; const colPreco=isRomaneio?'':`<td align="right" style="border-bottom:1px solid #000; padding:6px;">${formatMoney(price)}</td><td align="right" style="border-bottom:1px solid #000; padding:6px;">${formatMoney(valor)}</td>`; return `<tr style="background-color:${bg};"><td style="border-bottom:1px solid #000; padding:6px;">${i.produto_nome}</td><td align="center" style="border-bottom:1px solid #000; padding:6px;">${i.quantidade}</td>${colPreco}</tr>`; }).join(''); const cabecalhoPreco=isRomaneio?'':`<th align="right" style="background:#0f172a; color:#fff; padding:6px;">Unit. Estimado</th><th align="right" style="background:#0f172a; color:#fff; padding:6px;">Total Estimado</th>`; const rodapePreco=isRomaneio?'':`<table width="100%"><tr><td style="padding:10px 0; font-weight:900;">TOTAL ESTIMADO:</td><td align="right" style="font-size:13px;">${formatMoney(total)}</td></tr></table>`; const docTitle=isRomaneio?'ROMANEIO DE ENTREGA':'ORDEM DE COMPRA'; return `<div style="padding:10px;"><div style="display:flex; justify-content:space-between; border-bottom:2px solid #000; margin-bottom:15px;"><div><img src="logo.png" style="height:60px;"></div><div><h2>${docTitle}</h2><div>Nº: ${o.id}</div><div>Emissão: ${formatDate(o.data)}</div></div></div><div style="border:1px solid #000; margin-bottom:15px;"><div style="background:#f1f5f9; padding:4px;"><strong>FORNECEDOR</strong></div><div>${forn.nome}<br>Doc: ${forn.documento||'-'}<br>Tel: ${forn.telefone||'-'}</div></div><div style="border:1px solid #000; margin-bottom:15px;"><div style="background:#f1f5f9;"><strong>DESTINO</strong></div><div>${obra.nome}<br>Endereço: ${obra.endereco||'-'}<br>Solicitante: ${o.solicitante||'-'}</div></div><table style="width:100%; border-collapse:collapse; margin-bottom:15px;"><thead><tr style="background:#0f172a; color:#fff;"><th>Descrição</th><th>Qtd</th>${cabecalhoPreco}</tr></thead><tbody>${linhas}</tbody></table>${rodapePreco}<div><strong>Observações:</strong> ${o.observacao||'Nenhuma'}</div><div style="margin-top:40px; text-align:center;"><div style="border-top:1px solid #000; padding-top:5px;">ASSINATURA RESPONSÁVEL</div></div></div>`; }
-        async function compartilharNative(id,isRomaneio){ showLoading(true); try{ const logsOC=STATE.logs.filter(l=>String(l.id)===String(id)&&(l.tipo==='oc_pendente'||l.tipo==='compra')); if(!logsOC.length){ showLoading(false); return showToast("O.C. não encontrada",true); } const o=logsOC[0]; const obra=STATE.obras.find(x=>x.id==o.obra_id)||{nome:'Sem Obra',endereco:'-'}; const forn=STATE.fornecedores.find(x=>x.id==o.fornecedor_id)||{nome:'A Definir',documento:'',telefone:''}; let justObs=o.observacao||'Nenhuma'; if(justObs.includes(' | Obs: ')) justObs=justObs.split(' | Obs: ')[0]+'\n'+justObs.split(' | Obs: ')[1]; let total=0; const bodyTabela=[]; const headerRow=[{text:'Descrição',style:'tableHeader',alignment:'left'},{text:'Qtd',style:'tableHeader',alignment:'center'}]; if(!isRomaneio) headerRow.push({text:'Unit. Estimado',style:'tableHeader',alignment:'right'},{text:'Total Estimado',style:'tableHeader',alignment:'right'}); bodyTabela.push(headerRow); logsOC.forEach((i,index)=>{ const valor=parseFloat(i.valor_total); total+=valor; const price=valor/parseFloat(i.quantidade); const bgColor=index%2===0?'#ffffff':'#f8fafc'; const row=[{text:i.produto_nome,fillColor:bgColor,margin:[4,6,4,6],fontSize:10},{text:i.quantidade.toString(),alignment:'center',fillColor:bgColor,margin:[4,6,4,6],fontSize:10}]; if(!isRomaneio) row.push({text:formatMoney(price),alignment:'right',fillColor:bgColor,margin:[4,6,4,6],fontSize:10},{text:formatMoney(valor),alignment:'right',fillColor:bgColor,margin:[4,6,4,6],fontSize:10}); bodyTabela.push(row); }); async function getLogoBase64(url){ return new Promise((resolve)=>{ const img=new Image(); img.crossOrigin='Anonymous'; img.onload=()=>{ const canvas=document.createElement('canvas'); canvas.width=img.width; canvas.height=img.height; const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0); resolve(canvas.toDataURL('image/png')); }; img.onerror=()=>resolve(null); img.src=url; }); } const logoBase64=await getLogoBase64("https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png"); const docDefinition={ pageSize:'A4', pageMargins:[40,40,40,40], defaultStyle:{font:'Roboto'}, background:()=>({canvas:[{type:'rect',x:25,y:25,w:545.28,h:791.89,lineWidth:1,lineColor:'#000000'}]}), content:[{ table:{ widths:[90,'*','auto'], body:[[ logoBase64?{image:logoBase64,width:80,alignment:'center',margin:[0,0,10,0]}:'', { text:[{text:'RV NEGÓCIOS E COMPANHIA\n',fontSize:16,bold:true,color:'#1d4ed8'},{text:'CNPJ: 61.893.912/0001-24\n',fontSize:9,color:'#475569',lineHeight:1.3},{text:'Rua Mineiros, 530 | Jataí - GO | (64) 99981-5852',fontSize:9,color:'#475569',lineHeight:1.3}], margin:[0,10,0,0] }, { text:[{text:isRomaneio?'ROMANEIO DE ENTREGA\n':'ORDEM DE COMPRA\n',fontSize:13,bold:true},{text:`Nº: ${o.id}\n`,fontSize:9},{text:`Emissão: ${formatDate(o.data)}\n`,fontSize:9},{text:`Fase: ${o.fase_obra||'-'}`,fontSize:9}], alignment:'right', margin:[0,10,0,0] } ]] }, layout:'noBorders', margin:[0,0,0,10] }, { canvas:[{type:'line',x1:0,y1:0,x2:515,y2:0,lineWidth:2}], margin:[0,0,0,20] }, { columns:[ { width:'48%', table:{ widths:['*'], body:[[{text:'DADOS DO FORNECEDOR',fillColor:'#f1f5f9',bold:true,fontSize:8,margin:[4,4,4,4]}],[{text:`${forn.nome}\nDoc: ${forn.documento||'-'}\nTel: ${forn.telefone||'-'}`,fontSize:9,margin:[6,8,6,8]}]] }, layout:{hLineWidth:()=>1,vLineWidth:()=>1,hLineColor:()=>'#000000',vLineColor:()=>'#000000'} }, { width:'4%', text:'' }, { width:'48%', table:{ widths:['*'], body:[[{text:'DESTINO (OBRA)',fillColor:'#f1f5f9',bold:true,fontSize:8,margin:[4,4,4,4]}],[{text:`${obra.nome}\nEndereço: ${obra.endereco||'-'}\nSolicitante: ${o.solicitante||obra.solicitante||'-'} | Fase: ${o.fase_obra||'-'}`,fontSize:9,margin:[6,8,6,8]}]] }, layout:{hLineWidth:()=>1,vLineWidth:()=>1,hLineColor:()=>'#000000',vLineColor:()=>'#000000'} } ], margin:[0,0,0,20] }, { table:{ headerRows:1, widths:isRomaneio?['*','auto']:['*','auto','auto','auto'], body:bodyTabela }, layout:{ hLineWidth:(i,node)=>(i===0||i===node.table.body.length)?0:1, vLineWidth:()=>0, hLineColor:()=>'#000000', paddingLeft:()=>4, paddingRight:()=>4 }, margin:[0,0,0,20] }, { columns:[ { width:isRomaneio?'100%':'60%', table:{ widths:['*'], body:[[{ text:[{text:'Observações:\n',fontSize:9,bold:true},{text:justObs,fontSize:9}], margin:[6,6,6,25] }]] }, layout:{ hLineWidth:()=>1, vLineWidth:()=>1, hLineColor:()=>'#cbd5e1', vLineColor:()=>'#cbd5e1', hLineStyle:()=>({dash:{length:4,space:4}}), vLineStyle:()=>({dash:{length:4,space:4}}) } }, isRomaneio?'':{ width:'40%', alignment:'right', margin:[0,10,0,0], text:[{text:'TOTAL ESTIMADO:   ',bold:true,fontSize:10},{text:formatMoney(total),bold:true,fontSize:13}] } ], margin:[0,0,0,60] }, { text:'_________________________________________________\nASSINATURA RESPONSÁVEL', alignment:'center', fontSize:9, bold:true } ], styles:{ tableHeader:{ bold:true, fontSize:10, color:'white', fillColor:'#0f172a', margin:[4,6,4,6] } } }; pdfMake.createPdf(docDefinition).getBlob(async (blob)=>{ const filename=`Documento_${id}.pdf`; const file=new File([blob],filename,{type:'application/pdf'}); showLoading(false); if(navigator.canShare && navigator.canShare({files:[file]})){ try{ await navigator.share({ title:isRomaneio?`Romaneio OC #${id}`:`OC #${id}`, files:[file] }); } catch(e){} } else { const url=URL.createObjectURL(file); const a=document.createElement('a'); a.href=url; a.download=filename; a.click(); URL.revokeObjectURL(url); showToast("PDF baixado!"); } }); } catch(e){ showLoading(false); showToast("Erro ao gerar PDF",true); } }
+        //async function compartilharNative(id,isRomaneio){ showLoading(true); try{ const logsOC=STATE.logs.filter(l=>String(l.id)===String(id)&&(l.tipo==='oc_pendente'||l.tipo==='compra')); if(!logsOC.length){ showLoading(false); return showToast("O.C. não encontrada",true); } const o=logsOC[0]; const obra=STATE.obras.find(x=>x.id==o.obra_id)||{nome:'Sem Obra',endereco:'-'}; const forn=STATE.fornecedores.find(x=>x.id==o.fornecedor_id)||{nome:'A Definir',documento:'',telefone:''}; let justObs=o.observacao||'Nenhuma'; if(justObs.includes(' | Obs: ')) justObs=justObs.split(' | Obs: ')[0]+'\n'+justObs.split(' | Obs: ')[1]; let total=0; const bodyTabela=[]; const headerRow=[{text:'Descrição',style:'tableHeader',alignment:'left'},{text:'Qtd',style:'tableHeader',alignment:'center'}]; if(!isRomaneio) headerRow.push({text:'Unit. Estimado',style:'tableHeader',alignment:'right'},{text:'Total Estimado',style:'tableHeader',alignment:'right'}); bodyTabela.push(headerRow); logsOC.forEach((i,index)=>{ const valor=parseFloat(i.valor_total); total+=valor; const price=valor/parseFloat(i.quantidade); const bgColor=index%2===0?'#ffffff':'#f8fafc'; const row=[{text:i.produto_nome,fillColor:bgColor,margin:[4,6,4,6],fontSize:10},{text:i.quantidade.toString(),alignment:'center',fillColor:bgColor,margin:[4,6,4,6],fontSize:10}]; if(!isRomaneio) row.push({text:formatMoney(price),alignment:'right',fillColor:bgColor,margin:[4,6,4,6],fontSize:10},{text:formatMoney(valor),alignment:'right',fillColor:bgColor,margin:[4,6,4,6],fontSize:10}); bodyTabela.push(row); }); async function getLogoBase64(url){ return new Promise((resolve)=>{ const img=new Image(); img.crossOrigin='Anonymous'; img.onload=()=>{ const canvas=document.createElement('canvas'); canvas.width=img.width; canvas.height=img.height; const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0); resolve(canvas.toDataURL('image/png')); }; img.onerror=()=>resolve(null); img.src=url; }); } const logoBase64=await getLogoBase64("https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png"); const docDefinition={ pageSize:'A4', pageMargins:[40,40,40,40], defaultStyle:{font:'Roboto'}, background:()=>({canvas:[{type:'rect',x:25,y:25,w:545.28,h:791.89,lineWidth:1,lineColor:'#000000'}]}), content:[{ table:{ widths:[90,'*','auto'], body:[[ logoBase64?{image:logoBase64,width:80,alignment:'center',margin:[0,0,10,0]}:'', { text:[{text:'RV NEGÓCIOS E COMPANHIA\n',fontSize:16,bold:true,color:'#1d4ed8'},{text:'CNPJ: 61.893.912/0001-24\n',fontSize:9,color:'#475569',lineHeight:1.3},{text:'Rua Mineiros, 530 | Jataí - GO | (64) 99981-5852',fontSize:9,color:'#475569',lineHeight:1.3}], margin:[0,10,0,0] }, { text:[{text:isRomaneio?'ROMANEIO DE ENTREGA\n':'ORDEM DE COMPRA\n',fontSize:13,bold:true},{text:`Nº: ${o.id}\n`,fontSize:9},{text:`Emissão: ${formatDate(o.data)}\n`,fontSize:9},{text:`Fase: ${o.fase_obra||'-'}`,fontSize:9}], alignment:'right', margin:[0,10,0,0] } ]] }, layout:'noBorders', margin:[0,0,0,10] }, { canvas:[{type:'line',x1:0,y1:0,x2:515,y2:0,lineWidth:2}], margin:[0,0,0,20] }, { columns:[ { width:'48%', table:{ widths:['*'], body:[[{text:'DADOS DO FORNECEDOR',fillColor:'#f1f5f9',bold:true,fontSize:8,margin:[4,4,4,4]}],[{text:`${forn.nome}\nDoc: ${forn.documento||'-'}\nTel: ${forn.telefone||'-'}`,fontSize:9,margin:[6,8,6,8]}]] }, layout:{hLineWidth:()=>1,vLineWidth:()=>1,hLineColor:()=>'#000000',vLineColor:()=>'#000000'} }, { width:'4%', text:'' }, { width:'48%', table:{ widths:['*'], body:[[{text:'DESTINO (OBRA)',fillColor:'#f1f5f9',bold:true,fontSize:8,margin:[4,4,4,4]}],[{text:`${obra.nome}\nEndereço: ${obra.endereco||'-'}\nSolicitante: ${o.solicitante||obra.solicitante||'-'} | Fase: ${o.fase_obra||'-'}`,fontSize:9,margin:[6,8,6,8]}]] }, layout:{hLineWidth:()=>1,vLineWidth:()=>1,hLineColor:()=>'#000000',vLineColor:()=>'#000000'} } ], margin:[0,0,0,20] }, { table:{ headerRows:1, widths:isRomaneio?['*','auto']:['*','auto','auto','auto'], body:bodyTabela }, layout:{ hLineWidth:(i,node)=>(i===0||i===node.table.body.length)?0:1, vLineWidth:()=>0, hLineColor:()=>'#000000', paddingLeft:()=>4, paddingRight:()=>4 }, margin:[0,0,0,20] }, { columns:[ { width:isRomaneio?'100%':'60%', table:{ widths:['*'], body:[[{ text:[{text:'Observações:\n',fontSize:9,bold:true},{text:justObs,fontSize:9}], margin:[6,6,6,25] }]] }, layout:{ hLineWidth:()=>1, vLineWidth:()=>1, hLineColor:()=>'#cbd5e1', vLineColor:()=>'#cbd5e1', hLineStyle:()=>({dash:{length:4,space:4}}), vLineStyle:()=>({dash:{length:4,space:4}}) } }, isRomaneio?'':{ width:'40%', alignment:'right', margin:[0,10,0,0], text:[{text:'TOTAL ESTIMADO:   ',bold:true,fontSize:10},{text:formatMoney(total),bold:true,fontSize:13}] } ], margin:[0,0,0,60] }, { text:'_________________________________________________\nASSINATURA RESPONSÁVEL', alignment:'center', fontSize:9, bold:true } ], styles:{ tableHeader:{ bold:true, fontSize:10, color:'white', fillColor:'#0f172a', margin:[4,6,4,6] } } }; pdfMake.createPdf(docDefinition).getBlob(async (blob)=>{ const filename=`Documento_${id}.pdf`; const file=new File([blob],filename,{type:'application/pdf'}); showLoading(false); if(navigator.canShare && navigator.canShare({files:[file]})){ try{ await navigator.share({ title:isRomaneio?`Romaneio OC #${id}`:`OC #${id}`, files:[file] }); } catch(e){} } else { const url=URL.createObjectURL(file); const a=document.createElement('a'); a.href=url; a.download=filename; a.click(); URL.revokeObjectURL(url); showToast("PDF baixado!"); } }); } catch(e){ showLoading(false); showToast("Erro ao gerar PDF",true); } }
 
+
+
+      /*async function compartilharNative(id, isRomaneio){ 
+        showLoading(true); 
+        try{ 
+            const logsOC=STATE.logs.filter(l=>String(l.id)===String(id)&&(l.tipo==='oc_pendente'||l.tipo==='compra')); 
+            if(!logsOC.length){ showLoading(false); return showToast("O.C. não encontrada",true); } 
+            const o=logsOC[0]; 
+            const obra=STATE.obras.find(x=>x.id==o.obra_id)||{nome:'Sem Obra',endereco:'-'}; 
+            const forn=STATE.fornecedores.find(x=>x.id==o.fornecedor_id)||{nome:'A Definir',documento:'',telefone:''}; 
+            let justObs=o.observacao||'Nenhuma'; 
+            if(justObs.includes(' | Obs: ')) justObs=justObs.split(' | Obs: ')[0]+'\n'+justObs.split(' | Obs: ')[1]; 
+            let total=0; 
+            const bodyTabela=[]; 
+            let headerRow;
+            if (isRomaneio) {
+                headerRow = [
+                    {text: 'OK', style: 'tableHeader', alignment: 'center'},
+                    {text: 'Qtd', style: 'tableHeader', alignment: 'center'},
+                    {text: 'Descrição do Material', style: 'tableHeader', alignment: 'left'}
+                ];
+            } else {
+                headerRow = [
+                    {text: 'Descrição', style: 'tableHeader', alignment: 'left'},
+                    {text: 'Qtd', style: 'tableHeader', alignment: 'center'},
+                    {text: 'Unit. Estimado', style: 'tableHeader', alignment: 'right'},
+                    {text: 'Total Estimado', style: 'tableHeader', alignment: 'right'}
+                ];
+            }
+            bodyTabela.push(headerRow); 
+            logsOC.forEach((i,index)=>{ 
+                const valor=parseFloat(i.valor_total); 
+                total+=valor; 
+                const price=valor/parseFloat(i.quantidade); 
+                const bgColor=index%2===0?'#ffffff':'#f8fafc'; 
+                let row;
+                if (isRomaneio) {
+                    row = [
+                        {text: '☐', alignment: 'center', fillColor: bgColor, margin: [4,4,4,4], fontSize: 10},
+                        {text: i.quantidade.toString(), alignment: 'center', fillColor: bgColor, margin: [4,4,4,4], fontSize: 10},
+                        {text: i.produto_nome, alignment: 'left', fillColor: bgColor, margin: [4,4,4,4], fontSize: 10}
+                    ];
+                } else {
+                    row = [
+                        {text: i.produto_nome, fillColor: bgColor, margin: [4,6,4,6], fontSize: 10},
+                        {text: i.quantidade.toString(), alignment: 'center', fillColor: bgColor, margin: [4,6,4,6], fontSize: 10},
+                        {text: formatMoney(price), alignment: 'right', fillColor: bgColor, margin: [4,6,4,6], fontSize: 10},
+                        {text: formatMoney(valor), alignment: 'right', fillColor: bgColor, margin: [4,6,4,6], fontSize: 10}
+                    ];
+                }
+                bodyTabela.push(row); 
+            }); 
+    
+            // ===== CONTEÚDO DO PDF =====
+            let content = [];
+    
+            if (isRomaneio) {
+                // CABEÇALHO DO ROMANEIO (faixa preta)
+                content.push({
+                    table: {
+                        widths: ['*'],
+                        body: [
+                            [
+                                {
+                                    text: 'MATERIAIS PARA OBRAS',
+                                    style: 'tituloRomaneio',
+                                    alignment: 'center',
+                                    margin: [0, 8, 0, 8],
+                                    fontSize: 18,
+                                    bold: true,
+                                    color: 'white',
+                                    fillColor: '#0f172a'
+                                }
+                            ],
+                            [
+                                {
+                                    text: `O.C. Referência Nº: ${o.id}  |  Emissão: ${formatDate(o.data)}  |  Fase: ${o.fase_obra || '-'}`,
+                                    alignment: 'center',
+                                    fontSize: 11,
+                                    bold: true,
+                                    color: '#1e293b',
+                                    margin: [0, 6, 0, 6]
+                                }
+                            ]
+                        ]
+                    },
+                    layout: 'noBorders',
+                    margin: [0, 0, 0, 10]
+                });
+                // Linha separadora
+                content.push({ canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 2 }], margin: [0, 0, 0, 20] });
+    
+                // DADOS DO FORNECEDOR E OBRA (lado a lado)
+                content.push({
+                    columns: [
+                        {
+                            width: '48%',
+                            table: {
+                                widths: ['*'],
+                                body: [
+                                    [{ text: 'RETIRAR MATERIAL EM:', fillColor: '#f1f5f9', bold: true, fontSize: 8, margin: [4, 4, 4, 4] }],
+                                    [{ text: `${forn.nome}\nDoc: ${forn.documento || '-'}\nTel: ${forn.telefone || '-'}`, fontSize: 9, margin: [6, 8, 6, 8] }]
+                                ]
+                            },
+                            layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000000', vLineColor: () => '#000000' }
+                        },
+                        { width: '4%', text: '' },
+                        {
+                            width: '48%',
+                            table: {
+                                widths: ['*'],
+                                body: [
+                                    [{ text: 'ENTREGAR MATERIAL EM:', fillColor: '#f1f5f9', bold: true, fontSize: 8, margin: [4, 4, 4, 4] }],
+                                    [{ text: `${obra.nome}\nEndereço: ${obra.endereco || '-'}\nSolicitante: ${o.solicitante || obra.solicitante || '-'} | Fase: ${o.fase_obra || '-'}`, fontSize: 9, margin: [6, 8, 6, 8] }]
+                                ]
+                            },
+                            layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000000', vLineColor: () => '#000000' }
+                        }
+                    ],
+                    margin: [0, 0, 0, 20]
+                });
+    
+                // TABELA DE ITENS
+                content.push({
+                    table: {
+                        headerRows: 1,
+                        widths: ['auto', 'auto', '*'],
+                        body: bodyTabela
+                    },
+                    layout: {
+                        hLineWidth: function (i, node) { return 1; },
+                        vLineWidth: function () { return 1; },
+                        hLineColor: function () { return '#000'; },
+                        vLineColor: function () { return '#000'; },
+                        paddingLeft: function () { return 4; },
+                        paddingRight: function () { return 4; }
+                    },
+                    margin: [0, 0, 0, 20]
+                });
+    
+                // OBSERVAÇÕES (borda tracejada)
+                content.push({
+                    table: {
+                        widths: ['*'],
+                        body: [
+                            [{ text: 'Observações da Cotação:', bold: true, fontSize: 9, margin: [4, 4, 4, 4] }],
+                            [{ text: justObs, fontSize: 9, margin: [4, 8, 4, 12] }]
+                        ]
+                    },
+                    layout: {
+                        hLineWidth: function (i) { return 1; },
+                        vLineWidth: function () { return 1; },
+                        hLineColor: function () { return '#000'; },
+                        vLineColor: function () { return '#000'; },
+                        hLineStyle: function () { return { dash: { length: 4, space: 4 } }; },
+                        vLineStyle: function () { return { dash: { length: 4, space: 4 } }; }
+                    },
+                    margin: [0, 0, 0, 40]
+                });
+    
+                // ASSINATURAS
+                content.push({
+                    columns: [
+                        {
+                            width: '45%',
+                            alignment: 'center',
+                            text: '_________________________________________________\nASSINATURA MOTORISTA / RETIRADA',
+                            fontSize: 9,
+                            bold: true,
+                            margin: [0, 60, 0, 0]
+                        },
+                        { width: '10%', text: '' },
+                        {
+                            width: '45%',
+                            alignment: 'center',
+                            text: '_________________________________________________\nASSINATURA RECEBIMENTO (OBRA)',
+                            fontSize: 9,
+                            bold: true,
+                            margin: [0, 60, 0, 0]
+                        }
+                    ]
+                });
+            } else {
+                // ORDEM DE COMPRA (original com logo)
+                const logoBase64 = await getLogoBase64("https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png");
+                content = [
+                    { 
+                        table:{ 
+                            widths:[90,'*','auto'], 
+                            body:[[ 
+                                logoBase64?{image:logoBase64,width:80,alignment:'center',margin:[0,0,10,0]}:'', 
+                                { 
+                                    text:[
+                                        {text:'RV NEGÓCIOS E COMPANHIA\n',fontSize:16,bold:true,color:'#1d4ed8'},
+                                        {text:'CNPJ: 61.893.912/0001-24\n',fontSize:9,color:'#475569',lineHeight:1.3},
+                                        {text:'Rua Mineiros, 530 | Jataí - GO | (64) 99981-5852',fontSize:9,color:'#475569',lineHeight:1.3}
+                                    ], 
+                                    margin:[0,10,0,0] 
+                                }, 
+                                { 
+                                    text:[
+                                        {text:'ORDEM DE COMPRA\n',fontSize:13,bold:true},
+                                        {text:`Nº: ${o.id}\n`,fontSize:9},
+                                        {text:`Emissão: ${formatDate(o.data)}\n`,fontSize:9},
+                                        {text:`Fase: ${o.fase_obra||'-'}`,fontSize:9}
+                                    ], 
+                                    alignment:'right', 
+                                    margin:[0,10,0,0] 
+                                } 
+                            ]] 
+                        }, 
+                        layout:'noBorders', 
+                        margin:[0,0,0,10] 
+                    }, 
+                    { canvas:[{type:'line',x1:0,y1:0,x2:515,y2:0,lineWidth:2}], margin:[0,0,0,20] },
+                    { 
+                        columns:[ 
+                            { 
+                                width:'48%', 
+                                table:{ 
+                                    widths:['*'], 
+                                    body:[
+                                        [{text:'DADOS DO FORNECEDOR',fillColor:'#f1f5f9',bold:true,fontSize:8,margin:[4,4,4,4]}],
+                                        [{text:`${forn.nome}\nDoc: ${forn.documento||'-'}\nTel: ${forn.telefone||'-'}`,fontSize:9,margin:[6,8,6,8]}]
+                                    ] 
+                                }, 
+                                layout:{hLineWidth:()=>1,vLineWidth:()=>1,hLineColor:()=>'#000000',vLineColor:()=>'#000000'} 
+                            }, 
+                            { width:'4%', text:'' }, 
+                            { 
+                                width:'48%', 
+                                table:{ 
+                                    widths:['*'], 
+                                    body:[
+                                        [{text:'DESTINO (OBRA)',fillColor:'#f1f5f9',bold:true,fontSize:8,margin:[4,4,4,4]}],
+                                        [{text:`${obra.nome}\nEndereço: ${obra.endereco||'-'}\nSolicitante: ${o.solicitante||obra.solicitante||'-'} | Fase: ${o.fase_obra||'-'}`,fontSize:9,margin:[6,8,6,8]}]
+                                    ] 
+                                }, 
+                                layout:{hLineWidth:()=>1,vLineWidth:()=>1,hLineColor:()=>'#000000',vLineColor:()=>'#000000'} 
+                            } 
+                        ], 
+                        margin:[0,0,0,20] 
+                    }, 
+                    { 
+                        table:{ 
+                            headerRows:1, 
+                            widths:['*','auto','auto','auto'], 
+                            body:bodyTabela 
+                        }, 
+                        layout:{ 
+                            hLineWidth:(i,node)=>(i===0||i===node.table.body.length)?0:1, 
+                            vLineWidth:()=>0, 
+                            hLineColor:()=>'#000000', 
+                            paddingLeft:()=>4, 
+                            paddingRight:()=>4 
+                        }, 
+                        margin:[0,0,0,20] 
+                    }, 
+                    { 
+                        columns:[ 
+                            { 
+                                width:'60%', 
+                                table:{ 
+                                    widths:['*'], 
+                                    body:[[{ 
+                                        text:[{text:'Observações:\n',fontSize:9,bold:true},{text:justObs,fontSize:9}], 
+                                        margin:[6,6,6,25] 
+                                    }]] 
+                                }, 
+                                layout:{ 
+                                    hLineWidth:()=>1, 
+                                    vLineWidth:()=>1, 
+                                    hLineColor:()=>'#cbd5e1', 
+                                    vLineColor:()=>'#cbd5e1', 
+                                    hLineStyle:()=>({dash:{length:4,space:4}}), 
+                                    vLineStyle:()=>({dash:{length:4,space:4}}) 
+                                } 
+                            }, 
+                            { 
+                                width:'40%', 
+                                alignment:'right', 
+                                margin:[0,10,0,0], 
+                                text:[{text:'TOTAL ESTIMADO:   ',bold:true,fontSize:10},{text:formatMoney(total),bold:true,fontSize:13}] 
+                            } 
+                        ], 
+                        margin:[0,0,0,60] 
+                    },
+                    { text:'_________________________________________________\nASSINATURA RESPONSÁVEL', alignment:'center', fontSize:9, bold:true }
+                ];
+            }
+    
+            const docDefinition = {
+                pageSize: 'A4',
+                pageMargins: [40, 40, 40, 40],
+                defaultStyle: { font: 'Roboto' },
+                background: function() {
+                    return {
+                        canvas: [
+                            {
+                                type: 'rect',
+                                x: 25, y: 25, w: 545.28, h: 791.89,
+                                lineWidth: 1, lineColor: '#000000'
+                            }
+                        ]
+                    };
+                },
+                content: content,
+                styles: {
+                    tableHeader: {
+                        bold: true,
+                        fontSize: 10,
+                        color: 'white',
+                        fillColor: '#0f172a',
+                        margin: [4, 6, 4, 6]
+                    },
+                    tituloRomaneio: {
+                        fontSize: 18,
+                        bold: true,
+                        color: 'white',
+                        fillColor: '#0f172a',
+                        margin: [0, 0, 0, 0],
+                        padding: [8, 4, 8, 4]
+                    }
+                }
+            };
+    
+            pdfMake.createPdf(docDefinition).getBlob(async (blob)=>{ 
+                const filename=`Documento_${id}.pdf`; 
+                const file=new File([blob],filename,{type:'application/pdf'}); 
+                showLoading(false); 
+                if(navigator.canShare && navigator.canShare({files:[file]})){ 
+                    try{ 
+                        await navigator.share({ 
+                            title:isRomaneio?`Romaneio OC #${id}`:`OC #${id}`, 
+                            files:[file] 
+                        }); 
+                    } catch(e){} 
+                } else { 
+                    const url=URL.createObjectURL(file); 
+                    const a=document.createElement('a'); 
+                    a.href=url; 
+                    a.download=filename; 
+                    a.click(); 
+                    URL.revokeObjectURL(url); 
+                    showToast("PDF baixado!"); 
+                } 
+            }); 
+        } catch(e){ 
+            showLoading(false); 
+            showToast("Erro ao gerar PDF",true); 
+        } 
+    }*/
+
+// ===== FUNÇÃO PARA COMPARTILHAR ORDEM DE COMPRA (COM VALORES) =====
+async function compartilharOC(id) {
+    showLoading(true);
+    try {
+        const logsOC = STATE.logs.filter(l => String(l.id) === String(id) && (l.tipo === 'oc_pendente' || l.tipo === 'compra'));
+        if (!logsOC.length) {
+            showLoading(false);
+            return showToast("O.C. não encontrada", true);
+        }
+        const o = logsOC[0];
+        const obra = STATE.obras.find(x => x.id == o.obra_id) || { nome: 'Sem Obra', endereco: '-' };
+        const forn = STATE.fornecedores.find(x => x.id == o.fornecedor_id) || { nome: 'A Definir', documento: '', telefone: '' };
+        let justObs = o.observacao || 'Nenhuma';
+        if (justObs.includes(' | Obs: ')) justObs = justObs.split(' | Obs: ')[0] + '\n' + justObs.split(' | Obs: ')[1];
+        let total = 0;
+        const bodyTabela = [
+            [
+                { text: 'Descrição', style: 'tableHeader', alignment: 'left' },
+                { text: 'Qtd', style: 'tableHeader', alignment: 'center' },
+                { text: 'Unit. Estimado', style: 'tableHeader', alignment: 'right' },
+                { text: 'Total Estimado', style: 'tableHeader', alignment: 'right' }
+            ]
+        ];
+        logsOC.forEach((i, index) => {
+            const valor = parseFloat(i.valor_total);
+            total += valor;
+            const price = valor / parseFloat(i.quantidade);
+            const bgColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+            bodyTabela.push([
+                { text: i.produto_nome, fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 },
+                { text: i.quantidade.toString(), alignment: 'center', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 },
+                { text: formatMoney(price), alignment: 'right', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 },
+                { text: formatMoney(valor), alignment: 'right', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 }
+            ]);
+        });
+
+        const logoBase64 = await getLogoBase64("https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png");
+
+        const docDefinition = {
+            pageSize: 'A4',
+            pageMargins: [40, 40, 40, 40],
+            defaultStyle: { font: 'Roboto' },
+            background: () => ({
+                canvas: [{ type: 'rect', x: 25, y: 25, w: 545.28, h: 791.89, lineWidth: 1, lineColor: '#000000' }]
+            }),
+            content: [
+                {
+                    table: {
+                        widths: [90, '*', 'auto'],
+                        body: [[
+                            logoBase64 ? { image: logoBase64, width: 80, alignment: 'center', margin: [0, 0, 10, 0] } : '',
+                            {
+                                text: [
+                                    { text: 'RV NEGÓCIOS E COMPANHIA\n', fontSize: 16, bold: true, color: '#1d4ed8' },
+                                    { text: 'CNPJ: 61.893.912/0001-24\n', fontSize: 9, color: '#475569', lineHeight: 1.3 },
+                                    { text: 'Rua Mineiros, 530 | Jataí - GO | (64) 99981-5852', fontSize: 9, color: '#475569', lineHeight: 1.3 }
+                                ],
+                                margin: [0, 10, 0, 0]
+                            },
+                            {
+                                text: [
+                                    { text: 'ORDEM DE COMPRA\n', fontSize: 13, bold: true },
+                                    { text: `Nº: ${o.id}\n`, fontSize: 9 },
+                                    { text: `Emissão: ${formatDate(o.data)}\n`, fontSize: 9 },
+                                    { text: `Fase: ${o.fase_obra || '-'}`, fontSize: 9 }
+                                ],
+                                alignment: 'right',
+                                margin: [0, 10, 0, 0]
+                            }
+                        ]]
+                    },
+                    layout: 'noBorders',
+                    margin: [0, 0, 0, 10]
+                },
+                { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 2 }], margin: [0, 0, 0, 20] },
+                {
+                    columns: [
+                        {
+                            width: '48%',
+                            table: {
+                                widths: ['*'],
+                                body: [
+                                    [{ text: 'DADOS DO FORNECEDOR', fillColor: '#f1f5f9', bold: true, fontSize: 8, margin: [4, 4, 4, 4] }],
+                                    [{ text: `${forn.nome}\nDoc: ${forn.documento || '-'}\nTel: ${forn.telefone || '-'}`, fontSize: 9, margin: [6, 8, 6, 8] }]
+                                ]
+                            },
+                            layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000000', vLineColor: () => '#000000' }
+                        },
+                        { width: '4%', text: '' },
+                        {
+                            width: '48%',
+                            table: {
+                                widths: ['*'],
+                                body: [
+                                    [{ text: 'DESTINO (OBRA)', fillColor: '#f1f5f9', bold: true, fontSize: 8, margin: [4, 4, 4, 4] }],
+                                    [{ text: `${obra.nome}\nEndereço: ${obra.endereco || '-'}\nSolicitante: ${o.solicitante || obra.solicitante || '-'} | Fase: ${o.fase_obra || '-'}`, fontSize: 9, margin: [6, 8, 6, 8] }]
+                                ]
+                            },
+                            layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000000', vLineColor: () => '#000000' }
+                        }
+                    ],
+                    margin: [0, 0, 0, 20]
+                },
+                {
+                    table: {
+                        headerRows: 1,
+                        widths: ['*', 'auto', 'auto', 'auto'],
+                        body: bodyTabela
+                    },
+                    layout: {
+                        hLineWidth: (i, node) => (i === 0 || i === node.table.body.length) ? 0 : 1,
+                        vLineWidth: () => 0,
+                        hLineColor: () => '#000000',
+                        paddingLeft: () => 4,
+                        paddingRight: () => 4
+                    },
+                    margin: [0, 0, 0, 20]
+                },
+                {
+                    columns: [
+                        {
+                            width: '60%',
+                            table: {
+                                widths: ['*'],
+                                body: [[{ text: [{ text: 'Observações:\n', fontSize: 9, bold: true }, { text: justObs, fontSize: 9 }], margin: [6, 6, 6, 25] }]]
+                            },
+                            layout: {
+                                hLineWidth: () => 1,
+                                vLineWidth: () => 1,
+                                hLineColor: () => '#cbd5e1',
+                                vLineColor: () => '#cbd5e1',
+                                hLineStyle: () => ({ dash: { length: 4, space: 4 } }),
+                                vLineStyle: () => ({ dash: { length: 4, space: 4 } })
+                            }
+                        },
+                        {
+                            width: '40%',
+                            alignment: 'right',
+                            margin: [0, 10, 0, 0],
+                            text: [{ text: 'TOTAL ESTIMADO:   ', bold: true, fontSize: 10 }, { text: formatMoney(total), bold: true, fontSize: 13 }]
+                        }
+                    ],
+                    margin: [0, 0, 0, 60]
+                },
+                { text: '_________________________________________________\nASSINATURA RESPONSÁVEL', alignment: 'center', fontSize: 9, bold: true }
+            ],
+            styles: {
+                tableHeader: {
+                    bold: true,
+                    fontSize: 10,
+                    color: 'white',
+                    fillColor: '#0f172a',
+                    margin: [4, 6, 4, 6]
+                }
+            }
+        };
+
+        pdfMake.createPdf(docDefinition).getBlob(async (blob) => {
+            const filename = `OC_${id}.pdf`;
+            const file = new File([blob], filename, { type: 'application/pdf' });
+            showLoading(false);
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({ title: `OC #${id}`, files: [file] });
+                } catch (e) {
+                    // Se o usuário cancelou, não faz nada (ignora silenciosamente)
+                    if (e.name !== 'AbortError') {
+                        // Fallback: baixar o PDF em caso de erro inesperado
+                        const url = URL.createObjectURL(file);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        showToast("PDF baixado!");
+                    }
+                }
+            } else {
+                // Fallback para navegadores que não suportam compartilhamento
+                const url = URL.createObjectURL(file);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+                showToast("PDF baixado!");
+            }
+        });
+    } catch (e) {
+        showLoading(false);
+        showToast("Erro ao gerar PDF: " + e.message, true);
+    }
+}
+
+// ===== FUNÇÃO PARA COMPARTILHAR ROMANEIO (SEM VALORES) =====
+async function compartilharRomaneio(id) {
+    showLoading(true);
+    try {
+        const logsOC = STATE.logs.filter(l => String(l.id) === String(id) && (l.tipo === 'oc_pendente' || l.tipo === 'compra'));
+        if (!logsOC.length) {
+            showLoading(false);
+            return showToast("O.C. não encontrada", true);
+        }
+        const o = logsOC[0];
+        const obra = STATE.obras.find(x => x.id == o.obra_id) || { nome: 'Sem Obra', endereco: '-' };
+        const forn = STATE.fornecedores.find(x => x.id == o.fornecedor_id) || { nome: 'A Definir', documento: '', telefone: '' };
+        let justObs = o.observacao || 'Nenhuma';
+        if (justObs.includes(' | Obs: ')) justObs = justObs.split(' | Obs: ')[0] + '\n' + justObs.split(' | Obs: ')[1];
+
+        const bodyTabela = [
+            [
+                { text: 'OK', style: 'tableHeader', alignment: 'center' },
+                { text: 'Qtd', style: 'tableHeader', alignment: 'center' },
+                { text: 'Descrição do Material', style: 'tableHeader', alignment: 'left' }
+            ]
+        ];
+        logsOC.forEach((i, index) => {
+            const bgColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+            bodyTabela.push([
+                { text: '☐', alignment: 'center', fillColor: bgColor, margin: [4, 4, 4, 4], fontSize: 10 },
+                { text: i.quantidade.toString(), alignment: 'center', fillColor: bgColor, margin: [4, 4, 4, 4], fontSize: 10 },
+                { text: i.produto_nome, alignment: 'left', fillColor: bgColor, margin: [4, 4, 4, 4], fontSize: 10 }
+            ]);
+        });
+
+        const docDefinition = {
+            pageSize: 'A4',
+            pageMargins: [40, 40, 40, 40],
+            defaultStyle: { font: 'Roboto' },
+            background: () => ({
+                canvas: [{ type: 'rect', x: 25, y: 25, w: 545.28, h: 791.89, lineWidth: 1, lineColor: '#000000' }]
+            }),
+            content: [
+                {
+                    table: {
+                        widths: ['*'],
+                        body: [
+                            [
+                                {
+                                    text: 'MATERIAIS PARA OBRAS',
+                                    style: 'tituloRomaneio',
+                                    alignment: 'center',
+                                    margin: [0, 8, 0, 8]
+                                }
+                            ],
+                            [
+                                {
+                                    text: `O.C. Referência Nº: ${o.id}  |  Emissão: ${formatDate(o.data)}  |  Fase: ${o.fase_obra || '-'}`,
+                                    alignment: 'center',
+                                    fontSize: 11,
+                                    bold: true,
+                                    color: '#1e293b',
+                                    margin: [0, 6, 0, 6]
+                                }
+                            ]
+                        ]
+                    },
+                    layout: 'noBorders',
+                    margin: [0, 0, 0, 10]
+                },
+                { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 2 }], margin: [0, 0, 0, 20] },
+                {
+                    columns: [
+                        {
+                            width: '48%',
+                            table: {
+                                widths: ['*'],
+                                body: [
+                                    [{ text: 'RETIRAR MATERIAL EM:', fillColor: '#f1f5f9', bold: true, fontSize: 8, margin: [4, 4, 4, 4] }],
+                                    [{ text: `${forn.nome}\nDoc: ${forn.documento || '-'}\nTel: ${forn.telefone || '-'}`, fontSize: 9, margin: [6, 8, 6, 8] }]
+                                ]
+                            },
+                            layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000000', vLineColor: () => '#000000' }
+                        },
+                        { width: '4%', text: '' },
+                        {
+                            width: '48%',
+                            table: {
+                                widths: ['*'],
+                                body: [
+                                    [{ text: 'ENTREGAR MATERIAL EM:', fillColor: '#f1f5f9', bold: true, fontSize: 8, margin: [4, 4, 4, 4] }],
+                                    [{ text: `${obra.nome}\nEndereço: ${obra.endereco || '-'}\nSolicitante: ${o.solicitante || obra.solicitante || '-'} | Fase: ${o.fase_obra || '-'}`, fontSize: 9, margin: [6, 8, 6, 8] }]
+                                ]
+                            },
+                            layout: { hLineWidth: () => 1, vLineWidth: () => 1, hLineColor: () => '#000000', vLineColor: () => '#000000' }
+                        }
+                    ],
+                    margin: [0, 0, 0, 20]
+                },
+                {
+                    table: {
+                        headerRows: 1,
+                        widths: ['auto', 'auto', '*'],
+                        body: bodyTabela
+                    },
+                    layout: {
+                        hLineWidth: function (i, node) { return 1; },
+                        vLineWidth: function () { return 1; },
+                        hLineColor: function () { return '#000'; },
+                        vLineColor: function () { return '#000'; },
+                        paddingLeft: function () { return 4; },
+                        paddingRight: function () { return 4; }
+                    },
+                    margin: [0, 0, 0, 20]
+                },
+                {
+                    table: {
+                        widths: ['*'],
+                        body: [
+                            [{ text: 'Observações da Cotação:', bold: true, fontSize: 9, margin: [4, 4, 4, 4] }],
+                            [{ text: justObs, fontSize: 9, margin: [4, 8, 4, 12] }]
+                        ]
+                    },
+                    layout: {
+                        hLineWidth: function (i) { return 1; },
+                        vLineWidth: function () { return 1; },
+                        hLineColor: function () { return '#000'; },
+                        vLineColor: function () { return '#000'; },
+                        hLineStyle: function () { return { dash: { length: 4, space: 4 } }; },
+                        vLineStyle: function () { return { dash: { length: 4, space: 4 } }; }
+                    },
+                    margin: [0, 0, 0, 40]
+                },
+                {
+                    columns: [
+                        {
+                            width: '45%',
+                            alignment: 'center',
+                            text: '_________________________________________________\nASSINATURA MOTORISTA / RETIRADA',
+                            fontSize: 9,
+                            bold: true,
+                            margin: [0, 60, 0, 0]
+                        },
+                        { width: '10%', text: '' },
+                        {
+                            width: '45%',
+                            alignment: 'center',
+                            text: '_________________________________________________\nASSINATURA RECEBIMENTO (OBRA)',
+                            fontSize: 9,
+                            bold: true,
+                            margin: [0, 60, 0, 0]
+                        }
+                    ]
+                }
+            ],
+            styles: {
+                tableHeader: {
+                    bold: true,
+                    fontSize: 10,
+                    color: 'white',
+                    fillColor: '#0f172a',
+                    margin: [4, 6, 4, 6]
+                },
+                tituloRomaneio: {
+                    fontSize: 18,
+                    bold: true,
+                    color: 'white',
+                    fillColor: '#0f172a',
+                    margin: [0, 0, 0, 0],
+                    padding: [8, 4, 8, 4]
+                }
+            }
+        };
+
+        pdfMake.createPdf(docDefinition).getBlob(async (blob) => {
+            const filename = `Romaneio_${id}.pdf`;
+            const file = new File([blob], filename, { type: 'application/pdf' });
+            showLoading(false);
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({ title: `Romaneio OC #${id}`, files: [file] });
+                } catch (e) {
+                    // Se o usuário cancelou (AbortError), ignora silenciosamente
+                    if (e.name !== 'AbortError') {
+                        console.warn("Erro no compartilhamento:", e);
+                        // Fallback: baixar o PDF
+                        const url = URL.createObjectURL(file);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        showToast("PDF baixado (fallback)!");
+                    }
+                }
+            } else {
+                // Fallback para navegadores sem suporte a compartilhamento
+                const url = URL.createObjectURL(file);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+                showToast("PDF baixado!");
+            }
+        });
+    } catch (e) {
+        showLoading(false);
+        showToast("Erro ao gerar Romaneio: " + e.message, true);
+    }
+}
+
+// ===== FUNÇÃO AUXILIAR PARA CARREGAR LOGO =====
+async function getLogoBase64(url) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+        };
+        img.onerror = () => resolve(null);
+        img.src = url;
+    });
+}
+
+      
+      
+
+      
+      
         function fazerLogout(){ localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
      <script src="js/contrato.js"></script>
