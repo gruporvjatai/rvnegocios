@@ -3623,6 +3623,21 @@
           navigate('oc');           // vai para a lista de O.C. (opcional)
       }
 
+
+      //================================= timer
+      let inactivityTimer;
+
+      function resetInactivityTimer() {
+          clearTimeout(inactivityTimer);
+          inactivityTimer = setTimeout(() => {
+              // Verifica se o usuário está logado (pode checar se existe a sessão)
+              if (localStorage.getItem('rv_user')) {
+                  showToast("Sessão expirada por inatividade. Deslogando...", true);
+                  fazerLogout();
+              }
+          }, 1 * 60 * 1000); // 30 minutos
+      }
+
       // Adiciona listeners para reiniciar o timer
       function startInactivityMonitoring() {
           const events = ['mousedown', 'keydown', 'touchstart', 'scroll', 'click'];
