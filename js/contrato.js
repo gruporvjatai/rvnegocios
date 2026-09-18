@@ -1,3 +1,61 @@
+ function numeroPorExtenso(valor) {
+    const unidades = ['zero', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove'];
+    const especiais = ['dez', 'onze', 'doze', 'treze', 'quatorze', 'quinze', 'dezesseis', 'dezessete', 'dezoito', 'dezenove'];
+    const dezenas = ['', '', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
+    const centenas = ['', 'cento', 'duzentos', 'trezentos', 'quatrocentos', 'quinhentos', 'seiscentos', 'setecentos', 'oitocentos', 'novecentos'];
+
+    function grupoExtenso(num) {
+        let texto = '';
+        const c = Math.floor(num / 100);
+        const resto = num % 100;
+        if (c > 0) {
+            texto += (c === 1 && resto === 0) ? 'cem' : centenas[c];
+        }
+        if (resto > 0) {
+            if (texto) texto += ' e ';
+            if (resto < 10) {
+                texto += unidades[resto];
+            } else if (resto < 20) {
+                texto += especiais[resto - 10];
+            } else {
+                texto += dezenas[Math.floor(resto / 10)];
+                if (resto % 10 > 0) texto += ' e ' + unidades[resto % 10];
+            }
+        }
+        return texto;
+    }
+
+    function inteiroExtenso(num) {
+        if (num === 0) return 'zero';
+        const partes = [];
+        const bilhoes = Math.floor(num / 1000000000);
+        const milhoes = Math.floor((num % 1000000000) / 1000000);
+        const milhares = Math.floor((num % 1000000) / 1000);
+        const resto = num % 1000;
+        if (bilhoes > 0) partes.push(grupoExtenso(bilhoes) + (bilhoes === 1 ? ' bilhão' : ' bilhões'));
+        if (milhoes > 0) partes.push(grupoExtenso(milhoes) + (milhoes === 1 ? ' milhão' : ' milhões'));
+        if (milhares > 0) partes.push(milhares === 1 ? 'mil' : grupoExtenso(milhares) + ' mil');
+        if (resto > 0) partes.push(grupoExtenso(resto));
+        return partes.join(' e ');
+    }
+
+    const numero = Math.round((parseFloat(valor) || 0) * 100) / 100;
+    const inteiro = Math.floor(numero);
+    const centavos = Math.round((numero - inteiro) * 100);
+    let texto = '';
+    if (inteiro > 0) {
+        const extensoInteiroTxt = inteiroExtenso(inteiro);
+        const escalaGrande = /(milhão|milhões|bilhão|bilhões)$/.test(extensoInteiroTxt);
+        texto += extensoInteiroTxt + (escalaGrande ? ' de ' : ' ') + (inteiro === 1 ? 'real' : 'reais');
+    }
+    if (centavos > 0) {
+        if (texto) texto += ' e ';
+        texto += inteiroExtenso(centavos) + (centavos === 1 ? ' centavo' : ' centavos');
+    }
+    if (!texto) texto = 'zero reais';
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
  function imprimirDocumento() {
     const id = document.getElementById('doc-equipe-id').value;
     const tipo = document.getElementById('doc-tipo-select').value;
@@ -49,6 +107,11 @@
     const enderecoObra = obraVinculada ? (obraVinculada.endereco || obraVinculada.nome) : 'Endereço não informado / Obra não definida';
     const diariaTexto = formatMoney(e.valor_diaria || 0);
     const matricula = parseFloat(e.matricula || 0);
+
+    // Valor do contrato (Empreita) puxado do cadastro do colaborador
+    const valorContrato = parseFloat(e.valor_diaria || 0);
+    const valorContratoTexto = formatMoney(valorContrato);
+    const valorContratoExtenso = numeroPorExtenso(valorContrato);
   
     
 
@@ -639,7 +702,7 @@
  } else if (tipo === 'empreita1') {
         titulo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS POR EMPREITADA PARA EXECUÇÃO DE ETAPAS DE OBRA SEM VÍNCULO EMPREGATÍCIO <br><br> Nº ${matricula}/${ano} | JATAÍ – GOIÁS`;
         nomeContratanteAssinatura = "RV NEGOCIOS E COMPANHIA LTDA";
-        localVL = "Rua C-5, QD07 LT01 - Vila Luiza";
+        localVL = enderecoObra;
         localCP = "Av. Ribas Marques, 447 - Colméia Park";
         
         corpoTexto = `
@@ -698,7 +761,7 @@
             <p style="margin-bottom: 15px;"><strong>CLÁUSULA QUARTA – DO VALOR E DA FORMA DE PAGAMENTO</strong></p>
             <p style="text-indent: 30px; margin-bottom: 10px;"><strong>4.</strong> Os serviços serão remunerados conforme entregas executadas, medidas e aprovadas pelo gestor de obra designado pela <strong>${nomeContratanteAssinatura}</strong>, mediante apresentação de Recibo de Prestação de Serviços:</p>
             <div style="margin-left: 50px; margin-bottom: 30px;">
-                <div style="margin-bottom: 5px;"><strong>4.1.</strong> O valor total dos serviços será de <strong>R$ 382.485,72  (Trezentos e oitenta e dois mil quatrocentos e oitenta e cinco reais e setenta e dois centavos)</strong>, devendo ser pago recorrentemente através de medição mensal, conforme entrega dos serviços, estimando a duração de vigência contratual presentes neste instrumento.</div>
+                <div style="margin-bottom: 5px;"><strong>4.1.</strong> O valor total dos serviços será de <strong>${valorContratoTexto} (${valorContratoExtenso})</strong>, devendo ser pago recorrentemente através de medição mensal, conforme entrega dos serviços, estimando a duração de vigência contratual presentes neste instrumento.</div>
                 <div style="margin-bottom: 5px;"><strong>4.2.</strong> A Medição dos serviços concluidos será realizada pelo profissional indicado da Prefeitira de Jataí todo dia 1º do mês;
                 <div style="margin-bottom: 5px;"><strong>4.3.</strong> A Aprovação do pagamento ocorrerá após a conferência da medição, e a devida aprovação pelo responsável designado pela CONTRATANTE</div>
                 <div style="margin-bottom: 5px;"><strong>4.4.</strong> O pagamento será efetuado pontualmente entre os dias 10 (dez) e 15 (quinze) de cada mês, via transferência bancária para a conta indicada pelo CONTRATADO.          
