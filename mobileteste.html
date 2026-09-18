@@ -848,7 +848,17 @@
         let CURRENT_OC_ID = null; 
 
         window.onload = function() { 
-            if (dadosUsuario) { showLoading(true); loadData(); }
+            if (dadosUsuario) { 
+                showLoading(true);
+                sb.auth.getSession().then(function(res) {
+                    if (!res || !res.data || !res.data.session) {
+                        localStorage.removeItem('rv_user');
+                        window.location.replace('index.html');
+                        return;
+                    }
+                    loadData();
+                });
+            }
             lucide.createIcons();          
         };
 
@@ -3137,7 +3147,7 @@ async function getLogoBase64(url) {
 
       
       
-        function fazerLogout(){ localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
+        function fazerLogout(){ try { sb.auth.signOut(); } catch (_) {} localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
      <script src="js/contrato.js"></script>
   </body>

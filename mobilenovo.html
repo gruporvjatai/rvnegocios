@@ -1901,7 +1901,7 @@ function calcularPendenteEquipe(c) {
             navigate('equipe');
         }
         
-        function fazerLogout() { localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
+        function fazerLogout() { try { sb.auth.signOut(); } catch (_) {} localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
     </script>
   </body>
 </html>

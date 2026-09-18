@@ -58,15 +58,13 @@
                 </div>
 
                     <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-1">Senha (Somente números)</label>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Senha</label>
                     <div class="relative">
                         <i data-lucide="lock" class="absolute left-3 top-3 text-slate-400 w-5 h-5"></i>
                         <input type="password" 
                                id="senha" 
-                               inputmode="numeric" 
-                               pattern="[0-9]*" 
                                placeholder="••••••" 
-                               oninput="this.value = this.value.replace(/[^0-9]/g, '')" 
+                               autocomplete="current-password" 
                                class="w-full p-3 pl-10 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-600 outline-none bg-slate-50">
                     </div>
                 </div>
@@ -108,17 +106,35 @@
             msgErro.classList.add('hidden');
 
             try {
-                // Busca o usuário na NOVA tabela jsp_usuarios
+                // 1) Resolve o login para o e-mail cadastrado no Supabase Auth (tabela jsp_usuarios)
+                const { data: email, error: errEmail } = await sb.rpc('jsp_buscar_email_por_usuario', {
+                    usuario_busca: login_user
+                });
+
+                if (errEmail || !email) {
+                    throw new Error("Credenciais inválidas");
+                }
+
+                // 2) Autentica no Supabase Auth (mesma base de usuários do RV Portal)
+                const { data: authData, error: errAuth } = await sb.auth.signInWithPassword({
+                    email: email,
+                    password: senha
+                });
+
+                if (errAuth || !authData || !authData.user) {
+                    throw new Error("Credenciais inválidas");
+                }
+
+                // 3) Carrega o perfil do sistema (agora autenticado via RLS)
                 const { data, error } = await sb
                     .from('jsp_usuarios')
                     .select('*')
                     .eq('login', login_user)
-                    .eq('senha', senha)
                     .eq('ativo', true)
                     .single();
 
                 if (error || !data) {
-                    throw new Error("Credenciais inválidas");
+                    throw new Error("Usuário sem perfil ativo no sistema");
                 }
 
                 // Salva na sessão
@@ -132,6 +148,7 @@
                 window.location.href = "sistema.html?t=" + Date.now();
 
             } catch (err) {
+                try { await sb.auth.signOut(); } catch (_) {}
                 // Volta o botão e mostra erro
                 btn.classList.remove('hidden');
                 load.classList.add('hidden');
