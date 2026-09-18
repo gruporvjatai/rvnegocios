@@ -341,7 +341,8 @@
                 <select id="eqp-filter-tipo" class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium bg-slate-50" onchange="renderEquipe()">
                     <option value="todos">Todos</option>
                     <option value="diaria">Diária</option>
-                    <option value="metro">Metro </option>
+                    <option value="metro">Metro</option>
+                    <option value="empreita">Empreita</option>
                 </select>
             </div>
             <div>
@@ -376,8 +377,8 @@
                         <tr>
                             <th class="p-4">Funcionário / Categoria</th>
                             <th class="p-4">Obra Vinculada</th>
-                            <th class="p-4 text-center">Diária (R$)</th>
-                            <th class="p-4 text-center">Dias Trab.</th>
+                            <th class="p-4 text-center">Valor</th>
+                            <th class="p-4 text-center">Produção</th>
                             <th class="p-4 text-right">Total a Pagar</th>
                             <th class="p-4 text-center">Status</th>
                             <th class="p-4 text-center">Ações</th>
@@ -608,6 +609,9 @@
                     <div>
                         <label class="block text-[10px] font-bold text-slate-500 uppercase" id="label-valor-base">Valor da Diária (R$)</label>
                         <input type="number" step="0.01" id="eqp-diaria" class="w-full p-2 border rounded focus:border-blue-600 outline-none font-black text-green-700 bg-green-50">
+                    </div>
+                    <div id="eqp-hint-empreita" class="col-span-2 hidden">
+                        <p class="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2">Empreita usa o valor total do contrato. Os pagamentos saem das medições lançadas na obra, mês a mês, sem ultrapassar este teto.</p>
                     </div>
                 </div>
             </div>
@@ -863,6 +867,137 @@
 
       
       
+<!-- MODAL DE MEDIÇÃO DE EMPREITA -->
+<div id="modal-saldo-empreita" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl flex flex-col max-h-[95vh] overflow-hidden">
+        <div class="bg-amber-700 p-4 text-white flex justify-between items-center shrink-0">
+            <div>
+                <h3 class="font-black text-lg flex items-center gap-2">
+                    <i data-lucide="clipboard-list" class="w-5 h-5"></i> Medição de Empreita
+                </h3>
+                <p id="saldo-empreita-subtitle" class="text-xs font-medium opacity-90 mt-0.5"></p>
+            </div>
+            <button onclick="fecharModalSaldoEmpreita()" class="text-white hover:bg-white/20 p-2 rounded-lg transition">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <div class="p-5 overflow-y-auto flex-1 bg-slate-50">
+            <input type="hidden" id="saldo-empreita-id">
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-[10px] font-bold text-slate-500 uppercase">Contrato</div>
+                    <div id="emp-card-contrato" class="text-lg font-black text-slate-800">R$ 0,00</div>
+                </div>
+                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-[10px] font-bold text-slate-500 uppercase">Já Pago</div>
+                    <div id="emp-card-pago" class="text-lg font-black text-emerald-700">R$ 0,00</div>
+                </div>
+                <div class="bg-white p-3 rounded-xl border border-amber-200 shadow-sm bg-amber-50">
+                    <div class="text-[10px] font-bold text-amber-700 uppercase">A Pagar (filtro)</div>
+                    <div id="emp-card-pendente" class="text-lg font-black text-amber-800">R$ 0,00</div>
+                </div>
+                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-[10px] font-bold text-slate-500 uppercase">Saldo do Contrato</div>
+                    <div id="emp-card-saldo" class="text-lg font-black text-indigo-700">R$ 0,00</div>
+                    <div id="emp-card-percent" class="text-[10px] font-bold text-slate-400 mt-0.5">0% executado</div>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-4 flex flex-wrap gap-3 items-end">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Início</label>
+                    <input type="date" id="saldo-empreita-data-inicio" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="carregarTabelaSaldoEmpreita()">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Fim</label>
+                    <input type="date" id="saldo-empreita-data-fim" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="carregarTabelaSaldoEmpreita()">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
+                    <select id="saldo-empreita-filtro-status" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-36" onchange="carregarTabelaSaldoEmpreita()">
+                        <option value="PENDENTE" selected>Pendentes</option>
+                        <option value="PAGO">Já Pagos</option>
+                        <option value="TODOS">Todos</option>
+                    </select>
+                </div>
+                <div class="flex-1"></div>
+                <button onclick="imprimirExtratoEmpreita()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow">
+                    <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Extrato
+                </button>
+            </div>
+
+            <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-100 text-slate-600 border-b">
+                        <tr>
+                            <th class="p-3 text-left text-xs font-bold uppercase">Data</th>
+                            <th class="p-3 text-left text-xs font-bold uppercase">Serviço medido</th>
+                            <th class="p-3 text-center text-xs font-bold uppercase">%</th>
+                            <th class="p-3 text-right text-xs font-bold uppercase">Valor</th>
+                            <th class="p-3 text-center text-xs font-bold uppercase">Status</th>
+                            <th class="p-3 text-center text-xs font-bold uppercase">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="saldo-empreita-tabela-body" class="divide-y"></tbody>
+                </table>
+                <div id="saldo-empreita-sem-registros" class="p-8 text-center text-slate-400 font-medium hidden">
+                    Nenhuma medição encontrada para os filtros.
+                </div>
+            </div>
+
+            <div class="mt-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <h4 class="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-amber-700"></i> Lançar medição da obra
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-6 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Data</label>
+                        <input type="date" id="emp-medicao-data" class="w-full p-2 border rounded-lg text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">% do contrato</label>
+                        <input type="number" step="0.01" min="0" max="100" id="emp-medicao-percent" class="w-full p-2 border rounded-lg text-sm font-bold" placeholder="Ex: 15" oninput="sincronizarCamposMedicaoEmpreita('percent')">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Valor (R$)</label>
+                        <input type="number" step="0.01" min="0" id="emp-medicao-valor" class="w-full p-2 border rounded-lg text-sm font-bold" placeholder="0.00" oninput="sincronizarCamposMedicaoEmpreita('valor')">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-slate-500 mb-1">Serviço / etapa medida</label>
+                        <input type="text" id="emp-medicao-descricao" placeholder="Ex: Alvenaria 1º pavimento" class="w-full p-2 border rounded-lg text-sm">
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="lancarMedicaoEmpreita()" class="w-full bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-lg font-bold flex items-center justify-center gap-1">
+                            <i data-lucide="save" class="w-4 h-4"></i> Lançar
+                        </button>
+                    </div>
+                </div>
+                <p class="text-[11px] text-slate-500 mt-2">Informe % ou valor. O outro campo preenche sozinho. O lançamento não pode ultrapassar o saldo restante do contrato.</p>
+            </div>
+        </div>
+
+        <div class="p-4 bg-white border-t flex justify-between items-center shrink-0">
+            <div>
+                <span class="text-sm font-bold text-slate-500">Total medido (filtro):</span>
+                <span id="saldo-empreita-total-valor" class="text-2xl font-black text-amber-800 ml-2">R$ 0,00</span>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="imprimirReciboEmpreitaDoModal()" class="bg-slate-700 hover:bg-slate-800 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2" title="Imprimir recibo">
+                    <i data-lucide="receipt" class="w-5 h-5"></i> Recibo
+                </button>
+                <button onclick="estornarUltimoFechamentoEmpreita()" class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2" title="Estornar o último fechamento">
+                    <i data-lucide="rotate-ccw" class="w-5 h-5"></i> Estornar Último
+                </button>
+                <button onclick="fecharPagamentoSaldoEmpreita()" class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2">
+                    <i data-lucide="check-circle" class="w-5 h-5"></i> Conferido
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- FECHAENTO DE MODAL DE METRO============================================================================= -->
       <div id="fornecedor-form-container" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
         <form onsubmit="saveFornecedor(event)" class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
@@ -1488,7 +1623,7 @@
         const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
 
         // ====== VARIÁVEIS DE ESTADO ======
-        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], users: [], equipe: [], fases: [], ponto: [], terceirizados: [], producao_terc: [], ponto_diario: [] };
+        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], users: [], equipe: [], fases: [], ponto: [], terceirizados: [], producao_terc: [], ponto_diario: [], medicoes_empreita: [] };
         let CART = [];
         let CURRENT_OC_ID = null; 
 
@@ -1602,7 +1737,7 @@
         const [
           resObras, resForn, resProd, resLog,
           resEqp, resFases, resPonto, resTerc,
-          resPontoDiario, resHistPrecos, resProdTerc
+          resPontoDiario, resHistPrecos, resProdTerc, resMedicoesEmp
         ] = await Promise.all([
           fetchAllRecords('jsp_obras'),
           fetchAllRecords('jsp_fornecedores'),
@@ -1614,7 +1749,8 @@
           fetchAllRecords('jsp_terceirizados').catch(() => ({ data: [] })),
           fetchAllRecords('jsp_ponto_diario').catch(() => ({ data: [] })),
           fetchAllRecords('jsp_historico_precos').catch(() => ({ data: [] })),
-          fetchAllRecords('jsp_producao_terc').catch(() => ({ data: [] }))
+          fetchAllRecords('jsp_producao_terc').catch(() => ({ data: [] })),
+          fetchAllRecords('jsp_medicoes_empreita').catch(() => ({ data: [] }))
         ]);
 
         STATE.obras = resObras.data || [];
@@ -1628,6 +1764,13 @@
         STATE.ponto_diario = resPontoDiario.data || []; 
         STATE.historico_precos = resHistPrecos.data || [];
         STATE.producao_terc = resProdTerc.data || [];
+        STATE.medicoes_empreita = resMedicoesEmp.data || [];
+        if (!STATE.medicoes_empreita.length) {
+            try {
+                const localMed = JSON.parse(localStorage.getItem('rv_medicoes_empreita') || '[]');
+                if (localMed.length) STATE.medicoes_empreita = localMed;
+            } catch (e) {}
+        }
         //console.log("Histórico de Preços carregado:", STATE.historico_precos);
         // Garante que data_preco seja string 'yyyy-mm-dd'
         STATE.historico_precos = STATE.historico_precos.map(r => ({

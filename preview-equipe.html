@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preview - Aba Equipe com Empreita</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  body { background:#f8fafc; font-family:'Segoe UI', sans-serif; }
+  .hidden-section { display:none !important; }
+  th { white-space:nowrap; }
+</style>
+</head>
+<body class="p-4 md:p-8">
+
+<div class="max-w-6xl mx-auto">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+      <i data-lucide="users" class="text-blue-700"></i> Equipe
+    </h1>
+    <p class="text-sm text-slate-500 mt-1">Preview demonstrativo do calculo por diaria, metragem e <strong>empreita</strong>. Os dados ficam salvos no seu navegador.</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4 bg-white p-4 rounded-xl border shadow-sm">
+    <div>
+      <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
+      <select id="f-status" class="w-full p-2 border rounded bg-slate-50 font-medium" onchange="renderEquipe()">
+        <option value="true" selected>Ativos</option>
+        <option value="false">Desativados</option>
+        <option value="todos">Todos</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tipo</label>
+      <select id="f-tipo" class="w-full p-2 border rounded bg-slate-50 font-medium" onchange="renderEquipe()">
+        <option value="todos">Todos</option>
+        <option value="diaria">Diaria</option>
+        <option value="metro">Metro</option>
+        <option value="empreita">Empreita</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Inicio</label>
+      <input type="date" id="f-inicio" class="w-full p-2 border rounded bg-slate-50 font-medium" onchange="renderEquipe()">
+    </div>
+    <div>
+      <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Fim</label>
+      <input type="date" id="f-fim" class="w-full p-2 border rounded bg-slate-50 font-medium" onchange="renderEquipe()">
+    </div>
+    <div>
+      <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Obra</label>
+      <select id="f-obra" class="w-full p-2 border rounded bg-slate-50 font-medium" onchange="renderEquipe()">
+        <option value="">Todas as Obras</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Buscar</label>
+      <input type="text" id="f-busca" placeholder="Buscar..." class="w-full p-2 border rounded bg-slate-50 font-medium" onkeyup="renderEquipe()">
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm text-left whitespace-nowrap">
+        <thead class="bg-slate-100 text-slate-700 border-b">
+          <tr>
+            <th class="p-4">Funcionario / Categoria</th>
+            <th class="p-4">Obra Vinculada</th>
+            <th class="p-4 text-center">Valor</th>
+            <th class="p-4 text-center">Producao</th>
+            <th class="p-4 text-right">Total a Pagar</th>
+            <th class="p-4 text-center">Status</th>
+            <th class="p-4 text-center">Acoes</th>
+          </tr>
+        </thead>
+        <tbody id="equipe-list" class="divide-y"></tbody>
+      </table>
+    </div>
+  </div>
+  <div id="total-geral" class="text-right text-xs text-slate-500 font-medium mt-2 pr-2"></div>
+
+  <div class="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-800 leading-relaxed">
+    <strong>Como funciona a empreita neste preview:</strong> o contrato tem um valor total (teto). Cada mes voce lanca uma medicao informando o % executado ou o valor em R$.
+    O sistema mostra contrato, ja pago, a pagar no periodo e saldo restante. Ao clicar em <strong>Conferido</strong>, as medicoes pendentes viram pagas e o saldo diminui.
+    Ao <strong>Estornar Ultimo</strong>, o pagamento volta para pendente. Nada ultrapassa o valor total do contrato.
+  </div>
+</div>
+
+<!-- MODAL EMPREITA -->
+<div id="modal-empreita" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl flex flex-col max-h-[95vh] overflow-hidden">
+    <div class="bg-amber-700 p-4 text-white flex justify-between items-center shrink-0">
+      <div>
+        <h3 class="font-black text-lg flex items-center gap-2"><i data-lucide="clipboard-list" class="w-5 h-5"></i> Medicao de Empreita</h3>
+        <p id="emp-subtitle" class="text-xs font-medium opacity-90 mt-0.5"></p>
+      </div>
+      <button onclick="fecharModalEmpreita()" class="text-white hover:bg-white/20 p-2 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+
+    <div class="p-5 overflow-y-auto flex-1 bg-slate-50">
+      <input type="hidden" id="emp-id">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <div class="bg-white p-3 rounded-xl border shadow-sm">
+          <div class="text-[10px] font-bold text-slate-500 uppercase">Contrato</div>
+          <div id="emp-card-contrato" class="text-lg font-black text-slate-800">R$ 0,00</div>
+        </div>
+        <div class="bg-white p-3 rounded-xl border shadow-sm">
+          <div class="text-[10px] font-bold text-slate-500 uppercase">Ja Pago</div>
+          <div id="emp-card-pago" class="text-lg font-black text-emerald-700">R$ 0,00</div>
+        </div>
+        <div class="bg-amber-50 p-3 rounded-xl border border-amber-200 shadow-sm">
+          <div class="text-[10px] font-bold text-amber-700 uppercase">A Pagar (filtro)</div>
+          <div id="emp-card-pendente" class="text-lg font-black text-amber-800">R$ 0,00</div>
+        </div>
+        <div class="bg-white p-3 rounded-xl border shadow-sm">
+          <div class="text-[10px] font-bold text-slate-500 uppercase">Saldo do Contrato</div>
+          <div id="emp-card-saldo" class="text-lg font-black text-indigo-700">R$ 0,00</div>
+          <div id="emp-card-percent" class="text-[10px] font-bold text-slate-400 mt-0.5">0% executado</div>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl border shadow-sm mb-4 flex flex-wrap gap-3 items-end">
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Inicio</label>
+          <input type="date" id="emp-inicio" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="renderTabelaEmpreita()">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Fim</label>
+          <input type="date" id="emp-fim" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="renderTabelaEmpreita()">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Status</label>
+          <select id="emp-status" class="p-2 border rounded-lg text-sm font-bold bg-slate-50 w-36" onchange="renderTabelaEmpreita()">
+            <option value="PENDENTE" selected>Pendentes</option>
+            <option value="PAGO">Ja Pagos</option>
+            <option value="TODOS">Todos</option>
+          </select>
+        </div>
+        <div class="flex-1"></div>
+        <button onclick="imprimirExtrato()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow">
+          <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Extrato
+        </button>
+      </div>
+
+      <div class="bg-white rounded-xl border overflow-hidden shadow-sm">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-100 text-slate-600 border-b">
+            <tr>
+              <th class="p-3 text-left text-xs font-bold uppercase">Data</th>
+              <th class="p-3 text-left text-xs font-bold uppercase">Servico medido</th>
+              <th class="p-3 text-center text-xs font-bold uppercase">%</th>
+              <th class="p-3 text-right text-xs font-bold uppercase">Valor</th>
+              <th class="p-3 text-center text-xs font-bold uppercase">Status</th>
+              <th class="p-3 text-center text-xs font-bold uppercase">Acoes</th>
+            </tr>
+          </thead>
+          <tbody id="emp-tbody" class="divide-y"></tbody>
+        </table>
+        <div id="emp-vazio" class="p-8 text-center text-slate-400 font-medium hidden">Nenhuma medicao encontrada para os filtros.</div>
+      </div>
+
+      <div class="mt-4 bg-white p-4 rounded-xl border shadow-sm">
+        <h4 class="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2">
+          <i data-lucide="plus-circle" class="w-4 h-4 text-amber-700"></i> Lancar medicao da obra
+        </h4>
+        <div class="grid grid-cols-1 md:grid-cols-6 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">Data</label>
+            <input type="date" id="emp-nova-data" class="w-full p-2 border rounded-lg text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">% do contrato</label>
+            <input type="number" step="0.01" min="0" max="100" id="emp-nova-percent" placeholder="Ex: 15" class="w-full p-2 border rounded-lg text-sm font-bold" oninput="sincronizar('percent')">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">Valor (R$)</label>
+            <input type="number" step="0.01" min="0" id="emp-nova-valor" placeholder="0.00" class="w-full p-2 border rounded-lg text-sm font-bold" oninput="sincronizar('valor')">
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-xs font-bold text-slate-500 mb-1">Servico / etapa medida</label>
+            <input type="text" id="emp-nova-desc" placeholder="Ex: Alvenaria 1o pavimento" class="w-full p-2 border rounded-lg text-sm">
+          </div>
+          <div class="flex items-end">
+            <button onclick="lancarMedicao()" class="w-full bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-lg font-bold flex items-center justify-center gap-1">
+              <i data-lucide="save" class="w-4 h-4"></i> Lancar
+            </button>
+          </div>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-2">Informe % ou valor. O outro campo preenche sozinho. O lancamento nao pode ultrapassar o saldo restante do contrato.</p>
+      </div>
+    </div>
+
+    <div class="p-4 bg-white border-t flex justify-between items-center shrink-0">
+      <div>
+        <span class="text-sm font-bold text-slate-500">Total medido (filtro):</span>
+        <span id="emp-total" class="text-2xl font-black text-amber-800 ml-2">R$ 0,00</span>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="imprimirRecibo()" class="bg-slate-700 hover:bg-slate-800 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2">
+          <i data-lucide="receipt" class="w-5 h-5"></i> Recibo
+        </button>
+        <button onclick="estornarUltimo()" class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2">
+          <i data-lucide="rotate-ccw" class="w-5 h-5"></i> Estornar Ultimo
+        </button>
+        <button onclick="fecharPagamento()" class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2">
+          <i data-lucide="check-circle" class="w-5 h-5"></i> Conferido
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="hidden fixed top-5 right-5 px-6 py-3 rounded-lg shadow-xl text-white font-medium z-[60]"></div>
+<div id="print-area" class="hidden"></div>
+
+<script>
+const OBRAS = [
+  { id: '1', nome: 'Obra Vila Luiza' },
+  { id: '2', nome: 'Obra Colmeia Park' }
+];
+
+const EQUIPE = [
+  { id: 'e1', nome: 'Joao Pedreiro', categoria: 'Pedreiro', tipo: 'diaria', obra_atual_id: '1', ativo: true, valor_base: 180, chave_pix: 'joao@pix', cpf: '111.111.111-11' },
+  { id: 'e2', nome: 'Carlos Terceirizado', categoria: 'Terceirizado (Metro)', tipo: 'metro', obra_atual_id: '1', ativo: true, valor_base: 42, chave_pix: 'carlos@pix', cpf: '222.222.222-22' },
+  { id: 'e3', nome: 'Construtora Alfa (Empreita)', categoria: 'Empreita', tipo: 'empreita', obra_atual_id: '2', ativo: true, valor_base: 80000, chave_pix: 'alfa@pix', cpf: '33.333.333/0001-33' },
+  { id: 'e4', nome: 'Maria Servente', categoria: 'Servente', tipo: 'diaria', obra_atual_id: '2', ativo: false, valor_base: 120, chave_pix: '', cpf: '444.444.444-44' }
+];
+
+const PRODUCAO_METRO = [
+  { id: 'm1', equipe_id: 'e2', data: '2026-08-05', metros: 120, status: 'PENDENTE' },
+  { id: 'm2', equipe_id: 'e2', data: '2026-08-20', metros: 80, status: 'PENDENTE' }
+];
+
+const DIAS_DIARIA = [
+  { equipe_id: 'e1', dias: 12 },
+  { equipe_id: 'e4', dias: 4 }
+];
+
+function defaultMedicoes() {
+  return [
+    { id: 'md1', equipe_id: 'e3', data_medicao: '2026-07-31', percentual: 10, valor: 8000, descricao: 'Fundacao e baldrame', status: 'PAGO' },
+    { id: 'md2', equipe_id: 'e3', data_medicao: '2026-08-31', percentual: 12.5, valor: 10000, descricao: 'Alvenaria 1o pavimento', status: 'PENDENTE' }
+  ];
+}
+
+function carregarMedicoes() {
+  try {
+    const raw = localStorage.getItem('rv_preview_empreita');
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  const d = defaultMedicoes();
+  localStorage.setItem('rv_preview_empreita', JSON.stringify(d));
+  return d;
+}
+let MEDICOES = carregarMedicoes();
+
+function salvarMedicoes() { localStorage.setItem('rv_preview_empreita', JSON.stringify(MEDICOES)); }
+
+function money(v) { return parseFloat(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+function showToast(msg, err) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'fixed top-5 right-5 px-6 py-3 rounded-lg shadow-xl text-white font-medium z-[60] ' + (err ? 'bg-red-600' : 'bg-slate-800');
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 3000);
+}
+
+function setDefaultDates() {
+  document.getElementById('f-inicio').value = '2026-01-01';
+  document.getElementById('f-fim').value = '2026-12-31';
+  const sel = document.getElementById('f-obra');
+  sel.innerHTML = '<option value="">Todas as Obras</option>' + OBRAS.map(o => `<option value="${o.id}">${o.nome}</option>`).join('');
+}
+setDefaultDates();
+
+function resumoEmpreita(equipeId, ini, fim) {
+  const colab = EQUIPE.find(e => e.id === equipeId) || {};
+  const contrato = parseFloat(colab.valor_base || 0);
+  const todas = MEDICOES.filter(m => m.equipe_id === equipeId);
+  const pago = todas.filter(m => m.status === 'PAGO').reduce((s, m) => s + parseFloat(m.valor), 0);
+  const pendenteTotal = todas.filter(m => m.status !== 'PAGO').reduce((s, m) => s + parseFloat(m.valor), 0);
+  const periodo = todas.filter(m => (!ini || m.data_medicao >= ini) && (!fim || m.data_medicao <= fim));
+  const pendentePeriodo = periodo.filter(m => m.status !== 'PAGO').reduce((s, m) => s + parseFloat(m.valor), 0);
+  const saldo = Math.max(0, contrato - pago - pendenteTotal);
+  const pctPendente = contrato > 0 ? (pendentePeriodo / contrato) * 100 : 0;
+  const pctExec = contrato > 0 ? ((pago + pendenteTotal) / contrato) * 100 : 0;
+  return { contrato, pago, pendenteTotal, pendentePeriodo, saldo, pctPendente, pctExec, periodo };
+}
+
+function renderEquipe() {
+  const term = (document.getElementById('f-busca').value || '').toLowerCase();
+  const ini = document.getElementById('f-inicio').value;
+  const fim = document.getElementById('f-fim').value;
+  const status = document.getElementById('f-status').value;
+  const tipo = document.getElementById('f-tipo').value;
+  const obra = document.getElementById('f-obra').value;
+
+  let fil = EQUIPE.filter(c => (c.nome + ' ' + c.categoria).toLowerCase().includes(term));
+  if (obra) fil = fil.filter(c => c.obra_atual_id === obra);
+  if (status !== 'todos') {
+    const ativo = status === 'true';
+    fil = fil.filter(c => !!c.ativo === ativo);
+  }
+  if (tipo !== 'todos') fil = fil.filter(c => c.tipo === tipo);
+  fil.sort((a, b) => a.nome.localeCompare(b.nome));
+
+  const tbody = document.getElementById('equipe-list');
+  tbody.innerHTML = '';
+  let soma = 0;
+
+  fil.forEach(c => {
+    let valorTxt = '', prodTxt = '', total = 0, statusPg = 'EM DIA', badge = 'bg-green-100 text-green-700', corProd = 'text-slate-400';
+
+    if (c.tipo === 'diaria') {
+      const dias = DIAS_DIARIA.filter(d => d.equipe_id === c.id).reduce((s, d) => s + d.dias, 0);
+      valorTxt = money(c.valor_base);
+      prodTxt = dias.toFixed(2) + ' dias';
+      total = dias * c.valor_base;
+      if (dias > 0) { statusPg = 'PENDENTE'; badge = 'bg-orange-100 text-orange-700'; corProd = 'text-indigo-600'; }
+    } else if (c.tipo === 'empreita') {
+      const r = resumoEmpreita(c.id, ini, fim);
+      valorTxt = money(c.valor_base);
+      prodTxt = r.pctPendente.toFixed(1) + '% medido';
+      total = r.pendentePeriodo;
+      if (r.pendentePeriodo > 0) { statusPg = 'PENDENTE'; badge = 'bg-orange-100 text-orange-700'; corProd = 'text-amber-600'; }
+    } else {
+      const prod = PRODUCAO_METRO.filter(p => p.equipe_id === c.id && (!ini || p.data >= ini) && (!fim || p.data <= fim));
+      const pend = prod.filter(p => p.status !== 'PAGO').reduce((s, p) => s + p.metros, 0);
+      valorTxt = money(c.valor_base) + '/m';
+      prodTxt = pend.toFixed(2) + ' m';
+      total = pend * c.valor_base;
+      if (pend > 0) { statusPg = 'PENDENTE'; badge = 'bg-orange-100 text-orange-700'; corProd = 'text-indigo-600'; }
+    }
+    soma += total;
+
+    const obraNome = (OBRAS.find(o => o.id === c.obra_atual_id) || {}).nome || '<span class="text-slate-400 italic">Sem obra fixa</span>';
+
+    const btnCalcular = c.tipo === 'empreita'
+      ? `<button onclick="abrirModalEmpreita('${c.id}')" class="px-2 py-1.5 bg-amber-700 text-white hover:bg-amber-800 rounded shadow font-bold text-[10px] flex items-center gap-1"><i data-lucide="calculator" width="12"></i> CALCULAR</button>`
+      : c.tipo === 'diaria'
+      ? `<button class="px-2 py-1.5 bg-indigo-600 text-white rounded shadow font-bold text-[10px] flex items-center gap-1 opacity-50 cursor-not-allowed"><i data-lucide="calculator" width="12"></i> CALCULAR</button>`
+      : `<button class="px-2 py-1.5 bg-slate-800 text-white rounded shadow font-bold text-[10px] flex items-center gap-1 opacity-50 cursor-not-allowed"><i data-lucide="calculator" width="12"></i> CALCULAR</button>`;
+
+    const tr = document.createElement('tr');
+    tr.className = 'border-b hover:bg-slate-50 ' + (c.ativo ? '' : 'opacity-60 bg-red-50');
+    tr.innerHTML = `
+      <td class="p-3">
+        <div class="font-bold text-slate-800 text-sm">${c.nome} ${c.ativo ? '' : '<span class="text-[9px] text-red-500 font-bold">(DESATIVADO)</span>'}</div>
+        <div class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded uppercase font-bold inline-block mt-0.5">${c.categoria}</div>
+      </td>
+      <td class="p-3 text-xs font-bold text-blue-700">${obraNome}</td>
+      <td class="p-3 text-center font-bold text-slate-700 text-xs">${valorTxt}</td>
+      <td class="p-3 text-center text-xs font-black ${corProd}">${prodTxt}</td>
+      <td class="p-3 text-right font-black text-sm ${statusPg === 'PENDENTE' ? 'text-green-700' : 'text-slate-400'}">${money(total)}</td>
+      <td class="p-3 text-center"><span class="px-2 py-1 rounded text-[9px] font-bold ${badge}">${statusPg}</span></td>
+      <td class="p-3 text-center"><div class="flex items-center gap-1">${btnCalcular}</div></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('total-geral').innerHTML = `Total geral (filtro): <span class="font-bold text-slate-700">${money(soma)}</span>`;
+  lucide.createIcons();
+}
+
+function abrirModalEmpreita(id) {
+  const c = EQUIPE.find(e => e.id === id);
+  if (!c) return;
+  document.getElementById('emp-id').value = id;
+  document.getElementById('emp-subtitle').innerText = `${c.nome} - Contrato: ${money(c.valor_base)}`;
+  document.getElementById('emp-inicio').value = '2026-01-01';
+  document.getElementById('emp-fim').value = '2026-12-31';
+  document.getElementById('emp-status').value = 'PENDENTE';
+  document.getElementById('emp-nova-data').value = new Date().toISOString().split('T')[0];
+  document.getElementById('emp-nova-percent').value = '';
+  document.getElementById('emp-nova-valor').value = '';
+  document.getElementById('emp-nova-desc').value = '';
+  renderTabelaEmpreita();
+  document.getElementById('modal-empreita').classList.remove('hidden');
+  lucide.createIcons();
+}
+function fecharModalEmpreita() { document.getElementById('modal-empreita').classList.add('hidden'); }
+
+function sincronizar(origem) {
+  const c = EQUIPE.find(e => e.id === document.getElementById('emp-id').value);
+  if (!c) return;
+  const contrato = parseFloat(c.valor_base || 0);
+  if (contrato <= 0) return;
+  const pI = document.getElementById('emp-nova-percent');
+  const vI = document.getElementById('emp-nova-valor');
+  if (origem === 'percent') {
+    const p = parseFloat(pI.value);
+    vI.value = isNaN(p) ? '' : ((p / 100) * contrato).toFixed(2);
+  } else {
+    const v = parseFloat(vI.value);
+    pI.value = isNaN(v) ? '' : ((v / contrato) * 100).toFixed(2);
+  }
+}
+
+function renderTabelaEmpreita() {
+  const id = document.getElementById('emp-id').value;
+  const ini = document.getElementById('emp-inicio').value;
+  const fim = document.getElementById('emp-fim').value;
+  const st = document.getElementById('emp-status').value;
+  const r = resumoEmpreita(id, ini, fim);
+
+  document.getElementById('emp-card-contrato').innerText = money(r.contrato);
+  document.getElementById('emp-card-pago').innerText = money(r.pago);
+  document.getElementById('emp-card-pendente').innerText = money(r.pendentePeriodo);
+  document.getElementById('emp-card-saldo').innerText = money(r.saldo);
+  document.getElementById('emp-card-percent').innerText = r.pctExec.toFixed(1) + '% executado';
+
+  let regs = r.periodo.slice();
+  if (st === 'PENDENTE') regs = regs.filter(m => m.status !== 'PAGO');
+  if (st === 'PAGO') regs = regs.filter(m => m.status === 'PAGO');
+  regs.sort((a, b) => a.data_medicao.localeCompare(b.data_medicao));
+
+  const tbody = document.getElementById('emp-tbody');
+  tbody.innerHTML = '';
+  let total = 0;
+  document.getElementById('emp-vazio').classList.toggle('hidden', regs.length > 0);
+
+  regs.forEach(m => {
+    total += parseFloat(m.valor);
+    const d = new Date(m.data_medicao + 'T00:00:00').toLocaleDateString('pt-BR');
+    const pago = m.status === 'PAGO';
+    const tr = document.createElement('tr');
+    tr.className = 'border-b hover:bg-slate-50';
+    tr.innerHTML = `
+      <td class="p-3 font-bold text-slate-700">${d}</td>
+      <td class="p-3 text-slate-700">${m.descricao || '-'}</td>
+      <td class="p-3 text-center font-black text-amber-700">${parseFloat(m.percentual).toFixed(2)}%</td>
+      <td class="p-3 text-right font-black text-slate-800">${money(m.valor)}</td>
+      <td class="p-3 text-center"><span class="px-2 py-1 rounded text-[9px] font-bold ${pago ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">${pago ? 'PAGO' : 'PENDENTE'}</span></td>
+      <td class="p-3 text-center whitespace-nowrap">
+        ${pago ? '' : `<button onclick="excluirMedicao('${m.id}')" class="text-red-500 hover:text-red-700 mr-1" title="Excluir"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`}
+        <button onclick="excluirMedicaoAdmin('${m.id}')" class="text-slate-400 hover:text-amber-700" title="Acesso Restrito (Senha) - Excluir lançamento"><i data-lucide="shield-alert" class="w-4 h-4"></i></button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('emp-total').innerText = money(total);
+  lucide.createIcons();
+}
+
+function lancarMedicao() {
+  const id = document.getElementById('emp-id').value;
+  const c = EQUIPE.find(e => e.id === id);
+  const data = document.getElementById('emp-nova-data').value;
+  const percent = parseFloat(document.getElementById('emp-nova-percent').value);
+  const valor = parseFloat(document.getElementById('emp-nova-valor').value);
+  const desc = document.getElementById('emp-nova-desc').value.trim();
+  if (!data || isNaN(valor) || valor <= 0) return showToast('Preencha data e valor/percentual valido.', true);
+  const r = resumoEmpreita(id);
+  if (valor - r.saldo > 0.009) return showToast(`Valor ultrapassa o saldo do contrato (${money(r.saldo)}).`, true);
+  MEDICOES.push({
+    id: 'md-' + Date.now(),
+    equipe_id: id,
+    data_medicao: data,
+    percentual: isNaN(percent) ? (r.contrato > 0 ? (valor / r.contrato) * 100 : 0) : percent,
+    valor: valor,
+    descricao: desc || 'Medicao de empreita',
+    status: 'PENDENTE'
+  });
+  salvarMedicoes();
+  document.getElementById('emp-nova-percent').value = '';
+  document.getElementById('emp-nova-valor').value = '';
+  document.getElementById('emp-nova-desc').value = '';
+  renderTabelaEmpreita();
+  renderEquipe();
+  showToast('Medicao lancada.');
+}
+
+function excluirMedicaoAdmin(mid) {
+  const senha = prompt('Acesso Restrito. Digite a senha mestra:');
+  if (senha !== '147258369' && senha !== '150105199') {
+    alert('Senha incorreta. Acesso negado.');
+    return;
+  }
+  const m = MEDICOES.find(x => x.id === mid);
+  if (!m) return showToast('Lancamento nao encontrado.', true);
+  const msg = m.status === 'PAGO'
+    ? 'Este lancamento ja esta PAGO. Excluir mesmo assim?'
+    : 'Tem certeza que deseja excluir este lancamento? Esta acao nao pode ser desfeita.';
+  if (!confirm(msg)) return;
+  MEDICOES = MEDICOES.filter(x => x.id !== mid);
+  salvarMedicoes();
+  renderTabelaEmpreita();
+  renderEquipe();
+  showToast('Lancamento excluido.');
+}
+
+function excluirMedicao(mid) {
+  if (!confirm('Excluir esta medicao pendente?')) return;
+  MEDICOES = MEDICOES.filter(m => m.id !== mid);
+  salvarMedicoes();
+  renderTabelaEmpreita();
+  renderEquipe();
+}
+
+function fecharPagamento() {
+  const id = document.getElementById('emp-id').value;
+  const ini = document.getElementById('emp-inicio').value;
+  const fim = document.getElementById('emp-fim').value;
+  let pend = MEDICOES.filter(m => m.equipe_id === id && m.status !== 'PAGO' && (!ini || m.data_medicao >= ini) && (!fim || m.data_medicao <= fim));
+  if (pend.length === 0) return showToast('Nenhuma medicao pendente para fechar.', true);
+  const valor = pend.reduce((s, m) => s + parseFloat(m.valor), 0);
+  if (!confirm(`Fechar pagamento de ${money(valor)}?`)) return;
+  const ids = new Set(pend.map(m => m.id));
+  MEDICOES = MEDICOES.map(m => ids.has(m.id) ? { ...m, status: 'PAGO' } : m);
+  salvarMedicoes();
+  renderTabelaEmpreita();
+  renderEquipe();
+  showToast('Pagamento fechado. Despesa lancada como pendente.');
+}
+
+function estornarUltimo() {
+  const id = document.getElementById('emp-id').value;
+  const pagos = MEDICOES.filter(m => m.equipe_id === id && m.status === 'PAGO');
+  if (pagos.length === 0) return showToast('Nenhum pagamento para estornar.', true);
+  if (!confirm('Estornar o pagamento mais recente? As medicoes voltam a ficar pendentes.')) return;
+  const ultimo = pagos[pagos.length - 1];
+  MEDICOES = MEDICOES.map(m => m.id === ultimo.id ? { ...m, status: 'PENDENTE' } : m);
+  salvarMedicoes();
+  renderTabelaEmpreita();
+  renderEquipe();
+  showToast('Fechamento estornado.');
+}
+
+function imprimirRecibo() {
+  const id = document.getElementById('emp-id').value;
+  const c = EQUIPE.find(e => e.id === id);
+  const ini = document.getElementById('emp-inicio').value;
+  const fim = document.getElementById('emp-fim').value;
+  const r = resumoEmpreita(id, ini, fim);
+  const periodo = `${new Date(ini + 'T00:00:00').toLocaleDateString('pt-BR')} a ${new Date(fim + 'T00:00:00').toLocaleDateString('pt-BR')}`;
+  const html = `
+    <div style="font-family:'Segoe UI',Arial;border:2px solid #1e293b;padding:30px;border-radius:8px;">
+      <h1 style="margin:0;font-size:24px;">RECIBO DE EMPREITA</h1>
+      <p style="font-size:18px;color:#b45309;font-weight:bold;">VALOR: ${money(r.pendentePeriodo)}</p>
+      <p style="font-size:14px;line-height:1.8;text-align:justify;margin:20px 0;">
+        Recebi(emos) de <strong>RV NEGOCIOS E COMPANHIA LTDA</strong> a importancia de <strong>${money(r.pendentePeriodo)}</strong>,
+        referente a medicao de servicos por empreitada no periodo de <strong>${periodo}</strong>,
+        correspondendo a <strong>${r.pctPendente.toFixed(2)}%</strong> do contrato de <strong>${money(r.contrato)}</strong>.
+        Saldo restante: <strong>${money(r.saldo)}</strong>.
+      </p>
+      <p style="text-align:center;">Jatai - GO, ${new Date().toLocaleDateString('pt-BR')}.</p>
+      <div style="margin-top:60px;text-align:center;width:60%;margin-left:auto;margin-right:auto;border-top:1px solid #000;padding-top:10px;">
+        <strong>${c.nome.toUpperCase()}</strong><br><span style="font-size:12px;color:#64748b;">CPF: ${c.cpf}</span>
+      </div>
+    </div>`;
+  imprimir(html, true);
+}
+
+function imprimirExtrato() {
+  const id = document.getElementById('emp-id').value;
+  const c = EQUIPE.find(e => e.id === id);
+  const ini = document.getElementById('emp-inicio').value;
+  const fim = document.getElementById('emp-fim').value;
+  const st = document.getElementById('emp-status').value;
+  const r = resumoEmpreita(id, ini, fim);
+  let regs = r.periodo.slice();
+  if (st === 'PENDENTE') regs = regs.filter(m => m.status !== 'PAGO');
+  if (st === 'PAGO') regs = regs.filter(m => m.status === 'PAGO');
+  regs.sort((a, b) => a.data_medicao.localeCompare(b.data_medicao));
+  const linhas = regs.map(m => `<tr>
+      <td style="padding:10px;border:1px solid #cbd5e1;">${new Date(m.data_medicao + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+      <td style="padding:10px;border:1px solid #cbd5e1;">${m.descricao || '-'}</td>
+      <td style="padding:10px;border:1px solid #cbd5e1;text-align:center;">${parseFloat(m.percentual).toFixed(2)}%</td>
+      <td style="padding:10px;border:1px solid #cbd5e1;text-align:right;">${money(m.valor)}</td>
+      <td style="padding:10px;border:1px solid #cbd5e1;text-align:center;">${m.status === 'PAGO' ? 'PAGO' : 'PENDENTE'}</td>
+    </tr>`).join('');
+  const html = `
+    <div style="font-family:'Segoe UI',Arial;padding:30px;">
+      <h1 style="margin:0;font-size:24px;">EXTRATO DE EMPREITA</h1>
+      <p style="color:#b45309;font-weight:bold;">${c.nome}</p>
+      <p>Contrato: ${money(r.contrato)} | Pago: ${money(r.pago)} | Pendente: ${money(r.pendentePeriodo)} | Saldo: ${money(r.saldo)} | Executado: ${r.pctExec.toFixed(1)}%</p>
+      <table width="100%" style="border-collapse:collapse;font-size:12px;margin-top:16px;">
+        <thead><tr style="background:#f1f5f9;">
+          <th style="padding:10px;border:1px solid #cbd5e1;text-align:left;">Data</th>
+          <th style="padding:10px;border:1px solid #cbd5e1;text-align:left;">Servico</th>
+          <th style="padding:10px;border:1px solid #cbd5e1;">%</th>
+          <th style="padding:10px;border:1px solid #cbd5e1;text-align:right;">Valor</th>
+          <th style="padding:10px;border:1px solid #cbd5e1;">Status</th>
+        </tr></thead>
+        <tbody>${linhas || '<tr><td colspan="5" style="padding:12px;text-align:center;">Sem medicoes</td></tr>'}</tbody>
+      </table>
+    </div>`;
+  imprimir(html, false);
+}
+
+function imprimir(html, recibo) {
+  const w = window.open('', '_blank');
+  w.document.write(`<html><head><title>${recibo ? 'Recibo' : 'Extrato'}</title></head><body onload="window.print();window.close();">${html}</body></html>`);
+  w.document.close();
+}
+
+renderEquipe();
+lucide.createIcons();
+</script>
+</body>
+</html>

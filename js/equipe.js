@@ -44,6 +44,12 @@
                     c.producao_mes = saldo.totalDiarias;
                     c.valor_total = c.producao_mes * c.valor_base;
                     c.status_pagamento = saldo.totalDiarias > 0 ? 'PENDENTE' : 'EM DIA';
+                } else if (c.tipo === 'empreita') {
+                    const resumo = calcularResumoEmpreita(c.id, dataInicio, dataFim);
+                    c.resumo_empreita = resumo;
+                    c.producao_mes = resumo.percentPendente;
+                    c.valor_total = resumo.valorPendentePeriodo;
+                    c.status_pagamento = resumo.valorPendentePeriodo > 0 ? 'PENDENTE' : 'EM DIA';
                 } else {
                     const producao = STATE.producao_terc.filter(p => {
                         if (p.terceirizado_id !== c.id) return false;
@@ -69,7 +75,16 @@
                 
                 const obraAtual = STATE.obras.find(o => o.id == c.obra_atual_id);
                 const nomeObra = obraAtual ? obraAtual.nome : '<span class="text-slate-400 italic">Sem obra fixa</span>';
-                const diariaOuMetro = c.tipo === 'diaria' ? formatMoney(c.valor_base) : `${formatMoney(c.valor_base)}/m`;
+                let diariaOuMetro = `${formatMoney(c.valor_base)}/m`;
+                let producaoTxt = c.producao_mes.toFixed(2) + ' m';
+                if (c.tipo === 'diaria') {
+                    diariaOuMetro = formatMoney(c.valor_base);
+                    producaoTxt = c.producao_mes.toFixed(2) + ' dias';
+                } else if (c.tipo === 'empreita') {
+                    diariaOuMetro = formatMoney(c.valor_base);
+                    const pct = c.resumo_empreita ? c.resumo_empreita.percentPendente : 0;
+                    producaoTxt = pct.toFixed(1) + '% medido';
+                }
                     
                 const isPendente = c.status_pagamento === 'PENDENTE';
                 const valorExibicao = c.valor_total || 0;
@@ -87,6 +102,22 @@
                             <i data-lucide="edit-3" width="14"></i>
                         </button>
                         <button onclick="toggleStatusEquipe('${c.id}', ${c.ativo !== false})" class="p-1.5 border ${c.ativo !== false ? 'border-red-200 text-red-500 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'} rounded" title="${c.ativo !== false ? 'Desativar / Demitir' : 'Reativar'}">
+                            <i data-lucide="power" width="14"></i>
+                        </button>
+                        ${wppBtn}
+                    `;
+                } else if (c.tipo === 'empreita') {
+                    botoesAcao = `
+                        <button onclick="abrirModalSaldoEmpreita('${c.id}')" class="p-1.5 bg-amber-700 text-white hover:bg-amber-800 rounded shadow font-bold text-[10px] flex items-center gap-1">
+                            <i data-lucide="calculator" width="12"></i> CALCULAR
+                        </button>
+                        <button onclick="abrirModalDocumentos('${c.id}')" class="p-1.5 bg-slate-800 text-white rounded shadow" title="Contratos">
+                            <i data-lucide="file-signature" width="14"></i>
+                        </button>
+                        <button onclick="openEquipeForm('${c.id}')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar">
+                            <i data-lucide="edit-3" width="14"></i>
+                        </button>
+                        <button onclick="toggleStatusEquipe('${c.id}', ${c.ativo !== false})" class="p-1.5 border ${c.ativo !== false ? 'border-red-200 text-red-500 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'} rounded" title="${c.ativo !== false ? 'Desativar' : 'Reativar'}">
                             <i data-lucide="power" width="14"></i>
                         </button>
                         ${wppBtn}
@@ -125,7 +156,7 @@
                     </td>
                     <td class="p-2 text-center">
                         <div class="text-xs font-black ${c.producao_mes > 0 ? 'text-indigo-600' : 'text-slate-400'}">
-                            ${c.tipo === 'diaria' ? c.producao_mes.toFixed(2) + ' dias' : c.producao_mes.toFixed(2) + ' m'}
+                            ${producaoTxt}
                         </div>
                     </td>
                     <td class="p-2 text-right">
@@ -2470,6 +2501,40 @@ function executarImpressaoFolha() {
                     valor_total: totalValor
                 });
             }
+        } else if (c.tipo === 'empreita') {
+            const despesasEmp = STATE.logs.filter(l =>
+                l.tipo === 'despesa' &&
+                l.produto_nome && l.produto_nome.includes(`Pagamento de empreita - ${c.nome}`) &&
+                (statusFinanceiro === 'TODOS' || l.status_financeiro === statusFinanceiro)
+            );
+            let despesasFiltradas = despesasEmp;
+            if (dataInicio || dataFim) {
+                despesasFiltradas = despesasEmp.filter(d => {
+                    const dataDesp = d.data ? d.data.split('T')[0] : '';
+                    if (dataInicio && dataDesp < dataInicio) return false;
+                    if (dataFim && dataDesp > dataFim) return false;
+                    return true;
+                });
+            }
+            if (despesasFiltradas.length === 0) return;
+            let totalValor = 0;
+            let totalPercent = 0;
+            despesasFiltradas.forEach(d => {
+                totalValor += parseFloat(d.valor_total);
+                const pctMatch = d.observacao?.match(/Percentual:\s*([\d.]+)/);
+                if (pctMatch) totalPercent += parseFloat(pctMatch[1]);
+            });
+            if (totalValor > 0) {
+                dadosFolha.push({
+                    nome: c.nome,
+                    pix: c.chave_pix || 'Não informado',
+                    tipo: 'Empreita',
+                    unidade: '%',
+                    quantidade: totalPercent,
+                    valor_unitario: c.valor_base,
+                    valor_total: totalValor
+                });
+            }
         } else {
             // ========== NOVA LÓGICA PARA METRAGEM (TERCEIRIZADOS) ==========
             // Agora também busca nas despesas financeiras, igual aos diaristas
@@ -3509,20 +3574,23 @@ async function excluirRegistroAdmin(registroId) {
 
       // NOVA FUNÇÃO - Unifica equipe própria e terceirizados para exibição
 function getColaboradoresUnificados() {
-    const equipe = STATE.equipe.map(e => ({
-        ...e,
-        tipo: 'diaria',
-        valor_base: parseFloat(e.valor_diaria || 0),
-        unidade: 'dias',
-        table_origin: 'equipe'
-    }));
+    const equipe = STATE.equipe.map(e => {
+        const isEmpreita = (e.categoria || '') === 'Empreita';
+        return {
+            ...e,
+            tipo: isEmpreita ? 'empreita' : 'diaria',
+            valor_base: parseFloat(e.valor_diaria || 0),
+            unidade: isEmpreita ? 'contrato' : 'dias',
+            table_origin: 'equipe'
+        };
+    });
 
     const terceirizados = STATE.terceirizados.map(t => ({
         ...t,
-        nome: t.nome, // já existe, mas garantindo
+        nome: t.nome,
         categoria: 'Terceirizado (Metro)',
         telefone: t.telefone,
-        cpf: t.cpf_cnpj, // padronizando para compatibilidade
+        cpf: t.cpf_cnpj,
         rg: t.rg,
         endereco: t.endereco,
         chave_pix: t.chave_pix,
@@ -3537,21 +3605,81 @@ function getColaboradoresUnificados() {
     return [...equipe, ...terceirizados];
 }
 
+function getMedicoesEmpreitaLocal() {
+    try {
+        return JSON.parse(localStorage.getItem('rv_medicoes_empreita') || '[]');
+    } catch (e) {
+        return [];
+    }
+}
+
+function persistirMedicoesEmpreitaLocal() {
+    localStorage.setItem('rv_medicoes_empreita', JSON.stringify(STATE.medicoes_empreita || []));
+}
+
+function obterMedicoesEmpreita() {
+    const remoto = STATE.medicoes_empreita || [];
+    if (remoto.length) return remoto;
+    const local = getMedicoesEmpreitaLocal();
+    if (local.length && !remoto.length) STATE.medicoes_empreita = local;
+    return STATE.medicoes_empreita || [];
+}
+
+function calcularResumoEmpreita(equipeId, dataInicio, dataFim) {
+    const colaborador = STATE.equipe.find(e => e.id === equipeId);
+    const valorContrato = parseFloat((colaborador && colaborador.valor_diaria) || 0);
+    const medicoes = obterMedicoesEmpreita().filter(m => m.equipe_id === equipeId);
+    const valorPago = medicoes.filter(m => m.status === 'PAGO').reduce((acc, m) => acc + parseFloat(m.valor || 0), 0);
+    const valorPendenteTotal = medicoes.filter(m => m.status !== 'PAGO').reduce((acc, m) => acc + parseFloat(m.valor || 0), 0);
+    const medicoesPeriodo = medicoes.filter(m => {
+        if (dataInicio && m.data_medicao < dataInicio) return false;
+        if (dataFim && m.data_medicao > dataFim) return false;
+        return true;
+    });
+    const valorPendentePeriodo = medicoesPeriodo.filter(m => m.status !== 'PAGO').reduce((acc, m) => acc + parseFloat(m.valor || 0), 0);
+    const valorMedidoPeriodo = medicoesPeriodo.reduce((acc, m) => acc + parseFloat(m.valor || 0), 0);
+    const saldoContrato = Math.max(0, valorContrato - valorPago - valorPendenteTotal);
+    const percentPago = valorContrato > 0 ? (valorPago / valorContrato) * 100 : 0;
+    const percentPendente = valorContrato > 0 ? (valorPendentePeriodo / valorContrato) * 100 : 0;
+    const percentExecutado = valorContrato > 0 ? ((valorPago + valorPendenteTotal) / valorContrato) * 100 : 0;
+    return {
+        valorContrato,
+        valorPago,
+        valorPendenteTotal,
+        valorPendentePeriodo,
+        valorMedidoPeriodo,
+        saldoContrato,
+        percentPago,
+        percentPendente,
+        percentExecutado,
+        medicoes,
+        medicoesPeriodo
+    };
+}
+
       // NOVA FUNÇÃO - Altera label do campo valor conforme categoria selecionada
     function onCategoriaChange() {
         const cat = document.getElementById('eqp-cat').value;
         const label = document.getElementById('label-valor-base');
         const input = document.getElementById('eqp-diaria');
         const tipoOrigem = document.getElementById('eqp-tipo-origem');
+        const hint = document.getElementById('eqp-hint-empreita');
         
         if (cat === 'Terceirizado') {
             label.innerText = 'Valor do Metro (R$)';
             input.placeholder = 'Ex: 50.00';
             tipoOrigem.value = 'terceirizado';
+            if (hint) hint.classList.add('hidden');
+        } else if (cat === 'Empreita') {
+            label.innerText = 'Valor Total do Contrato (R$)';
+            input.placeholder = 'Ex: 50000.00';
+            tipoOrigem.value = 'equipe';
+            if (hint) hint.classList.remove('hidden');
         } else {
             label.innerText = 'Valor da Diária (R$)';
             input.placeholder = '0.00';
             tipoOrigem.value = 'equipe';
+            if (hint) hint.classList.add('hidden');
         }
     }
 
@@ -3649,6 +3777,9 @@ function getColaboradoresUnificados() {
         if (c.tipo === 'diaria') {
             const saldo = calcularSaldoPendenteFuncionarioPorPeriodo(c.id, dataInicio, dataFim);
             quantidade = saldo.totalDiarias;
+        } else if (c.tipo === 'empreita') {
+            const resumo = calcularResumoEmpreita(c.id, dataInicio, dataFim);
+            quantidade = resumo.percentPendente;
         } else {
             // Para terceirizados: considera APENAS a produção ainda PENDENTE (não paga)
             const producao = STATE.producao_terc.filter(p => {
@@ -3666,7 +3797,7 @@ function getColaboradoresUnificados() {
             dados.push({
                 nome: c.nome,
                 quantidade: quantidade,
-                unidade: c.tipo === 'diaria' ? 'diárias' : 'm',
+                unidade: c.tipo === 'diaria' ? 'diárias' : (c.tipo === 'empreita' ? '%' : 'm'),
                 obra: obra ? obra.nome : 'Sem obra'
             });
         }
@@ -3704,7 +3835,7 @@ function getColaboradoresUnificados() {
                 <thead>
                     <tr style="background-color: #f1f5f9;">
                         <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: left;">Nome</th>
-                        <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: center;">Qtd. Diárias / Metros</th>
+                        <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: center;">Qtd. Diárias / Metros / %</th>
                         <th style="padding: 10px; border: 1px solid #cbd5e1; text-align: left;">Obra</th>
                     </tr>
                 </thead>
@@ -3752,4 +3883,375 @@ function getColaboradoresUnificados() {
           } finally {
               showLoading(false);
           }
+}
+
+function abrirModalSaldoEmpreita(equipeId) {
+    const func = STATE.equipe.find(e => e.id === equipeId);
+    if (!func) return;
+    document.getElementById('saldo-empreita-id').value = equipeId;
+    document.getElementById('saldo-empreita-subtitle').innerText =
+        `${func.nome} - Contrato: ${formatMoney(func.valor_diaria || 0)}`;
+    const hoje = new Date();
+    const anoAtual = hoje.getFullYear();
+    const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
+    const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
+    document.getElementById('saldo-empreita-data-inicio').value = `${anoAtual}-01-01`;
+    document.getElementById('saldo-empreita-data-fim').value = `${anoAtual}-${mesAtual}-${String(ultimoDia).padStart(2, '0')}`;
+    document.getElementById('saldo-empreita-filtro-status').value = 'PENDENTE';
+    document.getElementById('emp-medicao-data').value = getTodayDate();
+    document.getElementById('emp-medicao-percent').value = '';
+    document.getElementById('emp-medicao-valor').value = '';
+    document.getElementById('emp-medicao-descricao').value = '';
+    carregarTabelaSaldoEmpreita();
+    document.getElementById('modal-saldo-empreita').classList.remove('hidden');
+    lucide.createIcons();
+}
+
+function fecharModalSaldoEmpreita() {
+    document.getElementById('modal-saldo-empreita').classList.add('hidden');
+}
+
+function sincronizarCamposMedicaoEmpreita(origem) {
+    const equipeId = document.getElementById('saldo-empreita-id').value;
+    const func = STATE.equipe.find(e => e.id === equipeId);
+    if (!func) return;
+    const contrato = parseFloat(func.valor_diaria || 0);
+    if (contrato <= 0) return;
+    const inputPercent = document.getElementById('emp-medicao-percent');
+    const inputValor = document.getElementById('emp-medicao-valor');
+    if (origem === 'percent') {
+        const pct = parseFloat(inputPercent.value);
+        if (isNaN(pct)) { inputValor.value = ''; return; }
+        inputValor.value = ((pct / 100) * contrato).toFixed(2);
+    } else {
+        const valor = parseFloat(inputValor.value);
+        if (isNaN(valor)) { inputPercent.value = ''; return; }
+        inputPercent.value = ((valor / contrato) * 100).toFixed(2);
+    }
+}
+
+function carregarTabelaSaldoEmpreita() {
+    const equipeId = document.getElementById('saldo-empreita-id').value;
+    const dataInicio = document.getElementById('saldo-empreita-data-inicio').value;
+    const dataFim = document.getElementById('saldo-empreita-data-fim').value;
+    const statusFiltro = document.getElementById('saldo-empreita-filtro-status').value;
+    const func = STATE.equipe.find(e => e.id === equipeId);
+    if (!func) return;
+    const resumo = calcularResumoEmpreita(equipeId, dataInicio, dataFim);
+    document.getElementById('emp-card-contrato').innerText = formatMoney(resumo.valorContrato);
+    document.getElementById('emp-card-pago').innerText = formatMoney(resumo.valorPago);
+    document.getElementById('emp-card-pendente').innerText = formatMoney(resumo.valorPendentePeriodo);
+    document.getElementById('emp-card-saldo').innerText = formatMoney(resumo.saldoContrato);
+    document.getElementById('emp-card-percent').innerText = `${resumo.percentExecutado.toFixed(1)}% executado`;
+    let registros = resumo.medicoesPeriodo.slice();
+    if (statusFiltro === 'PENDENTE') registros = registros.filter(m => m.status !== 'PAGO');
+    else if (statusFiltro === 'PAGO') registros = registros.filter(m => m.status === 'PAGO');
+    const tbody = document.getElementById('saldo-empreita-tabela-body');
+    tbody.innerHTML = '';
+    let totalFiltro = 0;
+    if (registros.length === 0) {
+        document.getElementById('saldo-empreita-sem-registros').classList.remove('hidden');
+        document.getElementById('saldo-empreita-total-valor').innerText = formatMoney(0);
+        return;
+    }
+    document.getElementById('saldo-empreita-sem-registros').classList.add('hidden');
+    registros.sort((a, b) => new Date(a.data_medicao) - new Date(b.data_medicao)).forEach(m => {
+        const valor = parseFloat(m.valor || 0);
+        totalFiltro += valor;
+        const dataStr = new Date(m.data_medicao + 'T00:00:00').toLocaleDateString('pt-BR');
+        const status = m.status === 'PAGO' ? 'PAGO' : 'PENDENTE';
+        const tr = document.createElement('tr');
+        tr.className = 'border-b hover:bg-slate-50';
+        tr.innerHTML = `
+            <td class="p-3 font-bold text-slate-700">${dataStr}</td>
+            <td class="p-3 text-slate-700">${m.descricao || '-'}</td>
+            <td class="p-3 text-center font-black text-amber-700">${parseFloat(m.percentual || 0).toFixed(2)}%</td>
+            <td class="p-3 text-right font-black text-slate-800">${formatMoney(valor)}</td>
+            <td class="p-3 text-center">
+                <span class="px-2 py-1 rounded text-[9px] font-bold ${status === 'PAGO' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">${status}</span>
+            </td>
+            <td class="p-3 text-center">
+                <button onclick="excluirMedicaoEmpreitaAdmin('${m.id}')" class="text-slate-400 hover:text-amber-700 p-1 rounded transition" title="Acesso Restrito (Senha) - Excluir lançamento">
+                    <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+    document.getElementById('saldo-empreita-total-valor').innerText = formatMoney(totalFiltro);
+}
+
+function excluirMedicaoEmpreitaAdmin(medicaoId) {
+    const senha = prompt('🔐 Acesso Restrito. Digite a senha mestra:');
+    if (senha !== '147258369' && senha !== '150105199') {
+        alert('Senha incorreta. Acesso negado.');
+        return;
+    }
+    const medicao = obterMedicoesEmpreita().find(m => m.id === medicaoId);
+    if (!medicao) {
+        showToast('Lançamento não encontrado.', true);
+        return;
+    }
+    const msg = medicao.status === 'PAGO'
+        ? 'Este lançamento já está PAGO. Excluir mesmo assim? Ele sairá do histórico, mas a despesa financeira já lançada não será removida automaticamente.'
+        : 'Tem certeza que deseja excluir este lançamento? Esta ação não pode ser desfeita.';
+    if (!confirm(msg)) return;
+    showLoading(true);
+    (async () => {
+        try {
+            const { error } = await sb.from('jsp_medicoes_empreita').delete().eq('id', medicaoId);
+            if (error) throw error;
+        } catch (e) {
+            showToast('Excluído localmente. Ajuste a tabela jsp_medicoes_empreita no banco se necessário.');
+        }
+        STATE.medicoes_empreita = obterMedicoesEmpreita().filter(m => m.id !== medicaoId);
+        persistirMedicoesEmpreitaLocal();
+        showLoading(false);
+        carregarTabelaSaldoEmpreita();
+        renderEquipe();
+        showToast('Lançamento excluído.');
+    })();
+}
+
+async function lancarMedicaoEmpreita() {
+    const equipeId = document.getElementById('saldo-empreita-id').value;
+    const data = document.getElementById('emp-medicao-data').value;
+    const percentual = parseFloat(document.getElementById('emp-medicao-percent').value);
+    const valor = parseFloat(document.getElementById('emp-medicao-valor').value);
+    const descricao = (document.getElementById('emp-medicao-descricao').value || '').trim();
+    if (!data || isNaN(valor) || valor <= 0) {
+        return showToast('Preencha data e um valor/percentual válido.', true);
+    }
+    const func = STATE.equipe.find(e => e.id === equipeId);
+    if (!func) return;
+    const resumo = calcularResumoEmpreita(equipeId);
+    if (valor - resumo.saldoContrato > 0.009) {
+        return showToast(`Valor ultrapassa o saldo do contrato (${formatMoney(resumo.saldoContrato)}).`, true);
+    }
+    const payload = {
+        id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : ('emp-' + Date.now()),
+        equipe_id: equipeId,
+        obra_id: func.obra_atual_id || null,
+        data_medicao: data,
+        percentual: isNaN(percentual) ? 0 : percentual,
+        valor: valor,
+        descricao: descricao || 'Medição de empreita',
+        status: 'PENDENTE'
+    };
+    showLoading(true);
+    let persistiuRemoto = false;
+    try {
+        const { error } = await sb.from('jsp_medicoes_empreita').insert([payload]);
+        if (error) throw error;
+        persistiuRemoto = true;
+    } catch (err) {
+        persistiuRemoto = false;
+    }
+    STATE.medicoes_empreita = [...obterMedicoesEmpreita(), payload];
+    persistirMedicoesEmpreitaLocal();
+    showLoading(false);
+    document.getElementById('emp-medicao-percent').value = '';
+    document.getElementById('emp-medicao-valor').value = '';
+    document.getElementById('emp-medicao-descricao').value = '';
+    carregarTabelaSaldoEmpreita();
+    renderEquipe();
+    showToast(persistiuRemoto ? 'Medição lançada.' : 'Medição lançada localmente. Crie a tabela jsp_medicoes_empreita no banco para persistir.');
+}
+
+async function fecharPagamentoSaldoEmpreita() {
+    const equipeId = document.getElementById('saldo-empreita-id').value;
+    const dataInicio = document.getElementById('saldo-empreita-data-inicio').value;
+    const dataFim = document.getElementById('saldo-empreita-data-fim').value;
+    const func = STATE.equipe.find(e => e.id === equipeId);
+    if (!func) return;
+    let registros = obterMedicoesEmpreita().filter(m => m.equipe_id === equipeId && m.status !== 'PAGO');
+    if (dataInicio) registros = registros.filter(m => m.data_medicao >= dataInicio);
+    if (dataFim) registros = registros.filter(m => m.data_medicao <= dataFim);
+    if (registros.length === 0) return showToast('Nenhuma medição pendente para fechar.', true);
+    const valorTotal = registros.reduce((sum, r) => sum + parseFloat(r.valor || 0), 0);
+    const percentTotal = registros.reduce((sum, r) => sum + parseFloat(r.percentual || 0), 0);
+    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+    const periodoDesc = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
+    if (!confirm(`Fechar pagamento de ${formatMoney(valorTotal)} (${percentTotal.toFixed(2)}% do contrato)?`)) return;
+    showLoading(true);
+    const descricao = `Pagamento de empreita - ${func.nome} - Período ${periodoDesc}`;
+    try {
+        const { error: errFin } = await sb.from('jsp_logs').insert([{
+            id: getNextIdNum(STATE.logs).toString(),
+            obra_id: func.obra_atual_id ? parseInt(func.obra_atual_id) : null,
+            tipo: 'despesa',
+            produto_nome: descricao,
+            valor_total: valorTotal,
+            data: new Date().toISOString(),
+            vencimento: new Date().toISOString(),
+            status_financeiro: 'PENDENTE',
+            categoria: 'Mão de Obra (Empreita)',
+            observacao: `Fechamento de empreita - Colaborador: ${func.nome} - Percentual: ${percentTotal.toFixed(2)}% - Valor: ${valorTotal.toFixed(2)}`
+        }]);
+        if (errFin) throw errFin;
+        const ids = registros.map(r => r.id);
+        const { error: errMed } = await sb.from('jsp_medicoes_empreita').update({ status: 'PAGO' }).in('id', ids);
+        if (errMed) throw errMed;
+    } catch (err) {
+        STATE.logs.push({
+            id: getNextIdNum(STATE.logs).toString(),
+            obra_id: func.obra_atual_id ? parseInt(func.obra_atual_id) : null,
+            tipo: 'despesa',
+            produto_nome: descricao,
+            valor_total: valorTotal,
+            data: new Date().toISOString(),
+            vencimento: new Date().toISOString(),
+            status_financeiro: 'PENDENTE',
+            categoria: 'Mão de Obra (Empreita)',
+            observacao: `Fechamento de empreita - Colaborador: ${func.nome} - Percentual: ${percentTotal.toFixed(2)}% - Valor: ${valorTotal.toFixed(2)}`
+        });
+    }
+    const idsSet = new Set(registros.map(r => r.id));
+    STATE.medicoes_empreita = obterMedicoesEmpreita().map(m => idsSet.has(m.id) ? { ...m, status: 'PAGO' } : m);
+    persistirMedicoesEmpreitaLocal();
+    showLoading(false);
+    carregarTabelaSaldoEmpreita();
+    renderEquipe();
+    showToast('Pagamento fechado. Despesa lançada como pendente.');
+}
+
+async function estornarUltimoFechamentoEmpreita() {
+    const equipeId = document.getElementById('saldo-empreita-id').value;
+    const func = STATE.equipe.find(e => e.id === equipeId);
+    if (!func) return;
+    const despesas = STATE.logs.filter(l =>
+        l.tipo === 'despesa' &&
+        l.produto_nome && l.produto_nome.includes(`Pagamento de empreita - ${func.nome}`) &&
+        (l.status_financeiro === 'PENDENTE' || l.status_financeiro === 'PAGO')
+    ).sort((a, b) => new Date(b.data) - new Date(a.data));
+    if (despesas.length === 0) return showToast('Nenhum pagamento de empreita para estornar.', true);
+    const ultima = despesas[0];
+    if (!confirm(`Estornar o pagamento de ${formatMoney(ultima.valor_total)}? As medições voltam a ficar pendentes.`)) return;
+    showLoading(true);
+    try {
+        await sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }).eq('id', ultima.id).eq('tipo', 'despesa');
+    } catch (e) {}
+    ultima.status_financeiro = 'CANCELADO';
+    let periodoInicio = null;
+    let periodoFim = null;
+    const match = ultima.produto_nome.match(/Período (.*) a (.*)$/);
+    if (match) {
+        const pIni = match[1].split('/');
+        const pFim = match[2].split('/');
+        if (pIni.length === 3) periodoInicio = `${pIni[2]}-${pIni[1]}-${pIni[0]}`;
+        if (pFim.length === 3) periodoFim = `${pFim[2]}-${pFim[1]}-${pFim[0]}`;
+    }
+    STATE.medicoes_empreita = obterMedicoesEmpreita().map(m => {
+        if (m.equipe_id !== equipeId || m.status !== 'PAGO') return m;
+        if (periodoInicio && m.data_medicao < periodoInicio) return m;
+        if (periodoFim && m.data_medicao > periodoFim) return m;
+        return { ...m, status: 'PENDENTE' };
+    });
+    persistirMedicoesEmpreitaLocal();
+    try {
+        const ids = STATE.medicoes_empreita.filter(m => m.equipe_id === equipeId && m.status === 'PENDENTE').map(m => m.id);
+        if (ids.length) await sb.from('jsp_medicoes_empreita').update({ status: 'PENDENTE' }).in('id', ids);
+    } catch (e) {}
+    showLoading(false);
+    carregarTabelaSaldoEmpreita();
+    renderEquipe();
+    showToast('Fechamento estornado.');
+}
+
+function imprimirReciboEmpreitaDoModal() {
+    const equipeId = document.getElementById('saldo-empreita-id').value;
+    const func = STATE.equipe.find(e => e.id === equipeId);
+    if (!func) return;
+    const dataInicio = document.getElementById('saldo-empreita-data-inicio').value;
+    const dataFim = document.getElementById('saldo-empreita-data-fim').value;
+    const resumo = calcularResumoEmpreita(equipeId, dataInicio, dataFim);
+    const valorTotal = resumo.valorPendentePeriodo;
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+    const periodo = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
+    const html = `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
+                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
+                <div style="text-align: right;">
+                    <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO DE EMPREITA</h1>
+                    <p style="margin: 5px 0 0 0; font-size: 18px; color: #b45309; font-weight: bold;">VALOR: ${formatMoney(valorTotal)}</p>
+                </div>
+            </div>
+            <div style="font-size: 14px; line-height: 1.8; text-align: justify; margin-bottom: 40px;">
+                Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA LTDA</strong> (CNPJ: 61.893.912/0001-24), a importância de <strong>${formatMoney(valorTotal)}</strong>,
+                referente à medição de serviços por empreitada no período de <strong>${periodo}</strong>,
+                correspondendo a <strong>${resumo.percentPendente.toFixed(2)}%</strong> do contrato de <strong>${formatMoney(resumo.valorContrato)}</strong>.
+                Saldo restante do contrato: <strong>${formatMoney(resumo.saldoContrato)}</strong>.
+            </div>
+            <div style="text-align: center; margin-bottom: 30px; font-size: 14px;">Jataí - GO, ${hoje}.</div>
+            <div style="margin-top: 60px; display: flex; justify-content: center;">
+                <div style="text-align: center; width: 60%; border-top: 1px solid #000; padding-top: 10px;">
+                    <strong>${(func.nome || '').toUpperCase()}</strong><br>
+                    <span style="font-size: 12px; color: #64748b;">CPF: ${func.cpf || '_______________________'}</span>
+                </div>
+            </div>
+        </div>
+    `;
+    document.getElementById('print-area').innerHTML = html;
+    setTimeout(() => window.print(), 300);
+}
+
+function imprimirExtratoEmpreita() {
+    const equipeId = document.getElementById('saldo-empreita-id').value;
+    const func = STATE.equipe.find(e => e.id === equipeId);
+    if (!func) return;
+    const dataInicio = document.getElementById('saldo-empreita-data-inicio').value;
+    const dataFim = document.getElementById('saldo-empreita-data-fim').value;
+    const statusFiltro = document.getElementById('saldo-empreita-filtro-status').value;
+    const resumo = calcularResumoEmpreita(equipeId, dataInicio, dataFim);
+    let registros = resumo.medicoesPeriodo.slice();
+    if (statusFiltro === 'PENDENTE') registros = registros.filter(m => m.status !== 'PAGO');
+    else if (statusFiltro === 'PAGO') registros = registros.filter(m => m.status === 'PAGO');
+    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : 'Início';
+    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : 'Fim';
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    let linhas = registros.sort((a, b) => new Date(a.data_medicao) - new Date(b.data_medicao)).map(m => {
+        const dataStr = new Date(m.data_medicao + 'T00:00:00').toLocaleDateString('pt-BR');
+        return `<tr>
+            <td style="padding:10px;border:1px solid #cbd5e1;">${dataStr}</td>
+            <td style="padding:10px;border:1px solid #cbd5e1;">${m.descricao || '-'}</td>
+            <td style="padding:10px;border:1px solid #cbd5e1;text-align:center;">${parseFloat(m.percentual || 0).toFixed(2)}%</td>
+            <td style="padding:10px;border:1px solid #cbd5e1;text-align:right;">${formatMoney(m.valor)}</td>
+            <td style="padding:10px;border:1px solid #cbd5e1;text-align:center;">${m.status === 'PAGO' ? 'PAGO' : 'PENDENTE'}</td>
+        </tr>`;
+    }).join('');
+    const html = `
+        <div style="font-family:'Segoe UI',Arial;padding:30px;">
+            <div style="display:flex;justify-content:space-between;border-bottom:3px solid #b45309;padding-bottom:15px;margin-bottom:25px;">
+                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height:70px;">
+                <div>
+                    <h1 style="margin:0;font-size:24px;">EXTRATO DE EMPREITA</h1>
+                    <p style="margin:5px 0 0 0;color:#b45309;">${func.nome}</p>
+                    <p>Período: ${dataIniFormatada} a ${dataFimFormatada} | Contrato: ${formatMoney(resumo.valorContrato)}</p>
+                </div>
+            </div>
+            <div style="margin-bottom:16px;font-size:13px;">
+                Pago: <strong>${formatMoney(resumo.valorPago)}</strong> |
+                Pendente: <strong>${formatMoney(resumo.valorPendentePeriodo)}</strong> |
+                Saldo: <strong>${formatMoney(resumo.saldoContrato)}</strong> |
+                Executado: <strong>${resumo.percentExecutado.toFixed(1)}%</strong>
+            </div>
+            <table width="100%" style="border-collapse:collapse;font-size:12px;">
+                <thead><tr style="background:#f1f5f9;">
+                    <th style="padding:10px;border:1px solid #cbd5e1;text-align:left;">Data</th>
+                    <th style="padding:10px;border:1px solid #cbd5e1;text-align:left;">Serviço</th>
+                    <th style="padding:10px;border:1px solid #cbd5e1;text-align:center;">%</th>
+                    <th style="padding:10px;border:1px solid #cbd5e1;text-align:right;">Valor</th>
+                    <th style="padding:10px;border:1px solid #cbd5e1;text-align:center;">Status</th>
+                </tr></thead>
+                <tbody>${linhas || '<tr><td colspan="5" style="padding:12px;text-align:center;">Sem medições</td></tr>'}</tbody>
+            </table>
+            <div style="text-align:center;margin-top:30px;font-size:11px;color:#64748b;">Emitido em ${hoje} - RV Negócios</div>
+        </div>
+    `;
+    document.getElementById('print-area').innerHTML = html;
+    setTimeout(() => window.print(), 300);
 }
