@@ -141,7 +141,9 @@
                 localStorage.setItem('rv_user', JSON.stringify({
                     id: data.id,
                     nome: data.nome,
-                    nivel: data.nivel_acesso
+                    nivel: data.nivel_acesso,
+                    email: authData.user.email || data.email || null,
+                    pode_gerenciar: data.pode_gerenciar === true
                 }));
 
                 // Redireciona

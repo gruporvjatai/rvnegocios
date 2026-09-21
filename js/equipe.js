@@ -800,7 +800,7 @@ function carregarTabelaSaldo() {
                     <span class="px-2 py-1 rounded text-[9px] font-bold ${pts.registros[0].pago_em_fechamento ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">
                         ${pts.registros[0].pago_em_fechamento ? 'PAGO' : 'PENDENTE'}
                     </span>
-                    <button onclick="abrirModalAdminRegistros('${funcId}')" class="text-slate-400 hover:text-indigo-600 p-1 rounded transition" title="Acesso Restrito (Senha)">
+                    <button onclick="abrirModalAdminRegistros('${funcId}')" class="text-slate-400 hover:text-indigo-600 p-1 rounded transition" title="Acesso restrito">
                         <i data-lucide="shield-alert" class="w-4 h-4"></i>
                     </button>
                 </div>
@@ -905,7 +905,7 @@ function carregarTabelaSaldoMetros() {
           <td class="p-3 text-center">
               <div class="flex items-center justify-center gap-2">
                   <span class="px-2 py-1 rounded text-[9px] font-bold ${status === 'PAGO' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">${status}</span>
-                  <button onclick="abrirModalAdminRegistrosMetros('${tercId}')" class="text-slate-400 hover:text-indigo-600 p-1 rounded transition" title="Acesso Restrito (Senha)">
+                  <button onclick="abrirModalAdminRegistrosMetros('${tercId}')" class="text-slate-400 hover:text-indigo-600 p-1 rounded transition" title="Acesso restrito">
                       <i data-lucide="shield-alert" class="w-4 h-4"></i>
                   </button>
               </div>
@@ -924,9 +924,8 @@ function carregarTabelaSaldoMetros() {
 
       // ========== MODAL ADMINISTRATIVO DE METROS ==========
 async function abrirModalAdminRegistrosMetros(tercId) {
-    const senha = prompt("🔐 Acesso Restrito. Digite a senha mestra:");
-    if (senha !== "147258369" && senha !== "150105199") {
-        alert("Senha incorreta. Acesso negado.");
+    if (typeof usuarioPodeGerenciar !== 'function' || !usuarioPodeGerenciar()) {
+        alert("Acesso restrito. Permissão de gerenciamento necessária.");
         return;
     }
     
@@ -1368,9 +1367,8 @@ function imprimirReciboMetrosDoModal() {
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
       async function excluirRegistroPonto(registroId) {
-          const senha = prompt("🔐 Ação restrita. Digite a senha mestra para excluir o registro:");
-          if (senha !== "147258369") {
-              alert("Senha incorreta. Operação cancelada.");
+          if (typeof usuarioPodeGerenciar !== 'function' || !usuarioPodeGerenciar()) {
+              alert("Acesso restrito. Permissão de gerenciamento necessária.");
               return;
           }
           if (!confirm("Tem certeza que deseja excluir este registro permanentemente? Esta ação não pode ser desfeita.")) {
@@ -3510,9 +3508,8 @@ function imprimirRelatorioTerc() {
       // ========== MODAL ADMINISTRATIVO DE REGISTROS ==========
 
 async function abrirModalAdminRegistros(funcId) {
-    const senha = prompt("🔐 Acesso Restrito. Digite a senha mestra:");
-    if (senha !== "147258369") {
-        alert("Senha incorreta. Acesso negado.");
+    if (typeof usuarioPodeGerenciar !== 'function' || !usuarioPodeGerenciar()) {
+        alert("Acesso restrito. Permissão de gerenciamento necessária.");
         return;
     }
     
@@ -4021,7 +4018,7 @@ function carregarTabelaSaldoEmpreita() {
                 <span class="px-2 py-1 rounded text-[9px] font-bold ${status === 'PAGO' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">${status}</span>
             </td>
             <td class="p-3 text-center">
-                <button onclick="excluirMedicaoEmpreitaAdmin('${m.id}')" class="text-slate-400 hover:text-amber-700 p-1 rounded transition" title="Acesso Restrito (Senha) - Excluir lançamento">
+                <button onclick="excluirMedicaoEmpreitaAdmin('${m.id}')" class="text-slate-400 hover:text-amber-700 p-1 rounded transition" title="Acesso restrito - Excluir lançamento">
                     <i data-lucide="shield-alert" class="w-4 h-4"></i>
                 </button>
             </td>
@@ -4032,9 +4029,8 @@ function carregarTabelaSaldoEmpreita() {
 }
 
 function excluirMedicaoEmpreitaAdmin(medicaoId) {
-    const senha = prompt('🔐 Acesso Restrito. Digite a senha mestra:');
-    if (senha !== '147258369' && senha !== '150105199') {
-        alert('Senha incorreta. Acesso negado.');
+    if (typeof usuarioPodeGerenciar !== 'function' || !usuarioPodeGerenciar()) {
+        alert('Acesso restrito. Permissão de gerenciamento necessária.');
         return;
     }
     const medicao = obterMedicoesEmpreita().find(m => m.id === medicaoId);
