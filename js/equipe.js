@@ -5,6 +5,27 @@
  * com base nos registros da tabela jsp_ponto_diario (status = 'VALIDADO' e ainda não incluídas em fechamento).
  * Retorna um objeto: { totalDiarias: number, registros: array }
  */
+// ====== HELPERS DE PERÍODO / SEGURANÇA ======
+// Interpreta o período gravado na descrição de um fechamento.
+// Suporta o formato atual "Período DD/MM/YYYY a DD/MM/YYYY" e o formato
+// antigo "Período MM/YYYY". Retorna { inicio: 'YYYY-MM-DD', fim: 'YYYY-MM-DD' }
+// ou null quando não há datas (ex.: "período selecionado").
+function rvParsePeriodo(texto) {
+    if (!texto) return null;
+    let m = String(texto).match(/Per[ií]odo\s+(\d{2})\/(\d{2})\/(\d{4})\s+a\s+(\d{2})\/(\d{2})\/(\d{4})/i);
+    if (m) {
+        return { inicio: `${m[3]}-${m[2]}-${m[1]}`, fim: `${m[6]}-${m[5]}-${m[4]}` };
+    }
+    m = String(texto).match(/Per[ií]odo\s+(\d{2})\/(\d{4})/i);
+    if (m) {
+        const mes = m[1];
+        const ano = m[2];
+        const ultimoDia = new Date(parseInt(ano, 10), parseInt(mes, 10), 0).getDate();
+        return { inicio: `${ano}-${mes}-01`, fim: `${ano}-${mes}-${String(ultimoDia).padStart(2, '0')}` };
+    }
+    return null;
+}
+
   // ====== CRUD EQUIPE E PONTO ======
       function renderEquipe() {
             const term = document.getElementById('eqp-search').value.toLowerCase();
@@ -1074,9 +1095,10 @@ async function fecharPagamentoSaldoMetros() {
     
     showLoading(true);
     
+    const logId = getNextIdNum(STATE.logs).toString();
     const descricao = `Pagamento de metragem - ${terc.nome} - Período ${periodoDesc}`;
     const { error: errFin } = await sb.from('jsp_logs').insert([{
-        id: getNextIdNum(STATE.logs).toString(),
+        id: logId,
         obra_id: terc.obra_atual_id ? parseInt(terc.obra_atual_id) : null,
         tipo: 'despesa',
         produto_nome: descricao,
@@ -1099,6 +1121,11 @@ async function fecharPagamentoSaldoMetros() {
         .in('id', ids);
     
     if (errProd) {
+        // Compensação: cancela a despesa recém-criada para não furar o caixa
+        await sb.from('jsp_logs')
+            .update({ status_financeiro: 'CANCELADO' })
+            .eq('id', logId)
+            .eq('tipo', 'despesa');
         showLoading(false);
         return showToast('Erro ao atualizar registros: ' + errProd.message, true);
     }
@@ -1172,6 +1199,11 @@ async function estornarUltimoFechamentoMetros() {
     const { error: errProd } = await query;
 
     if (errProd) {
+        // Compensação: restaura a despesa cancelada para manter o caixa consistente
+        await sb.from('jsp_logs')
+            .update({ status_financeiro: ultimaDespesa.status_financeiro })
+            .eq('id', ultimaDespesa.id)
+            .eq('tipo', 'despesa');
         showLoading(false);
         return showToast('Erro ao reverter registros de metragem: ' + errProd.message, true);
     }
@@ -1448,9 +1480,10 @@ async function fecharPagamentoSaldo() {
     
     showLoading(true);
     
+    const logId = getNextIdNum(STATE.logs).toString();
     const descricao = `Pagamento de ponto - ${func.nome} - Período ${periodoDesc}`;
     const { error: errFin } = await sb.from('jsp_logs').insert([{
-        id: getNextIdNum(STATE.logs).toString(),
+        id: logId,
         obra_id: func.obra_atual_id ? parseInt(func.obra_atual_id) : null,
         tipo: 'despesa',
         produto_nome: descricao,
@@ -1473,6 +1506,11 @@ async function fecharPagamentoSaldo() {
         .in('id', ids);
     
     if (errPonto) {
+        // Compensação: cancela a despesa recém-criada para não furar o caixa
+        await sb.from('jsp_logs')
+            .update({ status_financeiro: 'CANCELADO' })
+            .eq('id', logId)
+            .eq('tipo', 'despesa');
         showLoading(false);
         return showToast('Erro ao atualizar registros: ' + errPonto.message, true);
     }
@@ -2092,15 +2130,18 @@ async function estornarUltimoFechamento() {
 
     const ultimaDespesa = despesas[0];
     
-    // Extrai mês/ano da descrição (formato "Pagamento de ponto - Nome - Período MM/AAAA")
-    let mesAno = null;
-    const match = ultimaDespesa.produto_nome.match(/Período (\d{2})\/(\d{4})/);
-    if (match) {
-        mesAno = { mes: match[1], ano: match[2] };
-    }
+    // Extrai o período da descrição (formatos "Período DD/MM/YYYY a DD/MM/YYYY"
+    // e o legado "Período MM/YYYY"). Sem datas, estorna todos os registros fechados.
+    const periodo = rvParsePeriodo(ultimaDespesa.produto_nome);
 
     let confirmMsg = `Estornar o pagamento de ${formatMoney(ultimaDespesa.valor_total)} (${ultimaDespesa.status_financeiro})?`;
-    if (mesAno) confirmMsg += `\nPeríodo: ${mesAno.mes}/${mesAno.ano}`;
+    if (periodo) {
+        const iniBr = periodo.inicio.split('-').reverse().join('/');
+        const fimBr = periodo.fim.split('-').reverse().join('/');
+        confirmMsg += `\nPeríodo: ${iniBr} a ${fimBr}`;
+    } else {
+        confirmMsg += `\nPeríodo: todos os registros fechados`;
+    }
     confirmMsg += `\n\nOs registros de ponto voltarão a ficar pendentes.`;
     
     if (!confirm(confirmMsg)) return;
@@ -2124,21 +2165,20 @@ async function estornarUltimoFechamento() {
         .eq('funcionario_id', funcId)
         .eq('pago_em_fechamento', true);
 
-    if (mesAno) {
-        const { mes, ano } = mesAno;
-        // Calcula o último dia do mês corretamente (lida com fevereiro e anos bissextos)
-        const ultimoDia = new Date(ano, mes, 0).getDate();
-        const dataInicio = `${ano}-${mes}-01`;
-        const dataFim = `${ano}-${mes}-${String(ultimoDia).padStart(2, '0')}`;
-        
+    if (periodo) {
         query = query
-            .gte('hora_registro', dataInicio)
-            .lte('hora_registro', dataFim);
+            .gte('hora_registro', periodo.inicio + 'T00:00:00')
+            .lte('hora_registro', periodo.fim + 'T23:59:59');
     }
 
     const { error: errPonto } = await query;
 
     if (errPonto) {
+        // Compensação: restaura a despesa cancelada para manter o caixa consistente
+        await sb.from('jsp_logs')
+            .update({ status_financeiro: ultimaDespesa.status_financeiro })
+            .eq('id', ultimaDespesa.id)
+            .eq('tipo', 'despesa');
         showLoading(false);
         return showToast('Erro ao reverter registros de ponto: ' + errPonto.message, true);
     }
@@ -2388,13 +2428,16 @@ async function estornarUltimoFechamento() {
             if(!confirm("Deseja confirmar o pagamento deste mês? Isso criará uma Despesa automática na Obra atual do funcionário.")) return;
             showLoading(true);
 
-            const mes = document.getElementById('eqp-filter-mes').value;
-            const ano = document.getElementById('eqp-filter-ano').value;
             const e = STATE.equipe.find(x => x.id == equipe_id);
             const pt = STATE.ponto.find(x => x.id == ponto_id);
 
             if(!e || !pt) { showLoading(false); return showToast("Dados inconsistentes", true); }
             if(!e.obra_atual_id) { showLoading(false); return showToast("Funcionário precisa estar vinculado a uma obra para lançar a despesa.", true); }
+
+            // Mês/ano de referência vêm do próprio registro de ponto (não dependem de filtros de tela)
+            const mes = pt.mes;
+            const ano = pt.ano;
+            const statusAnterior = pt.status || 'PENDENTE';
 
             const dtPagamento = new Date().toISOString();
             
@@ -2403,9 +2446,10 @@ async function estornarUltimoFechamento() {
             if(errPt) { showLoading(false); return showToast("Erro: " + errPt.message, true); }
 
             // 2. Lançar no Financeiro
+            const logId = getNextIdNum(STATE.logs).toString();
             const desc = `Pagamento Mensal (${mes}/${ano}) - ${e.nome}`;
             const { error: errFin } = await sb.from('jsp_logs').insert([{
-                id: getNextIdNum(STATE.logs).toString(),
+                id: logId,
                 obra_id: parseInt(e.obra_atual_id),
                 tipo: 'despesa',
                 produto_nome: desc,
@@ -2416,8 +2460,14 @@ async function estornarUltimoFechamento() {
                 observacao: `Tipo: Mão de Obra | Equipe: ${e.nome} | Dias Trab: ${pt.total_dias}`
             }]);
 
-            if(errFin) { showLoading(false); return showToast("Erro financeiro: " + errFin.message, true); }
+            if(errFin) {
+                // Compensação: reverte o ponto para não deixar o pagamento pela metade
+                await sb.from('jsp_ponto').update({ status: statusAnterior, data_pagamento: null }).eq('id', ponto_id);
+                showLoading(false);
+                return showToast("Erro financeiro: " + errFin.message, true);
+            }
             
+            showLoading(false);
             showToast("Pagamento e Despesa lançados com sucesso!"); loadData();
         }
 function abrirModalFolhaPagamento() {

@@ -3656,14 +3656,17 @@
             
             showLoading(true);
 
-            const mes = document.getElementById('eqp-filter-mes').value;
-            const ano = document.getElementById('eqp-filter-ano').value;
             const e = STATE.equipe.find(x => x.id == equipe_id);
+            const pt = STATE.ponto.find(x => x.id == ponto_id);
 
-            if(!e) { 
+            if(!e || !pt) { 
                 showLoading(false); 
                 return showToast("Dados do funcionário não encontrados.", true); 
             }
+
+            // Mês/ano de referência vêm do próprio registro de ponto
+            const mes = pt.mes;
+            const ano = pt.ano;
 
             // 1. Volta o status do Ponto para PENDENTE
             const { error: errPt } = await sb.from('jsp_ponto')
