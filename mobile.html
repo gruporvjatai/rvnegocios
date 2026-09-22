@@ -832,6 +832,7 @@
 
     <div id="print-area" class="print-only"></div>
 
+    <script src="js/equipe-core.js"></script>
     <script>
         // ====== CONEXÃO E ESTADO ======
         let dadosUsuario = null;
@@ -1006,26 +1007,7 @@
       
          function getNextIdNum(array) { let max=0; array.forEach(item=>{ const val=parseInt(item.id); if(!isNaN(val) && val>max) max=val; }); return max+1; }
 
-         // A PK real de jsp_logs é "uid". O "id" numérico não é único (max+1 pode
-         // colidir), então update/delete deve filtrar por uid quando existir.
-        // ====== MOTOR UNICO DE DIARIA (presenca por periodo) ======
-        function rvRoundHalfDown(v) { if (v <= 0) return 0; if (v >= 1) return 1; const c = v * 100; const d = c - Math.floor(c); if (Math.abs(d - 0.5) < 0.0001) return Math.floor(c) / 100; return Math.round(c) / 100; }
-        function rvHoraDate(r) { return new Date(r.hora_registro !== undefined ? r.hora_registro : r.hora); }
-        function rvFracaoDiaria(regs) {
-            const aj = regs.filter(r => r.tipo === 'AJUSTE_MANUAL').reduce((s, r) => s + (parseFloat(r.fracao_diaria) || 0), 0);
-            const ent = regs.filter(r => r.tipo === 'ENTRADA');
-            if (ent.length === 0) return rvRoundHalfDown(Math.min(aj, 1));
-            const manha = ent.some(r => rvHoraDate(r).getUTCHours() < 12);
-            const tarde = ent.some(r => rvHoraDate(r).getUTCHours() >= 12);
-            return rvRoundHalfDown(Math.min((manha ? 0.5 : 0) + (tarde ? 0.5 : 0) + aj, 1));
-        }
-        function rvCalcularTotalDiarias(regs) {
-            if (!regs || regs.length === 0) return 0;
-            const porChave = new Map();
-            regs.forEach(p => { const dia = new Date(p.hora_registro).toLocaleDateString('pt-BR', { timeZone: 'UTC' }); const k = (p.funcionario_id || '') + '|' + dia; if (!porChave.has(k)) porChave.set(k, []); porChave.get(k).push(p); });
-            let tt = 0; for (const g of porChave.values()) tt += rvFracaoDiaria(g); return tt;
-        }
-         function refLog(query, log) { return (log && log.uid) ? query.eq('uid', log.uid) : query.eq('id', log.id); }
+
          function updateSelects() {
             const htmlObras = '<option value="">Todas Obras</option>'+STATE.obras.map(o=>`<option value="${o.id}">${o.nome}</option>`).join('');
             const htmlObrasStrict = '<option value="">-- Selecione Obra --</option>'+STATE.obras.map(o=>`<option value="${o.id}">${o.nome}</option>`).join('');
@@ -1362,23 +1344,7 @@
             if(error){ showLoading(false); return showToast('Erro: '+error.message,true); }
             await loadData(); carregarTabelaSaldo(); showToast('Ajuste lançado!');
         }
-// Interpreta o período gravado na descrição de um fechamento.
-// Formatos: "Período DD/MM/YYYY a DD/MM/YYYY" e "Período MM/YYYY" (legado).
-function rvParsePeriodo(texto) {
-    if (!texto) return null;
-    let m = String(texto).match(/Per[ií]odo\s+(\d{2})\/(\d{2})\/(\d{4})\s+a\s+(\d{2})\/(\d{2})\/(\d{4})/i);
-    if (m) {
-        return { inicio: `${m[3]}-${m[2]}-${m[1]}`, fim: `${m[6]}-${m[5]}-${m[4]}` };
-    }
-    m = String(texto).match(/Per[ií]odo\s+(\d{2})\/(\d{4})/i);
-    if (m) {
-        const mes = m[1];
-        const ano = m[2];
-        const ultimoDia = new Date(parseInt(ano, 10), parseInt(mes, 10), 0).getDate();
-        return { inicio: `${ano}-${mes}-01`, fim: `${ano}-${mes}-${String(ultimoDia).padStart(2, '0')}` };
-    }
-    return null;
-}
+
 
         async function fecharPagamentoSaldo() {
     const funcId = document.getElementById('saldo-equipe-id').value;
@@ -1725,11 +1691,7 @@ async function estornarUltimoFechamentoMetros() {
     if (match) periodo = match[1];
 
     // Vinculação: registros de produção marcados com o fechamento (uid) desta despesa.
-    const vinculadosMetro = (STATE.producao_terc || []).filter(p =>
-        p.terceirizado_id === tercId &&
-        p.status === 'PAGO' &&
-        p.fechamento_uid === ultimaDespesa.uid
-    );
+    const vinculadosMetro = rvSelecionarVinculadosMetro(STATE.producao_terc, tercId, ultimaDespesa);
 
     let confirmMsg = `Estornar o pagamento de ${formatMoney(ultimaDespesa.valor_total)} (${ultimaDespesa.status_financeiro})?`;
     if (periodo) confirmMsg += `\nPeríodo: ${periodo}`;
@@ -1940,15 +1902,7 @@ function imprimirReciboDoModal() {
     const periodo = rvParsePeriodo(ultimaDespesa.produto_nome);
 
     // Vinculação: registros de ponto marcados com o fechamento (uid) ou despesa_id.
-    const vinculados = STATE.ponto_diario.filter(p =>
-        p.funcionario_id === funcId &&
-        p.pago_em_fechamento &&
-        (p.fechamento_uid === ultimaDespesa.uid || String(p.despesa_id) === String(ultimaDespesa.id)) &&
-        (!periodo || (
-            p.hora_registro >= periodo.inicio + 'T00:00:00' &&
-            p.hora_registro <= periodo.fim + 'T23:59:59'
-        ))
-    );
+    const vinculados = rvSelecionarVinculadosDiaria(STATE.ponto_diario, funcId, ultimaDespesa, periodo);
 
     let confirmMsg = `Estornar o pagamento de ${formatMoney(ultimaDespesa.valor_total)} (${ultimaDespesa.status_financeiro})?`;
     if (periodo) {

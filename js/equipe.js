@@ -5,80 +5,7 @@
  * com base nos registros da tabela jsp_ponto_diario (status = 'VALIDADO' e ainda não incluídas em fechamento).
  * Retorna um objeto: { totalDiarias: number, registros: array }
  */
-// ====== HELPERS DE PERÍODO / SEGURANÇA ======
-// Interpreta o período gravado na descrição de um fechamento.
-// Suporta o formato atual "Período DD/MM/YYYY a DD/MM/YYYY" e o formato
-// antigo "Período MM/YYYY". Retorna { inicio: 'YYYY-MM-DD', fim: 'YYYY-MM-DD' }
-// ou null quando não há datas (ex.: "período selecionado").
-function rvParsePeriodo(texto) {
-    if (!texto) return null;
-    let m = String(texto).match(/Per[ií]odo\s+(\d{2})\/(\d{2})\/(\d{4})\s+a\s+(\d{2})\/(\d{2})\/(\d{4})/i);
-    if (m) {
-        return { inicio: `${m[3]}-${m[2]}-${m[1]}`, fim: `${m[6]}-${m[5]}-${m[4]}` };
-    }
-    m = String(texto).match(/Per[ií]odo\s+(\d{2})\/(\d{4})/i);
-    if (m) {
-        const mes = m[1];
-        const ano = m[2];
-        const ultimoDia = new Date(parseInt(ano, 10), parseInt(mes, 10), 0).getDate();
-        return { inicio: `${ano}-${mes}-01`, fim: `${ano}-${mes}-${String(ultimoDia).padStart(2, '0')}` };
-    }
-    return null;
-}
 
-// ====== MOTOR ÚNICO DE DIÁRIA (presença por período) ======
-// A jornada da obra é fixa (manhã 07:00-11:00 e tarde 13:00-17:00) e o sistema
-// externo registra a ENTRADA, gerando a SAÍDA automaticamente. Ou seja, o que
-// define a diária é a PRESENÇA no período, não o horário exato:
-//   - presença de manhã = alguma ENTRADA antes de 12:00
-//   - presença de tarde = alguma ENTRADA a partir de 12:00
-//   - diária = 0.5 por período presente (dia completo = 1.0)
-// As SAÍDAS são ignoradas no cálculo. AJUSTE_MANUAL entra como override/soma.
-// Este é o único motor de diária do sistema (desktop e mobile).
-function rvRoundHalfDown(v) {
-    if (v <= 0) return 0;
-    if (v >= 1) return 1;
-    const cents = v * 100;
-    const dec = cents - Math.floor(cents);
-    if (Math.abs(dec - 0.5) < 0.0001) return Math.floor(cents) / 100;
-    return Math.round(cents) / 100;
-}
-
-// Aceita registros com "hora_registro" (linha do banco) ou "hora" (Date já pronto).
-function rvHoraDate(r) {
-    return new Date(r.hora_registro !== undefined ? r.hora_registro : r.hora);
-}
-
-// Fração de UM dia (registros de um único funcionário em uma única data).
-function rvFracaoDiaria(registrosDoDia) {
-    const ajustes = registrosDoDia
-        .filter(r => r.tipo === 'AJUSTE_MANUAL')
-        .reduce((s, r) => s + (parseFloat(r.fracao_diaria) || 0), 0);
-
-    const entradas = registrosDoDia.filter(r => r.tipo === 'ENTRADA');
-    if (entradas.length === 0) return rvRoundHalfDown(Math.min(ajustes, 1));
-
-    const manha = entradas.some(r => rvHoraDate(r).getUTCHours() < 12);
-    const tarde = entradas.some(r => rvHoraDate(r).getUTCHours() >= 12);
-    const base = (manha ? 0.5 : 0) + (tarde ? 0.5 : 0);
-
-    return rvRoundHalfDown(Math.min(base + ajustes, 1));
-}
-
-// Total de diárias de uma lista de registros (agrupa por funcionário + dia).
-function rvCalcularTotalDiarias(registros) {
-    if (!registros || registros.length === 0) return 0;
-    const porChave = new Map();
-    registros.forEach(p => {
-        const dia = new Date(p.hora_registro).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
-        const chave = `${p.funcionario_id || ''}|${dia}`;
-        if (!porChave.has(chave)) porChave.set(chave, []);
-        porChave.get(chave).push(p);
-    });
-    let total = 0;
-    for (const regs of porChave.values()) total += rvFracaoDiaria(regs);
-    return total;
-}
 
   // ====== CRUD EQUIPE E PONTO ======
       function renderEquipe() {
@@ -364,13 +291,7 @@ function calcularSaldoPendenteFuncionario(funcId, mesFiltro = null, anoFiltro = 
 
 
     
-      // Cálculo da fração do dia (entradas/saídas + ajustes manuais)
-      // Tolerância: 10 minutos por período (manhã e tarde)
-      // ==========================================================
-      function calcularFracaoDia(registros) {
-          const ajustes = registros.filter(r => r.tipo === 'AJUSTE_MANUAL').reduce((s, r) => s + (parseFloat(r.fracao_diaria) || 0), 0);
-          return { fracao: rvFracaoDiaria(registros), ajustes: ajustes };
-      }
+
 
       
 
@@ -833,15 +754,7 @@ async function lancarAjusteManualMetros() {
     showToast('Ajuste lançado com sucesso!');
 }
 
-// A PK real de jsp_logs é "uid" (uuid). O campo "id" numérico NÃO é único
-// (é gerado por max+1 no front e pode colidir entre lançamentos), então usá-lo
-// em update/delete pode cancelar/baixar outros registros. Sempre que o
-// lançamento tiver uid, filtra por ele; mantém "id" apenas como fallback para
-// registros locais ainda sem uid.
-function filtrarLogPorRef(query, log) {
-    if (log && log.uid) return query.eq('uid', log.uid);
-    return query.eq('id', log.id);
-}
+
 
 async function fecharPagamentoSaldoMetros() {
     const tercId = document.getElementById('saldo-terc-id').value;
@@ -944,11 +857,7 @@ async function estornarUltimoFechamentoMetros() {
     }
 
     // Vinculação: registros de produção marcados com o fechamento (uid) desta despesa.
-    const vinculadosMetro = (STATE.producao_terc || []).filter(p =>
-        p.terceirizado_id === tercId &&
-        p.status === 'PAGO' &&
-        p.fechamento_uid === ultimaDespesa.uid
-    );
+    const vinculadosMetro = rvSelecionarVinculadosMetro(STATE.producao_terc, tercId, ultimaDespesa);
 
     let confirmMsg = `Estornar o pagamento de ${formatMoney(ultimaDespesa.valor_total)} (${ultimaDespesa.status_financeiro})?`;
     if (periodo) confirmMsg += `\nPeríodo: ${periodo}`;
@@ -1832,15 +1741,7 @@ async function estornarUltimoFechamento() {
     const periodo = rvParsePeriodo(ultimaDespesa.produto_nome);
 
     // Vinculação: registros de ponto marcados com o fechamento (uid) ou despesa_id.
-    const vinculados = STATE.ponto_diario.filter(p =>
-        p.funcionario_id === funcId &&
-        p.pago_em_fechamento &&
-        (p.fechamento_uid === ultimaDespesa.uid || String(p.despesa_id) === String(ultimaDespesa.id)) &&
-        (!periodo || (
-            p.hora_registro >= periodo.inicio + 'T00:00:00' &&
-            p.hora_registro <= periodo.fim + 'T23:59:59'
-        ))
-    );
+    const vinculados = rvSelecionarVinculadosDiaria(STATE.ponto_diario, funcId, ultimaDespesa, periodo);
 
     let confirmMsg = `Estornar o pagamento de ${formatMoney(ultimaDespesa.valor_total)} (${ultimaDespesa.status_financeiro})?`;
     if (periodo) {
@@ -2094,100 +1995,7 @@ async function estornarUltimoFechamento() {
             document.getElementById('ponto-total-valor').innerText = formatMoney(valor);
         }
 
-        async function savePonto() {
-              showLoading(true);
-              const equipe_id = document.getElementById('ponto-equipe-id').value;
-              const e = STATE.equipe.find(x => x.id == equipe_id);
-              const mes = document.getElementById('eqp-filter-mes').value;
-              const ano = document.getElementById('eqp-filter-ano').value;
-              
-              // REGRA DE OURO: Verifica se estamos no modo automático ou manual
-              let totalDias = 0;
-              
-              if (window.modoPontoAtivo === 'auto' && window.diariasEletronicasAtivas !== undefined) {
-                  // Se estamos na aba nova, pega o valor exato (com decimais) apurado pela busca
-                  totalDias = window.diariasEletronicasAtivas; 
-              } else {
-                  // Se estamos na aba antiga, conta os botõezinhos clicados
-                  totalDias = currentPontoDias.length; 
-              }
-          
-              const valorTotal = totalDias * currentPontoDiaria;
-          
-              let pt = STATE.ponto.find(x => x.equipe_id == equipe_id && x.mes === mes && x.ano === ano);
-              const isNew = !pt;
-          
-              const payload = {
-                  equipe_id: equipe_id,
-                  obra_id: e.obra_atual_id,
-                  mes: mes,
-                  ano: ano,
-                  // No modo auto, guardamos o Array vazio no BD, pois a prova do ponto está na tabela jsp_ponto_diario
-                  dias_marcados: (window.modoPontoAtivo === 'auto') ? [] : currentPontoDias, 
-                  total_dias: totalDias,
-                  valor_diaria: currentPontoDiaria,
-                  valor_total: valorTotal,
-                  status: pt ? pt.status : 'PENDENTE'
-              };
-          
-              if(!isNew) payload.id = pt.id;
-          
-              const { error } = await sb.from('jsp_ponto').upsert(payload);
-              
-              if(error) { showLoading(false); return showToast("Erro ao salvar ponto: " + error.message, true); }
-              
-              document.getElementById('ponto-modal').classList.add('hidden');
-              showToast("Fechamento de Ponto salvo com sucesso!"); 
-              loadData();
-          }
 
-      
-        async function pagarMesPonto(ponto_id, equipe_id) {
-            if(!confirm("Deseja confirmar o pagamento deste mês? Isso criará uma Despesa automática na Obra atual do funcionário.")) return;
-            showLoading(true);
-
-            const e = STATE.equipe.find(x => x.id == equipe_id);
-            const pt = STATE.ponto.find(x => x.id == ponto_id);
-
-            if(!e || !pt) { showLoading(false); return showToast("Dados inconsistentes", true); }
-            if(!e.obra_atual_id) { showLoading(false); return showToast("Funcionário precisa estar vinculado a uma obra para lançar a despesa.", true); }
-
-            // Mês/ano de referência vêm do próprio registro de ponto (não dependem de filtros de tela)
-            const mes = pt.mes;
-            const ano = pt.ano;
-            const statusAnterior = pt.status || 'PENDENTE';
-
-            const dtPagamento = new Date().toISOString();
-            
-            // 1. Atualizar status do Ponto para PAGO
-            const { error: errPt } = await sb.from('jsp_ponto').update({ status: 'PAGO', data_pagamento: dtPagamento }).eq('id', ponto_id);
-            if(errPt) { showLoading(false); return showToast("Erro: " + errPt.message, true); }
-
-            // 2. Lançar no Financeiro
-            const logId = getNextIdNum(STATE.logs).toString();
-            const desc = `Pagamento Mensal (${mes}/${ano}) - ${e.nome}`;
-            const { error: errFin } = await sb.from('jsp_logs').insert([{
-                id: logId,
-                obra_id: parseInt(e.obra_atual_id),
-                tipo: 'despesa',
-                produto_nome: desc,
-                valor_total: parseFloat(pt.valor_total),
-                data: dtPagamento, vencimento: dtPagamento,
-                status_financeiro: 'PAGO',
-                categoria: 'Mão de Obra',
-                observacao: `Tipo: Mão de Obra | Equipe: ${e.nome} | Dias Trab: ${pt.total_dias}`
-            }]);
-
-            if(errFin) {
-                // Compensação: reverte o ponto para não deixar o pagamento pela metade
-                await sb.from('jsp_ponto').update({ status: statusAnterior, data_pagamento: null }).eq('id', ponto_id);
-                showLoading(false);
-                return showToast("Erro financeiro: " + errFin.message, true);
-            }
-            
-            showLoading(false);
-            showToast("Pagamento e Despesa lançados com sucesso!"); loadData();
-        }
 function abrirModalFolhaPagamento() {
     const selectObra = document.getElementById('folha-obra');
     selectObra.innerHTML = '<option value="">Todas as Obras</option>' + 
@@ -2531,71 +2339,7 @@ function executarImpressaoFolha() {
 
 
  // =====================================================================
-// MOTOR DE CÁLCULO DE HORAS (QR CODE) PARA DIÁRIAS
-// =====================================================================
-async function calcularDiariasPorHora(funcionarioId, obraId, dataInicioIso, dataFimIso) {
-    try {
-        const { data, error } = await sb.from('jsp_ponto_diario')
-            .select('*')
-            .eq('funcionario_id', funcionarioId)
-            .eq('obra_id', obraId)
-            .eq('status', 'VALIDADO')
-            .gte('hora_registro', dataInicioIso + 'T00:00:00Z')
-            .lte('hora_registro', dataFimIso + 'T23:59:59Z')
-            .order('hora_registro', { ascending: true });
 
-        if (error) throw error;
-        if (!data || data.length === 0) return 0;
-
-        return rvCalcularTotalDiarias(data);
-    } catch (err) {
-        console.error("Erro ao calcular: ", err);
-        return 0;
-    }
-}
-
-      
-      // =====================================================================
-// INTEGRAÇÃO COM O FINANCEIRO (FECHAMENTO DA QUINZENA/MÊS)
-// =====================================================================
-async function preencherFechamentoAutomatico(funcionarioId, obraId, mes, ano) {
-    showLoading(true);
-    
-    let dataInicio = `${ano}-${String(mes).padStart(2, '0')}-01`;
-    let ultimoDia = new Date(ano, mes, 0).getDate();
-    let dataFim = `${ano}-${String(mes).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
-
-    let diariasCalculadas = await calcularDiariasPorHora(funcionarioId, obraId, dataInicio, dataFim);
-
-    const func = STATE.equipe.find(x => x.id == funcionarioId);
-    let valorDiaria = parseFloat(func.valor_diaria || 0);
-    let valorTotalPagar = diariasCalculadas * valorDiaria;
-
-    // Atualiza a interface visual do Modal do ERP
-    document.getElementById('ponto-total-dias').innerText = diariasCalculadas.toFixed(2);
-    document.getElementById('ponto-total-valor').innerText = formatMoney(valorTotalPagar);
-
-    // Salva na memória global para a função savePonto capturar depois
-    window.diariasEletronicasAtivas = diariasCalculadas;
-
-    showLoading(false);
-    showToast(`Ponto Eletrônico: ${diariasCalculadas.toFixed(2)} diárias confirmadas!`);
-}
-
-      // Gatilho do botão que puxa os dados da tela e chama o motor
-async function puxarHorasDoPontoEletronico() {
-    // Pegamos os dados reais que o ERP já colocou no modal
-    const funcId = document.getElementById('ponto-equipe-id').value;
-    const e = STATE.equipe.find(x => x.id == funcId);
-    const mes = document.getElementById('eqp-filter-mes').value;
-    const ano = document.getElementById('eqp-filter-ano').value;
-
-    if (!funcId || !e.obra_atual_id) {
-        return showToast("Funcionário precisa estar vinculado a uma obra para puxar o ponto eletrônico.", true);
-    }
-
-    await preencherFechamentoAutomatico(funcId, e.obra_atual_id, mes, ano);
-}
 
 // ==========================================================
 // MÓDULO TERCEIRIZADOS (EMPREITEIROS POR METRAGEM)
