@@ -899,7 +899,7 @@ async function fecharPagamentoSaldoMetros() {
     
     const ids = registros.map(r => r.id);
     const { error: errProd } = await sb.from('jsp_producao_terc')
-        .update({ status: 'PAGO' })
+        .update({ status: 'PAGO', fechamento_uid: logCriado?.[0]?.uid || null })
         .in('id', ids);
     
     if (errProd) {
@@ -943,6 +943,13 @@ async function estornarUltimoFechamentoMetros() {
         periodo = match[1];
     }
 
+    // Vinculação: registros de produção marcados com o fechamento (uid) desta despesa.
+    const vinculadosMetro = (STATE.producao_terc || []).filter(p =>
+        p.terceirizado_id === tercId &&
+        p.status === 'PAGO' &&
+        p.fechamento_uid === ultimaDespesa.uid
+    );
+
     let confirmMsg = `Estornar o pagamento de ${formatMoney(ultimaDespesa.valor_total)} (${ultimaDespesa.status_financeiro})?`;
     if (periodo) confirmMsg += `\nPeríodo: ${periodo}`;
     confirmMsg += `\n\nOs registros de metragem voltarão a ficar pendentes.`;
@@ -962,23 +969,32 @@ async function estornarUltimoFechamentoMetros() {
         return showToast('Erro ao cancelar despesa: ' + errFin.message, true);
     }
 
-    // 2. Reverter status PAGO para PENDENTE nos registros de produção do período
-    let query = sb.from('jsp_producao_terc')
-        .update({ status: 'PENDENTE' })
-        .eq('terceirizado_id', tercId)
-        .eq('status', 'PAGO');
+    // 2. Reverter status PAGO para PENDENTE nos registros de produção
+    let errProd;
+    if (vinculadosMetro.length > 0) {
+        // Caminho preferido: reverte exatamente os registros vinculados ao fechamento.
+        ({ error: errProd } = await sb.from('jsp_producao_terc')
+            .update({ status: 'PENDENTE', fechamento_uid: null })
+            .in('id', vinculadosMetro.map(p => p.id)));
+    } else {
+        // Legado (sem fechamento_uid): reverte pelo período da descrição.
+        let query = sb.from('jsp_producao_terc')
+            .update({ status: 'PENDENTE', fechamento_uid: null })
+            .eq('terceirizado_id', tercId)
+            .eq('status', 'PAGO');
 
-    if (periodo) {
-        // Tenta extrair datas do período (formato "dd/mm/aaaa a dd/mm/aaaa")
-        const partes = periodo.split(' a ');
-        if (partes.length === 2) {
-            const dataInicio = partes[0].split('/').reverse().join('-');
-            const dataFim = partes[1].split('/').reverse().join('-');
-            query = query.gte('data_registro', dataInicio).lte('data_registro', dataFim);
+        if (periodo) {
+            // Tenta extrair datas do período (formato "dd/mm/aaaa a dd/mm/aaaa")
+            const partes = periodo.split(' a ');
+            if (partes.length === 2) {
+                const dataInicio = partes[0].split('/').reverse().join('-');
+                const dataFim = partes[1].split('/').reverse().join('-');
+                query = query.gte('data_registro', dataInicio).lte('data_registro', dataFim);
+            }
         }
-    }
 
-    const { error: errProd } = await query;
+        ({ error: errProd } = await query);
+    }
 
     if (errProd) {
         // Compensação: restaura a despesa cancelada para manter o caixa consistente
@@ -1284,7 +1300,11 @@ async function fecharPagamentoSaldo() {
     const ids = registros.map(r => r.id);
     const despesaIdNum = parseInt(logId, 10);
     const { error: errPonto } = await sb.from('jsp_ponto_diario')
-        .update({ pago_em_fechamento: true, despesa_id: despesaIdNum })
+        .update({
+            pago_em_fechamento: true,
+            despesa_id: despesaIdNum,
+            fechamento_uid: logCriado?.[0]?.uid || null
+        })
         .in('id', ids);
 
     if (errPonto) {
@@ -1811,11 +1831,11 @@ async function estornarUltimoFechamento() {
     // e o legado "Período MM/YYYY"). Sem datas, estorna todos os registros fechados.
     const periodo = rvParsePeriodo(ultimaDespesa.produto_nome);
 
-    // Vinculação: registros de ponto marcados com o despesa_id deste fechamento.
+    // Vinculação: registros de ponto marcados com o fechamento (uid) ou despesa_id.
     const vinculados = STATE.ponto_diario.filter(p =>
         p.funcionario_id === funcId &&
         p.pago_em_fechamento &&
-        String(p.despesa_id) === String(ultimaDespesa.id) &&
+        (p.fechamento_uid === ultimaDespesa.uid || String(p.despesa_id) === String(ultimaDespesa.id)) &&
         (!periodo || (
             p.hora_registro >= periodo.inicio + 'T00:00:00' &&
             p.hora_registro <= periodo.fim + 'T23:59:59'
@@ -1853,12 +1873,12 @@ async function estornarUltimoFechamento() {
         // Caminho preferido: reverte exatamente os registros vinculados ao despesa_id.
         const idsVinculados = vinculados.map(p => p.id);
         ({ error: errPonto } = await sb.from('jsp_ponto_diario')
-            .update({ pago_em_fechamento: false, despesa_id: null })
+            .update({ pago_em_fechamento: false, despesa_id: null, fechamento_uid: null })
             .in('id', idsVinculados));
     } else {
         // Legado (sem despesa_id): reverte pelo período da descrição.
         let query = sb.from('jsp_ponto_diario')
-            .update({ pago_em_fechamento: false, despesa_id: null })
+            .update({ pago_em_fechamento: false, despesa_id: null, fechamento_uid: null })
             .eq('funcionario_id', funcId)
             .eq('pago_em_fechamento', true);
 
