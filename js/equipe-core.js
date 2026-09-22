@@ -140,4 +140,6 @@
     global.rvRefLog = rvRefLog;
     global.filtrarLogPorRef = rvRefLog;
     global.refLog = rvRefLog;
+    global.rvSelecionarVinculadosDiaria = rvSelecionarVinculadosDiaria;
+    global.rvSelecionarVinculadosMetro = rvSelecionarVinculadosMetro;
 })(typeof window !== 'undefined' ? window : globalThis);
