@@ -1176,15 +1176,17 @@
     }
 
     // 🔥 Definição da logo com base no tipo do contrato (apenas az1servente ou az2pedreiro)
-    let logoSrc = "https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png";
+    // A logo da AZ (i.postimg.cc/dLB7Dxxb/AZCONSTRUCOES.png) saiu do ar.
+    // Enquanto nao houver um arquivo local, usa a logo RV como fallback.
+    let logoSrc = "logo.png";
     if (tipo === 'az1servente' || tipo === 'az2pedreiro' || tipo === 'azepi') {
-        logoSrc = "https://i.postimg.cc/dLB7Dxxb/AZCONSTRUCOES.png";
+        logoSrc = "logo.png";
     }
 
     const htmlDoc = `
         <div style="font-family: 'Times New Roman', Times, serif; width: 100%; padding: 20px 40px; box-sizing: border-box; color: #000;">
             <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 30px;">                
-                <img src="${logoSrc}" style="display: block; margin: 0 auto; height: 70px;"><br><br>
+                <img src="${logoSrc}" onerror="this.onerror=null;this.src='logo.png';" style="display: block; margin: 0 auto; height: 70px;"><br><br>
                 <h2 style="margin: 0; font-size: 13pt; font-weight: bold; line-height: 1.3;">${titulo}</h2>
             </div>
             

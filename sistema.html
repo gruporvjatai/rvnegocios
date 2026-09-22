@@ -11,18 +11,18 @@
 
     
     <title>Controle de Obras Públicas - RV</title>
+    <script>
+        // Redireciona para a versao mobile ANTES de baixar os scripts pesados de desktop.
+        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 800) {
+          window.location.replace("mobile.html?t=" + Date.now());
+        }
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
-    <script>
-        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 800) {
-          window.location.replace("mobile.html?t=" + Date.now());
-        }
-    </script>
 
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="shortcut icon" type="image/png" href="logo.png">
@@ -83,7 +83,7 @@
             <i data-lucide="refresh-cw" class="w-4 h-4"></i>
         </button>
         <div class="w-20 h-20 rounded-full border-4 border-blue-600 mb-3 shadow-lg overflow-hidden p-1 bg-white">
-            <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" class="w-full h-full object-contain" />
+            <img src="logo.png" class="w-full h-full object-contain" />
         </div>
         <h1 class="text-lg font-bold tracking-wider text-blue-500">RV NEGÓCIOS</h1>
       </div>
@@ -1631,7 +1631,7 @@
         let CURRENT_OC_ID = null; 
 
         // ====== INICIALIZAÇÃO ======
-       window.onload = function() { 
+       document.addEventListener('DOMContentLoaded', function() { 
             const hoje = new Date();
             const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
             const anoAtual = hoje.getFullYear();
@@ -1670,7 +1670,7 @@
                     loadData();
                 });
             }
-        };
+        });
 
       
         function navigate(viewId) {
@@ -2880,7 +2880,7 @@
                 <table width="100%" style="border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px;">
                     <tr>
                         <td width="130" valign="middle" style="border-right: 1px solid #e2e8f0; padding-right: 15px;">
-                            <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" crossorigin="anonymous" style="max-height: 80px; display: block; margin: 0 auto;" />
+                            <img src="logo.png" crossorigin="anonymous" style="max-height: 80px; display: block; margin: 0 auto;" />
                         </td>
                         <td valign="middle" style="padding-left: 15px;">
                         <h2 style="margin: 0; color: #1d4ed8; font-size: 20px; font-weight: 800;">RV NEGÓCIOS E COMPANHIA</h2>
@@ -3011,7 +3011,7 @@
                 });
             }
 
-            const logoBase64 = await getLogoBase64("https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png");
+            const logoBase64 = await getLogoBase64("logo.png");
 
             const docDefinition = {
                 pageSize: 'A4',

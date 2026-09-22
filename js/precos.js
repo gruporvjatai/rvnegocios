@@ -391,7 +391,7 @@ function imprimirRelatorioHistoricoPrecos() {
       <!-- CABEÇALHO PROFISSIONAL -->
       <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 20px; margin-bottom: 30px;">
         <div>
-          <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 70px;" />
+          <img src="logo.png" style="height: 70px;" />
           <div style="font-size: 12px; color: #475569; margin-top: 5px;">CNPJ: 61.893.912/0001-24</div>
           <div style="font-size: 12px; color: #475569;">Rua Mineiros, 530 | Jataí - GO | (64) 99981-5852</div>
         </div>

@@ -232,7 +232,7 @@
             const html = `
                 <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
-                        <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
+                        <img src="logo.png" style="height: 60px;" />
                         <div style="text-align: right;">
                             <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO SOBRE DIÁRIAS</h1>
                             <p style="margin: 5px 0 0 0; font-size: 18px; color: #1d4ed8; font-weight: bold;">VALOR: ${valorTotal}</p>
@@ -948,7 +948,7 @@ function imprimirExtratoSaldoMetros() {
     let html = `
         <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; padding: 30px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 15px; margin-bottom: 25px;">
-                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 70px;" />
+                <img src="logo.png" style="height: 70px;" />
                 <div style="text-align: right;">
                     <h1 style="margin: 0; font-size: 24px; font-weight: 900;">EXTRATO DE METRAGEM</h1>
                     <p style="margin: 5px 0 0 0; font-size: 14px; color: #1d4ed8; font-weight: bold;">${terc.nome}</p>
@@ -1036,7 +1036,7 @@ function imprimirReciboMetrosDoModal() {
     const html = `
         <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
-                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
+                <img src="logo.png" style="height: 60px;" />
                 <div style="text-align: right;">
                     <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO DE METRAGEM</h1>
                     <p style="margin: 5px 0 0 0; font-size: 18px; color: #1d4ed8; font-weight: bold;">VALOR: ${valorTotal}</p>
@@ -1263,7 +1263,7 @@ function imprimirExtratoSaldo() {
     let html = `
         <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; padding: 30px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 15px; margin-bottom: 25px;">
-                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 70px;" />
+                <img src="logo.png" style="height: 70px;" />
                 <div style="text-align: right;">
                     <h1 style="margin: 0; font-size: 24px; font-weight: 900;">EXTRATO DE PONTO</h1>
                     <p style="margin: 5px 0 0 0; font-size: 14px; color: #1d4ed8; font-weight: bold;">${func.nome}</p>
@@ -1348,7 +1348,7 @@ function imprimirReciboSaldo(equipeId) {
     const html = `
         <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
-                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
+                <img src="logo.png" style="height: 60px;" />
                 <div style="text-align: right;">
                     <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO DE SALDO</h1>
                     <p style="margin: 5px 0 0 0; font-size: 18px; color: #1d4ed8; font-weight: bold;">VALOR: ${formatMoney(valorTotal)}</p>
@@ -1948,7 +1948,7 @@ async function estornarUltimoFechamento() {
     const htmlImpressao = `
         <div style="font-family: Arial, sans-serif; color: #000; width: 100%;">
             <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px;">
-                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px; margin-bottom: 10px;" />
+                <img src="logo.png" style="height: 60px; margin-bottom: 10px;" />
                 <h2 style="margin: 0; font-size: 18pt; font-weight: bold;">FOLHA DE PONTO INDIVIDUAL</h2>
                 <p style="margin: 5px 0 0 0; font-size: 11pt;">Período Apurado: ${dataIni} a ${dataFim}</p>
             </div>
@@ -2234,7 +2234,7 @@ function executarImpressaoFolha() {
     let html = `
         <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; padding: 30px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 15px; margin-bottom: 25px;">
-                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 70px;" />
+                <img src="logo.png" style="height: 70px;" />
                 <div style="text-align: right;">
                     <h1 style="margin: 0; font-size: 24px; font-weight: 900;">FOLHA DE PAGAMENTOS</h1>
                     <p style="margin: 5px 0 0 0; font-size: 14px; color: #1d4ed8; font-weight: bold;">Status: ${statusFinanceiro === 'PENDENTE' ? 'PENDENTES (NÃO BAIXADOS)' : statusFinanceiro}</p>
@@ -2313,7 +2313,7 @@ function executarImpressaoFolha() {
             const htmlRecibo = `
                 <div style="font-family: Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
-                        <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
+                        <img src="logo.png" style="height: 60px;" />
                         <div style="text-align: right;">
                             <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO DE PAGAMENTO</h1>
                             <p style="margin: 5px 0 0 0; font-size: 18px; color: #1d4ed8; font-weight: bold;">VALOR: ${formatMoney(total)}</p>
@@ -2673,7 +2673,7 @@ async function imprimirReciboTerc(tercId) {
     const htmlRecibo = `
         <div style="font-family: Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
-                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
+                <img src="logo.png" style="height: 60px;" />
                 <div style="text-align: right;">
                     <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO DE PRODUÇÃO</h1>
                     <p style="margin: 5px 0 0 0; font-size: 18px; color: #1d4ed8; font-weight: bold;">VALOR: ${formatMoney(totalPagar)}</p>
@@ -2735,7 +2735,7 @@ function imprimirRelatorioTerc() {
     let htmlRelatorio = `
         <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; padding: 10px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 15px; margin-bottom: 25px;">
-                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 55px;" />
+                <img src="logo.png" style="height: 55px;" />
                 <div style="text-align: right;">
                     <h2 style="margin: 0; font-size: 18px; font-weight: 900; color: #0f172a; text-transform: uppercase;">Folha de Terceirizados</h2>
                     <p style="margin: 3px 0 0 0; font-size: 13px; color: #1d4ed8; font-weight: bold;">Período: ${periodoExibicao}</p>
@@ -2884,7 +2884,7 @@ function imprimirRelatorioTerc() {
         <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 100%; color: #1e293b; padding: 20px;">
             
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 15px; margin-bottom: 25px;">
-                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
+                <img src="logo.png" style="height: 60px;" />
                 <div style="text-align: right;">
                     <h1 style="margin: 0; font-size: 22px; font-weight: 900; color: #0f172a; text-transform: uppercase;">Extrato de Produção</h1>
                     <p style="margin: 5px 0 0 0; font-size: 14px; color: #1d4ed8; font-weight: bold;">Competência: ${mes}/${ano}</p>
@@ -3343,7 +3343,7 @@ function calcularResumoEmpreita(equipeId, dataInicio, dataFim) {
         <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; padding: 30px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #1d4ed8; padding-bottom: 15px; margin-bottom: 25px;">
                 <div>
-                    <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 70px;" />
+                    <img src="logo.png" style="height: 70px;" />
                     <div style="font-size: 12px; color: #475569; margin-top: 5px;">CNPJ: 61.893.912/0001-24</div>
                     <div style="font-size: 12px; color: #475569;">Rua Mineiros, 530 | Jataí - GO | (64) 99981-5852</div>
                 </div>
@@ -3703,7 +3703,7 @@ function imprimirReciboEmpreitaDoModal() {
     const html = `
         <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
-                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
+                <img src="logo.png" style="height: 60px;" />
                 <div style="text-align: right;">
                     <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO DE EMPREITA</h1>
                     <p style="margin: 5px 0 0 0; font-size: 18px; color: #b45309; font-weight: bold;">VALOR: ${formatMoney(valorTotal)}</p>
@@ -3755,7 +3755,7 @@ function imprimirExtratoEmpreita() {
     const html = `
         <div style="font-family:'Segoe UI',Arial;padding:30px;">
             <div style="display:flex;justify-content:space-between;border-bottom:3px solid #b45309;padding-bottom:15px;margin-bottom:25px;">
-                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height:70px;">
+                <img src="logo.png" style="height:70px;">
                 <div>
                     <h1 style="margin:0;font-size:24px;">EXTRATO DE EMPREITA</h1>
                     <p style="margin:5px 0 0 0;color:#b45309;">${func.nome}</p>
