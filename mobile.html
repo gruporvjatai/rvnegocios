@@ -366,6 +366,7 @@
             <form onsubmit="saveEquipe(event)" class="space-y-3">
                 <input type="hidden" id="eqp-id">
                 <input type="hidden" id="eqp-tipo-origem" value="equipe">
+                <input type="hidden" id="eqp-origem" value="">
                 
                 <div>
                     <label class="text-[10px] font-bold text-slate-500 uppercase">Nome Completo</label>
@@ -1507,11 +1508,17 @@
         async function saveEquipe(e){
             e.preventDefault(); showLoading(true);
             const getV=id=>{ const el=document.getElementById(id); return el?el.value:''; };
-            const idAtual=getV('eqp-id'); const isNew=!idAtual; const tipoOrigem=document.getElementById('eqp-tipo-origem').value;
+            const idAtual=getV('eqp-id'); const isNew=!idAtual; const tipoOrigem=document.getElementById('eqp-tipo-origem').value; const origem=getV('eqp-origem');
             const nome=getV('eqp-nome').trim(); const categoria=getV('eqp-categoria'); const telefone=getV('eqp-telefone').trim(); const cpf=getV('eqp-cpf').trim(); const rg=getV('eqp-rg').trim(); const endereco=getV('eqp-endereco').trim(); const chave_pix=getV('eqp-chave_pix').trim(); const obra_id=getV('eqp-obra_atual_id'); const valor_base=parseFloat(getV('eqp-valor_diaria'))||0; const data_contrato=getV('eqp-data_contrato')||null; const ativo=getV('eqp-ativo')==='true';
             const isEmpreita=tipoOrigem==='equipe'&&categoria==='Empreita';
             if(!nome||!cpf||valor_base<=0){ showLoading(false); showToast("Informe nome, CPF e um valor válido",true); return; }
             if(!isEmpreita&&(!telefone||!obra_id)){ showLoading(false); showToast("Preencha telefone e obra",true); return; }
+            const mudouTipo=!isNew&&origem&&origem!==tipoOrigem;
+            if(mudouTipo){
+                const dep=await contarDependenciasColaborador(origem,idAtual);
+                if(dep===-1){ showLoading(false); return showToast("Não foi possível verificar os registros do colaborador. Tente novamente.",true); }
+                if(dep>0){ showLoading(false); return showToast(origem==='terceirizado'?`Este terceirizado tem ${dep} lançamento(s) de produção (metros). Não é possível mudar para diária sem perder esse histórico.`:`Este funcionário tem ${dep} registro(s) de ponto/medição. Não é possível mudar para terceirizado sem perder esse histórico.`,true); }
+            }
             if(tipoOrigem==='terceirizado'){
                 const payload={ nome, cpf_cnpj:cpf, rg, telefone, chave_pix, endereco, obra_atual_id:obra_id||null, valor_metro:valor_base, data_contrato, ativo };
                 if(!isNew) payload.id=idAtual; else payload.id=gerarIdSeguro();
@@ -1523,6 +1530,11 @@
                 const {data:salvo,error}=await sb.from('jsp_equipe').upsert(payload).select('matricula').single();
                 if(error){ showLoading(false); return showToast("Erro: "+error.message,true); }
                 if(isNew){ if(salvo) payload.matricula=salvo.matricula; document.getElementById('sucesso-nome').innerText=payload.nome; document.getElementById('sucesso-num-matricula').innerText=payload.matricula; document.getElementById('modal-sucesso-matricula').classList.remove('hidden'); lucide.createIcons(); }
+            }
+            if(mudouTipo){
+                const tabelaOrigem=origem==='terceirizado'?'jsp_terceirizados':'jsp_equipe';
+                const {error:errMove}=await sb.from(tabelaOrigem).delete().eq('id',idAtual);
+                if(errMove){ showLoading(false); return showToast("Erro ao remover o cadastro antigo: "+errMove.message,true); }
             }
             closeOverlayForm('equipe-form-container'); showToast("✅ Salvo!"); await loadData(); navigate('equipe');
         }
@@ -2053,7 +2065,7 @@ function executarImpressaoFolha() {
 
         function openEquipeForm(id, tipoOrigem='equipe'){
             document.getElementById('equipe-form-container').classList.remove('hidden');
-            const catSelect=document.getElementById('eqp-categoria'); const tipoHidden=document.getElementById('eqp-tipo-origem');
+            const catSelect=document.getElementById('eqp-categoria'); const tipoHidden=document.getElementById('eqp-tipo-origem'); const origemHidden=document.getElementById('eqp-origem');
             if(id){
                 if(tipoOrigem==='terceirizado'){
                     const t=STATE.terceirizados.find(x=>x.id==id);
@@ -2062,7 +2074,7 @@ function executarImpressaoFolha() {
                         document.getElementById('eqp-telefone').value=t.telefone||''; document.getElementById('eqp-cpf').value=t.cpf_cnpj||''; document.getElementById('eqp-rg').value=t.rg||'';
                         document.getElementById('eqp-endereco').value=t.endereco||''; document.getElementById('eqp-chave_pix').value=t.chave_pix||''; document.getElementById('eqp-obra_atual_id').value=t.obra_atual_id||'';
                         document.getElementById('eqp-data_contrato').value=t.data_contrato||''; document.getElementById('eqp-valor_diaria').value=t.valor_metro||''; document.getElementById('eqp-ativo').value=(t.ativo===true||t.ativo==='true')?'true':'false';
-                        tipoHidden.value='terceirizado'; onCategoriaChange();
+                        tipoHidden.value='terceirizado'; origemHidden.value='terceirizado'; onCategoriaChange();
                     }
                 } else {
                     const e=STATE.equipe.find(x=>x.id==id);
@@ -2071,11 +2083,11 @@ function executarImpressaoFolha() {
                         document.getElementById('eqp-telefone').value=e.telefone||''; document.getElementById('eqp-cpf').value=e.cpf||''; document.getElementById('eqp-rg').value=e.rg||'';
                         document.getElementById('eqp-endereco').value=e.endereco||''; document.getElementById('eqp-chave_pix').value=e.chave_pix||''; document.getElementById('eqp-obra_atual_id').value=e.obra_atual_id||'';
                         document.getElementById('eqp-data_contrato').value=e.data_contrato||''; document.getElementById('eqp-valor_diaria').value=e.valor_diaria||''; document.getElementById('eqp-ativo').value=(e.ativo===true||e.ativo==='true')?'true':'false';
-                        tipoHidden.value='equipe'; onCategoriaChange();
+                        tipoHidden.value='equipe'; origemHidden.value='equipe'; onCategoriaChange();
                     }
                 }
             } else {
-                document.getElementById('equipe-form-container').querySelector('form').reset(); document.getElementById('eqp-id').value=''; catSelect.value='Servente'; document.getElementById('eqp-ativo').value='true'; tipoHidden.value='equipe'; onCategoriaChange();
+                document.getElementById('equipe-form-container').querySelector('form').reset(); document.getElementById('eqp-id').value=''; catSelect.value='Servente'; document.getElementById('eqp-ativo').value='true'; tipoHidden.value='equipe'; origemHidden.value=''; onCategoriaChange();
             }
             openOverlayForm('equipe-form-container');
         }

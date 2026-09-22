@@ -1388,6 +1388,7 @@ function imprimirReciboSaldo(equipeId) {
           document.getElementById('equipe-form-container').classList.remove('hidden');
           const catSelect = document.getElementById('eqp-cat');
           const tipoHidden = document.getElementById('eqp-tipo-origem');
+          const origemHidden = document.getElementById('eqp-origem');
           
           if (id) {
               if (tipoOrigem === 'terceirizado') {
@@ -1405,6 +1406,7 @@ function imprimirReciboSaldo(equipeId) {
                       document.getElementById('eqp-contrato').value = t.data_contrato || ''; // ✅ agora carrega a data do contrato
                       document.getElementById('eqp-diaria').value = t.valor_metro || '';
                       tipoHidden.value = 'terceirizado';
+                      origemHidden.value = 'terceirizado';
                       onCategoriaChange();
                   }
               } else {
@@ -1422,6 +1424,7 @@ function imprimirReciboSaldo(equipeId) {
                       document.getElementById('eqp-contrato').value = e.data_contrato || '';
                       document.getElementById('eqp-diaria').value = e.valor_diaria || '';
                       tipoHidden.value = 'equipe';
+                      origemHidden.value = 'equipe';
                       onCategoriaChange();
                   }
               }
@@ -1430,18 +1433,51 @@ function imprimirReciboSaldo(equipeId) {
               document.getElementById('eqp-id').value = '';
               catSelect.value = 'Servente';
               tipoHidden.value = 'equipe';
+              origemHidden.value = '';
               onCategoriaChange();
           }
       }
       
-      async function saveEquipe(e) {
-          e.preventDefault(); 
-          showLoading(true);
-          
-          const id = document.getElementById('eqp-id').value;
-          const isNew = !id;
-          const tipoOrigem = document.getElementById('eqp-tipo-origem').value;
-          
+       // Conta registros vinculados ao colaborador na origem (producao de
+       // terceirizado ou ponto/medicao de equipe). Serve para bloquear a troca
+       // de tipo (terceirizado <-> diaria) sem duplicar cadastro e sem perder
+       // historico. Retorna -1 se nao for possivel verificar.
+       async function contarDependenciasColaborador(origem, id) {
+           if (!id) return 0;
+           try {
+               let total = 0;
+               if (origem === 'terceirizado') {
+                   const { count } = await sb.from('jsp_producao_terc')
+                       .select('id', { count: 'exact', head: true })
+                       .eq('terceirizado_id', id);
+                   total += (count || 0);
+               } else {
+                   const a = await sb.from('jsp_ponto_diario')
+                       .select('id', { count: 'exact', head: true })
+                       .eq('funcionario_id', id);
+                   const b = await sb.from('jsp_ponto_mensal')
+                       .select('id', { count: 'exact', head: true })
+                       .eq('funcionario_id', id);
+                   const c = await sb.from('jsp_medicoes_empreita')
+                       .select('id', { count: 'exact', head: true })
+                       .eq('equipe_id', id);
+                   total = (a.count || 0) + (b.count || 0) + (c.count || 0);
+               }
+               return total;
+           } catch (e) {
+               return -1;
+           }
+       }
+
+       async function saveEquipe(e) {
+           e.preventDefault(); 
+           showLoading(true);
+           
+           const id = document.getElementById('eqp-id').value;
+           const isNew = !id;
+           const tipoOrigem = document.getElementById('eqp-tipo-origem').value;
+           const origem = document.getElementById('eqp-origem').value;
+           
           const nome = document.getElementById('eqp-name').value;
           const categoria = document.getElementById('eqp-cat').value;
           const telefone = document.getElementById('eqp-phone').value;
@@ -1452,6 +1488,23 @@ function imprimirReciboSaldo(equipeId) {
           const obra_id = document.getElementById('eqp-obra').value || null;
           const valor_base = parseFloat(document.getElementById('eqp-diaria').value) || 0;
           const data_contrato = document.getElementById('eqp-contrato').value || null;
+          
+          // Troca de tipo (terceirizado <-> diaria): exige mover o cadastro.
+          // Se houver historico vinculado, bloqueia para nao duplicar nem perder dados.
+          const mudouTipo = !isNew && origem && origem !== tipoOrigem;
+          if (mudouTipo) {
+              const dep = await contarDependenciasColaborador(origem, id);
+              if (dep === -1) {
+                  showLoading(false);
+                  return showToast('Não foi possível verificar os registros do colaborador. Tente novamente.', true);
+              }
+              if (dep > 0) {
+                  showLoading(false);
+                  return showToast(origem === 'terceirizado'
+                      ? `Este terceirizado tem ${dep} lançamento(s) de produção (metros). Não é possível mudar para diária sem perder esse histórico.`
+                      : `Este funcionário tem ${dep} registro(s) de ponto/medição. Não é possível mudar para terceirizado sem perder esse histórico.`, true);
+              }
+          }
           
           if (tipoOrigem === 'terceirizado') {
               const payload = {
@@ -1468,6 +1521,7 @@ function imprimirReciboSaldo(equipeId) {
               
               if (!isNew) {
                   payload.id = id;
+                  if (mudouTipo) payload.ativo = true;
               } else {
                   payload.id = crypto.randomUUID();
                   payload.ativo = true;
@@ -1494,6 +1548,7 @@ function imprimirReciboSaldo(equipeId) {
               
               if (!isNew) {
                   payload.id = id;
+                  if (mudouTipo) payload.ativo = true;
               } else {
                   payload.id = crypto.randomUUID();
                   payload.ativo = true;
@@ -1504,6 +1559,16 @@ function imprimirReciboSaldo(equipeId) {
               if (error) {
                   showLoading(false);
                   return showToast("Erro ao salvar membro da equipe: " + error.message, true);
+              }
+          }
+          
+          // Se mudou de tipo, remove o registro antigo da outra tabela.
+          if (mudouTipo) {
+              const tabelaOrigem = origem === 'terceirizado' ? 'jsp_terceirizados' : 'jsp_equipe';
+              const { error: errMove } = await sb.from(tabelaOrigem).delete().eq('id', id);
+              if (errMove) {
+                  showLoading(false);
+                  return showToast("Erro ao remover o cadastro antigo: " + errMove.message, true);
               }
           }
           
