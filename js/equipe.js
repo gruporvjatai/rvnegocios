@@ -26,6 +26,60 @@ function rvParsePeriodo(texto) {
     return null;
 }
 
+// ====== MOTOR ÚNICO DE DIÁRIA (presença por período) ======
+// A jornada da obra é fixa (manhã 07:00-11:00 e tarde 13:00-17:00) e o sistema
+// externo registra a ENTRADA, gerando a SAÍDA automaticamente. Ou seja, o que
+// define a diária é a PRESENÇA no período, não o horário exato:
+//   - presença de manhã = alguma ENTRADA antes de 12:00
+//   - presença de tarde = alguma ENTRADA a partir de 12:00
+//   - diária = 0.5 por período presente (dia completo = 1.0)
+// As SAÍDAS são ignoradas no cálculo. AJUSTE_MANUAL entra como override/soma.
+// Este é o único motor de diária do sistema (desktop e mobile).
+function rvRoundHalfDown(v) {
+    if (v <= 0) return 0;
+    if (v >= 1) return 1;
+    const cents = v * 100;
+    const dec = cents - Math.floor(cents);
+    if (Math.abs(dec - 0.5) < 0.0001) return Math.floor(cents) / 100;
+    return Math.round(cents) / 100;
+}
+
+// Aceita registros com "hora_registro" (linha do banco) ou "hora" (Date já pronto).
+function rvHoraDate(r) {
+    return new Date(r.hora_registro !== undefined ? r.hora_registro : r.hora);
+}
+
+// Fração de UM dia (registros de um único funcionário em uma única data).
+function rvFracaoDiaria(registrosDoDia) {
+    const ajustes = registrosDoDia
+        .filter(r => r.tipo === 'AJUSTE_MANUAL')
+        .reduce((s, r) => s + (parseFloat(r.fracao_diaria) || 0), 0);
+
+    const entradas = registrosDoDia.filter(r => r.tipo === 'ENTRADA');
+    if (entradas.length === 0) return rvRoundHalfDown(Math.min(ajustes, 1));
+
+    const manha = entradas.some(r => rvHoraDate(r).getUTCHours() < 12);
+    const tarde = entradas.some(r => rvHoraDate(r).getUTCHours() >= 12);
+    const base = (manha ? 0.5 : 0) + (tarde ? 0.5 : 0);
+
+    return rvRoundHalfDown(Math.min(base + ajustes, 1));
+}
+
+// Total de diárias de uma lista de registros (agrupa por funcionário + dia).
+function rvCalcularTotalDiarias(registros) {
+    if (!registros || registros.length === 0) return 0;
+    const porChave = new Map();
+    registros.forEach(p => {
+        const dia = new Date(p.hora_registro).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+        const chave = `${p.funcionario_id || ''}|${dia}`;
+        if (!porChave.has(chave)) porChave.set(chave, []);
+        porChave.get(chave).push(p);
+    });
+    let total = 0;
+    for (const regs of porChave.values()) total += rvFracaoDiaria(regs);
+    return total;
+}
+
   // ====== CRUD EQUIPE E PONTO ======
       function renderEquipe() {
             const term = document.getElementById('eqp-search').value.toLowerCase();
@@ -225,79 +279,9 @@ function rvParsePeriodo(texto) {
                 registrosFiltrados = registrosFiltrados.filter(p => p.hora_registro <= dataFim + 'T23:59:59');
             }
             
-            // Agrupa por dia
-            const porDia = new Map();
-            registrosFiltrados.forEach(p => {
-                const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
-                if (!porDia.has(dataDia)) porDia.set(dataDia, []);
-                porDia.get(dataDia).push(p);
-            });
-            
-            let totalDiarias = 0;
-            
-            function diffMinutesUTC(startIso, endIso) {
-                return (new Date(endIso) - new Date(startIso)) / (1000 * 60);
-            }
-            
-            function calcularFracaoDiaPeriodo(registrosDoDia) {
-                const entradas = registrosDoDia.filter(r => r.tipo === 'ENTRADA').map(r => r.hora_registro);
-                const saidas   = registrosDoDia.filter(r => r.tipo === 'SAIDA').map(r => r.hora_registro);
-                const ajustes  = registrosDoDia.filter(r => r.tipo === 'AJUSTE_MANUAL')
-                                        .reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
-                
-                if (entradas.length === 0 && saidas.length === 0) return Math.min(ajustes, 1);
-                
-                const todosPontos = [
-                    ...entradas.map(e => ({ tipo: 'E', hora: e })),
-                    ...saidas.map(s => ({ tipo: 'S', hora: s }))
-                ].sort((a, b) => new Date(a.hora) - new Date(b.hora));
-                
-                let startManha = null, endManha = null;
-                let startTarde = null, endTarde = null;
-                
-                for (const p of todosPontos) {
-                    const hour = new Date(p.hora).getUTCHours();
-                    if (hour < 12) {
-                        if (p.tipo === 'E' && !startManha) startManha = p.hora;
-                        if (p.tipo === 'S') endManha = p.hora;
-                    } else {
-                        if (p.tipo === 'E' && !startTarde) startTarde = p.hora;
-                        if (p.tipo === 'S') endTarde = p.hora;
-                    }
-                }
-                
-                function calcMin(start, end, jornada) {
-                    if (!start || !end) return 0;
-                    let mins = diffMinutesUTC(start, end);
-                    const falta = jornada - mins;
-                    if (falta > 0 && falta <= 10) mins = jornada;
-                    return Math.min(jornada, Math.max(0, mins));
-                }
-                
-                let minutosManha = calcMin(startManha, endManha, 240);
-                let minutosTarde = calcMin(startTarde, endTarde, 240);
-                let baseFracao = (minutosManha + minutosTarde) / 480;
-                baseFracao = Math.min(1, Math.max(0, baseFracao));
-                
-                let fracao = baseFracao + ajustes;
-                if (fracao > 1) fracao = 1;
-                
-                // arredondamento half-down
-                function roundHalfDown(v) {
-                    if (v <= 0) return 0;
-                    if (v >= 1) return 1;
-                    let cents = v * 100;
-                    let dec = cents - Math.floor(cents);
-                    if (Math.abs(dec - 0.5) < 0.0001) return Math.floor(cents) / 100;
-                    return Math.round(cents) / 100;
-                }
-                return roundHalfDown(fracao);
-            }
-            
-            for (const registrosDoDia of porDia.values()) {
-                totalDiarias += calcularFracaoDiaPeriodo(registrosDoDia);
-            }
-            
+            // Motor unico de diaria (presenca por periodo)
+            const totalDiarias = rvCalcularTotalDiarias(registrosFiltrados);
+
             return { totalDiarias, registros: registrosFiltrados };
         }
 
@@ -372,78 +356,9 @@ function calcularSaldoPendenteFuncionario(funcId, mesFiltro = null, anoFiltro = 
         });
     }
     
-    // Agrupa por dia
-    const porDia = new Map();
-    registros.forEach(p => {
-        const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
-        if (!porDia.has(dataDia)) porDia.set(dataDia, []);
-        porDia.get(dataDia).push(p);
-    });
-    
-    let totalDiarias = 0;
-    
-    function diffMinutesUTC(startIso, endIso) {
-        return (new Date(endIso) - new Date(startIso)) / (1000 * 60);
-    }
-    
-    function roundHalfDown(v) {
-        if (v <= 0) return 0;
-        if (v >= 1) return 1;
-        let cents = v * 100;
-        let dec = cents - Math.floor(cents);
-        if (Math.abs(dec - 0.5) < 0.0001) return Math.floor(cents) / 100;
-        return Math.round(cents) / 100;
-    }
-    
-    function calcularFracaoDiaPeriodo(registrosDoDia) {
-        const entradas = registrosDoDia.filter(r => r.tipo === 'ENTRADA').map(r => r.hora_registro);
-        const saidas   = registrosDoDia.filter(r => r.tipo === 'SAIDA').map(r => r.hora_registro);
-        const ajustes  = registrosDoDia.filter(r => r.tipo === 'AJUSTE_MANUAL')
-                                .reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
-        
-        if (entradas.length === 0 && saidas.length === 0) return Math.min(ajustes, 1);
-        
-        const todosPontos = [
-            ...entradas.map(e => ({ tipo: 'E', hora: e })),
-            ...saidas.map(s => ({ tipo: 'S', hora: s }))
-        ].sort((a, b) => new Date(a.hora) - new Date(b.hora));
-        
-        let startManha = null, endManha = null;
-        let startTarde = null, endTarde = null;
-        
-        for (const p of todosPontos) {
-            const hour = new Date(p.hora).getUTCHours();
-            if (hour < 12) {
-                if (p.tipo === 'E' && !startManha) startManha = p.hora;
-                if (p.tipo === 'S') endManha = p.hora;
-            } else {
-                if (p.tipo === 'E' && !startTarde) startTarde = p.hora;
-                if (p.tipo === 'S') endTarde = p.hora;
-            }
-        }
-        
-        function calcMin(start, end, jornada) {
-            if (!start || !end) return 0;
-            let mins = diffMinutesUTC(start, end);
-            const falta = jornada - mins;
-            if (falta > 0 && falta <= 10) mins = jornada;
-            return Math.min(jornada, Math.max(0, mins));
-        }
-        
-        let minutosManha = calcMin(startManha, endManha, 240);
-        let minutosTarde = calcMin(startTarde, endTarde, 240);
-        let baseFracao = (minutosManha + minutosTarde) / 480;
-        baseFracao = Math.min(1, Math.max(0, baseFracao));
-        
-        let fracao = baseFracao + ajustes;
-        if (fracao > 1) fracao = 1;
-        return roundHalfDown(fracao);
-    }
-    
-    for (const registrosDoDia of porDia.values()) {
-        totalDiarias += calcularFracaoDiaPeriodo(registrosDoDia);
-    }
-    
+    // Motor unico de diaria (presenca por periodo)
+    const totalDiarias = rvCalcularTotalDiarias(registros);
+
     return { totalDiarias, registros };
 }
 
@@ -453,88 +368,8 @@ function calcularSaldoPendenteFuncionario(funcId, mesFiltro = null, anoFiltro = 
       // Tolerância: 10 minutos por período (manhã e tarde)
       // ==========================================================
       function calcularFracaoDia(registros) {
-          // Separa entradas, saídas e ajustes
-          const entradas = registros.filter(r => r.tipo === 'ENTRADA').map(r => new Date(r.hora_registro));
-          const saidas   = registros.filter(r => r.tipo === 'SAIDA').map(r => new Date(r.hora_registro));
-          const ajustes  = registros.filter(r => r.tipo === 'AJUSTE_MANUAL')
-                                    .reduce((sum, r) => sum + (parseFloat(r.fracao_diaria) || 0), 0);
-          
-          // Ordena todos os pontos para separar manhã e tarde
-          const todosPontos = [
-              ...entradas.map(e => ({ tipo: 'E', hora: e })),
-              ...saidas.map(s => ({ tipo: 'S', hora: s }))
-          ].sort((a, b) => a.hora - b.hora);
-          
-          // Função auxiliar para calcular minutos entre dois horários (já ordenados)
-          function diffMinutes(a, b) { return (b - a) / (1000 * 60); }
-          
-          // Identifica os períodos: manhã (até 12:00) e tarde (após 12:00)
-          let periodoManha = { start: null, end: null };
-          let periodoTarde = { start: null, end: null };
-          
-          // Encontra o último ponto antes do meio-dia (12:00) e o primeiro após
-          for (let i = 0; i < todosPontos.length; i++) {
-              const hora = todosPontos[i].hora;
-              const hour = hora.getUTCHours();
-              if (hour < 12) {
-                  // Período da manhã: pega a primeira entrada e última saída antes de 12:00
-                  if (todosPontos[i].tipo === 'E' && !periodoManha.start) periodoManha.start = hora;
-                  if (todosPontos[i].tipo === 'S') periodoManha.end = hora;
-              } else {
-                  // Período da tarde: pega a primeira entrada e última saída após ou igual 12:00
-                  if (todosPontos[i].tipo === 'E' && !periodoTarde.start) periodoTarde.start = hora;
-                  if (todosPontos[i].tipo === 'S') periodoTarde.end = hora;
-              }
-          }
-          
-          // Calcular horas trabalhadas em cada período, aplicando tolerância de 10 minutos
-          const JORNADA_BASE_MINUTOS = 480; // 8h diárias (não usado diretamente agora)
-          const TOLERANCIA_MINUTOS = 10;    // 10 minutos por período
-          
-          let minutosManha = 0;
-          let minutosTarde = 0;
-          
-          // Período da manhã
-          if (periodoManha.start && periodoManha.end) {
-              let diff = diffMinutes(periodoManha.start, periodoManha.end);
-              // Aplica tolerância: se a diferença for menor que a jornada teórica (4h = 240 min)
-              // e a falta for dentro da tolerância, arredonda para 4h
-              const JORNADA_MANHA_MIN = 240; // 4h
-              const faltaManha = JORNADA_MANHA_MIN - diff;
-              if (faltaManha > 0 && faltaManha <= TOLERANCIA_MINUTOS) {
-                  minutosManha = JORNADA_MANHA_MIN;
-              } else {
-                  minutosManha = diff;
-              }
-              minutosManha = Math.min(JORNADA_MANHA_MIN, Math.max(0, minutosManha));
-          }
-          
-          // Período da tarde
-          if (periodoTarde.start && periodoTarde.end) {
-              let diff = diffMinutes(periodoTarde.start, periodoTarde.end);
-              const JORNADA_TARDE_MIN = 240; // 4h
-              const faltaTarde = JORNADA_TARDE_MIN - diff;
-              if (faltaTarde > 0 && faltaTarde <= TOLERANCIA_MINUTOS) {
-                  minutosTarde = JORNADA_TARDE_MIN;
-              } else {
-                  minutosTarde = diff;
-              }
-              minutosTarde = Math.min(JORNADA_TARDE_MIN, Math.max(0, minutosTarde));
-          }
-          
-          // Fração base = (minutosManha + minutosTarde) / 480 (total diário)
-          let baseFracao = (minutosManha + minutosTarde) / 480;
-          baseFracao = Math.min(1, Math.max(0, baseFracao));
-          
-          // Adiciona ajustes manuais e limita a 1
-          let fracaoFinal = baseFracao + ajustes;
-          if (fracaoFinal > 1) fracaoFinal = 1;
-          
-          return {
-              fracao: fracaoFinal,
-              base: baseFracao,
-              ajustes: ajustes
-          };
+          const ajustes = registros.filter(r => r.tipo === 'AJUSTE_MANUAL').reduce((s, r) => s + (parseFloat(r.fracao_diaria) || 0), 0);
+          return { fracao: rvFracaoDiaria(registros), ajustes: ajustes };
       }
 
       
@@ -699,71 +534,9 @@ function carregarTabelaSaldo() {
     datasOrdenadas.forEach(dataDia => {
         const pts = porDia[dataDia];
         
-        // === NOVA LÓGICA COM TOLERÂNCIA POR PERÍODO ===
-        // Separa os pontos em manhã (até 12:00) e tarde (>=12:00)
-        const pontosManha = [];
-        const pontosTarde = [];
-        
-        // Junta todos os horários de entrada e saída em ordem
-        const todosPontos = [];
-        pts.entradas.forEach(e => todosPontos.push({ tipo: 'E', hora: e }));
-        pts.saidas.forEach(s => todosPontos.push({ tipo: 'S', hora: s }));
-        todosPontos.sort((a, b) => new Date(a.hora) - new Date(b.hora));
-        
-        let minutosManha = 0;
-        let minutosTarde = 0;
-        let startManha = null, endManha = null;
-        let startTarde = null, endTarde = null;
-        
-        for (let i = 0; i < todosPontos.length; i++) {
-            const ponto = todosPontos[i];
-            const hora = new Date(ponto.hora);
-            const hour = hora.getUTCHours();
-            const minute = hora.getUTCMinutes();
-            const isManha = (hour < 12) || (hour === 12 && minute === 0 && ponto.tipo === 'S'); // saída ao meio-dia conta como manhã?
-            // Vamos considerar: antes das 12:00 é manhã, igual ou depois é tarde.
-            if (hour < 12) {
-                if (ponto.tipo === 'E' && startManha === null) startManha = ponto.hora;
-                if (ponto.tipo === 'S') endManha = ponto.hora;
-            } else {
-                if (ponto.tipo === 'E' && startTarde === null) startTarde = ponto.hora;
-                if (ponto.tipo === 'S') endTarde = ponto.hora;
-            }
-        }
-        
-        // Função para calcular minutos com tolerância de 10 minutos por período
-        function calcularMinutosComTolerancia(start, end, jornadaMinutos) {
-            if (!start || !end) return 0;
-            let minutos = diffMinutes(start, end);
-            const falta = jornadaMinutos - minutos;
-            if (falta > 0 && falta <= 10) {
-                minutos = jornadaMinutos;
-            }
-            return Math.min(jornadaMinutos, Math.max(0, minutos));
-        }
-        
-        if (startManha && endManha) {
-            minutosManha = calcularMinutosComTolerancia(startManha, endManha, 240); // 4h = 240 min
-        }
-        if (startTarde && endTarde) {
-            minutosTarde = calcularMinutosComTolerancia(startTarde, endTarde, 240);
-        }
-        
-        let baseFracao = (minutosManha + minutosTarde) / 480;
-        baseFracao = Math.min(1, Math.max(0, baseFracao));
-        
-        // Soma dos ajustes manuais
-        let somaAjustes = 0;
-        if (pts.ajustes.length > 0) {
-            somaAjustes = pts.ajustes.reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
-        }
-        
-        // Fração final (base + ajustes) com limite de 1
-        let fracao = baseFracao + somaAjustes;
-        if (fracao > 1) fracao = 1;
-        
-        // Aplica o arredondamento half-down
-        fracao = roundFractionHalfDown(fracao);
+        // Motor unico de diaria (presenca por periodo)
+        let somaAjustes = pts.ajustes.reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
+        const fracao = rvFracaoDiaria(pts.registros);
         
         // Montagem da string de horários para exibição
         let horariosStr = '';
@@ -1060,6 +833,16 @@ async function lancarAjusteManualMetros() {
     showToast('Ajuste lançado com sucesso!');
 }
 
+// A PK real de jsp_logs é "uid" (uuid). O campo "id" numérico NÃO é único
+// (é gerado por max+1 no front e pode colidir entre lançamentos), então usá-lo
+// em update/delete pode cancelar/baixar outros registros. Sempre que o
+// lançamento tiver uid, filtra por ele; mantém "id" apenas como fallback para
+// registros locais ainda sem uid.
+function filtrarLogPorRef(query, log) {
+    if (log && log.uid) return query.eq('uid', log.uid);
+    return query.eq('id', log.id);
+}
+
 async function fecharPagamentoSaldoMetros() {
     const tercId = document.getElementById('saldo-terc-id').value;
     const dataInicio = document.getElementById('saldo-metros-data-inicio').value;
@@ -1096,7 +879,7 @@ async function fecharPagamentoSaldoMetros() {
     
     const logId = getNextIdNum(STATE.logs).toString();
     const descricao = `Pagamento de metragem - ${terc.nome} - Período ${periodoDesc}`;
-    const { error: errFin } = await sb.from('jsp_logs').insert([{
+    const { data: logCriado, error: errFin } = await sb.from('jsp_logs').insert([{
         id: logId,
         obra_id: terc.obra_atual_id ? parseInt(terc.obra_atual_id) : null,
         tipo: 'despesa',
@@ -1107,7 +890,7 @@ async function fecharPagamentoSaldoMetros() {
         status_financeiro: 'PENDENTE',
         categoria: 'Mão de Obra (Terceirizado)',
         observacao: `Fechamento de metragem - Terceirizado: ${terc.nome} - Total metros: ${totalMetros.toFixed(2)}`
-    }]);
+    }]).select('uid');
     
     if (errFin) {
         showLoading(false);
@@ -1121,10 +904,10 @@ async function fecharPagamentoSaldoMetros() {
     
     if (errProd) {
         // Compensação: cancela a despesa recém-criada para não furar o caixa
-        await sb.from('jsp_logs')
-            .update({ status_financeiro: 'CANCELADO' })
-            .eq('id', logId)
-            .eq('tipo', 'despesa');
+        await filtrarLogPorRef(
+            sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }),
+            logCriado?.[0] || { id: logId }
+        ).eq('tipo', 'despesa');
         showLoading(false);
         return showToast('Erro ao atualizar registros: ' + errProd.message, true);
     }
@@ -1169,10 +952,10 @@ async function estornarUltimoFechamentoMetros() {
     showLoading(true);
 
     // 1. Cancelar a despesa no financeiro
-    const { error: errFin } = await sb.from('jsp_logs')
-        .update({ status_financeiro: 'CANCELADO' })
-        .eq('id', ultimaDespesa.id)
-        .eq('tipo', 'despesa');
+    const { error: errFin } = await filtrarLogPorRef(
+        sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }),
+        ultimaDespesa
+    ).eq('tipo', 'despesa');
 
     if (errFin) {
         showLoading(false);
@@ -1199,10 +982,10 @@ async function estornarUltimoFechamentoMetros() {
 
     if (errProd) {
         // Compensação: restaura a despesa cancelada para manter o caixa consistente
-        await sb.from('jsp_logs')
-            .update({ status_financeiro: ultimaDespesa.status_financeiro })
-            .eq('id', ultimaDespesa.id)
-            .eq('tipo', 'despesa');
+        await filtrarLogPorRef(
+            sb.from('jsp_logs').update({ status_financeiro: ultimaDespesa.status_financeiro }),
+            ultimaDespesa
+        ).eq('tipo', 'despesa');
         showLoading(false);
         return showToast('Erro ao reverter registros de metragem: ' + errProd.message, true);
     }
@@ -1480,7 +1263,7 @@ async function fecharPagamentoSaldo() {
     
     const logId = getNextIdNum(STATE.logs).toString();
     const descricao = `Pagamento de ponto - ${func.nome} - Período ${periodoDesc}`;
-    const { error: errFin } = await sb.from('jsp_logs').insert([{
+    const { data: logCriado, error: errFin } = await sb.from('jsp_logs').insert([{
         id: logId,
         obra_id: func.obra_atual_id ? parseInt(func.obra_atual_id) : null,
         tipo: 'despesa',
@@ -1491,7 +1274,7 @@ async function fecharPagamentoSaldo() {
         status_financeiro: 'PENDENTE',
         categoria: 'Mão de Obra',
         observacao: `Fechamento de ponto - Funcionário: ${func.nome} - Total diárias: ${totalDiarias.toFixed(2)}`
-    }]);
+    }]).select('uid');
     
     if (errFin) {
         showLoading(false);
@@ -1499,16 +1282,17 @@ async function fecharPagamentoSaldo() {
     }
     
     const ids = registros.map(r => r.id);
+    const despesaIdNum = parseInt(logId, 10);
     const { error: errPonto } = await sb.from('jsp_ponto_diario')
-        .update({ pago_em_fechamento: true })
+        .update({ pago_em_fechamento: true, despesa_id: despesaIdNum })
         .in('id', ids);
-    
+
     if (errPonto) {
         // Compensação: cancela a despesa recém-criada para não furar o caixa
-        await sb.from('jsp_logs')
-            .update({ status_financeiro: 'CANCELADO' })
-            .eq('id', logId)
-            .eq('tipo', 'despesa');
+        await filtrarLogPorRef(
+            sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }),
+            logCriado?.[0] || { id: logId }
+        ).eq('tipo', 'despesa');
         showLoading(false);
         return showToast('Erro ao atualizar registros: ' + errPonto.message, true);
     }
@@ -1521,79 +1305,7 @@ async function fecharPagamentoSaldo() {
       
 // Função auxiliar para calcular total de diárias a partir de um array de registros
 function calcularTotalDiariasDosRegistros(registros) {
-    // Agrupa por dia
-    const porDia = new Map();
-    registros.forEach(p => {
-        const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
-        if (!porDia.has(dataDia)) porDia.set(dataDia, []);
-        porDia.get(dataDia).push(p);
-    });
-    
-    let total = 0;
-    
-    function diffMinutesUTC(startIso, endIso) {
-        return (new Date(endIso) - new Date(startIso)) / (1000 * 60);
-    }
-    
-    function roundHalfDown(v) {
-        if (v <= 0) return 0;
-        if (v >= 1) return 1;
-        let cents = v * 100;
-        let dec = cents - Math.floor(cents);
-        if (Math.abs(dec - 0.5) < 0.0001) return Math.floor(cents) / 100;
-        return Math.round(cents) / 100;
-    }
-    
-    function calcularFracaoDiaPeriodo(registrosDoDia) {
-        const entradas = registrosDoDia.filter(r => r.tipo === 'ENTRADA').map(r => r.hora_registro);
-        const saidas   = registrosDoDia.filter(r => r.tipo === 'SAIDA').map(r => r.hora_registro);
-        const ajustes  = registrosDoDia.filter(r => r.tipo === 'AJUSTE_MANUAL')
-                                .reduce((sum, a) => sum + parseFloat(a.fracao_diaria || 0), 0);
-        
-        if (entradas.length === 0 && saidas.length === 0) return Math.min(ajustes, 1);
-        
-        const todosPontos = [
-            ...entradas.map(e => ({ tipo: 'E', hora: e })),
-            ...saidas.map(s => ({ tipo: 'S', hora: s }))
-        ].sort((a, b) => new Date(a.hora) - new Date(b.hora));
-        
-        let startManha = null, endManha = null;
-        let startTarde = null, endTarde = null;
-        
-        for (const p of todosPontos) {
-            const hour = new Date(p.hora).getUTCHours();
-            if (hour < 12) {
-                if (p.tipo === 'E' && !startManha) startManha = p.hora;
-                if (p.tipo === 'S') endManha = p.hora;
-            } else {
-                if (p.tipo === 'E' && !startTarde) startTarde = p.hora;
-                if (p.tipo === 'S') endTarde = p.hora;
-            }
-        }
-        
-        function calcMin(start, end, jornada) {
-            if (!start || !end) return 0;
-            let mins = diffMinutesUTC(start, end);
-            const falta = jornada - mins;
-            if (falta > 0 && falta <= 10) mins = jornada;
-            return Math.min(jornada, Math.max(0, mins));
-        }
-        
-        let minutosManha = calcMin(startManha, endManha, 240);
-        let minutosTarde = calcMin(startTarde, endTarde, 240);
-        let baseFracao = (minutosManha + minutosTarde) / 480;
-        baseFracao = Math.min(1, Math.max(0, baseFracao));
-        
-        let fracao = baseFracao + ajustes;
-        if (fracao > 1) fracao = 1;
-        return roundHalfDown(fracao);
-    }
-    
-    for (const registrosDoDia of porDia.values()) {
-        total += calcularFracaoDiaPeriodo(registrosDoDia);
-    }
-    
-    return total;
+    return rvCalcularTotalDiarias(registros);
 }
 
       
@@ -2022,42 +1734,9 @@ async function buscarRegistrosEletronicos() {
             // Ordena cronologicamente os pontos do dia
             let pt = registro.pontos.sort((a, b) => a.hora - b.hora);
             
-            let fracao = 0;
-            let totalHoras = 0;
-
-            // Pega as entradas e saídas separadas para o fallback caso falte batida
-            let entradas = pt.filter(p => p.tipo === 'ENTRADA');
-            let saidas = pt.filter(p => p.tipo === 'SAIDA');
-
-            if (entradas.length > 0 && saidas.length > 0) {
-                if (pt.length >= 4) {
-                    // Cálculo com os 4 pontos (E1, S1, E2, S2)
-                    let msManha = pt[1].hora - pt[0].hora;
-                    let msTarde = pt[3].hora - pt[2].hora;
-
-                    if (msManha > 0) totalHoras += msManha / (1000 * 60 * 60);
-                    if (msTarde > 0) totalHoras += msTarde / (1000 * 60 * 60);
-                } else {
-                    // Fallback: Se bateu menos de 4x, usa primeira entrada e última saída descontando almoço
-                    let diffMilisegundos = saidas[saidas.length - 1].hora - entradas[0].hora;
-                    let horasBrutas = diffMilisegundos / (1000 * 60 * 60);
-                    if (horasBrutas >= 6) horasBrutas -= 1; // Desconto de almoço
-                    totalHoras = horasBrutas;
-                }
-
-                // Aplica Tolerância de 10 minutos
-                if (totalHoras >= (JORNADA_BASE_HORAS - TOLERANCIA_HORAS) && totalHoras < JORNADA_BASE_HORAS) {
-                    totalHoras = JORNADA_BASE_HORAS;
-                }
-
-                fracao = totalHoras / JORNADA_BASE_HORAS;
-
-                if (fracao > 1) fracao = 1;
-                else if (fracao < 0) fracao = 0;
-                else fracao = parseFloat(fracao.toFixed(2));
-
-                totalDiarias += fracao;
-            }
+            // Motor unico de diaria (presenca por periodo)
+            let fracao = rvFracaoDiaria(registro.pontos);
+            totalDiarias += fracao;
 
             const dataStr = registro.rawDate.toLocaleDateString('pt-BR', {timeZone: 'UTC'});
             
@@ -2132,6 +1811,17 @@ async function estornarUltimoFechamento() {
     // e o legado "Período MM/YYYY"). Sem datas, estorna todos os registros fechados.
     const periodo = rvParsePeriodo(ultimaDespesa.produto_nome);
 
+    // Vinculação: registros de ponto marcados com o despesa_id deste fechamento.
+    const vinculados = STATE.ponto_diario.filter(p =>
+        p.funcionario_id === funcId &&
+        p.pago_em_fechamento &&
+        String(p.despesa_id) === String(ultimaDespesa.id) &&
+        (!periodo || (
+            p.hora_registro >= periodo.inicio + 'T00:00:00' &&
+            p.hora_registro <= periodo.fim + 'T23:59:59'
+        ))
+    );
+
     let confirmMsg = `Estornar o pagamento de ${formatMoney(ultimaDespesa.valor_total)} (${ultimaDespesa.status_financeiro})?`;
     if (periodo) {
         const iniBr = periodo.inicio.split('-').reverse().join('/');
@@ -2147,36 +1837,46 @@ async function estornarUltimoFechamento() {
     showLoading(true);
 
     // 1. Cancelar a despesa no financeiro
-    const { error: errFin } = await sb.from('jsp_logs')
-        .update({ status_financeiro: 'CANCELADO' })
-        .eq('id', ultimaDespesa.id)
-        .eq('tipo', 'despesa');
+    const { error: errFin } = await filtrarLogPorRef(
+        sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }),
+        ultimaDespesa
+    ).eq('tipo', 'despesa');
 
     if (errFin) {
         showLoading(false);
         return showToast('Erro ao cancelar despesa: ' + errFin.message, true);
     }
 
-    // 2. Reverter marcação pago_em_fechamento nos registros de ponto do período
-    let query = sb.from('jsp_ponto_diario')
-        .update({ pago_em_fechamento: false })
-        .eq('funcionario_id', funcId)
-        .eq('pago_em_fechamento', true);
+    // 2. Reverter marcação pago_em_fechamento nos registros do fechamento
+    let errPonto;
+    if (vinculados.length > 0) {
+        // Caminho preferido: reverte exatamente os registros vinculados ao despesa_id.
+        const idsVinculados = vinculados.map(p => p.id);
+        ({ error: errPonto } = await sb.from('jsp_ponto_diario')
+            .update({ pago_em_fechamento: false, despesa_id: null })
+            .in('id', idsVinculados));
+    } else {
+        // Legado (sem despesa_id): reverte pelo período da descrição.
+        let query = sb.from('jsp_ponto_diario')
+            .update({ pago_em_fechamento: false, despesa_id: null })
+            .eq('funcionario_id', funcId)
+            .eq('pago_em_fechamento', true);
 
-    if (periodo) {
-        query = query
-            .gte('hora_registro', periodo.inicio + 'T00:00:00')
-            .lte('hora_registro', periodo.fim + 'T23:59:59');
+        if (periodo) {
+            query = query
+                .gte('hora_registro', periodo.inicio + 'T00:00:00')
+                .lte('hora_registro', periodo.fim + 'T23:59:59');
+        }
+
+        ({ error: errPonto } = await query);
     }
-
-    const { error: errPonto } = await query;
 
     if (errPonto) {
         // Compensação: restaura a despesa cancelada para manter o caixa consistente
-        await sb.from('jsp_logs')
-            .update({ status_financeiro: ultimaDespesa.status_financeiro })
-            .eq('id', ultimaDespesa.id)
-            .eq('tipo', 'despesa');
+        await filtrarLogPorRef(
+            sb.from('jsp_logs').update({ status_financeiro: ultimaDespesa.status_financeiro }),
+            ultimaDespesa
+        ).eq('tipo', 'despesa');
         showLoading(false);
         return showToast('Erro ao reverter registros de ponto: ' + errPonto.message, true);
     }
@@ -2611,9 +2311,11 @@ function executarImpressaoFolha() {
             let totalMetros = 0;
             despesasFiltradas.forEach(d => {
                 totalValor += parseFloat(d.valor_total);
-                // Extrai a metragem salva na observação (padrão: "Metragem: 150.00 m")
-                const metrosMatch = d.observacao?.match(/Metragem:\s*([\d\.]+)/);
-                if (metrosMatch) totalMetros += parseFloat(metrosMatch[1]);
+                // Extrai a metragem salva na observação. O fechamento grava
+                // "Total metros: 150.00" (ver fecharPagamentoSaldoMetros); o padrão
+                // legado era "Metragem: 150.00 m". Aceita ambos e vírgula decimal.
+                const metrosMatch = d.observacao?.match(/(?:Total metros|Metragem):\s*([\d.,]+)/);
+                if (metrosMatch) totalMetros += parseFloat(metrosMatch[1].replace(',', '.'));
             });
             
             if (totalValor > 0) {
@@ -2825,58 +2527,7 @@ async function calcularDiariasPorHora(funcionarioId, obraId, dataInicioIso, data
         if (error) throw error;
         if (!data || data.length === 0) return 0;
 
-        let diasTrabalhados = {};
-        
-        data.forEach(ponto => {
-            const dataDia = new Date(ponto.hora_registro).toLocaleDateString('pt-BR');
-            if(!diasTrabalhados[dataDia]) diasTrabalhados[dataDia] = { pontos: [] };
-            
-            diasTrabalhados[dataDia].pontos.push({
-                tipo: ponto.tipo,
-                hora: new Date(ponto.hora_registro)
-            });
-        });
-
-        let totalDiarias = 0;
-        const JORNADA_BASE_HORAS = 8; 
-        const TOLERANCIA_HORAS = 20 / 60; // tolerância
-
-        for (let dia in diasTrabalhados) {
-            let pt = diasTrabalhados[dia].pontos.sort((a, b) => a.hora - b.hora);
-            let entradas = pt.filter(p => p.tipo === 'ENTRADA');
-            let saidas = pt.filter(p => p.tipo === 'SAIDA');
-            
-            let totalHoras = 0;
-
-            if (entradas.length > 0 && saidas.length > 0) {
-                if (pt.length >= 4) {
-                    let msManha = pt[1].hora - pt[0].hora;
-                    let msTarde = pt[3].hora - pt[2].hora;
-
-                    if (msManha > 0) totalHoras += msManha / (1000 * 60 * 60);
-                    if (msTarde > 0) totalHoras += msTarde / (1000 * 60 * 60);
-                } else {
-                    let diffMilisegundos = saidas[saidas.length - 1].hora - entradas[0].hora;
-                    let horasBrutas = diffMilisegundos / (1000 * 60 * 60);
-                    if (horasBrutas >= 6) horasBrutas -= 1; 
-                    totalHoras = horasBrutas;
-                }
-
-                // Applica a tolerância para bater no cálculo da diária cheia
-                if (totalHoras >= (JORNADA_BASE_HORAS - TOLERANCIA_HORAS) && totalHoras < JORNADA_BASE_HORAS) {
-                    totalHoras = JORNADA_BASE_HORAS;
-                }
-
-                let fracao = totalHoras / JORNADA_BASE_HORAS;
-
-                if (fracao > 1) fracao = 1;
-                else if (fracao < 0) fracao = 0;
-                else fracao = parseFloat(fracao.toFixed(2));
-
-                totalDiarias += fracao;
-            }
-        }
-        return totalDiarias;
+        return rvCalcularTotalDiarias(data);
     } catch (err) {
         console.error("Erro ao calcular: ", err);
         return 0;
@@ -4176,7 +3827,10 @@ async function estornarUltimoFechamentoEmpreita() {
     if (!confirm(`Estornar o pagamento de ${formatMoney(ultima.valor_total)}? As medições voltam a ficar pendentes.`)) return;
     showLoading(true);
     try {
-        await sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }).eq('id', ultima.id).eq('tipo', 'despesa');
+        await filtrarLogPorRef(
+            sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }),
+            ultima
+        ).eq('tipo', 'despesa');
     } catch (e) {}
     ultima.status_financeiro = 'CANCELADO';
     let periodoInicio = null;

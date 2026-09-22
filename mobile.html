@@ -1005,6 +1005,27 @@
 }
       
          function getNextIdNum(array) { let max=0; array.forEach(item=>{ const val=parseInt(item.id); if(!isNaN(val) && val>max) max=val; }); return max+1; }
+
+         // A PK real de jsp_logs é "uid". O "id" numérico não é único (max+1 pode
+         // colidir), então update/delete deve filtrar por uid quando existir.
+        // ====== MOTOR UNICO DE DIARIA (presenca por periodo) ======
+        function rvRoundHalfDown(v) { if (v <= 0) return 0; if (v >= 1) return 1; const c = v * 100; const d = c - Math.floor(c); if (Math.abs(d - 0.5) < 0.0001) return Math.floor(c) / 100; return Math.round(c) / 100; }
+        function rvHoraDate(r) { return new Date(r.hora_registro !== undefined ? r.hora_registro : r.hora); }
+        function rvFracaoDiaria(regs) {
+            const aj = regs.filter(r => r.tipo === 'AJUSTE_MANUAL').reduce((s, r) => s + (parseFloat(r.fracao_diaria) || 0), 0);
+            const ent = regs.filter(r => r.tipo === 'ENTRADA');
+            if (ent.length === 0) return rvRoundHalfDown(Math.min(aj, 1));
+            const manha = ent.some(r => rvHoraDate(r).getUTCHours() < 12);
+            const tarde = ent.some(r => rvHoraDate(r).getUTCHours() >= 12);
+            return rvRoundHalfDown(Math.min((manha ? 0.5 : 0) + (tarde ? 0.5 : 0) + aj, 1));
+        }
+        function rvCalcularTotalDiarias(regs) {
+            if (!regs || regs.length === 0) return 0;
+            const porChave = new Map();
+            regs.forEach(p => { const dia = new Date(p.hora_registro).toLocaleDateString('pt-BR', { timeZone: 'UTC' }); const k = (p.funcionario_id || '') + '|' + dia; if (!porChave.has(k)) porChave.set(k, []); porChave.get(k).push(p); });
+            let tt = 0; for (const g of porChave.values()) tt += rvFracaoDiaria(g); return tt;
+        }
+         function refLog(query, log) { return (log && log.uid) ? query.eq('uid', log.uid) : query.eq('id', log.id); }
          function updateSelects() {
             const htmlObras = '<option value="">Todas Obras</option>'+STATE.obras.map(o=>`<option value="${o.id}">${o.nome}</option>`).join('');
             const htmlObrasStrict = '<option value="">-- Selecione Obra --</option>'+STATE.obras.map(o=>`<option value="${o.id}">${o.nome}</option>`).join('');
@@ -1163,30 +1184,7 @@
             let registros = STATE.ponto_diario.filter(p=> p.funcionario_id===funcId && p.status==='VALIDADO' && !p.pago_em_fechamento);
             if(dataInicio) registros = registros.filter(p=>p.hora_registro >= dataInicio+'T00:00:00');
             if(dataFim) registros = registros.filter(p=>p.hora_registro <= dataFim+'T23:59:59');
-            const porDia = new Map();
-            registros.forEach(p=>{ const dataDia = new Date(p.hora_registro).toLocaleDateString('pt-BR',{timeZone:'UTC'}); if(!porDia.has(dataDia)) porDia.set(dataDia,[]); porDia.get(dataDia).push(p); });
-            let totalDiarias = 0;
-            function diffMinutesUTC(start,end){ return (new Date(end)-new Date(start))/(1000*60); }
-            function roundHalfDown(v){ if(v<=0) return 0; if(v>=1) return 1; let cents=v*100; let dec=cents-Math.floor(cents); if(Math.abs(dec-0.5)<0.0001) return Math.floor(cents)/100; return Math.round(cents)/100; }
-            function calcularFracaoDia(registrosDoDia){
-                const entradas = registrosDoDia.filter(r=>r.tipo==='ENTRADA').map(r=>r.hora_registro);
-                const saidas   = registrosDoDia.filter(r=>r.tipo==='SAIDA').map(r=>r.hora_registro);
-                const ajustes  = registrosDoDia.filter(r=>r.tipo==='AJUSTE_MANUAL').reduce((sum,a)=>sum+parseFloat(a.fracao_diaria||0),0);
-                if(entradas.length===0 && saidas.length===0) return Math.min(ajustes,1);
-                const todosPontos = [...entradas.map(e=>({tipo:'E',hora:e})), ...saidas.map(s=>({tipo:'S',hora:s}))].sort((a,b)=>new Date(a.hora)-new Date(b.hora));
-                let startManha=null,endManha=null,startTarde=null,endTarde=null;
-                for(const p of todosPontos){
-                    const hour=new Date(p.hora).getUTCHours();
-                    if(hour<12){ if(p.tipo==='E' && !startManha) startManha=p.hora; if(p.tipo==='S') endManha=p.hora; }
-                    else { if(p.tipo==='E' && !startTarde) startTarde=p.hora; if(p.tipo==='S') endTarde=p.hora; }
-                }
-                function calcMin(start,end,jornada){ if(!start||!end) return 0; let mins=diffMinutesUTC(start,end); const falta=jornada-mins; if(falta>0 && falta<=10) mins=jornada; return Math.min(jornada,Math.max(0,mins)); }
-                let minutosManha=calcMin(startManha,endManha,240), minutosTarde=calcMin(startTarde,endTarde,240);
-                let baseFracao=(minutosManha+minutosTarde)/480; baseFracao=Math.min(1,Math.max(0,baseFracao));
-                let fracao=baseFracao+ajustes; if(fracao>1) fracao=1;
-                return roundHalfDown(fracao);
-            }
-            for(const regs of porDia.values()) totalDiarias+=calcularFracaoDia(regs);
+            const totalDiarias = rvCalcularTotalDiarias(registros);
             return { totalDiarias, registros };
         }
 
@@ -1334,14 +1332,8 @@
             document.getElementById('saldo-sem-registros').classList.add('hidden');
             datasOrdenadas.forEach(dataDia=>{
                 const pts=porDia[dataDia];
-                const todosPontos=[...pts.entradas.map(e=>({tipo:'E',hora:e})), ...pts.saidas.map(s=>({tipo:'S',hora:s}))].sort((a,b)=>new Date(a.hora)-new Date(b.hora));
-                let startManha=null,endManha=null,startTarde=null,endTarde=null;
-                for(const p of todosPontos){ const hour=new Date(p.hora).getUTCHours(); if(hour<12){ if(p.tipo==='E' && !startManha) startManha=p.hora; if(p.tipo==='S') endManha=p.hora; } else { if(p.tipo==='E' && !startTarde) startTarde=p.hora; if(p.tipo==='S') endTarde=p.hora; } }
-                function calcMin(start,end,jornada){ if(!start||!end) return 0; let mins=diffMinutesUTC(start,end); const falta=jornada-mins; if(falta>0 && falta<=10) mins=jornada; return Math.min(jornada,Math.max(0,mins)); }
-                let minutosManha=calcMin(startManha,endManha,240), minutosTarde=calcMin(startTarde,endTarde,240);
-                let baseFracao=(minutosManha+minutosTarde)/480; baseFracao=Math.min(1,Math.max(0,baseFracao));
                 let somaAjustes=pts.ajustes.reduce((sum,a)=>sum+parseFloat(a.fracao_diaria||0),0);
-                let fracao=baseFracao+somaAjustes; if(fracao>1) fracao=1; fracao=roundHalfDown(fracao);
+                const fracao = rvFracaoDiaria([...pts.entradas.map(h=>({tipo:'ENTRADA',hora_registro:h})), ...pts.saidas.map(h=>({tipo:'SAIDA',hora_registro:h})), ...pts.ajustes]);
                 totalDiarias+=fracao;
                 let horariosStr='';
                 if(pts.entradas.length||pts.saidas.length){
@@ -1402,49 +1394,7 @@ function rvParsePeriodo(texto) {
 
     // Função para calcular total de diárias (CORRIGIDA)
     function calcularTotalDiarias() {
-        let tot = 0;
-        const porDia = new Map();
-        registros.forEach(p => {
-            const d = new Date(p.hora_registro).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
-            if (!porDia.has(d)) porDia.set(d, []);
-            porDia.get(d).push(p);
-        });
-        function diff(arr) { return (new Date(arr[1]) - new Date(arr[0])) / (1000 * 60); }
-        function round(v) { let c = v * 100; let d = c - Math.floor(c); if (Math.abs(d - 0.5) < 0.0001) return Math.floor(c) / 100; return Math.round(c) / 100; }
-        function calc(regs) {
-            let ent = regs.filter(r => r.tipo === 'ENTRADA').map(r => r.hora_registro);
-            let sai = regs.filter(r => r.tipo === 'SAIDA').map(r => r.hora_registro);
-            let aj = regs.filter(r => r.tipo === 'AJUSTE_MANUAL').reduce((s, a) => s + parseFloat(a.fracao_diaria || 0), 0);
-            if (ent.length === 0 && sai.length === 0) return Math.min(aj, 1);
-            let pts = [...ent.map(e => ({ tipo: 'E', hora: e })), ...sai.map(s => ({ tipo: 'S', hora: s }))].sort((a, b) => new Date(a.hora) - new Date(b.hora));
-            let sm = null, em = null, st = null, et = null;
-            for (const p of pts) {
-                const h = new Date(p.hora).getUTCHours();
-                if (h < 12) {
-                    if (p.tipo === 'E' && !sm) sm = p.hora;
-                    if (p.tipo === 'S') em = p.hora;
-                } else {
-                    if (p.tipo === 'E' && !st) st = p.hora;
-                    if (p.tipo === 'S') et = p.hora;
-                }
-            }
-            function calcM(s, e, j) {
-                if (!s || !e) return 0;
-                let m = diff([s, e]);
-                let f = j - m;
-                if (f > 0 && f <= 10) m = j;
-                return Math.min(j, Math.max(0, m));
-            }
-            let minM = calcM(sm, em, 240);
-            let minT = calcM(st, et, 240);
-            let base = (minM + minT) / 480;
-            base = Math.min(1, Math.max(0, base));
-            let f = base + aj;
-            if (f > 1) f = 1;
-            return round(f);
-        }
-        for (const regs of porDia.values()) tot += calc(regs);
-        return tot;
+        return rvCalcularTotalDiarias(registros);
     }
 
     const totalDiarias = calcularTotalDiarias(); // AGORA É UM NÚMERO
@@ -1459,7 +1409,7 @@ function rvParsePeriodo(texto) {
     const descricao = `Pagamento de ponto - ${func.nome} - Período ${periodoDesc}`;
 
     const logId = getNextIdNum(STATE.logs).toString();
-    const { error: errFin } = await sb.from('jsp_logs').insert([{
+    const { data: logCriado, error: errFin } = await sb.from('jsp_logs').insert([{
         id: logId,
         obra_id: func.obra_atual_id ? parseInt(func.obra_atual_id) : null,
         tipo: 'despesa',
@@ -1470,7 +1420,7 @@ function rvParsePeriodo(texto) {
         status_financeiro: 'PENDENTE',
         categoria: 'Mão de Obra',
         observacao: `Fechamento de ponto - Funcionário: ${func.nome} - Total diárias: ${totalDiarias.toFixed(2)}`
-    }]);
+    }]).select('uid');
 
     if (errFin) {
         showLoading(false);
@@ -1478,10 +1428,11 @@ function rvParsePeriodo(texto) {
     }
 
     const ids = registros.map(r => r.id);
-    const { error: errPonto } = await sb.from('jsp_ponto_diario').update({ pago_em_fechamento: true }).in('id', ids);
+    const despesaIdNum = parseInt(logId, 10);
+    const { error: errPonto } = await sb.from('jsp_ponto_diario').update({ pago_em_fechamento: true, despesa_id: despesaIdNum }).in('id', ids);
     if (errPonto) {
         // Compensação: cancela a despesa recém-criada para não furar o caixa
-        await sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }).eq('id', logId).eq('tipo', 'despesa');
+        await refLog(sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }), logCriado?.[0] || { id: logId }).eq('tipo', 'despesa');
         showLoading(false);
         return showToast('Erro ao atualizar registros: ' + errPonto.message, true);
     }
@@ -1718,7 +1669,7 @@ async function fecharPagamentoSaldoMetros() {
 
     const descricao = `Pagamento de metragem - ${terc.nome} - Período ${periodoDesc}`;
     const logId = getNextIdNum(STATE.logs).toString();
-    const { error: errFin } = await sb.from('jsp_logs').insert([{
+    const { data: logCriado, error: errFin } = await sb.from('jsp_logs').insert([{
         id: logId,
         obra_id: terc.obra_atual_id ? parseInt(terc.obra_atual_id) : null,
         tipo: 'despesa',
@@ -1729,7 +1680,7 @@ async function fecharPagamentoSaldoMetros() {
         status_financeiro: 'PENDENTE',
         categoria: 'Mão de Obra (Terceirizado)',
         observacao: `Fechamento de metragem - Terceirizado: ${terc.nome} - Total metros: ${totalMetros.toFixed(2)}`
-    }]);
+    }]).select('uid');
 
     if (errFin) {
         showLoading(false);
@@ -1741,7 +1692,7 @@ async function fecharPagamentoSaldoMetros() {
 
     if (errProd) {
         // Compensação: cancela a despesa recém-criada para não furar o caixa
-        await sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }).eq('id', logId).eq('tipo', 'despesa');
+        await refLog(sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }), logCriado?.[0] || { id: logId }).eq('tipo', 'despesa');
         showLoading(false);
         return showToast('Erro ao atualizar registros: ' + errProd.message, true);
     }
@@ -1781,7 +1732,7 @@ async function estornarUltimoFechamentoMetros() {
 
     showLoading(true);
 
-    const { error: errFin } = await sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }).eq('id', ultimaDespesa.id).eq('tipo', 'despesa');
+    const { error: errFin } = await refLog(sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }), ultimaDespesa).eq('tipo', 'despesa');
     if (errFin) {
         showLoading(false);
         return showToast('Erro ao cancelar despesa: ' + errFin.message, true);
@@ -1800,7 +1751,7 @@ async function estornarUltimoFechamentoMetros() {
     const { error: errProd } = await query;
     if (errProd) {
         // Compensação: restaura a despesa cancelada para manter o caixa consistente
-        await sb.from('jsp_logs').update({ status_financeiro: ultimaDespesa.status_financeiro }).eq('id', ultimaDespesa.id).eq('tipo', 'despesa');
+        await refLog(sb.from('jsp_logs').update({ status_financeiro: ultimaDespesa.status_financeiro }), ultimaDespesa).eq('tipo', 'despesa');
         showLoading(false);
         return showToast('Erro ao reverter registros: ' + errProd.message, true);
     }
@@ -1977,6 +1928,17 @@ function imprimirReciboDoModal() {
     // e o legado "Período MM/YYYY"). Sem datas, estorna todos os registros fechados.
     const periodo = rvParsePeriodo(ultimaDespesa.produto_nome);
 
+    // Vinculação: registros de ponto marcados com o despesa_id deste fechamento.
+    const vinculados = STATE.ponto_diario.filter(p =>
+        p.funcionario_id === funcId &&
+        p.pago_em_fechamento &&
+        String(p.despesa_id) === String(ultimaDespesa.id) &&
+        (!periodo || (
+            p.hora_registro >= periodo.inicio + 'T00:00:00' &&
+            p.hora_registro <= periodo.fim + 'T23:59:59'
+        ))
+    );
+
     let confirmMsg = `Estornar o pagamento de ${formatMoney(ultimaDespesa.valor_total)} (${ultimaDespesa.status_financeiro})?`;
     if (periodo) {
         const iniBr = periodo.inicio.split('-').reverse().join('/');
@@ -1992,33 +1954,43 @@ function imprimirReciboDoModal() {
     showLoading(true);
 
     // 1. Cancelar a despesa no financeiro
-    const { error: errFin } = await sb.from('jsp_logs')
-        .update({ status_financeiro: 'CANCELADO' })
-        .eq('id', ultimaDespesa.id)
-        .eq('tipo', 'despesa');
+    const { error: errFin } = await refLog(
+        sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }),
+        ultimaDespesa
+    ).eq('tipo', 'despesa');
 
     if (errFin) {
         showLoading(false);
         return showToast('Erro ao cancelar despesa: ' + errFin.message, true);
     }
 
-    // 2. Reverter marcação pago_em_fechamento nos registros de ponto do período
-    let query = sb.from('jsp_ponto_diario')
-        .update({ pago_em_fechamento: false })
-        .eq('funcionario_id', funcId)
-        .eq('pago_em_fechamento', true);
+    // 2. Reverter marcação pago_em_fechamento nos registros do fechamento
+    let errPonto;
+    if (vinculados.length > 0) {
+        // Caminho preferido: reverte exatamente os registros vinculados ao despesa_id.
+        const idsVinculados = vinculados.map(p => p.id);
+        ({ error: errPonto } = await sb.from('jsp_ponto_diario')
+            .update({ pago_em_fechamento: false, despesa_id: null })
+            .in('id', idsVinculados));
+    } else {
+        // Legado (sem despesa_id): reverte pelo período da descrição.
+        let query = sb.from('jsp_ponto_diario')
+            .update({ pago_em_fechamento: false, despesa_id: null })
+            .eq('funcionario_id', funcId)
+            .eq('pago_em_fechamento', true);
 
-    if (periodo) {
-        query = query
-            .gte('hora_registro', periodo.inicio + 'T00:00:00')
-            .lte('hora_registro', periodo.fim + 'T23:59:59');
+        if (periodo) {
+            query = query
+                .gte('hora_registro', periodo.inicio + 'T00:00:00')
+                .lte('hora_registro', periodo.fim + 'T23:59:59');
+        }
+
+        ({ error: errPonto } = await query);
     }
-
-    const { error: errPonto } = await query;
 
     if (errPonto) {
         // Compensação: restaura a despesa cancelada para manter o caixa consistente
-        await sb.from('jsp_logs').update({ status_financeiro: ultimaDespesa.status_financeiro }).eq('id', ultimaDespesa.id).eq('tipo', 'despesa');
+        await refLog(sb.from('jsp_logs').update({ status_financeiro: ultimaDespesa.status_financeiro }), ultimaDespesa).eq('tipo', 'despesa');
         showLoading(false);
         return showToast('Erro ao reverter registros de ponto: ' + errPonto.message, true);
     }
