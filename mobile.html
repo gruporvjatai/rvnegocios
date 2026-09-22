@@ -832,7 +832,8 @@
 
     <div id="print-area" class="print-only"></div>
 
-    <script src="js/equipe-core.js?v=20260922c"></script>
+    <script src="js/equipe-core.js?v=20260922d"></script>
+    <script src="js/equipe.js?v=20260922d"></script>
     <script>
         // ====== CONEXÃO E ESTADO ======
         let dadosUsuario = null;
@@ -1162,14 +1163,6 @@
         function onCategoriaChange(){ const cat=document.getElementById('eqp-categoria').value; const label=document.getElementById('label-valor-base'); const tipoOrigem=document.getElementById('eqp-tipo-origem'); if(cat==='Terceirizado'){ label.innerText='Valor do Metro (R$)'; tipoOrigem.value='terceirizado'; } else { label.innerText='Valor da Diária (R$)'; tipoOrigem.value='equipe'; } }
 
         // ====== CÁLCULO DE SALDO PENDENTE (diárias) ======
-        function calcularSaldoPendenteFuncionarioPorPeriodo(funcId, dataInicio, dataFim){
-            let registros = STATE.ponto_diario.filter(p=> p.funcionario_id===funcId && p.status==='VALIDADO' && !p.pago_em_fechamento);
-            if(dataInicio) registros = registros.filter(p=>p.hora_registro >= dataInicio+'T00:00:00');
-            if(dataFim) registros = registros.filter(p=>p.hora_registro <= dataFim+'T23:59:59');
-            const totalDiarias = rvCalcularTotalDiarias(registros);
-            return { totalDiarias, registros };
-        }
-
         // ====== RENDER EQUIPE COM SALDO E BOTÕES ======
         function renderEquipe() {
           const term = document.getElementById('eqp-search').value.toLowerCase();
@@ -1303,7 +1296,6 @@
             if(dataFim) registros=registros.filter(p=>p.hora_registro<=dataFim+'T23:59:59');
             if(statusFiltro==='PENDENTE') registros=registros.filter(p=>!p.pago_em_fechamento);
             else if(statusFiltro==='PAGO') registros=registros.filter(p=>p.pago_em_fechamento===true);
-            function formatHoraUTC(iso){ if(!iso) return '--:--'; const d=new Date(iso); return `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`; }
             function diffMinutesUTC(start,end){ return (new Date(end)-new Date(start))/(1000*60); }
             function roundHalfDown(v){ if(v<=0) return 0; if(v>=1) return 1; let cents=v*100; let dec=cents-Math.floor(cents); if(Math.abs(dec-0.5)<0.0001) return Math.floor(cents)/100; return Math.round(cents)/100; }
             const porDia={};
@@ -1329,85 +1321,6 @@
             document.getElementById('saldo-total-valor').innerText=formatMoney(totalDiarias * parseFloat(func.valor_diaria||0));
             lucide.createIcons();
         }
-        async function lancarAjusteManual(){
-            const funcId=document.getElementById('saldo-equipe-id').value;
-            const data=document.getElementById('ajuste-data').value;
-            const fracao=parseFloat(document.getElementById('ajuste-fracao').value);
-            const justificativa=document.getElementById('ajuste-justificativa').value;
-            if(!data||isNaN(fracao)||fracao<=0) return showToast('Preencha data e fração',true);
-            const func=STATE.equipe.find(e=>e.id===funcId);
-            if(!func||!func.obra_atual_id) return showToast('Funcionário sem obra',true);
-            showLoading(true);
-            let nextId=1; if(STATE.ponto_diario.length) nextId=Math.max(...STATE.ponto_diario.map(p=>parseInt(p.id)||0))+1;
-            const payload={ id:nextId, funcionario_id:funcId, obra_id:func.obra_atual_id, tipo:'AJUSTE_MANUAL', status:'VALIDADO', hora_registro:new Date(data+'T12:00:00').toISOString(), fracao_diaria:fracao, observacao:justificativa||'Ajuste manual', pago_em_fechamento:false, lat_registro:'MANUAL', lng_registro:'MANUAL' };
-            const {error}=await sb.from('jsp_ponto_diario').insert([payload]);
-            if(error){ showLoading(false); return showToast('Erro: '+error.message,true); }
-            await loadData(); carregarTabelaSaldo(); showToast('Ajuste lançado!');
-        }
-
-
-        async function fecharPagamentoSaldo() {
-    const funcId = document.getElementById('saldo-equipe-id').value;
-    const dataInicio = document.getElementById('saldo-filtro-data-inicio').value;
-    const dataFim = document.getElementById('saldo-filtro-data-fim').value;
-    const func = STATE.equipe.find(e => e.id === funcId);
-    if (!func) return;
-
-    let registros = STATE.ponto_diario.filter(p => p.funcionario_id === funcId && p.status === 'VALIDADO' && !p.pago_em_fechamento);
-    if (dataInicio) registros = registros.filter(p => p.hora_registro >= dataInicio + 'T00:00:00');
-    if (dataFim) registros = registros.filter(p => p.hora_registro <= dataFim + 'T23:59:59');
-    if (registros.length === 0) return showToast('Nenhum registro pendente', true);
-
-    // Função para calcular total de diárias (CORRIGIDA)
-    function calcularTotalDiarias() {
-        return rvCalcularTotalDiarias(registros);
-    }
-
-    const totalDiarias = calcularTotalDiarias(); // AGORA É UM NÚMERO
-    const valorTotal = totalDiarias * parseFloat(func.valor_diaria || 0);
-
-    if (!confirm(`Fechar pagamento de ${totalDiarias.toFixed(2)} diárias no valor de ${formatMoney(valorTotal)}?`)) return;
-
-    showLoading(true);
-    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-    const periodoDesc = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
-    const descricao = `Pagamento de ponto - ${func.nome} - Período ${periodoDesc}`;
-
-    const logId = getNextIdNum(STATE.logs).toString();
-    const { data: logCriado, error: errFin } = await sb.from('jsp_logs').insert([{
-        id: logId,
-        obra_id: func.obra_atual_id ? parseInt(func.obra_atual_id) : null,
-        tipo: 'despesa',
-        produto_nome: descricao,
-        valor_total: valorTotal,
-        data: new Date().toISOString(),
-        vencimento: new Date().toISOString(),
-        status_financeiro: 'PENDENTE',
-        categoria: 'Mão de Obra',
-        observacao: `Fechamento de ponto - Funcionário: ${func.nome} - Total diárias: ${totalDiarias.toFixed(2)}`
-    }]).select('uid');
-
-    if (errFin) {
-        showLoading(false);
-        return showToast('Erro ao gerar despesa: ' + errFin.message, true);
-    }
-
-    const ids = registros.map(r => r.id);
-    const despesaIdNum = parseInt(logId, 10);
-    const { error: errPonto } = await sb.from('jsp_ponto_diario').update({ pago_em_fechamento: true, despesa_id: despesaIdNum, fechamento_uid: logCriado?.[0]?.uid || null }).in('id', ids);
-    if (errPonto) {
-        // Compensação: cancela a despesa recém-criada para não furar o caixa
-        await refLog(sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }), logCriado?.[0] || { id: logId }).eq('tipo', 'despesa');
-        showLoading(false);
-        return showToast('Erro ao atualizar registros: ' + errPonto.message, true);
-    }
-
-    await loadData();
-    fecharModalSaldo();
-    renderEquipe();
-    showToast('Pagamento fechado! Despesa lançada.');
-}
       
         function imprimirExtratoSaldo(){
             const funcId=document.getElementById('saldo-equipe-id').value; const func=STATE.equipe.find(e=>e.id===funcId); const dataInicio=document.getElementById('saldo-filtro-data-inicio').value; const dataFim=document.getElementById('saldo-filtro-data-fim').value; const statusFiltro=document.getElementById('saldo-filtro-status').value; const totalDiarias=document.getElementById('saldo-total-diarias').innerText; const valorTotal=document.getElementById('saldo-total-valor').innerText; const tbody=document.getElementById('saldo-tabela-body'); const linhas=Array.from(tbody.querySelectorAll('tr')).map(tr=>{ const tds=tr.querySelectorAll('td'); return{ data:tds[0]?.innerText||'', horarios:tds[1]?.innerText||'', fracao:tds[2]?.innerText||'', status:tds[3]?.innerText||'' }; }); const dataIniFormatada=dataInicio?new Date(dataInicio+'T00:00:00').toLocaleDateString('pt-BR'):'Início'; const dataFimFormatada=dataFim?new Date(dataFim+'T00:00:00').toLocaleDateString('pt-BR'):'Fim'; const periodoExibicao=`${dataIniFormatada} a ${dataFimFormatada}`; const hoje=new Date().toLocaleDateString('pt-BR'); let html=`<div style="font-family:'Segoe UI',Arial; padding:30px;"><div style="display:flex; justify-content:space-between; border-bottom:3px solid #1d4ed8; padding-bottom:15px; margin-bottom:25px;"><img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height:70px;"><div><h1 style="margin:0; font-size:24px;">EXTRATO DE PONTO</h1><p style="margin:5px 0 0 0; color:#1d4ed8;">${func.nome}</p><p>Período: ${periodoExibicao} | Diária: ${formatMoney(func.valor_diaria)}</p><p>Status: ${statusFiltro}</p></div></div><table width="100%" style="border-collapse:collapse;"><thead><tr style="background:#f1f5f9;"><th style="padding:12px; border:1px solid #cbd5e1;">Data</th><th style="padding:12px; border:1px solid #cbd5e1;">Horários</th><th style="padding:12px; border:1px solid #cbd5e1; text-align:center;">Diária</th><th style="padding:12px; border:1px solid #cbd5e1; text-align:center;">Status</th></tr></thead><tbody>${linhas.map(l=>`<tr><td style="padding:10px;">${l.data}</td><td style="padding:10px;">${l.horarios}</td><td style="padding:10px; text-align:center;">${l.fracao}</td><td style="padding:10px; text-align:center;">${l.status}</td></tr>`).join('')}</tbody></table><div style="display:flex; justify-content:flex-end; margin-top:40px;"><div style="width:300px; background:#f8fafc; padding:20px;"><div>Total de Diárias: <strong>${totalDiarias}</strong></div><div>Valor a Pagar: <strong style="color:#1d4ed8;">${valorTotal}</strong></div></div></div><div style="margin-top:60px; text-align:center;"><div style="border-top:1px solid #94a3b8; padding-top:10px;"><strong>RV NEGÓCIOS E COMPANHIA</strong><br>Contratante</div><div style="border-top:1px solid #94a3b8; padding-top:10px; margin-top:20px;"><strong>${func.nome.toUpperCase()}</strong><br>Profissional</div></div></div>`; document.getElementById('print-area').innerHTML=html; setTimeout(()=>window.print(),300);
@@ -1483,33 +1396,6 @@
 
 // ========== FUNÇÕES PARA SALDO DE METROS (TERCEIRIZADOS) ==========
 
-function fecharModalSaldoMetros() {
-    document.getElementById('modal-saldo-metros').classList.add('hidden');
-}
-
-function abrirModalSaldoMetros(tercId) {
-    const terc = STATE.terceirizados.find(t => t.id === tercId);
-    if (!terc) return;
-
-    document.getElementById('saldo-terc-id').value = tercId;
-    document.getElementById('saldo-metros-subtitle').innerText = `${terc.nome} - Valor do Metro: ${formatMoney(terc.valor_metro || 0)}`;
-
-    const hoje = new Date();
-    const anoAtual = hoje.getFullYear();
-    const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
-    const primeiroDia = `${anoAtual}-01-01`;
-    const ultimoDia = new Date(anoAtual, hoje.getMonth() + 1, 0).getDate();
-    const ultimoDiaStr = `${anoAtual}-${mesAtual}-${String(ultimoDia).padStart(2, '0')}`;
-
-    document.getElementById('saldo-metros-data-inicio').value = primeiroDia;
-    document.getElementById('saldo-metros-data-fim').value = ultimoDiaStr;
-    document.getElementById('saldo-metros-filtro-status').value = 'PENDENTE';
-
-    carregarTabelaSaldoMetros();
-    document.getElementById('modal-saldo-metros').classList.remove('hidden');
-    lucide.createIcons();
-}
-
 function carregarTabelaSaldoMetros() {
     const tercId = document.getElementById('saldo-terc-id').value;
     if (!tercId) return;
@@ -1566,173 +1452,6 @@ function carregarTabelaSaldoMetros() {
     const valorTotal = totalMetros * parseFloat(terc.valor_metro || 0);
     document.getElementById('saldo-metros-total-valor').innerText = formatMoney(valorTotal);
     lucide.createIcons();
-}
-
-async function lancarAjusteManualMetros() {
-    const tercId = document.getElementById('saldo-terc-id').value;
-    const data = document.getElementById('ajuste-metros-data').value;
-    const metros = parseFloat(document.getElementById('ajuste-metros-valor').value);
-    const justificativa = document.getElementById('ajuste-metros-justificativa').value;
-
-    if (!data || isNaN(metros) || metros <= 0) {
-        return showToast('Preencha data e metragem válida.', true);
-    }
-
-    const terc = STATE.terceirizados.find(t => t.id === tercId);
-    if (!terc || !terc.obra_atual_id) {
-        return showToast('Terceirizado sem obra vinculada.', true);
-    }
-
-    showLoading(true);
-
-    const payload = {
-        id: crypto.randomUUID(),
-        terceirizado_id: tercId,
-        obra_id: terc.obra_atual_id,
-        data_registro: data,
-        metros: metros,
-        status: 'PENDENTE',
-        observacao: justificativa || 'Ajuste manual'
-    };
-
-    const { error } = await sb.from('jsp_producao_terc').insert([payload]);
-    if (error) {
-        showLoading(false);
-        return showToast('Erro ao lançar ajuste: ' + error.message, true);
-    }
-
-    await loadData();
-    carregarTabelaSaldoMetros();
-    showToast('Ajuste lançado com sucesso!');
-}
-
-async function fecharPagamentoSaldoMetros() {
-    const tercId = document.getElementById('saldo-terc-id').value;
-    const dataInicio = document.getElementById('saldo-metros-data-inicio').value;
-    const dataFim = document.getElementById('saldo-metros-data-fim').value;
-
-    const terc = STATE.terceirizados.find(t => t.id === tercId);
-    if (!terc) return;
-
-    let registros = (STATE.producao_terc || []).filter(p => p.terceirizado_id === tercId && p.status !== 'PAGO');
-    if (dataInicio) registros = registros.filter(p => p.data_registro >= dataInicio);
-    if (dataFim) registros = registros.filter(p => p.data_registro <= dataFim);
-
-    if (registros.length === 0) {
-        return showToast('Nenhum registro pendente para fechar.', true);
-    }
-
-    const totalMetros = registros.reduce((sum, r) => sum + parseFloat(r.metros), 0);
-    const valorTotal = totalMetros * parseFloat(terc.valor_metro || 0);
-
-    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-    const periodoDesc = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
-
-    if (!confirm(`Fechar pagamento de ${totalMetros.toFixed(2)} metros no valor de ${formatMoney(valorTotal)}?`)) return;
-
-    showLoading(true);
-
-    const descricao = `Pagamento de metragem - ${terc.nome} - Período ${periodoDesc}`;
-    const logId = getNextIdNum(STATE.logs).toString();
-    const { data: logCriado, error: errFin } = await sb.from('jsp_logs').insert([{
-        id: logId,
-        obra_id: terc.obra_atual_id ? parseInt(terc.obra_atual_id) : null,
-        tipo: 'despesa',
-        produto_nome: descricao,
-        valor_total: valorTotal,
-        data: new Date().toISOString(),
-        vencimento: new Date().toISOString(),
-        status_financeiro: 'PENDENTE',
-        categoria: 'Mão de Obra (Terceirizado)',
-        observacao: `Fechamento de metragem - Terceirizado: ${terc.nome} - Total metros: ${totalMetros.toFixed(2)}`
-    }]).select('uid');
-
-    if (errFin) {
-        showLoading(false);
-        return showToast('Erro ao gerar despesa: ' + errFin.message, true);
-    }
-
-    const ids = registros.map(r => r.id);
-    const { error: errProd } = await sb.from('jsp_producao_terc').update({ status: 'PAGO', fechamento_uid: logCriado?.[0]?.uid || null }).in('id', ids);
-
-    if (errProd) {
-        // Compensação: cancela a despesa recém-criada para não furar o caixa
-        await refLog(sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }), logCriado?.[0] || { id: logId }).eq('tipo', 'despesa');
-        showLoading(false);
-        return showToast('Erro ao atualizar registros: ' + errProd.message, true);
-    }
-
-    await loadData();
-    fecharModalSaldoMetros();
-    renderEquipe();
-    showToast('Pagamento fechado! Despesa lançada como pendente.');
-}
-
-async function estornarUltimoFechamentoMetros() {
-    const tercId = document.getElementById('saldo-terc-id').value;
-    const terc = STATE.terceirizados.find(t => t.id === tercId);
-    if (!terc) return;
-
-    const despesas = STATE.logs.filter(l =>
-        l.tipo === 'despesa' &&
-        l.produto_nome && l.produto_nome.includes(`Pagamento de metragem - ${terc.nome}`) &&
-        (l.status_financeiro === 'PENDENTE' || l.status_financeiro === 'PAGO')
-    ).sort((a, b) => new Date(b.data) - new Date(a.data));
-
-    if (despesas.length === 0) {
-        return showToast('Nenhum pagamento de metragem encontrado para estornar.', true);
-    }
-
-    const ultimaDespesa = despesas[0];
-
-    let periodo = null;
-    const match = ultimaDespesa.produto_nome.match(/Período (.*)$/);
-    if (match) periodo = match[1];
-
-    // Vinculação: registros de produção marcados com o fechamento (uid) desta despesa.
-    const vinculadosMetro = rvSelecionarVinculadosMetro(STATE.producao_terc, tercId, ultimaDespesa);
-
-    let confirmMsg = `Estornar o pagamento de ${formatMoney(ultimaDespesa.valor_total)} (${ultimaDespesa.status_financeiro})?`;
-    if (periodo) confirmMsg += `\nPeríodo: ${periodo}`;
-    confirmMsg += `\n\nOs registros de metragem voltarão a ficar pendentes.`;
-
-    if (!confirm(confirmMsg)) return;
-
-    showLoading(true);
-
-    const { error: errFin } = await refLog(sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }), ultimaDespesa).eq('tipo', 'despesa');
-    if (errFin) {
-        showLoading(false);
-        return showToast('Erro ao cancelar despesa: ' + errFin.message, true);
-    }
-
-    let errProd;
-    if (vinculadosMetro.length > 0) {
-        ({ error: errProd } = await sb.from('jsp_producao_terc').update({ status: 'PENDENTE', fechamento_uid: null }).in('id', vinculadosMetro.map(p => p.id)));
-    } else {
-        let query = sb.from('jsp_producao_terc').update({ status: 'PENDENTE', fechamento_uid: null }).eq('terceirizado_id', tercId).eq('status', 'PAGO');
-        if (periodo) {
-            const partes = periodo.split(' a ');
-            if (partes.length === 2) {
-                const dataInicio = partes[0].split('/').reverse().join('-');
-                const dataFim = partes[1].split('/').reverse().join('-');
-                query = query.gte('data_registro', dataInicio).lte('data_registro', dataFim);
-            }
-        }
-        ({ error: errProd } = await query);
-    }
-    if (errProd) {
-        // Compensação: restaura a despesa cancelada para manter o caixa consistente
-        await refLog(sb.from('jsp_logs').update({ status_financeiro: ultimaDespesa.status_financeiro }), ultimaDespesa).eq('tipo', 'despesa');
-        showLoading(false);
-        return showToast('Erro ao reverter registros: ' + errProd.message, true);
-    }
-
-    await loadData();
-    carregarTabelaSaldoMetros();
-    renderEquipe();
-    showToast('Estorno realizado com sucesso! Despesa cancelada e metragens liberadas.');
 }
 
 function imprimirExtratoSaldoMetros() {
@@ -1826,145 +1545,7 @@ function imprimirReciboMetrosDoModal() {
     setTimeout(() => window.print(), 300);
 }
       
-function imprimirReciboDoModal() {
-    const funcId = document.getElementById('saldo-equipe-id').value;
-    const func = STATE.equipe.find(e => e.id === funcId);
-    if (!func) return;
-    
-    const totalDiarias = document.getElementById('saldo-total-diarias').innerText;
-    const valorTotal = document.getElementById('saldo-total-valor').innerText;
-    const dataInicio = document.getElementById('saldo-filtro-data-inicio').value;
-    const dataFim = document.getElementById('saldo-filtro-data-fim').value;
-    const hoje = new Date().toLocaleDateString('pt-BR');
-    
-    const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-    const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
-    const periodo = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
-    
-    const html = `
-        <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
-                <img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height: 60px;" />
-                <div style="text-align: right;">
-                    <h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO SOBRE DIÁRIAS</h1>
-                    <p style="margin: 5px 0 0 0; font-size: 18px; color: #1d4ed8; font-weight: bold;">VALOR: ${valorTotal}</p>
-                </div>
-            </div>
-            
-            <div style="font-size: 14px; line-height: 1.8; text-align: justify; margin-bottom: 40px;">
-                Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA LTDA</strong> (CNPJ: 61.893.912/0001-24), a importância de <strong>${valorTotal}</strong>, 
-                referente ao pagamento de diárias <!--trabalhadas no período de <strong>${periodo}</strong>--> em aberto, conforme registro diário de presença da obra. Totalizando <strong>${totalDiarias} dias</strong> 
-                com a diária acordada em <strong>${formatMoney(func.valor_diaria)}</strong>.
-            </div>
-            
-            <div style="font-size: 14px; margin-bottom: 40px;">
-                Para maior clareza, firmo(amos) o presente recibo para que produza os seus efeitos legais.
-            </div>
-            
-            <div style="text-align: center; margin-bottom: 30px; font-size: 14px;">
-                Jataí - GO, ${hoje}.
-            </div>
-            
-            <div style="margin-top: 60px; display: flex; justify-content: center;">
-                <div style="text-align: center; width: 60%; border-top: 1px solid #000; padding-top: 10px;">
-                    <strong>${func.nome.toUpperCase()}</strong><br>
-                    <span style="font-size: 12px; color: #64748b;">CPF: ${func.cpf || '_______________________'} <!--| RG: ${func.rg || '_______________________'}--></span>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.getElementById('print-area').innerHTML = html;
-    setTimeout(() => window.print(), 300);
-}
-
-
-     async function estornarUltimoFechamento() {
-    const funcId = document.getElementById('saldo-equipe-id').value;
-    const func = STATE.equipe.find(e => e.id === funcId);
-    if (!func) return;
-
-    // Busca a despesa mais recente gerada para este funcionário com a descrição padrão
-    const despesas = STATE.logs.filter(l => 
-        l.tipo === 'despesa' &&
-        l.produto_nome && l.produto_nome.includes(`Pagamento de ponto - ${func.nome}`) &&
-        (l.status_financeiro === 'PENDENTE' || l.status_financeiro === 'PAGO')
-    ).sort((a, b) => new Date(b.data) - new Date(a.data));
-
-    if (despesas.length === 0) {
-        return showToast('Nenhum pagamento de ponto encontrado para estornar.', true);
-    }
-
-    const ultimaDespesa = despesas[0];
-    
-    // Extrai o período da descrição (formatos "Período DD/MM/YYYY a DD/MM/YYYY"
-    // e o legado "Período MM/YYYY"). Sem datas, estorna todos os registros fechados.
-    const periodo = rvParsePeriodo(ultimaDespesa.produto_nome);
-
-    // Vinculação: registros de ponto marcados com o fechamento (uid) ou despesa_id.
-    const vinculados = rvSelecionarVinculadosDiaria(STATE.ponto_diario, funcId, ultimaDespesa, periodo);
-
-    let confirmMsg = `Estornar o pagamento de ${formatMoney(ultimaDespesa.valor_total)} (${ultimaDespesa.status_financeiro})?`;
-    if (periodo) {
-        const iniBr = periodo.inicio.split('-').reverse().join('/');
-        const fimBr = periodo.fim.split('-').reverse().join('/');
-        confirmMsg += `\nPeríodo: ${iniBr} a ${fimBr}`;
-    } else {
-        confirmMsg += `\nPeríodo: todos os registros fechados`;
-    }
-    confirmMsg += `\n\nOs registros de ponto voltarão a ficar pendentes.`;
-    
-    if (!confirm(confirmMsg)) return;
-
-    showLoading(true);
-
-    // 1. Cancelar a despesa no financeiro
-    const { error: errFin } = await refLog(
-        sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }),
-        ultimaDespesa
-    ).eq('tipo', 'despesa');
-
-    if (errFin) {
-        showLoading(false);
-        return showToast('Erro ao cancelar despesa: ' + errFin.message, true);
-    }
-
-    // 2. Reverter marcação pago_em_fechamento nos registros do fechamento
-    let errPonto;
-    if (vinculados.length > 0) {
-        // Caminho preferido: reverte exatamente os registros vinculados ao despesa_id.
-        const idsVinculados = vinculados.map(p => p.id);
-        ({ error: errPonto } = await sb.from('jsp_ponto_diario')
-            .update({ pago_em_fechamento: false, despesa_id: null, fechamento_uid: null })
-            .in('id', idsVinculados));
-    } else {
-        // Legado (sem despesa_id): reverte pelo período da descrição.
-        let query = sb.from('jsp_ponto_diario')
-            .update({ pago_em_fechamento: false, despesa_id: null, fechamento_uid: null })
-            .eq('funcionario_id', funcId)
-            .eq('pago_em_fechamento', true);
-
-        if (periodo) {
-            query = query
-                .gte('hora_registro', periodo.inicio + 'T00:00:00')
-                .lte('hora_registro', periodo.fim + 'T23:59:59');
-        }
-
-        ({ error: errPonto } = await query);
-    }
-
-    if (errPonto) {
-        // Compensação: restaura a despesa cancelada para manter o caixa consistente
-        await refLog(sb.from('jsp_logs').update({ status_financeiro: ultimaDespesa.status_financeiro }), ultimaDespesa).eq('tipo', 'despesa');
-        showLoading(false);
-        return showToast('Erro ao reverter registros de ponto: ' + errPonto.message, true);
-    }
-
-    await loadData();
-    carregarTabelaSaldo(); // Atualiza o modal
-    renderEquipe();        // Atualiza a listagem principal
-    showToast('Estorno realizado com sucesso! Despesa cancelada e registros liberados.');
-}     
+     
 
      function imprimirChecagem() {
     // Obtém os elementos (com fallback para evitar erros)
