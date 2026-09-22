@@ -301,6 +301,7 @@
                   <option value="todos">Todos</option>
                   <option value="diaria">Diária</option>
                   <option value="metro">Metro</option>
+                  <option value="empreita">Empreita</option>
               </select>
           </div>
 
@@ -378,6 +379,7 @@
                         <option value="Pedreiro">Pedreiro (Diária)</option>
                         <option value="Servente">Servente (Diária)</option>
                         <option value="Terceirizado">Terceirizado (Metro)</option>
+                        <option value="Empreita">Empreita (Contrato)</option>
                     </select>
                 </div>
                 
@@ -424,6 +426,10 @@
                 <div>
                     <label class="text-[10px] font-bold text-slate-500 uppercase" id="label-valor-base">Valor da Diária (R$)</label>
                     <input type="number" step="0.01" id="eqp-valor_diaria" placeholder="0.00" class="w-full p-2.5 bg-slate-50 border rounded-xl outline-none text-sm">
+                </div>
+
+                <div id="eqp-hint-empreita" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-3">
+                    <p class="text-[10px] text-amber-800 font-bold">Empreita: informe o valor TOTAL do contrato. As medições (%) são lançadas manualmente pelo botão CALCULAR.</p>
                 </div>
 
                 <div>
@@ -626,7 +632,7 @@
             <p id="doc-equipe-nome" class="text-sm font-bold text-slate-500 mb-4"></p>
             <input type="hidden" id="doc-equipe-id">
             <div class="space-y-4">
-                <div><label class="text-[10px] font-bold uppercase">Tipo de Documento</label><select id="doc-tipo-select" class="w-full p-3 border rounded font-bold text-slate-700"><option value="" selected hidden>Selecione...</option><option value="contrato1">Contrato Trabalho - Servente</option><option value="contrato2">Contrato Trabalho - Pedreiro</option><option value="metragem">Contrato Trabalho - Metragem</option><option value="epi">Comprovante de EPI's</option></select></div>
+                <div><label class="text-[10px] font-bold uppercase">Tipo de Documento</label><select id="doc-tipo-select" class="w-full p-3 border rounded font-bold text-slate-700"><option value="" selected hidden>Selecione...</option><option value="contrato1">Contrato Trabalho - Servente</option><option value="contrato2">Contrato Trabalho - Pedreiro</option><option value="metragem">Contrato Trabalho - Metragem</option><option value="empreita">Contrato de Empreita (Serviço)</option><option value="epi">Comprovante de EPI's</option></select></div>
                 <button onclick="imprimirDocumento()" class="w-full bg-slate-800 text-white p-3 rounded font-bold flex items-center justify-center gap-2"><i data-lucide="printer"></i> Imprimir Documento</button>
                 <button id="btn-assinar-doc" onclick="marcarContratoAssinado()" class="w-full bg-green-600 text-white p-3 rounded font-bold">Marcar como Assinado</button>
             </div>
@@ -636,7 +642,7 @@
 
      <!-- MODAL DE SALDO DE METROS (TERCEIRIZADOS) -->
 <!-- MODAL SALDO METROS (TERCEIRIZADOS) - VERSÃO MOBILE OTIMIZADA -->
-<div id="modal-saldo-metros" class="hidden fixed inset-0 bg-black/70 z-50 flex items-end justify-center">
+<div id="modal-saldo-metros" class="hidden fixed inset-0 bg-black/70 z-50 flex items-end justify-center no-print">
   <div class="bg-white rounded-t-3xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl animate-slide-up">
     
     <!-- Cabeçalho -->
@@ -761,7 +767,7 @@
 
 
     <!-- MODAL FOLHA DE PAGAMENTO (MOBILE) -->
-<div id="modal-folha-pagamento" class="hidden fixed inset-0 bg-black/70 z-50 flex items-end justify-center">
+<div id="modal-folha-pagamento" class="hidden fixed inset-0 bg-black/70 z-50 flex items-end justify-center no-print">
   <div class="bg-white rounded-t-3xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl animate-slide-up">
     
     <!-- Cabeçalho -->
@@ -830,6 +836,122 @@
 
     
 
+    <!-- MODAL MEDICAO DE EMPREITA (MOBILE) -->
+    <div id="modal-saldo-empreita" class="hidden fixed inset-0 bg-black/70 z-50 flex items-end justify-center no-print">
+        <div class="bg-white rounded-t-3xl w-full max-h-[95vh] flex flex-col overflow-hidden shadow-2xl">
+            <div class="bg-amber-700 p-4 text-white flex justify-between items-center shrink-0">
+                <div>
+                    <h3 class="font-bold text-base flex items-center gap-2"><i data-lucide="clipboard-list" class="w-5 h-5"></i> Medição de Empreita</h3>
+                    <p id="saldo-empreita-subtitle" class="text-[11px] font-medium opacity-90 mt-0.5"></p>
+                </div>
+                <button onclick="fecharModalSaldoEmpreita()" class="p-1 rounded-full bg-amber-800/50 active:bg-amber-900"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
+                <input type="hidden" id="saldo-empreita-id">
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="text-[9px] font-bold text-slate-500 uppercase">Contrato</div>
+                        <div id="emp-card-contrato" class="text-sm font-black text-slate-800">R$ 0,00</div>
+                    </div>
+                    <div class="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="text-[9px] font-bold text-slate-500 uppercase">Já Pago</div>
+                        <div id="emp-card-pago" class="text-sm font-black text-emerald-700">R$ 0,00</div>
+                    </div>
+                    <div class="bg-amber-50 p-2.5 rounded-xl border border-amber-200 shadow-sm">
+                        <div class="text-[9px] font-bold text-amber-700 uppercase">A Pagar</div>
+                        <div id="emp-card-pendente" class="text-sm font-black text-amber-800">R$ 0,00</div>
+                    </div>
+                    <div class="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="text-[9px] font-bold text-slate-500 uppercase">Saldo</div>
+                        <div id="emp-card-saldo" class="text-sm font-black text-indigo-700">R$ 0,00</div>
+                        <div id="emp-card-percent" class="text-[9px] font-bold text-slate-400 mt-0.5">0% executado</div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Data Início</label>
+                            <input type="date" id="saldo-empreita-data-inicio" class="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50" onchange="carregarTabelaSaldoEmpreita()">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Data Fim</label>
+                            <input type="date" id="saldo-empreita-data-fim" class="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50" onchange="carregarTabelaSaldoEmpreita()">
+                        </div>
+                    </div>
+                    <div class="flex gap-2 items-end">
+                        <div class="flex-1">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Status</label>
+                            <select id="saldo-empreita-filtro-status" class="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50" onchange="carregarTabelaSaldoEmpreita()">
+                                <option value="PENDENTE" selected>Pendentes</option>
+                                <option value="PAGO">Já Pagos</option>
+                                <option value="TODOS">Todos</option>
+                            </select>
+                        </div>
+                        <button onclick="imprimirExtratoEmpreita()" class="bg-slate-800 text-white px-3 py-2 rounded-lg font-bold text-xs flex items-center gap-1"><i data-lucide="printer" class="w-4 h-4"></i> Extrato</button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                    <table class="w-full text-xs">
+                        <thead class="bg-slate-100 text-slate-600 border-b">
+                            <tr>
+                                <th class="p-2 text-left text-[9px] font-bold uppercase">Data</th>
+                                <th class="p-2 text-left text-[9px] font-bold uppercase">Serviço</th>
+                                <th class="p-2 text-center text-[9px] font-bold uppercase">%</th>
+                                <th class="p-2 text-right text-[9px] font-bold uppercase">Valor</th>
+                                <th class="p-2 text-center text-[9px] font-bold uppercase">Status</th>
+                                <th class="p-2 text-center text-[9px] font-bold uppercase">Del</th>
+                            </tr>
+                        </thead>
+                        <tbody id="saldo-empreita-tabela-body" class="divide-y"></tbody>
+                    </table>
+                    <div id="saldo-empreita-sem-registros" class="p-6 text-center text-slate-400 font-medium text-xs hidden">Nenhuma medição encontrada para os filtros.</div>
+                </div>
+
+                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                    <h4 class="font-bold text-slate-700 text-xs mb-2 flex items-center gap-1"><i data-lucide="plus-circle" class="w-4 h-4 text-amber-700"></i> Lançar medição da obra</h4>
+                    <div class="space-y-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1">Data</label>
+                            <input type="date" id="emp-medicao-data" class="w-full p-2 border rounded-lg text-xs">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 mb-1">% do contrato</label>
+                                <input type="number" step="0.01" min="0" max="100" id="emp-medicao-percent" class="w-full p-2 border rounded-lg text-xs font-bold" placeholder="Ex: 15" oninput="sincronizarCamposMedicaoEmpreita('percent')">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 mb-1">Valor (R$)</label>
+                                <input type="number" step="0.01" min="0" id="emp-medicao-valor" class="w-full p-2 border rounded-lg text-xs font-bold" placeholder="0.00" oninput="sincronizarCamposMedicaoEmpreita('valor')">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1">Serviço / etapa medida</label>
+                            <input type="text" id="emp-medicao-descricao" placeholder="Ex: Alvenaria 1º pavimento" class="w-full p-2 border rounded-lg text-xs">
+                        </div>
+                        <button onclick="lancarMedicaoEmpreita()" class="w-full bg-amber-700 text-white px-4 py-2 rounded-lg font-bold flex items-center justify-center gap-1 active:scale-95"><i data-lucide="save" class="w-4 h-4"></i> Lançar</button>
+                    </div>
+                    <p class="text-[10px] text-slate-500 mt-2">Informe % ou valor. O outro campo preenche sozinho. O lançamento não pode ultrapassar o saldo restante do contrato.</p>
+                </div>
+            </div>
+
+            <div class="p-3 bg-white border-t shrink-0">
+                <div class="mb-2">
+                    <span class="text-xs font-bold text-slate-500">Total medido (filtro):</span>
+                    <span id="saldo-empreita-total-valor" class="text-lg font-black text-amber-800 ml-1">R$ 0,00</span>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="imprimirReciboEmpreitaDoModal()" class="flex-1 bg-slate-700 text-white px-3 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1 active:scale-95"><i data-lucide="receipt" class="w-4 h-4"></i> Recibo</button>
+                    <button onclick="estornarUltimoFechamentoEmpreita()" class="flex-1 bg-amber-600 text-white px-3 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1 active:scale-95"><i data-lucide="rotate-ccw" class="w-4 h-4"></i> Estornar</button>
+                    <button onclick="fecharPagamentoSaldoEmpreita()" class="flex-1 bg-blue-700 text-white px-3 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1 active:scale-95"><i data-lucide="check-circle" class="w-4 h-4"></i> Conferido</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="print-area" class="print-only"></div>
 
     <script src="js/equipe-core.js?v=20260922d"></script>
@@ -845,7 +967,7 @@
         const supabaseKey = 'sb_publishable_B2a4vA22qf4XGcrxPDRAaw_13rW51uI';
         const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], fases: [], equipe: [], ponto_diario: [], terceirizados: [], producao_terc: [] };
+        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], fases: [], equipe: [], ponto_diario: [], terceirizados: [], producao_terc: [], medicoes_empreita: [] };
         let CART = [];
         let CURRENT_OC_ID = null; 
 
@@ -866,6 +988,8 @@
 
         // ====== UTILITÁRIOS ======
         function formatMoney(val) { return parseFloat(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+        function usuarioPodeGerenciar() { return !!(dadosUsuario && (dadosUsuario.nivel === 'admin' || dadosUsuario.nivel_acesso === 'admin' || dadosUsuario.pode_gerenciar === true)); }
+        function getTodayDate() { const d = new Date(); const year = d.getFullYear(); const month = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0'); return `${year}-${month}-${day}`; }
         function formatDate(d) { try { return d ? new Date(d).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : '-'; } catch(e) { return '-'; } }
         function showLoading(show) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
         function showToast(msg, isError=false) { 
@@ -943,7 +1067,8 @@
                   resEquipe,
                   resTerceirizados,
                   resPonto,
-                  resProducaoTerc
+                  resProducaoTerc,
+                  resMedicoesEmpreita
               ] = await Promise.all([
                   fetchAllRecords('jsp_obras'),
                   fetchAllRecords('jsp_fornecedores'),
@@ -953,7 +1078,8 @@
                   fetchAllRecords('jsp_equipe'),
                   fetchAllRecords('jsp_terceirizados'),
                   fetchAllRecords('jsp_ponto_diario').catch(() => ({ data: [] })),
-                  fetchAllRecords('jsp_producao_terc').catch(() => ({ data: [] }))
+                  fetchAllRecords('jsp_producao_terc').catch(() => ({ data: [] })),
+                  fetchAllRecords('jsp_medicoes_empreita').catch(() => ({ data: [] }))
               ]);
       
               STATE.obras = resObras.data || [];
@@ -965,6 +1091,7 @@
               STATE.terceirizados = resTerceirizados.data || [];
               STATE.ponto_diario = resPonto.data || [];
               STATE.producao_terc = resProducaoTerc.data || [];
+              STATE.medicoes_empreita = resMedicoesEmpreita.data || [];
       
                   
               updateSelects();
@@ -1159,8 +1286,8 @@
         async function saveProduct(e){ e.preventDefault(); showLoading(true); const isNew=!document.getElementById('prd-id').value; const payload={ nome:document.getElementById('prd-name').value, categoria:document.getElementById('prd-cat').value, preco:document.getElementById('prd-price').value }; if(!isNew) payload.id=document.getElementById('prd-id').value; await sb.from('jsp_produtos').upsert(payload); closeOverlayForm('prod-form-container'); showToast("Salvo!"); loadData(); }
 
         // ====== FUNÇÕES DE EQUIPE UNIFICADA ======
-        function getColaboradoresUnificados(){ const equipe=STATE.equipe.map(e=>({...e, tipo:'diaria', valor_base:parseFloat(e.valor_diaria||0), unidade:'dias', table_origin:'equipe'})); const terceirizados=STATE.terceirizados.map(t=>({...t, nome:t.nome, categoria:'Terceirizado (Metro)', telefone:t.telefone, cpf:t.cpf_cnpj, rg:t.rg, endereco:t.endereco, chave_pix:t.chave_pix, obra_atual_id:t.obra_atual_id, ativo:t.ativo, tipo:'metro', valor_base:parseFloat(t.valor_metro||0), unidade:'metros', table_origin:'terceirizados'})); return [...equipe, ...terceirizados]; }
-        function onCategoriaChange(){ const cat=document.getElementById('eqp-categoria').value; const label=document.getElementById('label-valor-base'); const tipoOrigem=document.getElementById('eqp-tipo-origem'); if(cat==='Terceirizado'){ label.innerText='Valor do Metro (R$)'; tipoOrigem.value='terceirizado'; } else { label.innerText='Valor da Diária (R$)'; tipoOrigem.value='equipe'; } }
+        function getColaboradoresUnificados(){ const equipe=STATE.equipe.map(e=>{ const isEmpreita=(e.categoria||'')==='Empreita'; return {...e, tipo:isEmpreita?'empreita':'diaria', valor_base:parseFloat(e.valor_diaria||0), unidade:isEmpreita?'contrato':'dias', table_origin:'equipe'}; }); const terceirizados=STATE.terceirizados.map(t=>({...t, nome:t.nome, categoria:'Terceirizado (Metro)', telefone:t.telefone, cpf:t.cpf_cnpj, rg:t.rg, endereco:t.endereco, chave_pix:t.chave_pix, obra_atual_id:t.obra_atual_id, ativo:t.ativo, tipo:'metro', valor_base:parseFloat(t.valor_metro||0), unidade:'metros', table_origin:'terceirizados'})); return [...equipe, ...terceirizados]; }
+        function onCategoriaChange(){ const cat=document.getElementById('eqp-categoria').value; const label=document.getElementById('label-valor-base'); const tipoOrigem=document.getElementById('eqp-tipo-origem'); const hint=document.getElementById('eqp-hint-empreita'); const input=document.getElementById('eqp-valor_diaria'); if(cat==='Terceirizado'){ label.innerText='Valor do Metro (R$)'; tipoOrigem.value='terceirizado'; if(hint) hint.classList.add('hidden'); } else if(cat==='Empreita'){ label.innerText='Valor Total do Contrato (R$)'; tipoOrigem.value='equipe'; if(input) input.placeholder='Ex: 50000.00'; if(hint) hint.classList.remove('hidden'); } else { label.innerText='Valor da Diária (R$)'; tipoOrigem.value='equipe'; if(input) input.placeholder='0.00'; if(hint) hint.classList.add('hidden'); } }
 
         // ====== CÁLCULO DE SALDO PENDENTE (diárias) ======
         // ====== RENDER EQUIPE COM SALDO E BOTÕES ======
@@ -1191,20 +1318,27 @@
               const nomeObra = obra ? obra.nome : 'Sem obra alocada';
               const tipoBadge = c.tipo === 'diaria'
                   ? '<span class="bg-blue-100 text-blue-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">DIÁRIA</span>'
-                  : '<span class="bg-purple-100 text-purple-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">METRO</span>';
-              const valorExibicao = c.tipo === 'diaria'
-                  ? formatMoney(c.valor_base)
-                  : `${formatMoney(c.valor_base)}/m`;
+                  : c.tipo === 'empreita'
+                      ? '<span class="bg-amber-100 text-amber-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">EMPREITA</span>'
+                      : '<span class="bg-purple-100 text-purple-700 text-[8px] font-bold px-1.5 py-0.5 rounded ml-1">METRO</span>';
+              const valorExibicao = c.tipo === 'metro'
+                  ? `${formatMoney(c.valor_base)}/m`
+                  : formatMoney(c.valor_base);
               const isAtivo = c.ativo === true || c.ativo === 'true';
       
               let saldoDiarias = 0, valorPendente = 0, diasTrabalhados = 0;
-              let metrosPendentes = 0;
+              let metrosPendentes = 0, percentMedido = 0;
       
               if (c.tipo === 'diaria') {
                   const saldo = calcularSaldoPendenteFuncionarioPorPeriodo(c.id, dataInicio, dataFim);
                   diasTrabalhados = saldo.totalDiarias;
                   valorPendente = diasTrabalhados * c.valor_base;
                   somaGeral += valorPendente;   // ← soma
+              } else if (c.tipo === 'empreita') {
+                  const resumo = calcularResumoEmpreita(c.id, dataInicio, dataFim);
+                  valorPendente = resumo.valorPendentePeriodo;
+                  percentMedido = resumo.percentPendente;
+                  somaGeral += valorPendente;
               } else if (c.tipo === 'metro') {
                   let producoes = (STATE.producao_terc || []).filter(p => p.terceirizado_id === c.id);
                   if (dataInicio) producoes = producoes.filter(p => p.data_registro >= dataInicio);
@@ -1225,10 +1359,12 @@
               const acoes = `<div class="flex justify-end gap-2 mt-2 pt-2 border-t border-slate-100">
                   ${c.tipo === 'diaria'
                       ? `<button onclick="abrirModalSaldo('${c.id}')" class="p-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-1"><i data-lucide="calculator" class="w-3 h-3"></i> Calcular</button>`
-                      : `<button onclick="abrirModalSaldoMetros('${c.id}')" class="p-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-1"><i data-lucide="calculator" class="w-3 h-3"></i> Calcular</button>`
+                      : c.tipo === 'empreita'
+                          ? `<button onclick="abrirModalSaldoEmpreita('${c.id}')" class="p-1.5 bg-amber-700 text-white rounded-lg text-[10px] font-bold flex items-center gap-1"><i data-lucide="calculator" class="w-3 h-3"></i> Medições</button>`
+                          : `<button onclick="abrirModalSaldoMetros('${c.id}')" class="p-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-1"><i data-lucide="calculator" class="w-3 h-3"></i> Calcular</button>`
                   }
                   <button onclick="abrirModalDocumentos('${c.id}')" class="p-1.5 bg-slate-800 text-white rounded-lg text-[10px] font-bold flex items-center gap-1"><i data-lucide="file-signature" class="w-3 h-3"></i> Contratos</button>
-                  <button onclick="openEquipeForm('${c.id}')" class="p-1.5 bg-slate-100 text-blue-600 rounded-lg"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                  <button onclick="openEquipeForm('${c.id}'${c.tipo === 'metro' ? ", 'terceirizado'" : ''})" class="p-1.5 bg-slate-100 text-blue-600 rounded-lg"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
                   ${zapBtn}
               </div>`;
       
@@ -1245,9 +1381,12 @@
                               <span class="font-black text-sm text-slate-700">${valorExibicao}</span>
                               ${c.tipo === 'diaria' && diasTrabalhados > 0
                                   ? `<span class="text-[9px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">Saldo: ${formatMoney(valorPendente)} (${diasTrabalhados.toFixed(2)} dias)</span>`
-                                  : (c.tipo === 'metro' && metrosPendentes > 0
-                                      ? `<span class="text-[9px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">Saldo: ${formatMoney(valorPendente)} (${metrosPendentes.toFixed(2)} m)</span>`
-                                      : '')
+                                  : (c.tipo === 'empreita' && valorPendente > 0
+                                      ? `<span class="text-[9px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-full">Saldo: ${formatMoney(valorPendente)} (${percentMedido.toFixed(1)}% medido)</span>`
+                                      : (c.tipo === 'metro' && metrosPendentes > 0
+                                          ? `<span class="text-[9px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">Saldo: ${formatMoney(valorPendente)} (${metrosPendentes.toFixed(2)} m)</span>`
+                                          : '')
+                                  )
                               }
                           </div>
                       </div>
@@ -1353,11 +1492,16 @@
             let dataTerminoContrato="____/____/______"; if(obraVinculada&&obraVinculada.data_termino){ const partes=obraVinculada.data_termino.split('-'); dataTerminoContrato=`${partes[2]}/${partes[1]}/${partes[0]}`; }
             let dataInicioContrato="____/____/______"; if(e.data_contrato){ const p=e.data_contrato.split('-'); dataInicioContrato=`${p[2]}/${p[1]}/${p[0]}`; }
             let titulo="", corpoTexto="", nomeContratanteAssinatura="RV NEGOCIOS E COMPANHIA LTDA";
+            const isEmpreitaContrato = tipo==='empreita' || (e.categoria||'').toUpperCase()==='EMPREITA';
+            const matriculaTxt = isTerc ? 'TERC' : (e.matricula||'000');
             if(tipo==='epi'){
                 titulo="FICHA DE EPI / TERMO DE RECEBIMENTO";
                 corpoTexto=`<div><p><strong>Nome:</strong> ${e.nome.toUpperCase()}</p><p><strong>Atividade:</strong> ${e.categoria.toUpperCase()}</p><p>Declaro ter recebido orientação sobre EPI's.</p><table border="1" style="width:100%; border-collapse:collapse;"><tr><th>DATA</th><th>EPI</th><th>C.A.</th><th>QUANT.</th><th>Assinatura</th></tr><tr><td></td><td>Capacete</td><td>21420</td><td>1</td><td></td></tr><tr><td></td><td>Sapato de segurança</td><td>24312</td><td>1</td><td></td></tr><tr><td></td><td>Óculos</td><td>07732</td><td>1</td><td></td></tr></table></div>`;
+            } else if(isEmpreitaContrato){
+                titulo=`CONTRATO DE EMPREITADA Nº ${matriculaTxt}/2026 | JATAÍ – GOIÁS`;
+                corpoTexto=`<div><p>CONTRATANTE: RV NEGOCIOS E COMPANHIA LTDA, CNPJ 61.893.912/0001-24.</p><p>CONTRATADO: ${e.nome}, CPF ${e.cpf}, RG ${e.rg}, residente em ${e.endereco}.</p><p>Objeto: Execução de serviços de construção civil por empreitada (empreita), conforme medições aprovadas pela contratante.</p><p>Valor global do contrato: ${diariaTexto}, pago conforme medições de percentual executado.</p><p>Prazo: Início ${dataInicioContrato}, término ${dataTerminoContrato}.</p><p>Foro: Jataí-GO.</p></div>`;
             } else {
-                titulo=`CONTRATO DE PRESTAÇÃO DE SERVIÇOS Nº ${matricula}/2026 | JATAÍ – GOIÁS`;
+                titulo=`CONTRATO DE PRESTAÇÃO DE SERVIÇOS Nº ${matriculaTxt}/2026 | JATAÍ – GOIÁS`;
                 corpoTexto=`<div><p>CONTRATANTE: RV NEGOCIOS E COMPANHIA LTDA, CNPJ 61.893.912/0001-24.</p><p>CONTRATADO: ${e.nome}, CPF ${e.cpf}, RG ${e.rg}, residente em ${e.endereco}.</p><p>Objeto: Fornecimento de mão de obra qualificada para construção civil.</p><p>Valor: ${diariaTexto} por ${e.categoria.includes('METRO')?'metro':'diária completa'}.</p><p>Prazo: Início ${dataInicioContrato}, término ${dataTerminoContrato}.</p><p>Foro: Jataí-GO.</p></div>`;
             }
             const htmlDoc=`<div style="font-family:'Times New Roman'; padding:20px;"><div style="text-align:center; border-bottom:2px solid #000;"><img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height:70px;"><h2>${titulo}</h2></div><div style="margin:20px;">${corpoTexto}</div><div style="margin-top:60px; text-align:center;"><div style="border-top:1px solid #000; padding-top:10px;">${nomeContratanteAssinatura}<br>CONTRATANTE</div><div style="border-top:1px solid #000; padding-top:10px; margin-top:20px;">${e.nome.toUpperCase()}<br>CONTRATADO(A)</div></div></div>`;
@@ -1376,14 +1520,16 @@
             const getV=id=>{ const el=document.getElementById(id); return el?el.value:''; };
             const idAtual=getV('eqp-id'); const isNew=!idAtual; const tipoOrigem=document.getElementById('eqp-tipo-origem').value;
             const nome=getV('eqp-nome').trim(); const categoria=getV('eqp-categoria'); const telefone=getV('eqp-telefone').trim(); const cpf=getV('eqp-cpf').trim(); const rg=getV('eqp-rg').trim(); const endereco=getV('eqp-endereco').trim(); const chave_pix=getV('eqp-chave_pix').trim(); const obra_id=getV('eqp-obra_atual_id'); const valor_base=parseFloat(getV('eqp-valor_diaria'))||0; const data_contrato=getV('eqp-data_contrato')||null; const ativo=getV('eqp-ativo')==='true';
-            if(!nome||!cpf||!telefone||!obra_id||valor_base<=0){ showLoading(false); showToast("Preencha todos os campos obrigatórios",true); return; }
+            const isEmpreita=tipoOrigem==='equipe'&&categoria==='Empreita';
+            if(!nome||!cpf||valor_base<=0){ showLoading(false); showToast("Informe nome, CPF e um valor válido",true); return; }
+            if(!isEmpreita&&(!telefone||!obra_id)){ showLoading(false); showToast("Preencha telefone e obra",true); return; }
             if(tipoOrigem==='terceirizado'){
-                const payload={ nome, cpf_cnpj:cpf, rg, telefone, chave_pix, endereco, obra_atual_id:obra_id, valor_metro:valor_base, data_contrato, ativo };
+                const payload={ nome, cpf_cnpj:cpf, rg, telefone, chave_pix, endereco, obra_atual_id:obra_id||null, valor_metro:valor_base, data_contrato, ativo };
                 if(!isNew) payload.id=idAtual; else payload.id=gerarIdSeguro();
                 const {error}=await sb.from('jsp_terceirizados').upsert(payload);
                 if(error){ showLoading(false); return showToast("Erro: "+error.message,true); }
             } else {
-                const payload={ nome, categoria, telefone, cpf, rg, endereco, chave_pix, obra_atual_id:obra_id, valor_diaria:valor_base, data_contrato, ativo };
+                const payload={ nome, categoria, telefone, cpf, rg, endereco, chave_pix, obra_atual_id:obra_id||null, valor_diaria:valor_base, data_contrato, ativo };
                 if(!isNew) payload.id=idAtual; else { payload.id=gerarIdSeguro(); payload.contrato_assinado=false; let maxMat=0; if(STATE.equipe.length) STATE.equipe.forEach(item=>{ let m=parseInt(item.matricula); if(!isNaN(m)&&m>maxMat) maxMat=m; }); payload.matricula=maxMat>0?maxMat+1:133; }
                 const {error}=await sb.from('jsp_equipe').upsert(payload);
                 if(error){ showLoading(false); return showToast("Erro: "+error.message,true); }
@@ -1589,6 +1735,9 @@ function imprimirReciboMetrosDoModal() {
             
             // Soma apenas os metros com status DIFERENTE de 'PAGO' (ou seja, pendentes)
             quantidade = producoes.filter(p => p.status !== 'PAGO').reduce((acc, p) => acc + parseFloat(p.metros || 0), 0);
+        } else if (c.tipo === 'empreita') {
+            const resumo = calcularResumoEmpreita(c.id, dataInicio, dataFim);
+            quantidade = resumo.percentPendente;
         }
         
         // Exibe mesmo se quantidade for zero apenas quando não estiver filtrando "apenas ativos com produção"
@@ -1597,7 +1746,7 @@ function imprimirReciboMetrosDoModal() {
             dados.push({
                 nome: c.nome,
                 quantidade: quantidade,
-                unidade: c.tipo === 'diaria' ? 'diárias' : 'm',
+                unidade: c.tipo === 'diaria' ? 'diárias' : (c.tipo === 'empreita' ? '% do contrato' : 'm'),
                 obra: obra ? obra.nome : 'Sem obra'
             });
         }
@@ -1790,6 +1939,42 @@ function executarImpressaoFolha() {
                     unidade: 'm',
                     quantidade: totalMetros,
                     valor_unitario: c.valor_base,
+                    valor_total: totalValor
+                });
+            }
+        } else if (c.tipo === 'empreita') {
+            let despesasEmp = STATE.logs.filter(l =>
+                l.tipo === 'despesa' &&
+                l.categoria === 'Mão de Obra (Empreita)' &&
+                l.observacao && l.observacao.includes(`Colaborador: ${c.nome}`)
+            );
+            if (dataInicio || dataFim) {
+                despesasEmp = despesasEmp.filter(d => {
+                    const dataDesp = d.data ? d.data.split('T')[0] : '';
+                    if (dataInicio && dataDesp < dataInicio) return false;
+                    if (dataFim && dataDesp > dataFim) return false;
+                    return true;
+                });
+            }
+            if (statusFinanceiro !== 'TODOS') {
+                despesasEmp = despesasEmp.filter(d => d.status_financeiro === statusFinanceiro);
+            }
+            if (despesasEmp.length === 0) return;
+            let totalValor = 0;
+            let totalPct = 0;
+            despesasEmp.forEach(d => {
+                totalValor += parseFloat(d.valor_total);
+                const pctMatch = d.observacao?.match(/Percentual: ([\d.]+)%/);
+                if (pctMatch) totalPct += parseFloat(pctMatch[1]);
+            });
+            if (totalValor > 0) {
+                dadosFolha.push({
+                    nome: c.nome,
+                    pix: c.chave_pix || 'Não informado',
+                    tipo: 'Empreita',
+                    unidade: '% contrato',
+                    quantidade: totalPct,
+                    valor_unitario: totalPct,
                     valor_total: totalValor
                 });
             }
