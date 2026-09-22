@@ -1116,15 +1116,10 @@ async function lancarAjusteManual() {
     
     showLoading(true);
     
-    // Determinar o próximo ID inteiro
-    let nextId = 1;
-    if (STATE.ponto_diario && STATE.ponto_diario.length > 0) {
-        const maxId = Math.max(...STATE.ponto_diario.map(p => parseInt(p.id) || 0));
-        nextId = maxId + 1;
-    }
-    
+    // O id de jsp_ponto_diario e gerado pela sequencia do banco (id_seq).
+    // Nao calculamos id no cliente para evitar colisao entre lancamentos
+    // simultaneos (dois dispositivos) e o erro de chave duplicada.
     const payload = {
-        id: nextId,
         funcionario_id: funcId,
         obra_id: func.obra_atual_id,
         tipo: 'AJUSTE_MANUAL',

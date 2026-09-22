@@ -973,7 +973,7 @@
     <div id="print-area" class="print-only"></div>
 
     <script src="js/equipe-core.js?v=20260922d"></script>
-    <script src="js/equipe.js?v=20260922d"></script>
+    <script src="js/equipe.js?v=20260922e"></script>
     <script>
         // ====== CONEXÃO E ESTADO ======
         let dadosUsuario = null;
@@ -1519,10 +1519,10 @@
                 if(error){ showLoading(false); return showToast("Erro: "+error.message,true); }
             } else {
                 const payload={ nome, categoria, telefone, cpf, rg, endereco, chave_pix, obra_atual_id:obra_id||null, valor_diaria:valor_base, data_contrato, ativo };
-                if(!isNew) payload.id=idAtual; else { payload.id=gerarIdSeguro(); payload.contrato_assinado=false; let maxMat=0; if(STATE.equipe.length) STATE.equipe.forEach(item=>{ let m=parseInt(item.matricula); if(!isNaN(m)&&m>maxMat) maxMat=m; }); payload.matricula=maxMat>0?maxMat+1:133; }
-                const {error}=await sb.from('jsp_equipe').upsert(payload);
+                if(!isNew) payload.id=idAtual; else { payload.id=gerarIdSeguro(); payload.contrato_assinado=false; }
+                const {data:salvo,error}=await sb.from('jsp_equipe').upsert(payload).select('matricula').single();
                 if(error){ showLoading(false); return showToast("Erro: "+error.message,true); }
-                if(isNew){ document.getElementById('sucesso-nome').innerText=payload.nome; document.getElementById('sucesso-num-matricula').innerText=payload.matricula; document.getElementById('modal-sucesso-matricula').classList.remove('hidden'); lucide.createIcons(); }
+                if(isNew){ if(salvo) payload.matricula=salvo.matricula; document.getElementById('sucesso-nome').innerText=payload.nome; document.getElementById('sucesso-num-matricula').innerText=payload.matricula; document.getElementById('modal-sucesso-matricula').classList.remove('hidden'); lucide.createIcons(); }
             }
             closeOverlayForm('equipe-form-container'); showToast("✅ Salvo!"); await loadData(); navigate('equipe');
         }
