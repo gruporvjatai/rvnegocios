@@ -628,13 +628,31 @@
     <!-- MODAL DOCUMENTOS/CONTRATOS -->
     <div id="modal-docs-equipe" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-[70] flex flex-col mobile-modal modal-hidden no-print">
         <div class="bg-white w-full rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-lg"><i data-lucide="file-text" class="inline text-blue-600"></i> Documentos</h3><button onclick="fecharModalDocs()" class="text-slate-400"><i data-lucide="x"></i></button></div>
+            <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-lg"><i data-lucide="file-text" class="inline text-blue-600"></i> Documentos e Contratos</h3><button onclick="fecharModalDocs()" class="text-slate-400"><i data-lucide="x"></i></button></div>
             <p id="doc-equipe-nome" class="text-sm font-bold text-slate-500 mb-4"></p>
             <input type="hidden" id="doc-equipe-id">
             <div class="space-y-4">
-                <div><label class="text-[10px] font-bold uppercase">Tipo de Documento</label><select id="doc-tipo-select" class="w-full p-3 border rounded font-bold text-slate-700"><option value="" selected hidden>Selecione...</option><option value="contrato1">Contrato Trabalho - Servente</option><option value="contrato2">Contrato Trabalho - Pedreiro</option><option value="metragem">Contrato Trabalho - Metragem</option><option value="empreita">Contrato de Empreita (Serviço)</option><option value="epi">Comprovante de EPI's</option></select></div>
-                <button onclick="imprimirDocumento()" class="w-full bg-slate-800 text-white p-3 rounded font-bold flex items-center justify-center gap-2"><i data-lucide="printer"></i> Imprimir Documento</button>
-                <button id="btn-assinar-doc" onclick="marcarContratoAssinado()" class="w-full bg-green-600 text-white p-3 rounded font-bold">Marcar como Assinado</button>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Selecione o Documento</label>
+                    <select id="doc-tipo-select" class="w-full p-3 border rounded font-bold text-slate-700">
+                        <option value="" selected disabled hidden>Clique aqui para selecionar...</option>
+                        <option value="contrato1">Contrato de Trabalho - Servente</option>
+                        <option value="contrato2">Contrato de Trabalho - Pedreiro</option>
+                        <option value="metragem">Contrato de Trabalho - Metragem (M²)</option>
+                        <option value="epi">Comprovante de Entrega de EPI's</option>
+                        <option value="empreita1">EMPREITA PELA RV</option>
+                        <!--<option value="empreita2">EMPREITA COLMEIA PARK</option>-->
+                        <!--<option value="empreita3">EMPREITA (AZ)</option>-->
+                        <option value="az1servente">AZ -&gt; Servente</option>
+                        <option value="az2pedreiro">AZ -&gt; Pedreiro</option>
+                        <option value="azepi">AZ -&gt; EPI's</option>
+                    </select>
+                </div>
+                <button onclick="imprimirDocumento()" class="w-full bg-slate-800 text-white p-3 rounded font-bold flex items-center justify-center gap-2"><i data-lucide="printer"></i> Imprimir Documento Selecionado</button>
+                <div class="border-t pt-4">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-2">Status do Contrato</label>
+                    <button id="btn-assinar-doc" onclick="marcarContratoAssinado()" class="w-full bg-green-600 text-white p-3 rounded font-bold flex items-center justify-center gap-2"><i data-lucide="check-circle"></i> Marcar como Assinado</button>
+                </div>
             </div>
         </div>
     </div>
@@ -1477,35 +1495,6 @@
             btnAssinar.onclick=assinado?null:(()=>marcarContratoAssinado());
             openModal('modal-docs-equipe');
             lucide.createIcons();
-        }
-        function imprimirDocumento(){
-            const id=document.getElementById('doc-equipe-id').value;
-            const tipo=document.getElementById('doc-tipo-select').value;
-            if(!tipo){ alert('Selecione um documento'); return; }
-            let pessoa=STATE.equipe.find(x=>x.id==id);
-            let isTerc=false;
-            if(!pessoa){ pessoa=STATE.terceirizados.find(x=>x.id==id); isTerc=true; }
-            if(!pessoa){ alert('Erro dados'); return; }
-            const e={ nome:pessoa.nome||'', cpf:isTerc?(pessoa.cpf_cnpj||''):(pessoa.cpf||''), rg:pessoa.rg||'', endereco:pessoa.endereco||'', categoria:isTerc?'TERCEIRIZADO (METRO)':(pessoa.categoria||'Geral'), valor_diaria:isTerc?parseFloat(pessoa.valor_metro||0):parseFloat(pessoa.valor_diaria||0), matricula:isTerc?'TERC':(pessoa.matricula||'000'), obra_atual_id:pessoa.obra_atual_id, data_contrato:!isTerc?pessoa.data_contrato:null, contrato_assinado:pessoa.contrato_assinado||false };
-            const dataAtual=new Date(); const dia=dataAtual.getDate(); const meses=["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"]; const mes=meses[dataAtual.getMonth()]; const ano=dataAtual.getFullYear(); const dataExtenso=`${dia} de ${mes} de ${ano}`; const hojeCurto=dataAtual.toLocaleDateString('pt-BR');
-            const obraVinculada=STATE.obras.find(o=>o.id==e.obra_atual_id); const enderecoObra=obraVinculada?(obraVinculada.endereco||obraVinculada.nome):'Endereço não informado'; const diariaTexto=formatMoney(e.valor_diaria||0); const matricula=parseFloat(e.matricula||0);
-            let dataTerminoContrato="____/____/______"; if(obraVinculada&&obraVinculada.data_termino){ const partes=obraVinculada.data_termino.split('-'); dataTerminoContrato=`${partes[2]}/${partes[1]}/${partes[0]}`; }
-            let dataInicioContrato="____/____/______"; if(e.data_contrato){ const p=e.data_contrato.split('-'); dataInicioContrato=`${p[2]}/${p[1]}/${p[0]}`; }
-            let titulo="", corpoTexto="", nomeContratanteAssinatura="RV NEGOCIOS E COMPANHIA LTDA";
-            const isEmpreitaContrato = tipo==='empreita' || (e.categoria||'').toUpperCase()==='EMPREITA';
-            const matriculaTxt = isTerc ? 'TERC' : (e.matricula||'000');
-            if(tipo==='epi'){
-                titulo="FICHA DE EPI / TERMO DE RECEBIMENTO";
-                corpoTexto=`<div><p><strong>Nome:</strong> ${e.nome.toUpperCase()}</p><p><strong>Atividade:</strong> ${e.categoria.toUpperCase()}</p><p>Declaro ter recebido orientação sobre EPI's.</p><table border="1" style="width:100%; border-collapse:collapse;"><tr><th>DATA</th><th>EPI</th><th>C.A.</th><th>QUANT.</th><th>Assinatura</th></tr><tr><td></td><td>Capacete</td><td>21420</td><td>1</td><td></td></tr><tr><td></td><td>Sapato de segurança</td><td>24312</td><td>1</td><td></td></tr><tr><td></td><td>Óculos</td><td>07732</td><td>1</td><td></td></tr></table></div>`;
-            } else if(isEmpreitaContrato){
-                titulo=`CONTRATO DE EMPREITADA Nº ${matriculaTxt}/2026 | JATAÍ – GOIÁS`;
-                corpoTexto=`<div><p>CONTRATANTE: RV NEGOCIOS E COMPANHIA LTDA, CNPJ 61.893.912/0001-24.</p><p>CONTRATADO: ${e.nome}, CPF ${e.cpf}, RG ${e.rg}, residente em ${e.endereco}.</p><p>Objeto: Execução de serviços de construção civil por empreitada (empreita), conforme medições aprovadas pela contratante.</p><p>Valor global do contrato: ${diariaTexto}, pago conforme medições de percentual executado.</p><p>Prazo: Início ${dataInicioContrato}, término ${dataTerminoContrato}.</p><p>Foro: Jataí-GO.</p></div>`;
-            } else {
-                titulo=`CONTRATO DE PRESTAÇÃO DE SERVIÇOS Nº ${matriculaTxt}/2026 | JATAÍ – GOIÁS`;
-                corpoTexto=`<div><p>CONTRATANTE: RV NEGOCIOS E COMPANHIA LTDA, CNPJ 61.893.912/0001-24.</p><p>CONTRATADO: ${e.nome}, CPF ${e.cpf}, RG ${e.rg}, residente em ${e.endereco}.</p><p>Objeto: Fornecimento de mão de obra qualificada para construção civil.</p><p>Valor: ${diariaTexto} por ${e.categoria.includes('METRO')?'metro':'diária completa'}.</p><p>Prazo: Início ${dataInicioContrato}, término ${dataTerminoContrato}.</p><p>Foro: Jataí-GO.</p></div>`;
-            }
-            const htmlDoc=`<div style="font-family:'Times New Roman'; padding:20px;"><div style="text-align:center; border-bottom:2px solid #000;"><img src="https://i.postimg.cc/PqdgXGF0/logo-rv-negociospng.png" style="height:70px;"><h2>${titulo}</h2></div><div style="margin:20px;">${corpoTexto}</div><div style="margin-top:60px; text-align:center;"><div style="border-top:1px solid #000; padding-top:10px;">${nomeContratanteAssinatura}<br>CONTRATANTE</div><div style="border-top:1px solid #000; padding-top:10px; margin-top:20px;">${e.nome.toUpperCase()}<br>CONTRATADO(A)</div></div></div>`;
-            document.getElementById('print-area').innerHTML=htmlDoc; setTimeout(()=>window.print(),300);
         }
         async function marcarContratoAssinado(){
             const id=document.getElementById('doc-equipe-id').value; const isTerc=STATE.terceirizados.some(t=>t.id==id);
