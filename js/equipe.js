@@ -3597,6 +3597,7 @@ async function fecharPagamentoSaldoEmpreita() {
     if (!confirm(`Fechar pagamento de ${formatMoney(valorTotal)} (${percentTotal.toFixed(2)}% do contrato)?`)) return;
     showLoading(true);
     const descricao = `Pagamento de empreita - ${func.nome} - Período ${periodoDesc}`;
+    let persistiuRemoto = false;
     try {
         const { error: errFin } = await sb.from('jsp_logs').insert([{
             id: getNextIdNum(STATE.logs).toString(),
@@ -3614,6 +3615,7 @@ async function fecharPagamentoSaldoEmpreita() {
         const ids = registros.map(r => r.id);
         const { error: errMed } = await sb.from('jsp_medicoes_empreita').update({ status: 'PAGO' }).in('id', ids);
         if (errMed) throw errMed;
+        persistiuRemoto = true;
     } catch (err) {
         STATE.logs.push({
             id: getNextIdNum(STATE.logs).toString(),
@@ -3631,6 +3633,9 @@ async function fecharPagamentoSaldoEmpreita() {
     const idsSet = new Set(registros.map(r => r.id));
     STATE.medicoes_empreita = obterMedicoesEmpreita().map(m => idsSet.has(m.id) ? { ...m, status: 'PAGO' } : m);
     persistirMedicoesEmpreitaLocal();
+    // Recarrega do banco para a despesa pendente aparecer na Folha de Pagamento
+    // (mesmo comportamento do fechamento de ponto/diaria).
+    if (persistiuRemoto) await loadData();
     showLoading(false);
     carregarTabelaSaldoEmpreita();
     renderEquipe();
