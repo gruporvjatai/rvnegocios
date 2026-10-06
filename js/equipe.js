@@ -104,7 +104,7 @@
                     `;
                 } else if (c.tipo === 'empreita') {
                     botoesAcao = `
-                        <button onclick="abrirModalSaldoEmpreita('${c.id}')" class="h-8 px-2.5 bg-amber-700 text-white hover:bg-amber-800 rounded shadow font-bold text-[10px] flex items-center gap-1">
+                        <button onclick="abrirModalSaldoEmpreita('${c.id}')" class="h-8 px-2.5 bg-blue-700 text-white hover:bg-blue-800 rounded shadow font-bold text-[10px] flex items-center gap-1">
                             <i data-lucide="calculator" width="12"></i> CALCULAR
                         </button>
                         ${wppBtn}
@@ -114,7 +114,7 @@
                     `;
                 } else {
                     botoesAcao = `
-                        <button onclick="abrirModalSaldoMetros('${c.id}')" class="h-8 px-2.5 bg-slate-800 text-white hover:bg-black rounded shadow font-bold text-[10px] flex items-center gap-1">
+                        <button onclick="abrirModalSaldoMetros('${c.id}')" class="h-8 px-2.5 bg-sky-700 text-white hover:bg-sky-800 rounded shadow font-bold text-[10px] flex items-center gap-1">
                             <i data-lucide="calculator" width="12"></i> CALCULAR
                         </button>
                         ${wppBtn}
