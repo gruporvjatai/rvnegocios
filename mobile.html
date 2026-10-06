@@ -42,6 +42,7 @@
         body { background: white; margin: 0; padding: 0; font-family: 'Helvetica', 'Arial', sans-serif; color: #1e293b; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         header, nav, main, #loading, #toast, .no-print { display: none !important; }
         #print-area { display: block !important; }
+        body.rv-printing > *:not(#print-area) { display: none !important; }
       }
       .print-only { display: none; }
       #print-area.print-active { display: block; position: absolute; top: 0; left: 0; width: 100%; background: white; z-index: 9999; }
@@ -993,7 +994,7 @@
     <script src="js/ui.js?v=20261006b"></script>
     <script src="js/equipe-core.js?v=20261006c"></script>
     <script src="js/equipe.js?v=20261006g"></script>
-    <script src="js/vales.js?v=20261006d"></script>
+    <script src="js/vales.js?v=20261006e"></script>
     <script src="js/contas.js?v=20261006a"></script>
     <script>window.__rvFolhaShared = (typeof executarImpressaoFolha === 'function') ? executarImpressaoFolha : null;
     window.__rvReciboMetrosShared = (typeof imprimirReciboMetrosDoModal === 'function') ? imprimirReciboMetrosDoModal : null;</script>

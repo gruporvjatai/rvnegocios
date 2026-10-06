@@ -454,34 +454,97 @@
     function imprimirReciboVale(id) {
         var v = todosVales().find(function (x) { return String(x.id) === String(id); });
         if (!v) return showToast('Vale nao encontrado.', true);
-        var info = colaboradorInfo(v.colaborador_id);
-        var cpf = info ? (info.cpf || info.cpf_cnpj || '') : '';
+        var info = colaboradorInfo(v.colaborador_id) || {};
+        var cpf = info.cpf || info.cpf_cnpj || '';
+        var chavePix = info.chave_pix || '';
+        var categoria = info.categoria || (TIPO_LABEL[v.tipo] || v.tipo || '');
+        var obra = (STATE.obras || []).find(function (o) {
+            return String(o.id) === String(v.obra_id != null ? v.obra_id : info.obra_atual_id);
+        });
+        var nomeObra = obra ? obra.nome : 'Geral';
+        var nomeColab = (v.colaborador_nome || info.nome || '').toUpperCase();
         var hoje = new Date().toLocaleDateString('pt-BR');
         var dataStr = v.data ? new Date(v.data + 'T00:00:00').toLocaleDateString('pt-BR') : hoje;
+        var statusLabel = v.status === 'ABATIDO' ? 'ABATIDO' : (v.status === 'ESTORNADO' ? 'ESTORNADO' : 'EM ABERTO');
+        var numero = String(v.id || '').replace(/-/g, '').slice(0, 8).toUpperCase();
         var html =
-            '<div style="font-family: \'Segoe UI\', Arial, sans-serif; width: 100%; border: 2px solid #1e293b; padding: 30px; border-radius: 8px;">' +
-                '<div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">' +
+            '<div style="font-family: \'Segoe UI\', Arial, sans-serif; width: 100%; color: #1e293b; padding: 20px;">' +
+                '<div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #be123c; padding-bottom: 15px; margin-bottom: 25px;">' +
                     '<img src="logo.png" style="height: 60px;" />' +
                     '<div style="text-align: right;">' +
-                        '<h1 style="margin: 0; font-size: 24px; color: #1e293b; font-weight: 900;">RECIBO DE VALE / ADIANTAMENTO</h1>' +
-                        '<p style="margin: 5px 0 0 0; font-size: 18px; color: #be123c; font-weight: bold;">VALOR: ' + formatMoney(v.valor) + '</p>' +
+                        '<h1 style="margin: 0; font-size: 22px; color: #0f172a; font-weight: 900; text-transform: uppercase;">Recibo de Adiantamento</h1>' +
+                        '<p style="margin: 5px 0 0 0; font-size: 13px; color: #be123c; font-weight: bold; text-transform: uppercase;">Vale / Adiantamento de Pagamento</p>' +
+                        '<p style="margin: 2px 0 0 0; font-size: 11px; color: #64748b;">N. ' + numero + ' &nbsp;|&nbsp; Emitido em: ' + hoje + '</p>' +
                     '</div>' +
                 '</div>' +
-                '<div style="font-size: 14px; line-height: 1.8; text-align: justify; margin-bottom: 40px;">' +
-                    'Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA LTDA</strong> (CNPJ: 61.893.912/0001-24), a importancia de <strong>' + formatMoney(v.valor) + '</strong>, ' +
-                    'a titulo de <strong>vale / adiantamento</strong> de pagamento, em ' + dataStr + '. Este valor sera descontado no proximo fechamento do colaborador.' +
-                '</div>' +
-                '<div style="font-size: 14px; margin-bottom: 40px;">Para maior clareza, firmo(amos) o presente recibo para que produza os seus efeitos legais.</div>' +
-                '<div style="text-align: center; margin-bottom: 30px; font-size: 14px;">Jatai - GO, ' + hoje + '.</div>' +
-                '<div style="margin-top: 60px; display: flex; justify-content: center;">' +
-                    '<div style="text-align: center; width: 60%; border-top: 1px solid #000; padding-top: 10px;">' +
-                        '<strong>' + vEscape((v.colaborador_nome || '').toUpperCase()) + '</strong><br>' +
-                        '<span style="font-size: 12px; color: #64748b;">CPF: ' + (cpf || '_______________________') + '</span>' +
+                '<div style="display: flex; gap: 20px; margin-bottom: 25px;">' +
+                    '<div style="flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background-color: #f8fafc;">' +
+                        '<h3 style="margin: 0 0 10px 0; font-size: 12px; color: #64748b; text-transform: uppercase;">Dados da Contratante</h3>' +
+                        '<div style="font-size: 13px; line-height: 1.6; font-weight: bold; color: #334155;">' +
+                            'RV NEGÓCIOS E COMPANHIA LTDA<br>' +
+                            '<span style="font-weight: normal; color: #64748b;">CNPJ: 61.893.912/0001-24</span><br>' +
+                            '<span style="font-weight: normal; color: #64748b;">Obra: ' + vEscape(nomeObra) + '</span>' +
+                        '</div>' +
                     '</div>' +
+                    '<div style="flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px;">' +
+                        '<h3 style="margin: 0 0 10px 0; font-size: 12px; color: #64748b; text-transform: uppercase;">Dados do Profissional</h3>' +
+                        '<div style="font-size: 13px; line-height: 1.6;">' +
+                            '<strong style="color: #0f172a; font-size: 14px;">' + vEscape(nomeColab) + '</strong><br>' +
+                            '<span style="color: #475569;">Função:</span> ' + vEscape(categoria) + '<br>' +
+                            '<span style="color: #475569;">CPF/CNPJ:</span> ' + vEscape(cpf || 'Não informado') + '<br>' +
+                            '<span style="color: #475569;">Chave PIX:</span> <strong style="color: #be123c;">' + vEscape(chavePix || 'Não cadastrada') + '</strong>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<div style="background-color: #fff1f2; border: 2px solid #fecdd3; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 25px;">' +
+                    '<span style="font-size: 13px; font-weight: bold; color: #be123c; text-transform: uppercase;">Valor do Vale / Adiantamento</span>' +
+                    '<div style="font-size: 34px; font-weight: 900; color: #9f1239; margin-top: 5px;">' + formatMoney(v.valor) + '</div>' +
+                '</div>' +
+                '<table width="100%" style="border-collapse: collapse; margin-bottom: 25px; font-size: 13px;">' +
+                    '<thead><tr style="background-color: #f1f5f9; text-align: left; color: #475569;">' +
+                        '<th style="padding: 10px; border: 1px solid #cbd5e1;">Data do Vale</th>' +
+                        '<th style="padding: 10px; border: 1px solid #cbd5e1;">Tipo</th>' +
+                        '<th style="padding: 10px; border: 1px solid #cbd5e1;">Situação</th>' +
+                        '<th style="padding: 10px; border: 1px solid #cbd5e1; text-align: right;">Saldo em Aberto</th>' +
+                    '</tr></thead>' +
+                    '<tbody><tr>' +
+                        '<td style="padding: 10px; border: 1px solid #cbd5e1;">' + dataStr + '</td>' +
+                        '<td style="padding: 10px; border: 1px solid #cbd5e1;">' + vEscape(TIPO_LABEL[v.tipo] || v.tipo || '-') + '</td>' +
+                        '<td style="padding: 10px; border: 1px solid #cbd5e1;">' + statusLabel + '</td>' +
+                        '<td style="padding: 10px; border: 1px solid #cbd5e1; text-align: right; font-weight: bold; color: #be123c;">' + formatMoney(v.valor_aberto) + '</td>' +
+                    '</tr></tbody>' +
+                '</table>' +
+                (v.observacao ? '<p style="font-size: 12px; color: #475569; margin: 0 0 25px 0;"><strong>Observação:</strong> ' + vEscape(v.observacao) + '</p>' : '') +
+                '<div style="font-size: 13px; line-height: 1.8; text-align: justify; margin-bottom: 25px;">' +
+                    'Recebi(emos) de <strong>RV NEGÓCIOS E COMPANHIA LTDA</strong> (CNPJ: 61.893.912/0001-24) a importância de ' +
+                    '<strong>' + formatMoney(v.valor) + '</strong>, a título de <strong>vale / adiantamento</strong> de pagamento, em ' + dataStr + '. ' +
+                    'Declaro que o referido valor será descontado no próximo fechamento de pagamento do colaborador.' +
+                '</div>' +
+                '<div style="font-size: 13px; margin-bottom: 40px;">Para maior clareza, firmo(amos) o presente recibo para que produza os seus efeitos legais.</div>' +
+                '<div style="text-align: center; font-size: 13px; margin-bottom: 50px;">Jataí - GO, ' + hoje + '.</div>' +
+                '<div style="display: flex; justify-content: space-between; margin-top: 60px;">' +
+                    '<div style="text-align: center; width: 45%; border-top: 1px solid #94a3b8; padding-top: 10px;">' +
+                        '<strong style="font-size: 13px; color: #0f172a;">RV NEGÓCIOS E COMPANHIA</strong><br>' +
+                        '<span style="font-size: 11px; color: #64748b;">Contratante</span>' +
+                    '</div>' +
+                    '<div style="text-align: center; width: 45%; border-top: 1px solid #94a3b8; padding-top: 10px;">' +
+                        '<strong style="font-size: 13px; color: #0f172a;">' + vEscape(nomeColab) + '</strong><br>' +
+                        '<span style="font-size: 11px; color: #64748b;">Profissional Contratado</span>' +
+                    '</div>' +
+                '</div>' +
+                '<div style="text-align: center; font-size: 11px; color: #94a3b8; margin-top: 40px; border-top: 1px dashed #e2e8f0; padding-top: 15px;">' +
+                    'Documento gerado eletronicamente pelo sistema RV Negócios.' +
                 '</div>' +
             '</div>';
         document.getElementById('print-area').innerHTML = html;
+        document.body.classList.add('rv-printing');
+        var finalizar = function () {
+            document.body.classList.remove('rv-printing');
+            window.removeEventListener('afterprint', finalizar);
+        };
+        window.addEventListener('afterprint', finalizar);
         setTimeout(function () { window.print(); }, 300);
+        setTimeout(finalizar, 60000);
     }
 
     var api = {
