@@ -15,7 +15,8 @@ alter table public.jsp_contas add column if not exists obra_id int;
 -- 2. MIGRACAO DOS DADOS (reaproveita os registros atuais; nada e apagado)
 --    CORA - VILA LUIZA     -> obra 1
 --    CORA - COLMEIA PARK   -> obra 2
---    EMPRESTIMO (19351,18) -> Vila Luiza 13394,60 + Colmeia Park 5956,58
+--    EMPRESTIMO            -> 2 contas por obra com saldo inicial 0
+--                             (o historico do emprestimo e lancado manualmente)
 --    CARTAO JOAO HENRIQUE  -> Vila Luiza + Colmeia Park (limite 15000 cada)
 -- ---------------------------------------------------------------------
 update public.jsp_contas set obra_id = 1
@@ -25,14 +26,21 @@ update public.jsp_contas set obra_id = 2
  where nome = 'CORA - COLMEIA PARK' and obra_id is null;
 
 update public.jsp_contas
-   set obra_id = 1, saldo_inicial = 13394.60, nome = 'EMPRÉSTIMO - VILA LUIZA'
+   set obra_id = 1, saldo_inicial = 0, nome = 'EMPRÉSTIMO - VILA LUIZA'
  where nome = 'EMPRÉSTIMO' and obra_id is null;
 
 insert into public.jsp_contas (nome, tipo, saldo_inicial, data_saldo_inicial, cor, ativa, ordem, obra_id)
-select 'EMPRÉSTIMO - COLMEIA PARK', 'banco', 5956.58, c.data_saldo_inicial, c.cor, c.ativa, c.ordem, 2
+select 'EMPRÉSTIMO - COLMEIA PARK', 'banco', 0, c.data_saldo_inicial, c.cor, c.ativa, c.ordem, 2
   from public.jsp_contas c
  where c.nome = 'EMPRÉSTIMO - VILA LUIZA'
    and not exists (select 1 from public.jsp_contas x where x.nome = 'EMPRÉSTIMO - COLMEIA PARK');
+
+-- zera o saldo inicial das contas de emprestimo (sem movimentos) para que o
+-- historico seja lancado manualmente
+update public.jsp_contas c set saldo_inicial = 0
+ where c.nome in ('EMPRÉSTIMO - VILA LUIZA', 'EMPRÉSTIMO - COLMEIA PARK')
+   and c.saldo_inicial <> 0
+   and not exists (select 1 from public.jsp_movimentacoes m where m.conta_id = c.id);
 
 update public.jsp_contas set obra_id = 1, nome = 'CARTÃO JOÃO HENRIQUE - VILA LUIZA'
  where nome = 'CARTÃO JOÃO HENRIQUE' and obra_id is null;
