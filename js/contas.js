@@ -18,6 +18,7 @@
     var verConsolidado = false;
     var filtro = { inicio: '', fim: '' };
     var baixaPendente = null; // { uid, tipo } ou { ocId: true }
+    var filtroObra = ''; // '' = todas as obras
 
     // ---------------- helpers ----------------
     function esc(s) {
@@ -60,18 +61,28 @@
         return (Number(c.limite) || 0) + saldoConta(id);
     }
     function contasAtivas() { return contas().filter(function (c) { return c.ativa !== false; }); }
-    function saldoTotalReal() {
+    function obras() { var s = STATEref(); return (s && s.obras) ? s.obras : []; }
+    function nomeObra(id) { if (id == null || id === '') return '-'; var o = obras().find(function (x) { return String(x.id) === String(id); }); return o ? (o.nome || o.nome_obra || '-') : '-'; }
+    function contasPorObra() { return contas().filter(function (c) { return !filtroObra || String(c.obra_id) === String(filtroObra); }); }
+    function optionsObrasHtml(valor) {
+        return '<option value="">-- Selecione --</option>' + obras().map(function (o) {
+            return '<option value="' + esc(o.id) + '"' + (String(valor) === String(o.id) ? ' selected' : '') + '>' + esc(o.nome || o.nome_obra || '') + '</option>';
+        }).join('');
+    }
+    function saldoTotalReal(obraId) {
         var t = 0;
         contasAtivas().forEach(function (c) {
+            if (obraId && String(c.obra_id) !== String(obraId)) return;
             if (c.tipo === 'cartao_credito') return;
             t += saldoConta(c.id);
         });
         return t;
     }
-    function saldoDisponivelGeral() {
+    function saldoDisponivelGeral(obraId) {
         // ativos (caixa/banco) + disponivel dos cartoes
         var t = 0;
         contasAtivas().forEach(function (c) {
+            if (obraId && String(c.obra_id) !== String(obraId)) return;
             t += (c.tipo === 'cartao_credito') ? disponivelCartao(c.id) : saldoConta(c.id);
         });
         return t;
@@ -104,6 +115,8 @@
         document.getElementById('cta-nome').value = c ? (c.nome || '') : '';
         document.getElementById('cta-tipo').value = c ? c.tipo : 'caixa';
         document.getElementById('cta-tipo').disabled = !!c;
+        var obraSel = document.getElementById('cta-obra');
+        if (obraSel) obraSel.innerHTML = optionsObrasHtml(c ? c.obra_id : (filtroObra || ''));
         document.getElementById('cta-cor').value = c ? (c.cor || '#0f172a') : '#0f172a';
         document.getElementById('cta-limite').value = c && c.limite != null ? c.limite : '';
         document.getElementById('cta-fech').value = c && c.dia_fechamento != null ? c.dia_fechamento : '';
@@ -127,10 +140,13 @@
         var id = document.getElementById('cta-id').value;
         var nome = (document.getElementById('cta-nome').value || '').trim();
         var tipo = document.getElementById('cta-tipo').value;
+        var obra = document.getElementById('cta-obra').value;
         if (!nome) return toast('Informe o nome da conta.', true);
+        if (!obra) return toast('Selecione a obra da conta.', true);
         var payload = {
             nome: nome,
             tipo: tipo,
+            obra_id: parseInt(obra, 10),
             cor: document.getElementById('cta-cor').value || null,
             ativa: document.getElementById('cta-ativa').checked
         };
@@ -197,12 +213,21 @@
 
     function abrirModalTransferencia(contaId) {
         garantirModais();
-        preencherSelectContas('tr-origem', contaId || '', false);
-        preencherSelectContas('tr-destino', '', true);
+        var c = contaById(contaId);
+        var obra = c ? c.obra_id : (filtroObra || '');
+        preencherSelectContas('tr-origem', contaId || '', false, obra);
+        onChangeTransfOrigem();
         document.getElementById('tr-valor').value = '';
         document.getElementById('tr-data').value = hoje();
         document.getElementById('tr-desc').value = 'Transferencia entre contas';
         document.getElementById('modal-transferencia').classList.remove('hidden');
+    }
+    function onChangeTransfOrigem() {
+        var origem = document.getElementById('tr-origem').value;
+        var c = contaById(origem);
+        var obra = c ? c.obra_id : (filtroObra || '');
+        var atual = document.getElementById('tr-destino').value;
+        preencherSelectContas('tr-destino', atual, true, obra);
     }
     async function salvarTransferencia() {
         var origem = document.getElementById('tr-origem').value;
@@ -239,18 +264,20 @@
         baixaPendente = { uid: uid, tipo: tipo || log.tipo };
         document.getElementById('bx-titulo').innerText = (baixaPendente.tipo === 'receita') ? 'Confirmar Recebimento' : 'Baixar Despesa';
         document.getElementById('bx-info').innerText = (log.produto_nome || '') + ' - ' + money(log.valor_total) + ' | ' + (baixaPendente.tipo === 'receita' ? 'entrada' : 'saida') + ' no caixa';
-        preencherSelectContas('bx-conta', log.conta_id || '', false);
+        preencherSelectContas('bx-conta', log.conta_id || '', false, log.obra_id);
         document.getElementById('bx-data').value = hoje();
         document.getElementById('modal-baixa').classList.remove('hidden');
     }
     function abrirModalBaixaOC(id) {
         garantirModais();
         baixaPendente = { ocId: id };
-        var total = (STATE.logs || []).filter(function (l) { return String(l.id) === String(id) && l.tipo === 'compra' && l.status_financeiro === 'PENDENTE'; })
-            .reduce(function (a, l) { return a + (parseFloat(l.valor_total) || 0); }, 0);
+        var pend = (STATE.logs || []).filter(function (l) { return String(l.id) === String(id) && l.tipo === 'compra' && l.status_financeiro === 'PENDENTE'; });
+        var total = pend.reduce(function (a, l) { return a + (parseFloat(l.valor_total) || 0); }, 0);
+        var obra = '';
+        pend.forEach(function (l) { if (l.obra_id != null) obra = l.obra_id; });
         document.getElementById('bx-titulo').innerText = 'Baixar O.C. #' + id;
         document.getElementById('bx-info').innerText = 'O.C. #' + id + ' - ' + money(total) + ' | saida no caixa';
-        preencherSelectContas('bx-conta', '', false);
+        preencherSelectContas('bx-conta', '', false, obra);
         document.getElementById('bx-data').value = hoje();
         document.getElementById('modal-baixa').classList.remove('hidden');
     }
@@ -308,7 +335,8 @@
         if (!f) return toast('Fatura nao encontrada.', true);
         document.getElementById('pf-fatura').value = fatId;
         document.getElementById('pf-info').innerText = 'Fatura ' + f.competencia + ' - ' + money(f.valor_total);
-        preencherSelectContas('pf-conta', (contaById(f.conta_id) || {}).conta_pagamento_padrao || '', true);
+        var card = contaById(f.conta_id);
+        preencherSelectContas('pf-conta', (card || {}).conta_pagamento_padrao || '', true, card ? card.obra_id : '');
         document.getElementById('pf-data').value = hoje();
         document.getElementById('modal-pagar-fatura').classList.remove('hidden');
     }
@@ -347,21 +375,26 @@
         render('fin-contas-container-mobile');
     }
 
-    function preencherSelectContas(elId, valor, incluirCartao) {
+    function preencherSelectContas(elId, valor, incluirCartao, obraFiltro) {
         var el = document.getElementById(elId);
         if (!el) return;
-        var opcoes = contasAtivas().filter(function (c) { return incluirCartao || c.tipo !== 'cartao_credito'; });
+        var opcoes = contasAtivas().filter(function (c) {
+            if (!incluirCartao && c.tipo === 'cartao_credito') return false;
+            if (obraFiltro && String(c.obra_id) !== String(obraFiltro)) return false;
+            return true;
+        });
         el.innerHTML = '<option value="">-- Selecione --</option>' + opcoes.map(function (c) {
             return '<option value="' + esc(c.id) + '">' + esc(c.nome) + '</option>';
         }).join('');
         if (valor) el.value = String(valor);
     }
 
-    function preencherSelectPorForma(elId, forma, valor) {
+    function preencherSelectPorForma(elId, forma, valor, obraFiltro) {
         var el = document.getElementById(elId);
         if (!el) return;
         var cartao = (String(forma).indexOf('Cart') === 0);
         var opcoes = contasAtivas().filter(function (c) {
+            if (obraFiltro && String(c.obra_id) !== String(obraFiltro)) return false;
             return cartao ? c.tipo === 'cartao_credito' : c.tipo !== 'cartao_credito';
         });
         el.innerHTML = '<option value="">-- Selecione --</option>' + opcoes.map(function (c) {
@@ -375,11 +408,21 @@
         var contaEl = document.getElementById('exp-conta');
         if (!formaEl || !contaEl) return;
         var cur = contaEl.value || '';
-        preencherSelectPorForma('exp-conta', formaEl.value, cur);
+        var obraEl = document.getElementById('exp-obra');
+        var obra = obraEl ? obraEl.value : '';
+        preencherSelectPorForma('exp-conta', formaEl.value, cur, obra);
         var hint = document.getElementById('exp-conta-hint');
         if (hint) hint.innerText = (String(formaEl.value).indexOf('Cart') === 0)
             ? 'Compra no cartao: entra na fatura; o dinheiro sai no pagamento da fatura.'
             : 'Conta usada quando a despesa for paga (baixa).';
+    }
+
+    function onObraExpChange() { onFormaExpChange(); }
+    function onObraRevChange() {
+        var obraEl = document.getElementById('rev-obra');
+        var el = document.getElementById('rev-conta');
+        var cur = el ? el.value : '';
+        preencherSelectContas('rev-conta', cur, false, obraEl ? obraEl.value : '');
     }
 
     function cardConta(c) {
@@ -402,7 +445,7 @@
                 '<div class="flex items-center gap-2">' +
                     '<span style="background:' + esc(cor) + '" class="w-3 h-3 rounded-full inline-block"></span>' +
                     '<div><div class="font-bold text-slate-800 text-sm">' + esc(c.nome) + badge + '</div>' +
-                    '<div class="text-[9px] font-bold text-slate-400 uppercase">' + (TIPO_CURTO[c.tipo] || c.tipo) + '</div></div>' +
+                    '<div class="text-[9px] font-bold text-slate-400 uppercase">' + (TIPO_CURTO[c.tipo] || c.tipo) + ' | ' + esc(nomeObra(c.obra_id)) + '</div></div>' +
                 '</div>' +
                 '<i data-lucide="' + (TIPO_ICON[c.tipo] || 'wallet') + '" class="w-4 h-4 text-slate-300"></i>' +
             '</div>' +
@@ -498,14 +541,17 @@
     function render(containerId) {
         var el = document.getElementById(containerId);
         if (!el) return;
-        var lista = contas().slice().sort(function (a, b) { return (a.ordem || 0) - (b.ordem || 0) || String(a.nome).localeCompare(String(b.nome)); });
+        var lista = contasPorObra().slice().sort(function (a, b) { return (a.ordem || 0) - (b.ordem || 0) || String(a.nome).localeCompare(String(b.nome)); });
         var cards = lista.map(cardConta).join('');
         var sel = selectedConta ? contaById(selectedConta) : null;
         var extra = '';
         if (sel) { extra += renderExtrato(sel); if (sel.tipo === 'cartao_credito') extra += renderFaturas(sel); }
 
-        var totalReal = saldoTotalReal();
-        var totalDisp = saldoDisponivelGeral();
+        var totalReal = saldoTotalReal(filtroObra);
+        var totalDisp = saldoDisponivelGeral(filtroObra);
+        var opcoesObra = '<option value="">Todas as obras</option>' + obras().map(function (o) {
+            return '<option value="' + esc(o.id) + '"' + (String(filtroObra) === String(o.id) ? ' selected' : '') + '>' + esc(o.nome || o.nome_obra || '') + '</option>';
+        }).join('');
         el.innerHTML =
             '<div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">' +
                 '<div class="bg-white p-4 rounded-xl border-l-4 border-l-blue-600 shadow-sm">' +
@@ -520,16 +566,19 @@
                 '</div>' +
                 '<div class="bg-white p-4 rounded-xl border-l-4 border-l-slate-400 shadow-sm">' +
                     '<p class="text-slate-500 text-[10px] font-bold uppercase">Contas</p>' +
-                    '<h3 class="text-2xl font-black text-slate-800">' + contas().length + '</h3>' +
-                    '<p class="text-[9px] text-slate-400 font-semibold">' + contasAtivas().length + ' ativas</p>' +
+                    '<h3 class="text-2xl font-black text-slate-800">' + lista.length + '</h3>' +
+                    '<p class="text-[9px] text-slate-400 font-semibold">' + lista.filter(function (c) { return c.ativa !== false; }).length + ' ativas</p>' +
                 '</div>' +
             '</div>' +
-            '<div class="flex justify-between items-center mb-3">' +
-                '<h3 class="font-bold text-slate-700 text-sm uppercase tracking-wide">Carteiras</h3>' +
+            '<div class="flex flex-wrap justify-between items-center gap-2 mb-3">' +
+                '<div class="flex items-center gap-2">' +
+                    '<h3 class="font-bold text-slate-700 text-sm uppercase tracking-wide">Carteiras</h3>' +
+                    '<select onchange="RVContas.setFiltroObra(this.value)" class="p-1.5 border rounded-lg text-xs font-bold text-slate-700 bg-white">' + opcoesObra + '</select>' +
+                '</div>' +
                 (podeGerenciar() ? '<button onclick="RVContas.abrirModalConta()" class="bg-blue-700 hover:bg-blue-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow flex items-center gap-1"><i data-lucide="plus" class="w-4 h-4"></i> Nova Conta</button>' : '') +
             '</div>' +
             (cards ? '<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">' + cards + '</div>'
-                   : '<div class="bg-white rounded-xl border p-6 text-center text-slate-400 text-sm">Nenhuma conta cadastrada. Crie a primeira em "Nova Conta".</div>') +
+                   : '<div class="bg-white rounded-xl border p-6 text-center text-slate-400 text-sm">' + (filtroObra ? 'Nenhuma conta cadastrada nesta obra.' : 'Nenhuma conta cadastrada. Crie a primeira em "Nova Conta".') + '</div>') +
             extra;
         icons();
     }
@@ -548,6 +597,7 @@
     function abrirExtrato(id) { selectedConta = id; renderAll(); setTimeout(function () { var e = document.getElementById('cta-ext-inicio'); if (e) e.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100); }
     function fecharExtrato() { selectedConta = null; renderAll(); }
     function setFiltro(k, v) { filtro[k] = v; renderAll(); }
+    function setFiltroObra(v) { filtroObra = v || ''; renderAll(); }
 
     function pdfExtrato(contaId) {
         var c = contaById(contaId); if (!c) return;
@@ -581,6 +631,7 @@
             '<div class="p-4 space-y-3">' +
               '<input type="hidden" id="cta-id">' +
               '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nome</label><input id="cta-nome" class="w-full p-2 border rounded-lg text-sm font-bold"></div>' +
+              '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Obra</label><select id="cta-obra" class="w-full p-2 border rounded-lg text-sm font-bold"></select></div>' +
               '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Tipo</label><select id="cta-tipo" onchange="RVContas.onChangeTipoConta()" class="w-full p-2 border rounded-lg text-sm font-bold"><option value="caixa">Caixa (Dinheiro)</option><option value="banco">Banco / Conta</option><option value="cartao_credito">Cartao de Credito</option></select></div>' +
               '<div id="cta-saldo-wrap"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Saldo Inicial (R$)</label><input type="number" step="0.01" id="cta-saldo" class="w-full p-2 border rounded-lg text-sm font-bold"></div>' +
               '<div id="cta-data-saldo-wrap"><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data do Saldo Inicial</label><input type="date" id="cta-data-saldo" class="w-full p-2 border rounded-lg text-sm"></div>' +
@@ -600,8 +651,9 @@
           '<div class="bg-white rounded-2xl w-full max-w-md shadow-2xl">' +
             '<div class="p-4 border-b flex justify-between items-center bg-slate-50"><h3 class="font-bold text-slate-800">Transferencia entre Contas</h3><button onclick="document.getElementById(\'modal-transferencia\').classList.add(\'hidden\')" class="text-slate-400 hover:text-red-500"><i data-lucide="x"></i></button></div>' +
             '<div class="p-4 space-y-3">' +
-              '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Origem</label><select id="tr-origem" class="w-full p-2 border rounded-lg text-sm font-bold"></select></div>' +
+              '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Origem</label><select id="tr-origem" onchange="RVContas.onChangeTransfOrigem()" class="w-full p-2 border rounded-lg text-sm font-bold"></select></div>' +
               '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Destino</label><select id="tr-destino" class="w-full p-2 border rounded-lg text-sm font-bold"></select></div>' +
+              '<p class="text-[10px] text-slate-400 font-semibold">Transferencias so entre contas da mesma obra.</p>' +
               '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Valor (R$)</label><input type="number" step="0.01" id="tr-valor" class="w-full p-2 border rounded-lg text-sm font-bold"></div>' +
               '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data</label><input type="date" id="tr-data" class="w-full p-2 border rounded-lg text-sm"></div>' +
               '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Descricao</label><input id="tr-desc" class="w-full p-2 border rounded-lg text-sm"></div>' +
@@ -660,16 +712,18 @@
         render: render, renderAll: renderAll,
         abrirModalConta: abrirModalConta, onChangeTipoConta: onChangeTipoConta, salvarConta: salvarConta, toggleConta: toggleConta,
         abrirModalAjuste: abrirModalAjuste, salvarAjuste: salvarAjuste,
-        abrirModalTransferencia: abrirModalTransferencia, salvarTransferencia: salvarTransferencia,
+        abrirModalTransferencia: abrirModalTransferencia, salvarTransferencia: salvarTransferencia, onChangeTransfOrigem: onChangeTransfOrigem,
         estornarMovimento: estornarMovimento,
-        selecionarConta: selecionarConta, abrirExtrato: abrirExtrato, fecharExtrato: fecharExtrato, setFiltro: setFiltro, pdfExtrato: pdfExtrato,
+        selecionarConta: selecionarConta, abrirExtrato: abrirExtrato, fecharExtrato: fecharExtrato, setFiltro: setFiltro, setFiltroObra: setFiltroObra, pdfExtrato: pdfExtrato,
         abrirModalBaixa: abrirModalBaixa, abrirModalBaixaOC: abrirModalBaixaOC, confirmarBaixa: confirmarBaixa,
         estornarBaixa: estornarBaixa, estornarBaixaOC: estornarBaixaOC,
         registrarCompraCartao: registrarCompraCartao, estornarCompraCartao: estornarCompraCartao,
         abrirModalPagarFatura: abrirModalPagarFatura, confirmarPagarFatura: confirmarPagarFatura,
         fecharFatura: fecharFatura, estornarPagamentoFatura: estornarPagamentoFatura,
         preencherSelectContas: preencherSelectContas, tipoLabel: tipoLabel,
-        preencherSelectPorForma: preencherSelectPorForma, onFormaExpChange: onFormaExpChange
+        preencherSelectPorForma: preencherSelectPorForma, onFormaExpChange: onFormaExpChange,
+        onObraExpChange: onObraExpChange, onObraRevChange: onObraRevChange,
+        nomeObra: nomeObra
     };
     global.RVContas = api;
     // atalhos globais (usados nos onclick)
