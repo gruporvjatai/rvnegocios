@@ -97,57 +97,30 @@
                         <button onclick="abrirModalSaldo('${c.id}')" class="p-1.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded shadow font-bold text-[10px] flex items-center gap-1">
                             <i data-lucide="calculator" width="12"></i> CALCULAR
                         </button>
-                        <button onclick="abrirModalVale('${c.id}')" class="p-1.5 bg-rose-600 text-white hover:bg-rose-700 rounded shadow font-bold text-[10px] flex items-center gap-1" title="Vale / Adiantamento">
-                            <i data-lucide="hand-coins" width="12"></i> VALE
-                        </button>
-                        <button onclick="abrirModalDocumentos('${c.id}')" class="p-1.5 bg-slate-800 text-white rounded shadow" title="Contratos">
-                            <i data-lucide="file-signature" width="14"></i>
-                        </button>
-                        <button onclick="openEquipeForm('${c.id}')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar">
-                            <i data-lucide="edit-3" width="14"></i>
-                        </button>
-                        <button onclick="toggleStatusEquipe('${c.id}', ${c.ativo !== false})" class="p-1.5 border ${c.ativo !== false ? 'border-red-200 text-red-500 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'} rounded" title="${c.ativo !== false ? 'Desativar / Demitir' : 'Reativar'}">
-                            <i data-lucide="power" width="14"></i>
-                        </button>
                         ${wppBtn}
+                        <button onclick="abrirMenuAcoesEquipe(event, '${c.id}', 'diaria', ${c.ativo !== false})" class="p-1.5 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Mais opções">
+                            ${RV_MORE_ICON_SVG}
+                        </button>
                     `;
                 } else if (c.tipo === 'empreita') {
                     botoesAcao = `
                         <button onclick="abrirModalSaldoEmpreita('${c.id}')" class="p-1.5 bg-amber-700 text-white hover:bg-amber-800 rounded shadow font-bold text-[10px] flex items-center gap-1">
                             <i data-lucide="calculator" width="12"></i> CALCULAR
                         </button>
-                        <button onclick="abrirModalVale('${c.id}')" class="p-1.5 bg-rose-600 text-white hover:bg-rose-700 rounded shadow font-bold text-[10px] flex items-center gap-1" title="Vale / Adiantamento">
-                            <i data-lucide="hand-coins" width="12"></i> VALE
-                        </button>
-                        <button onclick="abrirModalDocumentos('${c.id}')" class="p-1.5 bg-slate-800 text-white rounded shadow" title="Contratos">
-                            <i data-lucide="file-signature" width="14"></i>
-                        </button>
-                        <button onclick="openEquipeForm('${c.id}')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar">
-                            <i data-lucide="edit-3" width="14"></i>
-                        </button>
-                        <button onclick="toggleStatusEquipe('${c.id}', ${c.ativo !== false})" class="p-1.5 border ${c.ativo !== false ? 'border-red-200 text-red-500 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'} rounded" title="${c.ativo !== false ? 'Desativar' : 'Reativar'}">
-                            <i data-lucide="power" width="14"></i>
-                        </button>
                         ${wppBtn}
+                        <button onclick="abrirMenuAcoesEquipe(event, '${c.id}', 'empreita', ${c.ativo !== false})" class="p-1.5 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Mais opções">
+                            ${RV_MORE_ICON_SVG}
+                        </button>
                     `;
                 } else {
                     botoesAcao = `
                         <button onclick="abrirModalSaldoMetros('${c.id}')" class="px-2 py-1.5 bg-slate-800 text-white hover:bg-black rounded shadow font-bold text-[10px] flex items-center gap-1">
                             <i data-lucide="calculator" width="12"></i> CALCULAR
                         </button>
-                        <button onclick="abrirModalVale('${c.id}')" class="p-1.5 bg-rose-600 text-white hover:bg-rose-700 rounded shadow font-bold text-[10px] flex items-center gap-1" title="Vale / Adiantamento">
-                            <i data-lucide="hand-coins" width="12"></i> VALE
-                        </button>
-                        <button onclick="abrirModalDocumentosTerc('${c.id}')" class="p-1.5 bg-slate-800 text-white rounded shadow" title="Contratos">
-                            <i data-lucide="file-signature" width="14"></i>
-                        </button>
-                        <button onclick="openEquipeForm('${c.id}', 'terceirizado')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar">
-                            <i data-lucide="edit-3" width="14"></i>
-                        </button>
-                        <button onclick="toggleStatusTerceirizado('${c.id}', ${c.ativo !== false})" class="p-1.5 border ${c.ativo !== false ? 'border-red-200 text-red-500 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50'} rounded" title="${c.ativo !== false ? 'Desativar' : 'Reativar'}">
-                            <i data-lucide="power" width="14"></i>
-                        </button>
                         ${wppBtn}
+                        <button onclick="abrirMenuAcoesEquipe(event, '${c.id}', 'metro', ${c.ativo !== false})" class="p-1.5 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Mais opções">
+                            ${RV_MORE_ICON_SVG}
+                        </button>
                     `;
                 }
                 
@@ -197,6 +170,63 @@
                     
                     lucide.createIcons();
                 }
+
+      // ====== MENU "MAIS OPCOES" DAS ACOES DO COLABORADOR ======
+      const RV_MORE_ICON_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.9"></circle><circle cx="12" cy="12" r="1.9"></circle><circle cx="12" cy="19" r="1.9"></circle></svg>';
+
+      function fecharMenuAcoesEquipe() {
+          const m = document.getElementById('rv-menu-acoes');
+          if (m) m.remove();
+          if (window.__rvMenuAcoesHandler) {
+              document.removeEventListener('mousedown', window.__rvMenuAcoesHandler, true);
+              window.__rvMenuAcoesHandler = null;
+          }
+          window.removeEventListener('scroll', fecharMenuAcoesEquipe, true);
+          window.removeEventListener('resize', fecharMenuAcoesEquipe);
+      }
+
+      function abrirMenuAcoesEquipe(ev, id, tipo, ativo) {
+          if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+          fecharMenuAcoesEquipe();
+          const ehTerc = tipo === 'metro';
+          const estaAtivo = ativo !== false && ativo !== 'false';
+          const acoes = [
+              { icon: 'hand-coins', label: 'Vale', cor: '#be123c', js: "abrirModalVale('" + id + "')" },
+              { icon: 'edit-3', label: 'Editar', cor: '#1d4ed8', js: ehTerc ? "openEquipeForm('" + id + "', 'terceirizado')" : "openEquipeForm('" + id + "')" },
+              { icon: 'file-signature', label: 'Contrato', cor: '#334155', js: ehTerc ? "abrirModalDocumentosTerc('" + id + "')" : "abrirModalDocumentos('" + id + "')" },
+              { icon: 'power', label: estaAtivo ? 'Desativar' : 'Ativar', cor: estaAtivo ? '#dc2626' : '#16a34a', js: ehTerc ? "toggleStatusTerceirizado('" + id + "', " + estaAtivo + ")" : "toggleStatusEquipe('" + id + "', " + estaAtivo + ")" }
+          ];
+          const menu = document.createElement('div');
+          menu.id = 'rv-menu-acoes';
+          menu.style.cssText = 'position:fixed;z-index:9999;min-width:180px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.2);padding:6px;';
+          menu.innerHTML = acoes.map(a =>
+              '<button type="button" onclick="fecharMenuAcoesEquipe(); ' + a.js + '" ' +
+              'style="display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;border:0;background:transparent;border-radius:8px;font:600 13px \'Segoe UI\',Arial,sans-serif;color:' + a.cor + ';cursor:pointer;text-align:left;" ' +
+              'onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'transparent\'">' +
+              '<i data-lucide="' + a.icon + '" style="width:15px;height:15px;"></i><span>' + a.label + '</span></button>'
+          ).join('');
+          document.body.appendChild(menu);
+
+          const rect = (ev && ev.currentTarget) ? ev.currentTarget.getBoundingClientRect() : { left: window.innerWidth - 200, top: 100, bottom: 130 };
+          const mw = menu.offsetWidth, mh = menu.offsetHeight;
+          let left = Math.min(rect.left, window.innerWidth - mw - 8);
+          if (left < 8) left = 8;
+          let top = rect.bottom + 6;
+          if (top + mh > window.innerHeight - 8) top = Math.max(8, rect.top - mh - 6);
+          menu.style.left = left + 'px';
+          menu.style.top = top + 'px';
+
+          if (typeof lucide !== 'undefined') lucide.createIcons();
+
+          window.__rvMenuAcoesHandler = function (e) {
+              const m = document.getElementById('rv-menu-acoes');
+              if (m && m.contains(e.target)) return;
+              fecharMenuAcoesEquipe();
+          };
+          document.addEventListener('mousedown', window.__rvMenuAcoesHandler, true);
+          window.addEventListener('scroll', fecharMenuAcoesEquipe, true);
+          window.addEventListener('resize', fecharMenuAcoesEquipe);
+      }
 
 
 
