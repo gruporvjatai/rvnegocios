@@ -697,13 +697,11 @@
     </div>
     <p id="saldo-metros-subtitle" class="px-4 pb-2 text-xs font-medium text-slate-600 bg-indigo-50 border-b"></p>
 
-    <!-- Conteúdo rolável -->
-    <div class="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+    <!-- Topo fixo: filtros, ações e ajuste manual -->
+    <div class="shrink-0 bg-white border-b border-slate-200">
       <input type="hidden" id="saldo-terc-id">
-
-      <!-- Filtros -->
-      <div class="bg-white rounded-xl p-3 shadow-sm border space-y-3">
-        <div class="grid grid-cols-2 gap-3">
+      <div class="p-3 space-y-2">
+        <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Data início</label>
             <input type="date" id="saldo-metros-data-inicio" class="w-full p-2 border rounded-lg text-sm bg-white" onchange="carregarTabelaSaldoMetros()">
@@ -722,19 +720,38 @@
               <option value="TODOS">Todos</option>
             </select>
           </div>
-          <button onclick="imprimirExtratoSaldoMetros()" class="bg-slate-800 text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1 whitespace-nowrap">
-            <i data-lucide="printer" class="w-4 h-4"></i> Extrato
+          <button onclick="imprimirExtratoSaldoMetros()" class="bg-slate-800 text-white px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center gap-1 whitespace-nowrap">
+            <i data-lucide="printer" class="w-3.5 h-3.5"></i> Extrato
+          </button>
+          <button onclick="imprimirReciboMetrosDoModal()" class="bg-slate-700 text-white px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center gap-1 whitespace-nowrap">
+            <i data-lucide="receipt" class="w-3.5 h-3.5"></i> Recibo
+          </button>
+          <button onclick="estornarUltimoFechamentoMetros()" class="bg-amber-600 text-white px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center gap-1 whitespace-nowrap">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Estornar
+          </button>
+        </div>
+        <div class="bg-slate-50 rounded-xl p-2 border">
+          <div class="text-[10px] font-bold text-slate-600 mb-1 flex items-center gap-1">
+            <i data-lucide="plus-circle" class="w-3.5 h-3.5 text-indigo-600"></i> Ajuste manual (metros)
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <input type="date" id="ajuste-metros-data" class="p-2 border rounded-lg text-sm">
+            <input type="number" step="0.01" id="ajuste-metros-valor" placeholder="Metros" class="p-2 border rounded-lg text-sm">
+            <input type="text" id="ajuste-metros-justificativa" placeholder="Justificativa" class="col-span-2 p-2 border rounded-lg text-sm">
+          </div>
+          <button onclick="lancarAjusteManualMetros()" class="w-full mt-2 bg-indigo-600 text-white py-2 rounded-lg font-bold text-xs active:scale-95 transition">
+            Lançar ajuste
           </button>
         </div>
       </div>
+    </div>
 
-      <div id="saldo-metros-vale-resumo"></div>
-
-      <!-- Tabela de registros -->
+    <!-- Scroll: somente os lançamentos -->
+    <div class="flex-1 overflow-y-auto p-4 bg-slate-50">
       <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
-            <thead class="bg-slate-100 text-slate-600">
+            <thead class="bg-slate-100 text-slate-600 sticky top-0 z-10">
               <tr>
                 <th class="p-3 text-left text-xs font-bold">Data</th>
                 <th class="p-3 text-center text-xs font-bold">Metros</th>
@@ -748,44 +765,32 @@
           Nenhum registro encontrado.
         </div>
       </div>
-
-      <!-- Ajuste manual -->
-      <div class="bg-white rounded-xl p-3 shadow-sm border space-y-3">
-        <h4 class="font-bold text-slate-700 text-sm flex items-center gap-2">
-          <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-600"></i> Ajuste manual (metros)
-        </h4>
-        <div class="grid grid-cols-2 gap-3">
-          <input type="date" id="ajuste-metros-data" class="p-2 border rounded-lg text-sm">
-          <input type="number" step="0.01" id="ajuste-metros-valor" placeholder="Metros" class="p-2 border rounded-lg text-sm">
-          <input type="text" id="ajuste-metros-justificativa" placeholder="Justificativa" class="col-span-2 p-2 border rounded-lg text-sm">
-        </div>
-        <button onclick="lancarAjusteManualMetros()" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-bold text-sm active:scale-95 transition">
-          Lançar ajuste
-        </button>
-      </div>
     </div>
 
-    <!-- Rodapé com totais e botões -->
-    <div class="bg-white border-t p-4 shrink-0 space-y-3">
-      <div class="flex justify-between items-center">
-        <div>
-          <div class="text-xs text-slate-500 font-bold uppercase">Total de metros</div>
-          <div id="saldo-metros-total-metros" class="text-2xl font-black text-indigo-700">0.00</div>
+    <!-- Rodapé fixo: vales + totais + conferido -->
+    <div class="bg-white border-t shrink-0">
+      <div id="saldo-metros-vale-resumo" class="px-4 pt-3"></div>
+      <div class="p-4 space-y-3">
+        <div class="flex justify-between items-end">
+          <div>
+            <div class="text-[10px] text-slate-500 font-bold uppercase">Total de metros</div>
+            <div id="saldo-metros-total-metros" class="text-xl font-black text-indigo-700">0.00</div>
+          </div>
+          <div class="text-center">
+            <div class="text-[10px] text-slate-500 font-bold uppercase">Bruto</div>
+            <div id="saldo-metros-total-bruto" class="text-sm font-black text-slate-600">R$ 0,00</div>
+          </div>
+          <div class="text-center">
+            <div class="text-[10px] text-slate-500 font-bold uppercase">Vales</div>
+            <div id="saldo-metros-total-vales" class="text-sm font-black text-rose-600">- R$ 0,00</div>
+          </div>
+          <div class="text-right">
+            <div class="text-[10px] text-slate-500 font-bold uppercase">Valor a pagar</div>
+            <div id="saldo-metros-total-valor" class="text-xl font-black text-green-700">R$ 0,00</div>
+          </div>
         </div>
-        <div class="text-right">
-          <div class="text-xs text-slate-500 font-bold uppercase">Valor a pagar</div>
-          <div id="saldo-metros-total-valor" class="text-2xl font-black text-green-700">R$ 0,00</div>
-        </div>
-      </div>
-      <div class="flex gap-2">
-        <button onclick="imprimirReciboMetrosDoModal()" class="flex-1 bg-slate-700 text-white py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-1 active:scale-95">
-          <i data-lucide="receipt" class="w-4 h-4"></i> Recibo
-        </button>
-        <button onclick="estornarUltimoFechamentoMetros()" class="flex-1 bg-amber-600 text-white py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-1 active:scale-95">
-          <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Estornar
-        </button>
-        <button onclick="fecharPagamentoSaldoMetros()" class="flex-1 bg-blue-700 text-white py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-1 active:scale-95">
-          <i data-lucide="check-circle" class="w-4 h-4"></i> Fechar
+        <button onclick="fecharPagamentoSaldoMetros()" class="w-full bg-blue-700 text-white py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-1 active:scale-95">
+          <i data-lucide="check-circle" class="w-4 h-4"></i> Conferido
         </button>
       </div>
     </div>
@@ -889,58 +894,78 @@
                 <button onclick="fecharModalSaldoEmpreita()" class="p-1 rounded-full bg-amber-800/50 active:bg-amber-900"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
 
-            <div class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
+            <!-- Topo fixo: resumo, filtros, ações e lançamento de medição -->
+            <div class="shrink-0 bg-white border-b border-slate-200">
                 <input type="hidden" id="saldo-empreita-id">
 
-                <div class="grid grid-cols-2 gap-2">
-                    <div class="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm">
-                        <div class="text-[9px] font-bold text-slate-500 uppercase">Contrato</div>
-                        <div id="emp-card-contrato" class="text-sm font-black text-slate-800">R$ 0,00</div>
-                    </div>
-                    <div class="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm">
-                        <div class="text-[9px] font-bold text-slate-500 uppercase">Já Pago</div>
-                        <div id="emp-card-pago" class="text-sm font-black text-emerald-700">R$ 0,00</div>
-                    </div>
-                    <div class="bg-amber-50 p-2.5 rounded-xl border border-amber-200 shadow-sm">
-                        <div class="text-[9px] font-bold text-amber-700 uppercase">A Pagar</div>
-                        <div id="emp-card-pendente" class="text-sm font-black text-amber-800">R$ 0,00</div>
-                    </div>
-                    <div class="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm">
-                        <div class="text-[9px] font-bold text-slate-500 uppercase">Saldo</div>
-                        <div id="emp-card-saldo" class="text-sm font-black text-indigo-700">R$ 0,00</div>
-                        <div id="emp-card-percent" class="text-[9px] font-bold text-slate-400 mt-0.5">0% executado</div>
-                    </div>
-                </div>
-
-                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                <div class="p-3 space-y-2">
                     <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Data Início</label>
-                            <input type="date" id="saldo-empreita-data-inicio" class="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50" onchange="carregarTabelaSaldoEmpreita()">
+                        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                            <div class="text-[9px] font-bold text-slate-500 uppercase">Contrato</div>
+                            <div id="emp-card-contrato" class="text-sm font-black text-slate-800">R$ 0,00</div>
                         </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Data Fim</label>
-                            <input type="date" id="saldo-empreita-data-fim" class="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50" onchange="carregarTabelaSaldoEmpreita()">
+                        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                            <div class="text-[9px] font-bold text-slate-500 uppercase">Já Pago</div>
+                            <div id="emp-card-pago" class="text-sm font-black text-emerald-700">R$ 0,00</div>
+                        </div>
+                        <div class="bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+                            <div class="text-[9px] font-bold text-amber-700 uppercase">A Pagar</div>
+                            <div id="emp-card-pendente" class="text-sm font-black text-amber-800">R$ 0,00</div>
+                        </div>
+                        <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                            <div class="text-[9px] font-bold text-slate-500 uppercase">Saldo</div>
+                            <div id="emp-card-saldo" class="text-sm font-black text-indigo-700">R$ 0,00</div>
+                            <div id="emp-card-percent" class="text-[9px] font-bold text-slate-400 mt-0.5">0% executado</div>
                         </div>
                     </div>
-                    <div class="flex gap-2 items-end">
-                        <div class="flex-1">
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Status</label>
-                            <select id="saldo-empreita-filtro-status" class="w-full p-2 border rounded-lg text-xs font-bold bg-slate-50" onchange="carregarTabelaSaldoEmpreita()">
-                                <option value="PENDENTE" selected>Pendentes</option>
-                                <option value="PAGO">Já Pagos</option>
-                                <option value="TODOS">Todos</option>
-                            </select>
+
+                    <div class="bg-slate-50 p-2 rounded-xl border border-slate-200 space-y-2">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Data Início</label>
+                                <input type="date" id="saldo-empreita-data-inicio" class="w-full p-2 border rounded-lg text-xs font-bold bg-white" onchange="carregarTabelaSaldoEmpreita()">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Data Fim</label>
+                                <input type="date" id="saldo-empreita-data-fim" class="w-full p-2 border rounded-lg text-xs font-bold bg-white" onchange="carregarTabelaSaldoEmpreita()">
+                            </div>
                         </div>
-                        <button onclick="imprimirExtratoEmpreita()" class="bg-slate-800 text-white px-3 py-2 rounded-lg font-bold text-xs flex items-center gap-1"><i data-lucide="printer" class="w-4 h-4"></i> Extrato</button>
+                        <div class="flex gap-2 items-end">
+                            <div class="flex-1">
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Status</label>
+                                <select id="saldo-empreita-filtro-status" class="w-full p-2 border rounded-lg text-xs font-bold bg-white" onchange="carregarTabelaSaldoEmpreita()">
+                                    <option value="PENDENTE" selected>Pendentes</option>
+                                    <option value="PAGO">Já Pagos</option>
+                                    <option value="TODOS">Todos</option>
+                                </select>
+                            </div>
+                            <button onclick="imprimirExtratoEmpreita()" class="bg-slate-800 text-white px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center gap-1 whitespace-nowrap"><i data-lucide="printer" class="w-3.5 h-3.5"></i> Extrato</button>
+                            <button onclick="imprimirReciboEmpreitaDoModal()" class="bg-slate-700 text-white px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center gap-1 whitespace-nowrap"><i data-lucide="receipt" class="w-3.5 h-3.5"></i> Recibo</button>
+                            <button onclick="estornarUltimoFechamentoEmpreita()" class="bg-amber-600 text-white px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center gap-1 whitespace-nowrap"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Estornar</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-2 rounded-xl border border-slate-200">
+                        <div class="text-[10px] font-bold text-slate-600 mb-1 flex items-center gap-1"><i data-lucide="plus-circle" class="w-3.5 h-3.5 text-amber-700"></i> Lançar medição da obra</div>
+                        <div class="space-y-2">
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="date" id="emp-medicao-data" class="p-2 border rounded-lg text-xs">
+                                <input type="number" step="0.01" min="0" max="100" id="emp-medicao-percent" class="p-2 border rounded-lg text-xs font-bold" placeholder="% contrato" oninput="sincronizarCamposMedicaoEmpreita('percent')">
+                                <input type="number" step="0.01" min="0" id="emp-medicao-valor" class="p-2 border rounded-lg text-xs font-bold" placeholder="Valor (R$)" oninput="sincronizarCamposMedicaoEmpreita('valor')">
+                                <input type="text" id="emp-medicao-descricao" placeholder="Serviço / etapa" class="p-2 border rounded-lg text-xs">
+                            </div>
+                            <button onclick="lancarMedicaoEmpreita()" class="w-full bg-amber-700 text-white py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1 active:scale-95"><i data-lucide="save" class="w-3.5 h-3.5"></i> Lançar</button>
+                        </div>
+                        <p class="text-[10px] text-slate-500 mt-1">Informe % ou valor. O outro campo preenche sozinho. O lançamento não pode ultrapassar o saldo restante do contrato.</p>
                     </div>
                 </div>
+            </div>
 
-                <div id="saldo-empreita-vale-resumo"></div>
-
+            <!-- Scroll: somente as medições -->
+            <div class="flex-1 overflow-y-auto p-4 bg-slate-50">
                 <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
                     <table class="w-full text-xs">
-                        <thead class="bg-slate-100 text-slate-600 border-b">
+                        <thead class="bg-slate-100 text-slate-600 border-b sticky top-0 z-10">
                             <tr>
                                 <th class="p-2 text-left text-[9px] font-bold uppercase">Data</th>
                                 <th class="p-2 text-left text-[9px] font-bold uppercase">Serviço</th>
@@ -954,43 +979,31 @@
                     </table>
                     <div id="saldo-empreita-sem-registros" class="p-6 text-center text-slate-400 font-medium text-xs hidden">Nenhuma medição encontrada para os filtros.</div>
                 </div>
-
-                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-                    <h4 class="font-bold text-slate-700 text-xs mb-2 flex items-center gap-1"><i data-lucide="plus-circle" class="w-4 h-4 text-amber-700"></i> Lançar medição da obra</h4>
-                    <div class="space-y-2">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 mb-1">Data</label>
-                            <input type="date" id="emp-medicao-data" class="w-full p-2 border rounded-lg text-xs">
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-500 mb-1">% do contrato</label>
-                                <input type="number" step="0.01" min="0" max="100" id="emp-medicao-percent" class="w-full p-2 border rounded-lg text-xs font-bold" placeholder="Ex: 15" oninput="sincronizarCamposMedicaoEmpreita('percent')">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-500 mb-1">Valor (R$)</label>
-                                <input type="number" step="0.01" min="0" id="emp-medicao-valor" class="w-full p-2 border rounded-lg text-xs font-bold" placeholder="0.00" oninput="sincronizarCamposMedicaoEmpreita('valor')">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 mb-1">Serviço / etapa medida</label>
-                            <input type="text" id="emp-medicao-descricao" placeholder="Ex: Alvenaria 1º pavimento" class="w-full p-2 border rounded-lg text-xs">
-                        </div>
-                        <button onclick="lancarMedicaoEmpreita()" class="w-full bg-amber-700 text-white px-4 py-2 rounded-lg font-bold flex items-center justify-center gap-1 active:scale-95"><i data-lucide="save" class="w-4 h-4"></i> Lançar</button>
-                    </div>
-                    <p class="text-[10px] text-slate-500 mt-2">Informe % ou valor. O outro campo preenche sozinho. O lançamento não pode ultrapassar o saldo restante do contrato.</p>
-                </div>
             </div>
 
-            <div class="p-3 bg-white border-t shrink-0">
-                <div class="mb-2">
-                    <span class="text-xs font-bold text-slate-500">Total medido (filtro):</span>
-                    <span id="saldo-empreita-total-valor" class="text-lg font-black text-amber-800 ml-1">R$ 0,00</span>
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="imprimirReciboEmpreitaDoModal()" class="flex-1 bg-slate-700 text-white px-3 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1 active:scale-95"><i data-lucide="receipt" class="w-4 h-4"></i> Recibo</button>
-                    <button onclick="estornarUltimoFechamentoEmpreita()" class="flex-1 bg-amber-600 text-white px-3 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1 active:scale-95"><i data-lucide="rotate-ccw" class="w-4 h-4"></i> Estornar</button>
-                    <button onclick="fecharPagamentoSaldoEmpreita()" class="flex-1 bg-blue-700 text-white px-3 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1 active:scale-95"><i data-lucide="check-circle" class="w-4 h-4"></i> Conferido</button>
+            <!-- Rodapé fixo: vales + totais + conferido -->
+            <div class="bg-white border-t shrink-0">
+                <div id="saldo-empreita-vale-resumo" class="px-4 pt-3"></div>
+                <div class="p-4 space-y-3">
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <div class="text-[10px] text-slate-500 font-bold uppercase">Total medido</div>
+                            <div id="saldo-empreita-total-medido" class="text-lg font-black text-amber-800">R$ 0,00</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-[10px] text-slate-500 font-bold uppercase">Bruto</div>
+                            <div id="saldo-empreita-total-bruto" class="text-sm font-black text-slate-600">R$ 0,00</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-[10px] text-slate-500 font-bold uppercase">Vales</div>
+                            <div id="saldo-empreita-total-vales" class="text-sm font-black text-rose-600">- R$ 0,00</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-[10px] text-slate-500 font-bold uppercase">Valor a pagar</div>
+                            <div id="saldo-empreita-total-valor" class="text-lg font-black text-green-700">R$ 0,00</div>
+                        </div>
+                    </div>
+                    <button onclick="fecharPagamentoSaldoEmpreita()" class="w-full bg-blue-700 text-white py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-1 active:scale-95"><i data-lucide="check-circle" class="w-4 h-4"></i> Conferido</button>
                 </div>
             </div>
         </div>
@@ -1001,7 +1014,7 @@
     <script src="js/ui.js?v=20261006b"></script>
     <script src="js/modals.js?v=20261006a"></script>
     <script src="js/equipe-core.js?v=20261006c"></script>
-    <script src="js/equipe.js?v=20261007d"></script>
+    <script src="js/equipe.js?v=20261007e"></script>
     <script src="js/vales.js?v=20261007b"></script>
     <script src="js/contas.js?v=20261007a"></script>
     <script>window.__rvFolhaShared = (typeof executarImpressaoFolha === 'function') ? executarImpressaoFolha : null;
@@ -1550,7 +1563,7 @@
             registros.forEach(p=>{ const dataDia=new Date(p.hora_registro).toLocaleDateString('pt-BR',{timeZone:'UTC'}); if(!porDia[dataDia]) porDia[dataDia]={entradas:[],saidas:[],ajustes:[]}; if(p.tipo==='ENTRADA') porDia[dataDia].entradas.push(p.hora_registro); else if(p.tipo==='SAIDA') porDia[dataDia].saidas.push(p.hora_registro); else if(p.tipo==='AJUSTE_MANUAL') porDia[dataDia].ajustes.push(p); });
             const tbody=document.getElementById('saldo-tabela-body'); tbody.innerHTML=''; let totalDiarias=0;
             const datasOrdenadas=Object.keys(porDia).sort((a,b)=>{ const [da,ma,aa]=a.split('/'); const [db,mb,ab]=b.split('/'); return new Date(aa,ma-1,da)-new Date(ab,mb-1,db); });
-            if(datasOrdenadas.length===0){ document.getElementById('saldo-sem-registros').classList.remove('hidden'); document.getElementById('saldo-total-diarias').innerText='0.00'; document.getElementById('saldo-total-valor').innerText=formatMoney(0); if(typeof renderResumoValeModal==='function'){ const pv=STATE.ponto_diario.filter(p=>p.funcionario_id===funcId&&p.status==='VALIDADO'&&!p.pago_em_fechamento&&(!dataInicio||p.hora_registro>=dataInicio+'T00:00:00')&&(!dataFim||p.hora_registro<=dataFim+'T23:59:59')); renderResumoValeModal('saldo-vale-resumo', funcId, rvCalcularTotalDiarias(pv)*parseFloat(func.valor_diaria||0)); } return; }
+            if(datasOrdenadas.length===0){ document.getElementById('saldo-sem-registros').classList.remove('hidden'); document.getElementById('saldo-total-diarias').innerText='0.00'; document.getElementById('saldo-total-valor').innerText=formatMoney(0); const bz=document.getElementById('saldo-total-bruto'); if(bz) bz.innerText=formatMoney(0); const vz=document.getElementById('saldo-total-vales'); if(vz) vz.innerText='- '+formatMoney(0); if(typeof renderResumoValeModal==='function'){ const pv=STATE.ponto_diario.filter(p=>p.funcionario_id===funcId&&p.status==='VALIDADO'&&!p.pago_em_fechamento&&(!dataInicio||p.hora_registro>=dataInicio+'T00:00:00')&&(!dataFim||p.hora_registro<=dataFim+'T23:59:59')); renderResumoValeModal('saldo-vale-resumo', funcId, rvCalcularTotalDiarias(pv)*parseFloat(func.valor_diaria||0), { hideLiquido:true }); } return; }
             document.getElementById('saldo-sem-registros').classList.add('hidden');
             datasOrdenadas.forEach(dataDia=>{
                 const pts=porDia[dataDia];
@@ -1566,8 +1579,12 @@
                 tbody.innerHTML+=`<tr><td class="p-2 font-bold text-slate-700 text-[10px]">${dataDia}</td><td class="p-2 text-[10px]">${horariosStr}</td><td class="p-2 text-center font-black">${fracao.toFixed(2)}</td><td class="p-2 text-center"><span class="px-1 py-0.5 rounded text-[9px] font-bold ${pts.ajustes[0]?.pago_em_fechamento||registros.some(r=>r.hora_registro===pts.entradas[0]&&r.pago_em_fechamento)?'bg-green-100 text-green-700':'bg-orange-100 text-orange-700'}">${registros.some(r=>r.hora_registro===pts.entradas[0]&&r.pago_em_fechamento)?'PAGO':'PENDENTE'}</span></td></tr>`;
             });
             document.getElementById('saldo-total-diarias').innerText=totalDiarias.toFixed(2);
-            document.getElementById('saldo-total-valor').innerText=formatMoney(totalDiarias * parseFloat(func.valor_diaria||0));
-            if(typeof renderResumoValeModal==='function'){ const pv=STATE.ponto_diario.filter(p=>p.funcionario_id===funcId&&p.status==='VALIDADO'&&!p.pago_em_fechamento&&(!dataInicio||p.hora_registro>=dataInicio+'T00:00:00')&&(!dataFim||p.hora_registro<=dataFim+'T23:59:59')); renderResumoValeModal('saldo-vale-resumo', funcId, rvCalcularTotalDiarias(pv)*parseFloat(func.valor_diaria||0)); }
+            const brutoDiaria=totalDiarias * parseFloat(func.valor_diaria||0);
+            const elBrDia=document.getElementById('saldo-total-bruto'); if(elBrDia) elBrDia.innerText=formatMoney(brutoDiaria);
+            let simDiaria=null;
+            if(typeof renderResumoValeModal==='function'){ const pv=STATE.ponto_diario.filter(p=>p.funcionario_id===funcId&&p.status==='VALIDADO'&&!p.pago_em_fechamento&&(!dataInicio||p.hora_registro>=dataInicio+'T00:00:00')&&(!dataFim||p.hora_registro<=dataFim+'T23:59:59')); simDiaria=renderResumoValeModal('saldo-vale-resumo', funcId, rvCalcularTotalDiarias(pv)*parseFloat(func.valor_diaria||0), { hideLiquido:true }); }
+            const elVlDia=document.getElementById('saldo-total-vales'); if(elVlDia) elVlDia.innerText='- '+formatMoney(simDiaria?simDiaria.total:0);
+            document.getElementById('saldo-total-valor').innerText=formatMoney(simDiaria?simDiaria.saldoLiquido:brutoDiaria);
             lucide.createIcons();
         }
       
@@ -1662,7 +1679,9 @@ function carregarTabelaSaldoMetros() {
         document.getElementById('saldo-metros-sem-registros').classList.remove('hidden');
         document.getElementById('saldo-metros-total-metros').innerText = '0.00';
         document.getElementById('saldo-metros-total-valor').innerText = formatMoney(0);
-        if (typeof renderResumoValeModal === 'function') { const pend = (STATE.producao_terc || []).filter(p => p.terceirizado_id === tercId && p.status !== 'PAGO' && (!dataInicio || p.data_registro >= dataInicio) && (!dataFim || p.data_registro <= dataFim)); const bruto = pend.reduce((s, p) => s + (parseFloat(p.metros) || 0), 0) * parseFloat(terc.valor_metro || 0); renderResumoValeModal('saldo-metros-vale-resumo', tercId, bruto); }
+        const bzM = document.getElementById('saldo-metros-total-bruto'); if (bzM) bzM.innerText = formatMoney(0);
+        const vzM = document.getElementById('saldo-metros-total-vales'); if (vzM) vzM.innerText = '- ' + formatMoney(0);
+        if (typeof renderResumoValeModal === 'function') { const pend = (STATE.producao_terc || []).filter(p => p.terceirizado_id === tercId && p.status !== 'PAGO' && (!dataInicio || p.data_registro >= dataInicio) && (!dataFim || p.data_registro <= dataFim)); const bruto = pend.reduce((s, p) => s + (parseFloat(p.metros) || 0), 0) * parseFloat(terc.valor_metro || 0); renderResumoValeModal('saldo-metros-vale-resumo', tercId, bruto, { hideLiquido: true }); }
         return;
     }
     document.getElementById('saldo-metros-sem-registros').classList.add('hidden');
@@ -1689,8 +1708,11 @@ function carregarTabelaSaldoMetros() {
 
     document.getElementById('saldo-metros-total-metros').innerText = totalMetros.toFixed(2);
     const valorTotal = totalMetros * parseFloat(terc.valor_metro || 0);
-    document.getElementById('saldo-metros-total-valor').innerText = formatMoney(valorTotal);
-    if (typeof renderResumoValeModal === 'function') { const pend = (STATE.producao_terc || []).filter(p => p.terceirizado_id === tercId && p.status !== 'PAGO' && (!dataInicio || p.data_registro >= dataInicio) && (!dataFim || p.data_registro <= dataFim)); const bruto = pend.reduce((s, p) => s + (parseFloat(p.metros) || 0), 0) * parseFloat(terc.valor_metro || 0); renderResumoValeModal('saldo-metros-vale-resumo', tercId, bruto); }
+    const elBrMetros = document.getElementById('saldo-metros-total-bruto'); if (elBrMetros) elBrMetros.innerText = formatMoney(valorTotal);
+    let simMetros = null;
+    if (typeof renderResumoValeModal === 'function') { const pend = (STATE.producao_terc || []).filter(p => p.terceirizado_id === tercId && p.status !== 'PAGO' && (!dataInicio || p.data_registro >= dataInicio) && (!dataFim || p.data_registro <= dataFim)); const bruto = pend.reduce((s, p) => s + (parseFloat(p.metros) || 0), 0) * parseFloat(terc.valor_metro || 0); simMetros = renderResumoValeModal('saldo-metros-vale-resumo', tercId, bruto, { hideLiquido: true }); }
+    const elVlMetros = document.getElementById('saldo-metros-total-vales'); if (elVlMetros) elVlMetros.innerText = '- ' + formatMoney(simMetros ? simMetros.total : 0);
+    document.getElementById('saldo-metros-total-valor').innerText = formatMoney(simMetros ? simMetros.saldoLiquido : valorTotal);
     lucide.createIcons();
 }
 

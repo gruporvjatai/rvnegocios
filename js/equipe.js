@@ -679,6 +679,10 @@ function carregarTabelaSaldoMetros() {
         document.getElementById('saldo-metros-sem-registros').classList.remove('hidden');
         document.getElementById('saldo-metros-total-metros').innerText = '0.00';
         document.getElementById('saldo-metros-total-valor').innerText = formatMoney(0);
+        const elBrutoZero = document.getElementById('saldo-metros-total-bruto');
+        if (elBrutoZero) elBrutoZero.innerText = formatMoney(0);
+        const elValesZero = document.getElementById('saldo-metros-total-vales');
+        if (elValesZero) elValesZero.innerText = '- ' + formatMoney(0);
         if (typeof renderResumoValeModal === 'function') {
             const pendentesValeVazio = STATE.producao_terc.filter(p =>
                 p.terceirizado_id === tercId && p.status !== 'PAGO' &&
@@ -686,7 +690,7 @@ function carregarTabelaSaldoMetros() {
                 (!dataFim || p.data_registro <= dataFim)
             );
             const metrosPendVazio = pendentesValeVazio.reduce((s, p) => s + (parseFloat(p.metros) || 0), 0);
-            renderResumoValeModal('saldo-metros-vale-resumo', tercId, metrosPendVazio * parseFloat(terc.valor_metro || 0));
+            renderResumoValeModal('saldo-metros-vale-resumo', tercId, metrosPendVazio * parseFloat(terc.valor_metro || 0), { hideLiquido: true });
         }
         return;
     }
@@ -717,9 +721,11 @@ function carregarTabelaSaldoMetros() {
     
     document.getElementById('saldo-metros-total-metros').innerText = totalMetros.toFixed(2);
     const valorTotal = totalMetros * parseFloat(terc.valor_metro || 0);
-    document.getElementById('saldo-metros-total-valor').innerText = formatMoney(valorTotal);
+    const elBrutoMetros = document.getElementById('saldo-metros-total-bruto');
+    if (elBrutoMetros) elBrutoMetros.innerText = formatMoney(valorTotal);
 
     // Preview do abatimento de vales (somente produção pendente)
+    let simMetros = null;
     if (typeof renderResumoValeModal === 'function') {
         const pendentesVale = STATE.producao_terc.filter(p =>
             p.terceirizado_id === tercId && p.status !== 'PAGO' &&
@@ -728,8 +734,14 @@ function carregarTabelaSaldoMetros() {
         );
         const metrosPend = pendentesVale.reduce((s, p) => s + (parseFloat(p.metros) || 0), 0);
         const brutoVale = metrosPend * parseFloat(terc.valor_metro || 0);
-        renderResumoValeModal('saldo-metros-vale-resumo', tercId, brutoVale);
+        simMetros = renderResumoValeModal('saldo-metros-vale-resumo', tercId, brutoVale, { hideLiquido: true });
     }
+
+    const valeAbatidoMetros = simMetros ? simMetros.total : 0;
+    const valorLiquidoMetros = simMetros ? simMetros.saldoLiquido : valorTotal;
+    const elValesMetros = document.getElementById('saldo-metros-total-vales');
+    if (elValesMetros) elValesMetros.innerText = '- ' + formatMoney(valeAbatidoMetros);
+    document.getElementById('saldo-metros-total-valor').innerText = formatMoney(valorLiquidoMetros);
     
     lucide.createIcons();
 }
@@ -3685,10 +3697,17 @@ function carregarTabelaSaldoEmpreita() {
     let totalFiltro = 0;
     if (registros.length === 0) {
         document.getElementById('saldo-empreita-sem-registros').classList.remove('hidden');
-        document.getElementById('saldo-empreita-total-valor').innerText = formatMoney(0);
+        const elMedidoZero = document.getElementById('saldo-empreita-total-medido');
+        if (elMedidoZero) elMedidoZero.innerText = formatMoney(0);
+        const elBrutoZeroEmp = document.getElementById('saldo-empreita-total-bruto');
+        if (elBrutoZeroEmp) elBrutoZeroEmp.innerText = formatMoney(resumo.valorPendentePeriodo || 0);
+        let simVazioEmp = null;
         if (typeof renderResumoValeModal === 'function') {
-            renderResumoValeModal('saldo-empreita-vale-resumo', equipeId, resumo.valorPendentePeriodo);
+            simVazioEmp = renderResumoValeModal('saldo-empreita-vale-resumo', equipeId, resumo.valorPendentePeriodo, { hideLiquido: true });
         }
+        const elValesZeroEmp = document.getElementById('saldo-empreita-total-vales');
+        if (elValesZeroEmp) elValesZeroEmp.innerText = '- ' + formatMoney(simVazioEmp ? simVazioEmp.total : 0);
+        document.getElementById('saldo-empreita-total-valor').innerText = formatMoney(simVazioEmp ? simVazioEmp.saldoLiquido : (resumo.valorPendentePeriodo || 0));
         return;
     }
     document.getElementById('saldo-empreita-sem-registros').classList.add('hidden');
@@ -3715,10 +3734,17 @@ function carregarTabelaSaldoEmpreita() {
         `;
         tbody.appendChild(tr);
     });
-    document.getElementById('saldo-empreita-total-valor').innerText = formatMoney(totalFiltro);
+    const elMedidoEmp = document.getElementById('saldo-empreita-total-medido');
+    if (elMedidoEmp) elMedidoEmp.innerText = formatMoney(totalFiltro);
+    const elBrutoEmp = document.getElementById('saldo-empreita-total-bruto');
+    if (elBrutoEmp) elBrutoEmp.innerText = formatMoney(resumo.valorPendentePeriodo || 0);
+    let simEmp = null;
     if (typeof renderResumoValeModal === 'function') {
-        renderResumoValeModal('saldo-empreita-vale-resumo', equipeId, resumo.valorPendentePeriodo);
+        simEmp = renderResumoValeModal('saldo-empreita-vale-resumo', equipeId, resumo.valorPendentePeriodo, { hideLiquido: true });
     }
+    const elValesEmp = document.getElementById('saldo-empreita-total-vales');
+    if (elValesEmp) elValesEmp.innerText = '- ' + formatMoney(simEmp ? simEmp.total : 0);
+    document.getElementById('saldo-empreita-total-valor').innerText = formatMoney(simEmp ? simEmp.saldoLiquido : (resumo.valorPendentePeriodo || 0));
 }
 
 async function excluirMedicaoEmpreitaAdmin(medicaoId) {
