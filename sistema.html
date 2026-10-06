@@ -697,12 +697,12 @@
             </button>
         </div>
 
-        <!-- Corpo com scroll -->
-        <div class="p-5 overflow-y-auto flex-1 bg-slate-50">
+        <!-- Topo fixo: filtros, ações e lançamento manual -->
+        <div class="shrink-0 bg-white border-b border-slate-200">
             <input type="hidden" id="saldo-equipe-id">
-            
-            <!-- Filtros -->
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-4 flex flex-wrap gap-3 items-end">
+
+            <!-- Filtros + ações -->
+            <div class="px-5 pt-3 pb-2 flex flex-wrap gap-3 items-end">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data Início</label>
                     <input type="date" id="saldo-filtro-data-inicio" class="p-2 border rounded-lg text-sm font-bold bg-slate-50" onchange="carregarTabelaSaldo()">
@@ -720,17 +720,51 @@
                     </select>
                 </div>
                 <div class="flex-1"></div>
-                <button onclick="imprimirExtratoSaldo()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow">
-                    <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Extrato
-                </button>
+                <div class="flex items-center gap-2">
+                    <button onclick="imprimirExtratoSaldo()" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm" title="Imprimir extrato">
+                        <i data-lucide="printer" class="w-4 h-4"></i> Extrato
+                    </button>
+                    <button onclick="imprimirReciboDoModal()" class="bg-slate-700 hover:bg-slate-800 text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm" title="Imprimir recibo com os dados filtrados">
+                        <i data-lucide="receipt" class="w-4 h-4"></i> Recibo
+                    </button>
+                    <button onclick="estornarUltimoFechamento()" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm" title="Estornar o último fechamento de ponto">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Estornar Último
+                    </button>
+                </div>
             </div>
 
-            <div id="saldo-vale-resumo" class="mb-4"></div>
+            <!-- Lançamento de ajuste manual -->
+            <div class="px-5 pb-3">
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div class="flex flex-wrap gap-2 items-end">
+                        <div class="flex items-center gap-1 text-xs font-bold text-slate-600 pb-2 pr-1">
+                            <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-600"></i> Lançar Ajuste Manual
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Data</label>
+                            <input type="date" id="ajuste-data" class="p-2 border rounded-lg text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fração</label>
+                            <input type="number" step="0.01" min="0" id="ajuste-fracao" placeholder="0.5" class="w-24 p-2 border rounded-lg text-sm font-bold">
+                        </div>
+                        <div class="flex-1 min-w-[180px]">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Justificativa</label>
+                            <input type="text" id="ajuste-justificativa" placeholder="Ex: Esqueceu bater ponto" class="w-full p-2 border rounded-lg text-sm">
+                        </div>
+                        <button onclick="lancarAjusteManual()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-1.5">
+                            <i data-lucide="save" class="w-4 h-4"></i> Lançar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-            <!-- Tabela de registros -->
+        <!-- Scroll: somente os lançamentos de diária -->
+        <div class="p-5 overflow-y-auto flex-1 bg-slate-50">
             <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
                 <table class="w-full text-sm">
-                    <thead class="bg-slate-100 text-slate-600 border-b">
+                    <thead class="bg-slate-100 text-slate-600 border-b sticky top-0 z-10">
                         <tr>
                             <th class="p-3 text-left text-xs font-bold uppercase">Data</th>
                             <th class="p-3 text-left text-xs font-bold uppercase">Horários</th>
@@ -744,53 +778,32 @@
                     Nenhum registro encontrado para os filtros.
                 </div>
             </div>
-
-            <!-- Lançamento de ajuste manual -->
-            <div class="mt-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                <h4 class="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2">
-                    <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-600"></i> Lançar Ajuste Manual (Meia Diária)
-                </h4>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1">Data</label>
-                        <input type="date" id="ajuste-data" class="w-full p-2 border rounded-lg text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1">Fração (ex: 0.5)</label>
-                        <input type="number" step="0.01" min="0" id="ajuste-fracao" class="w-full p-2 border rounded-lg text-sm font-bold">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1">Justificativa</label>
-                        <input type="text" id="ajuste-justificativa" placeholder="Ex: Esqueceu bater ponto" class="w-full p-2 border rounded-lg text-sm">
-                    </div>
-                    <div class="flex items-end">
-                        <button onclick="lancarAjusteManual()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold flex items-center justify-center gap-1">
-                            <i data-lucide="save" class="w-4 h-4"></i> Lançar
-                        </button>
-                    </div>
-                </div>
-            </div>
         </div>
 
-        <!-- Rodapé com totais e ações -->
-        <div class="p-4 bg-white border-t flex justify-between items-center shrink-0">
-            <div>
-                <span class="text-sm font-bold text-slate-500">Total de Diárias Pendentes:</span>
-                <span id="saldo-total-diarias" class="text-2xl font-black text-indigo-700 ml-2">0.00</span>
-            </div>
-            <div class="flex items-center gap-4">
-                <div class="text-right">
-                    <div class="text-xs text-slate-500 font-bold uppercase">Valor a Pagar</div>
-                    <div id="saldo-total-valor" class="text-2xl font-black text-green-600">R$ 0,00</div>
+        <!-- Rodapé fixo: vales + totais + conferido -->
+        <div class="shrink-0 bg-white border-t border-slate-200">
+            <div id="saldo-vale-resumo" class="px-5 pt-3"></div>
+            <div class="px-5 py-3 flex flex-wrap justify-between items-end gap-3">
+                <div class="flex flex-wrap items-end gap-6">
+                    <div>
+                        <div class="text-[10px] font-bold text-slate-500 uppercase">Total de Diárias Pendentes</div>
+                        <div id="saldo-total-diarias" class="text-2xl font-black text-indigo-700">0.00</div>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-bold text-slate-500 uppercase">Valor Bruto</div>
+                        <div id="saldo-total-bruto" class="text-lg font-black text-slate-600">R$ 0,00</div>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-bold text-slate-500 uppercase">Vales Abatidos</div>
+                        <div id="saldo-total-vales" class="text-lg font-black text-rose-600">- R$ 0,00</div>
+                    </div>
                 </div>
-                <div class="flex gap-2">
-                    <button onclick="imprimirReciboDoModal()" class="bg-slate-700 hover:bg-slate-800 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2" title="Imprimir recibo com os dados filtrados">
-                        <i data-lucide="receipt" class="w-5 h-5"></i> Recibo
-                    </button>
-                    <button onclick="estornarUltimoFechamento()" class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2" title="Estornar o último fechamento de ponto">
-                        <i data-lucide="rotate-ccw" class="w-5 h-5"></i> Estornar Último
-                    </button>
-                    <button onclick="fecharPagamentoSaldo()" class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2">
+                <div class="flex items-end gap-4">
+                    <div class="text-right">
+                        <div class="text-[10px] font-bold text-slate-500 uppercase">Valor a Pagar</div>
+                        <div id="saldo-total-valor" class="text-3xl font-black text-green-600">R$ 0,00</div>
+                    </div>
+                    <button onclick="fecharPagamentoSaldo()" class="bg-blue-700 hover:bg-blue-800 text-white px-5 py-2.5 rounded-xl font-bold shadow flex items-center gap-2">
                         <i data-lucide="check-circle" class="w-5 h-5"></i> Conferido
                     </button>
                 </div>
@@ -4449,8 +4462,8 @@
      <script src="js/equipe-core.js?v=20261006c"></script>
      <script src="js/precos.js?v=20261006a"></script>
      <script src="js/contrato.js?v=20260922d"></script>
-     <script src="js/equipe.js?v=20261006g"></script>
-     <script src="js/vales.js?v=20261006g"></script>
+     <script src="js/equipe.js?v=20261007b"></script>
+     <script src="js/vales.js?v=20261007b"></script>
      <script src="js/contas.js?v=20261007a"></script>
   </body>
 </html>

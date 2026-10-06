@@ -546,13 +546,11 @@
     </div>
     <p id="saldo-modal-subtitle" class="px-4 pb-2 text-xs font-medium text-slate-600 bg-indigo-50 border-b"></p>
 
-    <!-- Conteúdo rolável -->
-    <div class="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+    <!-- Topo fixo: filtros, ações e ajuste manual -->
+    <div class="shrink-0 bg-white border-b border-slate-200">
       <input type="hidden" id="saldo-equipe-id">
-
-      <!-- Filtros -->
-      <div class="bg-white rounded-xl p-3 shadow-sm border space-y-3">
-        <div class="grid grid-cols-2 gap-3">
+      <div class="p-3 space-y-2">
+        <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Data início</label>
             <input type="date" id="saldo-filtro-data-inicio" class="w-full p-2 border rounded-lg text-sm bg-white" onchange="carregarTabelaSaldo()">
@@ -571,19 +569,38 @@
               <option value="TODOS">Todos</option>
             </select>
           </div>
-          <button onclick="imprimirExtratoSaldo()" class="bg-slate-800 text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1 whitespace-nowrap">
-            <i data-lucide="printer" class="w-4 h-4"></i> Extrato
+          <button onclick="imprimirExtratoSaldo()" class="bg-slate-800 text-white px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center gap-1 whitespace-nowrap">
+            <i data-lucide="printer" class="w-3.5 h-3.5"></i> Extrato
+          </button>
+          <button onclick="imprimirReciboDoModal()" class="bg-slate-700 text-white px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center gap-1 whitespace-nowrap">
+            <i data-lucide="receipt" class="w-3.5 h-3.5"></i> Recibo
+          </button>
+          <button onclick="estornarUltimoFechamento()" class="bg-amber-600 text-white px-2.5 py-2 rounded-lg text-[11px] font-bold flex items-center gap-1 whitespace-nowrap">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Estornar
+          </button>
+        </div>
+        <div class="bg-slate-50 rounded-xl p-2 border">
+          <div class="text-[10px] font-bold text-slate-600 mb-1 flex items-center gap-1">
+            <i data-lucide="plus-circle" class="w-3.5 h-3.5 text-indigo-600"></i> Lançar ajuste manual
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <input type="date" id="ajuste-data" class="p-2 border rounded-lg text-sm">
+            <input type="number" step="0.01" id="ajuste-fracao" placeholder="Fração (0.5)" class="p-2 border rounded-lg text-sm">
+            <input type="text" id="ajuste-justificativa" placeholder="Justificativa" class="col-span-2 p-2 border rounded-lg text-sm">
+          </div>
+          <button onclick="lancarAjusteManual()" class="w-full mt-2 bg-indigo-600 text-white py-2 rounded-lg font-bold text-xs active:scale-95 transition">
+            Lançar ajuste
           </button>
         </div>
       </div>
+    </div>
 
-      <div id="saldo-vale-resumo"></div>
-
-      <!-- Tabela de registros -->
+    <!-- Scroll: somente lançamentos -->
+    <div class="flex-1 overflow-y-auto p-4 bg-slate-50">
       <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
-            <thead class="bg-slate-100 text-slate-600">
+            <thead class="bg-slate-100 text-slate-600 sticky top-0 z-10">
               <tr>
                 <th class="p-3 text-left text-xs font-bold">Data</th>
                 <th class="p-3 text-left text-xs font-bold">Horários</th>
@@ -598,43 +615,31 @@
           Nenhum registro encontrado.
         </div>
       </div>
-
-      <!-- Ajuste manual -->
-      <div class="bg-white rounded-xl p-3 shadow-sm border space-y-3">
-        <h4 class="font-bold text-slate-700 text-sm flex items-center gap-2">
-          <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-600"></i> Lançar ajuste manual (meia diária)
-        </h4>
-        <div class="grid grid-cols-2 gap-3">
-          <input type="date" id="ajuste-data" class="p-2 border rounded-lg text-sm">
-          <input type="number" step="0.01" id="ajuste-fracao" placeholder="Fração (ex: 0.5)" class="p-2 border rounded-lg text-sm">
-          <input type="text" id="ajuste-justificativa" placeholder="Justificativa" class="col-span-2 p-2 border rounded-lg text-sm">
-        </div>
-        <button onclick="lancarAjusteManual()" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-bold text-sm active:scale-95 transition">
-          Lançar ajuste
-        </button>
-      </div>
     </div>
 
-    <!-- Rodapé com totais e botões -->
-    <div class="bg-white border-t p-4 shrink-0 space-y-3">
-      <div class="flex justify-between items-center">
-        <div>
-          <div class="text-xs text-slate-500 font-bold uppercase">Total de diárias</div>
-          <div id="saldo-total-diarias" class="text-2xl font-black text-indigo-700">0.00</div>
+    <!-- Rodapé fixo: vales + totais + conferido -->
+    <div class="bg-white border-t shrink-0">
+      <div id="saldo-vale-resumo" class="px-4 pt-3"></div>
+      <div class="p-4 space-y-3">
+        <div class="flex justify-between items-end">
+          <div>
+            <div class="text-[10px] text-slate-500 font-bold uppercase">Total de diárias</div>
+            <div id="saldo-total-diarias" class="text-xl font-black text-indigo-700">0.00</div>
+          </div>
+          <div class="text-center">
+            <div class="text-[10px] text-slate-500 font-bold uppercase">Bruto</div>
+            <div id="saldo-total-bruto" class="text-sm font-black text-slate-600">R$ 0,00</div>
+          </div>
+          <div class="text-center">
+            <div class="text-[10px] text-slate-500 font-bold uppercase">Vales</div>
+            <div id="saldo-total-vales" class="text-sm font-black text-rose-600">- R$ 0,00</div>
+          </div>
+          <div class="text-right">
+            <div class="text-[10px] text-slate-500 font-bold uppercase">Valor a pagar</div>
+            <div id="saldo-total-valor" class="text-xl font-black text-green-700">R$ 0,00</div>
+          </div>
         </div>
-        <div class="text-right">
-          <div class="text-xs text-slate-500 font-bold uppercase">Valor a pagar</div>
-          <div id="saldo-total-valor" class="text-2xl font-black text-green-700">R$ 0,00</div>
-        </div>
-      </div>
-      <div class="flex gap-2">
-        <button onclick="imprimirReciboDoModal()" class="flex-1 bg-slate-700 text-white py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-1 active:scale-95">
-          <i data-lucide="receipt" class="w-4 h-4"></i> Recibo
-        </button>
-        <button onclick="estornarUltimoFechamento()" class="flex-1 bg-amber-600 text-white py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-1 active:scale-95">
-          <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Estornar
-        </button>
-        <button onclick="fecharPagamentoSaldo()" class="flex-1 bg-blue-700 text-white py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-1 active:scale-95">
+        <button onclick="fecharPagamentoSaldo()" class="w-full bg-blue-700 text-white py-2.5 rounded-xl font-bold text-sm flex items-center justify-center gap-1 active:scale-95">
           <i data-lucide="check-circle" class="w-4 h-4"></i> Conferido
         </button>
       </div>
@@ -996,8 +1001,8 @@
     <script src="js/ui.js?v=20261006b"></script>
     <script src="js/modals.js?v=20261006a"></script>
     <script src="js/equipe-core.js?v=20261006c"></script>
-    <script src="js/equipe.js?v=20261006g"></script>
-    <script src="js/vales.js?v=20261006g"></script>
+    <script src="js/equipe.js?v=20261007b"></script>
+    <script src="js/vales.js?v=20261007b"></script>
     <script src="js/contas.js?v=20261007a"></script>
     <script>window.__rvFolhaShared = (typeof executarImpressaoFolha === 'function') ? executarImpressaoFolha : null;
     window.__rvReciboMetrosShared = (typeof imprimirReciboMetrosDoModal === 'function') ? imprimirReciboMetrosDoModal : null;</script>

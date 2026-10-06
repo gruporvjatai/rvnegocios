@@ -520,6 +520,13 @@ function carregarTabelaSaldo() {
         document.getElementById('saldo-sem-registros').classList.remove('hidden');
         document.getElementById('saldo-total-diarias').innerText = '0.00';
         document.getElementById('saldo-total-valor').innerText = formatMoney(0);
+        const elBrutoZero = document.getElementById('saldo-total-bruto');
+        if (elBrutoZero) elBrutoZero.innerText = formatMoney(0);
+        const elValesZero = document.getElementById('saldo-total-vales');
+        if (elValesZero) elValesZero.innerText = '- ' + formatMoney(0);
+        if (typeof renderResumoValeModal === 'function') {
+            renderResumoValeModal('saldo-vale-resumo', funcId, 0, { hideLiquido: true });
+        }
         return;
     }
     document.getElementById('saldo-sem-registros').classList.add('hidden');
@@ -576,10 +583,12 @@ function carregarTabelaSaldo() {
     });
     
     document.getElementById('saldo-total-diarias').innerText = totalDiarias.toFixed(2);
-    const valorTotal = totalDiarias * parseFloat(func.valor_diaria || 0);
-    document.getElementById('saldo-total-valor').innerText = formatMoney(valorTotal);
+    const valorBruto = totalDiarias * parseFloat(func.valor_diaria || 0);
+    const elBruto = document.getElementById('saldo-total-bruto');
+    if (elBruto) elBruto.innerText = formatMoney(valorBruto);
 
     // Preview do abatimento de vales (somente registros ainda pendentes)
+    let simVale = null;
     if (typeof renderResumoValeModal === 'function') {
         const pendentesVale = STATE.ponto_diario.filter(p =>
             p.funcionario_id === funcId && p.status === 'VALIDADO' && !p.pago_em_fechamento &&
@@ -587,8 +596,14 @@ function carregarTabelaSaldo() {
             (!dataFim || p.hora_registro <= dataFim + 'T23:59:59')
         );
         const brutoVale = rvCalcularTotalDiarias(pendentesVale) * parseFloat(func.valor_diaria || 0);
-        renderResumoValeModal('saldo-vale-resumo', funcId, brutoVale);
+        simVale = renderResumoValeModal('saldo-vale-resumo', funcId, brutoVale, { hideLiquido: true });
     }
+
+    const valeAbatido = simVale ? simVale.total : 0;
+    const valorLiquido = simVale ? simVale.saldoLiquido : valorBruto;
+    const elVales = document.getElementById('saldo-total-vales');
+    if (elVales) elVales.innerText = '- ' + formatMoney(valeAbatido);
+    document.getElementById('saldo-total-valor').innerText = formatMoney(valorLiquido);
     
     lucide.createIcons();
 }

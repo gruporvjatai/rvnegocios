@@ -121,10 +121,11 @@
     // ------------------------------------------------------------------
     // Resumo dentro das modais de calculo
     // ------------------------------------------------------------------
-    function renderResumoValeModal(containerId, colabId, bruto) {
+    function renderResumoValeModal(containerId, colabId, bruto, opts) {
         var el = document.getElementById(containerId);
         var abertos = rvValesAbertos(todosVales(), colabId);
         var sim = rvSimularAbatimentos(abertos, bruto);
+        var hideLiquido = !!(opts && opts.hideLiquido);
         if (!el) return sim;
 
         var linhas = '';
@@ -139,6 +140,19 @@
 
         var totalAberto = rvMoney(abertos.reduce(function (s, v) { return s + rvMoney(v.valor_aberto); }, 0));
 
+        var totaisHtml =
+            '<div class="border-t border-rose-200 mt-2 pt-2 text-xs">' +
+                '<div class="flex justify-between"><span class="text-slate-600">Vales em aberto:</span>' +
+                    '<span class="font-bold text-rose-700">' + vMoney(totalAberto) + '</span></div>' +
+                '<div class="flex justify-between"><span class="text-slate-600">Abatimento neste fechamento:</span>' +
+                    '<span class="font-bold text-rose-700">' + vMoney(sim.total) + '</span></div>';
+        if (!hideLiquido) {
+            totaisHtml +=
+                '<div class="flex justify-between text-sm"><span class="font-bold text-slate-700">Liquido a pagar:</span>' +
+                    '<span class="font-black text-green-700">' + vMoney(sim.saldoLiquido) + '</span></div>';
+        }
+        totaisHtml += '</div>';
+
         el.innerHTML =
             '<div class="border border-rose-200 bg-rose-50 rounded-xl p-3">' +
                 '<div class="flex items-center justify-between mb-1">' +
@@ -148,14 +162,7 @@
                         'class="text-[10px] bg-rose-700 hover:bg-rose-800 text-white px-2 py-1 rounded font-bold">+ Lancar Vale</button>' +
                 '</div>' +
                 linhas +
-                '<div class="border-t border-rose-200 mt-2 pt-2 text-xs">' +
-                    '<div class="flex justify-between"><span class="text-slate-600">Vales em aberto:</span>' +
-                        '<span class="font-bold text-rose-700">' + vMoney(totalAberto) + '</span></div>' +
-                    '<div class="flex justify-between"><span class="text-slate-600">Abatimento neste fechamento:</span>' +
-                        '<span class="font-bold text-rose-700">' + vMoney(sim.total) + '</span></div>' +
-                    '<div class="flex justify-between text-sm"><span class="font-bold text-slate-700">Liquido a pagar:</span>' +
-                        '<span class="font-black text-green-700">' + vMoney(sim.saldoLiquido) + '</span></div>' +
-                '</div>' +
+                totaisHtml +
             '</div>';
         if (typeof lucide !== 'undefined') lucide.createIcons();
         return sim;
