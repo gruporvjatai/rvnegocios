@@ -97,6 +97,9 @@
                         <button onclick="abrirModalSaldo('${c.id}')" class="p-1.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded shadow font-bold text-[10px] flex items-center gap-1">
                             <i data-lucide="calculator" width="12"></i> CALCULAR
                         </button>
+                        <button onclick="abrirModalVale('${c.id}')" class="p-1.5 bg-rose-600 text-white hover:bg-rose-700 rounded shadow font-bold text-[10px] flex items-center gap-1" title="Vale / Adiantamento">
+                            <i data-lucide="hand-coins" width="12"></i> VALE
+                        </button>
                         <button onclick="abrirModalDocumentos('${c.id}')" class="p-1.5 bg-slate-800 text-white rounded shadow" title="Contratos">
                             <i data-lucide="file-signature" width="14"></i>
                         </button>
@@ -113,6 +116,9 @@
                         <button onclick="abrirModalSaldoEmpreita('${c.id}')" class="p-1.5 bg-amber-700 text-white hover:bg-amber-800 rounded shadow font-bold text-[10px] flex items-center gap-1">
                             <i data-lucide="calculator" width="12"></i> CALCULAR
                         </button>
+                        <button onclick="abrirModalVale('${c.id}')" class="p-1.5 bg-rose-600 text-white hover:bg-rose-700 rounded shadow font-bold text-[10px] flex items-center gap-1" title="Vale / Adiantamento">
+                            <i data-lucide="hand-coins" width="12"></i> VALE
+                        </button>
                         <button onclick="abrirModalDocumentos('${c.id}')" class="p-1.5 bg-slate-800 text-white rounded shadow" title="Contratos">
                             <i data-lucide="file-signature" width="14"></i>
                         </button>
@@ -128,6 +134,9 @@
                     botoesAcao = `
                         <button onclick="abrirModalSaldoMetros('${c.id}')" class="px-2 py-1.5 bg-slate-800 text-white hover:bg-black rounded shadow font-bold text-[10px] flex items-center gap-1">
                             <i data-lucide="calculator" width="12"></i> CALCULAR
+                        </button>
+                        <button onclick="abrirModalVale('${c.id}')" class="p-1.5 bg-rose-600 text-white hover:bg-rose-700 rounded shadow font-bold text-[10px] flex items-center gap-1" title="Vale / Adiantamento">
+                            <i data-lucide="hand-coins" width="12"></i> VALE
                         </button>
                         <button onclick="abrirModalDocumentosTerc('${c.id}')" class="p-1.5 bg-slate-800 text-white rounded shadow" title="Contratos">
                             <i data-lucide="file-signature" width="14"></i>
@@ -219,11 +228,26 @@
             const func = STATE.equipe.find(e => e.id === funcId);
             if (!func) return;
             
-            const totalDiarias = document.getElementById('saldo-total-diarias').innerText;
-            const valorTotal = document.getElementById('saldo-total-valor').innerText;
             const dataInicio = document.getElementById('saldo-filtro-data-inicio').value;
             const dataFim = document.getElementById('saldo-filtro-data-fim').value;
             const hoje = new Date().toLocaleDateString('pt-BR');
+
+            // Bruto/liquido considerando os vales em aberto (mesmo criterio do fechamento)
+            const pendReceb = STATE.ponto_diario.filter(p =>
+                p.funcionario_id === funcId && p.status === 'VALIDADO' && !p.pago_em_fechamento &&
+                (!dataInicio || p.hora_registro >= dataInicio + 'T00:00:00') &&
+                (!dataFim || p.hora_registro <= dataFim + 'T23:59:59'));
+            const totalDiariasNum = rvCalcularTotalDiarias(pendReceb);
+            const valorBrutoNum = totalDiariasNum * parseFloat(func.valor_diaria || 0);
+            const simValeReceb = rvSimularAbatimentos(rvValesAbertos(STATE.vales || [], funcId), valorBrutoNum);
+            const totalDiarias = totalDiariasNum.toFixed(2);
+            const valorTotal = formatMoney(simValeReceb.saldoLiquido);
+            const blocoValesReceb = simValeReceb.total > 0 ? `
+                <div style="font-size: 13px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; margin-bottom: 30px;">
+                    <div style="display:flex; justify-content:space-between;"><span>Valor bruto das diárias:</span><strong>${formatMoney(valorBrutoNum)}</strong></div>
+                    <div style="display:flex; justify-content:space-between; color:#be123c;"><span>(-) Vales / adiantamentos abatidos:</span><strong>- ${formatMoney(simValeReceb.total)}</strong></div>
+                    <div style="display:flex; justify-content:space-between; border-top:1px solid #e2e8f0; padding-top:6px; margin-top:6px;"><span>Valor líquido pago:</span><strong>${formatMoney(simValeReceb.saldoLiquido)}</strong></div>
+                </div>` : '';
             
             const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
             const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
@@ -244,6 +268,7 @@
                         referente ao pagamento de diárias <!--trabalhadas no período de <strong>${periodo}</strong>--> em aberto, conforme registro diário de presença da obra. Totalizando <strong>${totalDiarias} dias</strong> 
                         com a diária acordada em <strong>${formatMoney(func.valor_diaria)}</strong>.
                     </div>
+                    ${blocoValesReceb}
                     
                     <div style="font-size: 14px; margin-bottom: 40px;">
                         Para maior clareza, firmo(amos) o presente recibo para que produza os seus efeitos legais.
@@ -506,6 +531,17 @@ function carregarTabelaSaldo() {
     document.getElementById('saldo-total-diarias').innerText = totalDiarias.toFixed(2);
     const valorTotal = totalDiarias * parseFloat(func.valor_diaria || 0);
     document.getElementById('saldo-total-valor').innerText = formatMoney(valorTotal);
+
+    // Preview do abatimento de vales (somente registros ainda pendentes)
+    if (typeof renderResumoValeModal === 'function') {
+        const pendentesVale = STATE.ponto_diario.filter(p =>
+            p.funcionario_id === funcId && p.status === 'VALIDADO' && !p.pago_em_fechamento &&
+            (!dataInicio || p.hora_registro >= dataInicio + 'T00:00:00') &&
+            (!dataFim || p.hora_registro <= dataFim + 'T23:59:59')
+        );
+        const brutoVale = rvCalcularTotalDiarias(pendentesVale) * parseFloat(func.valor_diaria || 0);
+        renderResumoValeModal('saldo-vale-resumo', funcId, brutoVale);
+    }
     
     lucide.createIcons();
 }
@@ -581,6 +617,15 @@ function carregarTabelaSaldoMetros() {
         document.getElementById('saldo-metros-sem-registros').classList.remove('hidden');
         document.getElementById('saldo-metros-total-metros').innerText = '0.00';
         document.getElementById('saldo-metros-total-valor').innerText = formatMoney(0);
+        if (typeof renderResumoValeModal === 'function') {
+            const pendentesValeVazio = STATE.producao_terc.filter(p =>
+                p.terceirizado_id === tercId && p.status !== 'PAGO' &&
+                (!dataInicio || p.data_registro >= dataInicio) &&
+                (!dataFim || p.data_registro <= dataFim)
+            );
+            const metrosPendVazio = pendentesValeVazio.reduce((s, p) => s + (parseFloat(p.metros) || 0), 0);
+            renderResumoValeModal('saldo-metros-vale-resumo', tercId, metrosPendVazio * parseFloat(terc.valor_metro || 0));
+        }
         return;
     }
     document.getElementById('saldo-metros-sem-registros').classList.add('hidden');
@@ -611,6 +656,18 @@ function carregarTabelaSaldoMetros() {
     document.getElementById('saldo-metros-total-metros').innerText = totalMetros.toFixed(2);
     const valorTotal = totalMetros * parseFloat(terc.valor_metro || 0);
     document.getElementById('saldo-metros-total-valor').innerText = formatMoney(valorTotal);
+
+    // Preview do abatimento de vales (somente produção pendente)
+    if (typeof renderResumoValeModal === 'function') {
+        const pendentesVale = STATE.producao_terc.filter(p =>
+            p.terceirizado_id === tercId && p.status !== 'PAGO' &&
+            (!dataInicio || p.data_registro >= dataInicio) &&
+            (!dataFim || p.data_registro <= dataFim)
+        );
+        const metrosPend = pendentesVale.reduce((s, p) => s + (parseFloat(p.metros) || 0), 0);
+        const brutoVale = metrosPend * parseFloat(terc.valor_metro || 0);
+        renderResumoValeModal('saldo-metros-vale-resumo', tercId, brutoVale);
+    }
     
     lucide.createIcons();
 }
@@ -780,18 +837,27 @@ async function fecharPagamentoSaldoMetros() {
     }
     
     const totalMetros = registros.reduce((sum, r) => sum + parseFloat(r.metros), 0);
-    const valorTotal = totalMetros * parseFloat(terc.valor_metro || 0);
+    const valorBruto = totalMetros * parseFloat(terc.valor_metro || 0);
+
+    const valesAbertosMetro = rvValesAbertos(STATE.vales || [], tercId);
+    const simValeMetro = rvSimularAbatimentos(valesAbertosMetro, valorBruto);
+    const valorTotal = simValeMetro.saldoLiquido;
     
     const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
     const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
     const periodoDesc = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
     
-    if (!confirm(`Fechar pagamento de ${totalMetros.toFixed(2)} metros no valor de ${formatMoney(valorTotal)}?`)) return;
+    let confirmMsg = `Fechar pagamento de ${totalMetros.toFixed(2)} metros.`;
+    confirmMsg += `\nBruto: ${formatMoney(valorBruto)}`;
+    if (simValeMetro.total > 0) confirmMsg += `\nVales a abater: -${formatMoney(simValeMetro.total)}`;
+    confirmMsg += `\nLíquido a pagar: ${formatMoney(valorTotal)}`;
+    if (!confirm(confirmMsg)) return;
     
     showLoading(true);
     
     const logId = getNextIdNum(STATE.logs).toString();
     const descricao = `Pagamento de metragem - ${terc.nome} - Período ${periodoDesc}`;
+    const statusFin = valorTotal > 0 ? 'PENDENTE' : 'PAGO';
     const { data: logCriado, error: errFin } = await sb.from('jsp_logs').insert([{
         id: logId,
         obra_id: terc.obra_atual_id ? parseInt(terc.obra_atual_id) : null,
@@ -800,9 +866,9 @@ async function fecharPagamentoSaldoMetros() {
         valor_total: valorTotal,
         data: new Date().toISOString(),
         vencimento: new Date().toISOString(),
-        status_financeiro: 'PENDENTE',
+        status_financeiro: statusFin,
         categoria: 'Mão de Obra (Terceirizado)',
-        observacao: `Fechamento de metragem - Terceirizado: ${terc.nome} - Total metros: ${totalMetros.toFixed(2)}`
+        observacao: `Fechamento de metragem - Terceirizado: ${terc.nome} - Total metros: ${totalMetros.toFixed(2)} - Bruto: ${valorBruto.toFixed(2)} - Vales: ${simValeMetro.total.toFixed(2)}`
     }]).select('uid');
     
     if (errFin) {
@@ -811,8 +877,9 @@ async function fecharPagamentoSaldoMetros() {
     }
     
     const ids = registros.map(r => r.id);
+    const fechamentoUidMetro = logCriado?.[0]?.uid || null;
     const { error: errProd } = await sb.from('jsp_producao_terc')
-        .update({ status: 'PAGO', fechamento_uid: logCriado?.[0]?.uid || null })
+        .update({ status: 'PAGO', fechamento_uid: fechamentoUidMetro })
         .in('id', ids);
     
     if (errProd) {
@@ -823,6 +890,12 @@ async function fecharPagamentoSaldoMetros() {
         ).eq('tipo', 'despesa');
         showLoading(false);
         return showToast('Erro ao atualizar registros: ' + errProd.message, true);
+    }
+
+    try {
+        await registrarAbatimentosVale(tercId, fechamentoUidMetro, simValeMetro);
+    } catch (eVale) {
+        showToast('Fechamento salvo, mas falhou ao registrar o abatimento de vale: ' + (eVale.message || eVale), true);
     }
     
     await loadData();
@@ -914,6 +987,8 @@ async function estornarUltimoFechamentoMetros() {
         showLoading(false);
         return showToast('Erro ao reverter registros de metragem: ' + errProd.message, true);
     }
+
+    await reverterAbatimentosVale(ultimaDespesa.uid);
 
     await loadData();
     carregarTabelaSaldoMetros();
@@ -1023,11 +1098,26 @@ function imprimirReciboMetrosDoModal() {
     const terc = STATE.terceirizados.find(t => t.id === tercId);
     if (!terc) return;
     
-    const totalMetros = document.getElementById('saldo-metros-total-metros').innerText;
-    const valorTotal = document.getElementById('saldo-metros-total-valor').innerText;
     const dataInicio = document.getElementById('saldo-metros-data-inicio').value;
     const dataFim = document.getElementById('saldo-metros-data-fim').value;
     const hoje = new Date().toLocaleDateString('pt-BR');
+
+    // Bruto/liquido considerando os vales em aberto (mesmo criterio do fechamento)
+    const pendReceb = STATE.producao_terc.filter(p =>
+        p.terceirizado_id === tercId && p.status !== 'PAGO' &&
+        (!dataInicio || p.data_registro >= dataInicio) &&
+        (!dataFim || p.data_registro <= dataFim));
+    const metrosNum = pendReceb.reduce((s, p) => s + (parseFloat(p.metros) || 0), 0);
+    const valorBrutoNum = metrosNum * parseFloat(terc.valor_metro || 0);
+    const simValeReceb = rvSimularAbatimentos(rvValesAbertos(STATE.vales || [], tercId), valorBrutoNum);
+    const totalMetros = metrosNum.toFixed(2);
+    const valorTotal = formatMoney(simValeReceb.saldoLiquido);
+    const blocoValesReceb = simValeReceb.total > 0 ? `
+        <div style="font-size: 13px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; margin-bottom: 30px;">
+            <div style="display:flex; justify-content:space-between;"><span>Valor bruto da metragem:</span><strong>${formatMoney(valorBrutoNum)}</strong></div>
+            <div style="display:flex; justify-content:space-between; color:#be123c;"><span>(-) Vales / adiantamentos abatidos:</span><strong>- ${formatMoney(simValeReceb.total)}</strong></div>
+            <div style="display:flex; justify-content:space-between; border-top:1px solid #e2e8f0; padding-top:6px; margin-top:6px;"><span>Valor líquido pago:</span><strong>${formatMoney(simValeReceb.saldoLiquido)}</strong></div>
+        </div>` : '';
     
     const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
     const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
@@ -1048,6 +1138,7 @@ function imprimirReciboMetrosDoModal() {
                 referente ao pagamento de produção por metragem no período de <strong>${periodo}</strong>, totalizando <strong>${totalMetros} metros</strong> 
                 com o valor acordado de <strong>${formatMoney(terc.valor_metro)} por metro</strong>.
             </div>
+            ${blocoValesReceb}
             
             <div style="font-size: 14px; margin-bottom: 40px;">
                 Para maior clareza, firmo(amos) o presente recibo para que produza os seus efeitos legais.
@@ -1171,18 +1262,27 @@ async function fecharPagamentoSaldo() {
     }
     
     const totalDiarias = calcularTotalDiariasDosRegistros(registros);
-    const valorTotal = totalDiarias * parseFloat(func.valor_diaria || 0);
+    const valorBruto = totalDiarias * parseFloat(func.valor_diaria || 0);
+
+    const valesAbertosDiaria = rvValesAbertos(STATE.vales || [], funcId);
+    const simValeDiaria = rvSimularAbatimentos(valesAbertosDiaria, valorBruto);
+    const valorTotal = simValeDiaria.saldoLiquido;
     
     const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
     const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
     const periodoDesc = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
     
-    if (!confirm(`Fechar pagamento de ${totalDiarias.toFixed(2)} diárias no valor de ${formatMoney(valorTotal)}?`)) return;
+    let confirmMsg = `Fechar pagamento de ${totalDiarias.toFixed(2)} diárias.`;
+    confirmMsg += `\nBruto: ${formatMoney(valorBruto)}`;
+    if (simValeDiaria.total > 0) confirmMsg += `\nVales a abater: -${formatMoney(simValeDiaria.total)}`;
+    confirmMsg += `\nLíquido a pagar: ${formatMoney(valorTotal)}`;
+    if (!confirm(confirmMsg)) return;
     
     showLoading(true);
     
     const logId = getNextIdNum(STATE.logs).toString();
     const descricao = `Pagamento de ponto - ${func.nome} - Período ${periodoDesc}`;
+    const statusFin = valorTotal > 0 ? 'PENDENTE' : 'PAGO';
     const { data: logCriado, error: errFin } = await sb.from('jsp_logs').insert([{
         id: logId,
         obra_id: func.obra_atual_id ? parseInt(func.obra_atual_id) : null,
@@ -1191,9 +1291,9 @@ async function fecharPagamentoSaldo() {
         valor_total: valorTotal,
         data: new Date().toISOString(),
         vencimento: new Date().toISOString(),
-        status_financeiro: 'PENDENTE',
+        status_financeiro: statusFin,
         categoria: 'Mão de Obra',
-        observacao: `Fechamento de ponto - Funcionário: ${func.nome} - Total diárias: ${totalDiarias.toFixed(2)}`
+        observacao: `Fechamento de ponto - Funcionário: ${func.nome} - Total diárias: ${totalDiarias.toFixed(2)} - Bruto: ${valorBruto.toFixed(2)} - Vales: ${simValeDiaria.total.toFixed(2)}`
     }]).select('uid');
     
     if (errFin) {
@@ -1203,11 +1303,12 @@ async function fecharPagamentoSaldo() {
     
     const ids = registros.map(r => r.id);
     const despesaIdNum = parseInt(logId, 10);
+    const fechamentoUidDiaria = logCriado?.[0]?.uid || null;
     const { error: errPonto } = await sb.from('jsp_ponto_diario')
         .update({
             pago_em_fechamento: true,
             despesa_id: despesaIdNum,
-            fechamento_uid: logCriado?.[0]?.uid || null
+            fechamento_uid: fechamentoUidDiaria
         })
         .in('id', ids);
 
@@ -1219,6 +1320,13 @@ async function fecharPagamentoSaldo() {
         ).eq('tipo', 'despesa');
         showLoading(false);
         return showToast('Erro ao atualizar registros: ' + errPonto.message, true);
+    }
+
+    // Abatimento FIFO dos vales em aberto deste colaborador
+    try {
+        await registrarAbatimentosVale(funcId, fechamentoUidDiaria, simValeDiaria);
+    } catch (eVale) {
+        showToast('Fechamento salvo, mas falhou ao registrar o abatimento de vale: ' + (eVale.message || eVale), true);
     }
     
     await loadData();
@@ -1862,6 +1970,8 @@ async function estornarUltimoFechamento() {
         return showToast('Erro ao reverter registros de ponto: ' + errPonto.message, true);
     }
 
+    await reverterAbatimentosVale(ultimaDespesa.uid);
+
     await loadData();
     carregarTabelaSaldo(); // Atualiza o modal
     renderEquipe();        // Atualiza a listagem principal
@@ -2120,13 +2230,19 @@ function executarImpressaoFolha() {
             
             let totalValor = 0;
             let totalDiarias = 0;
+            let totalBruto = 0;
+            let totalVales = 0;
             despesasFiltradas.forEach(d => {
                 totalValor += parseFloat(d.valor_total);
                 const diariasMatch = d.observacao?.match(/Total diárias: ([\d.]+)/);
                 if (diariasMatch) totalDiarias += parseFloat(diariasMatch[1]);
+                const brutoMatch = d.observacao?.match(/Bruto:\s*([\d.]+)/);
+                const valesMatch = d.observacao?.match(/Vales:\s*([\d.]+)/);
+                totalBruto += brutoMatch ? parseFloat(brutoMatch[1]) : parseFloat(d.valor_total);
+                totalVales += valesMatch ? parseFloat(valesMatch[1]) : 0;
             });
             
-            if (totalValor > 0) {
+            if (totalValor > 0 || totalBruto > 0) {
                 dadosFolha.push({
                     nome: c.nome,
                     pix: c.chave_pix || 'Não informado',
@@ -2134,6 +2250,8 @@ function executarImpressaoFolha() {
                     unidade: 'dias',
                     quantidade: totalDiarias,
                     valor_unitario: c.valor_base,
+                    valor_bruto: totalBruto,
+                    vales: totalVales,
                     valor_total: totalValor
                 });
             }
@@ -2155,12 +2273,18 @@ function executarImpressaoFolha() {
             if (despesasFiltradas.length === 0) return;
             let totalValor = 0;
             let totalPercent = 0;
+            let totalBruto = 0;
+            let totalVales = 0;
             despesasFiltradas.forEach(d => {
                 totalValor += parseFloat(d.valor_total);
                 const pctMatch = d.observacao?.match(/Percentual:\s*([\d.]+)/);
                 if (pctMatch) totalPercent += parseFloat(pctMatch[1]);
+                const brutoMatch = d.observacao?.match(/Bruto:\s*([\d.]+)/);
+                const valesMatch = d.observacao?.match(/Vales:\s*([\d.]+)/);
+                totalBruto += brutoMatch ? parseFloat(brutoMatch[1]) : parseFloat(d.valor_total);
+                totalVales += valesMatch ? parseFloat(valesMatch[1]) : 0;
             });
-            if (totalValor > 0) {
+            if (totalValor > 0 || totalBruto > 0) {
                 dadosFolha.push({
                     nome: c.nome,
                     pix: c.chave_pix || 'Não informado',
@@ -2168,6 +2292,8 @@ function executarImpressaoFolha() {
                     unidade: '%',
                     quantidade: totalPercent,
                     valor_unitario: c.valor_base,
+                    valor_bruto: totalBruto,
+                    vales: totalVales,
                     valor_total: totalValor
                 });
             }
@@ -2197,6 +2323,8 @@ function executarImpressaoFolha() {
             
             let totalValor = 0;
             let totalMetros = 0;
+            let totalBruto = 0;
+            let totalVales = 0;
             despesasFiltradas.forEach(d => {
                 totalValor += parseFloat(d.valor_total);
                 // Extrai a metragem salva na observação. O fechamento grava
@@ -2204,9 +2332,13 @@ function executarImpressaoFolha() {
                 // legado era "Metragem: 150.00 m". Aceita ambos e vírgula decimal.
                 const metrosMatch = d.observacao?.match(/(?:Total metros|Metragem):\s*([\d.,]+)/);
                 if (metrosMatch) totalMetros += parseFloat(metrosMatch[1].replace(',', '.'));
+                const brutoMatch = d.observacao?.match(/Bruto:\s*([\d.]+)/);
+                const valesMatch = d.observacao?.match(/Vales:\s*([\d.]+)/);
+                totalBruto += brutoMatch ? parseFloat(brutoMatch[1]) : parseFloat(d.valor_total);
+                totalVales += valesMatch ? parseFloat(valesMatch[1]) : 0;
             });
             
-            if (totalValor > 0) {
+            if (totalValor > 0 || totalBruto > 0) {
                 dadosFolha.push({
                     nome: c.nome,
                     pix: c.chave_pix || 'Não informado',
@@ -2214,6 +2346,8 @@ function executarImpressaoFolha() {
                     unidade: 'm',
                     quantidade: totalMetros,
                     valor_unitario: c.valor_base, // valor por metro do cadastro
+                    valor_bruto: totalBruto,
+                    vales: totalVales,
                     valor_total: totalValor
                 });
             }
@@ -2249,6 +2383,8 @@ function executarImpressaoFolha() {
                         <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Tipo</th>
                         <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Quantidade</th>
                         <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: center;">Valor Unit.</th>
+                        <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: right;">Bruto</th>
+                        <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: right;">Vales</th>
                         <th style="padding: 12px; border: 1px solid #cbd5e1; text-align: right;">Valor Total</th>
                     </tr>
                 </thead>
@@ -2256,8 +2392,12 @@ function executarImpressaoFolha() {
     `;
     
     let somaGeral = 0;
+    let somaBruto = 0;
+    let somaVales = 0;
     dadosFolha.forEach(d => {
         somaGeral += d.valor_total;
+        somaBruto += (d.valor_bruto || 0);
+        somaVales += (d.vales || 0);
         html += `
             <tr>
                 <td style="padding: 10px; border: 1px solid #cbd5e1;">
@@ -2269,6 +2409,8 @@ function executarImpressaoFolha() {
                 <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center;">${d.tipo}</td>
                 <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center; font-weight: bold;">${d.quantidade.toFixed(2)} ${d.unidade}</td>
                 <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: center;">${formatMoney(d.valor_unitario)}</td>
+                <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: right;">${formatMoney(d.valor_bruto || 0)}</td>
+                <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: right; color: #be123c;">${(d.vales || 0) > 0 ? '- ' + formatMoney(d.vales) : formatMoney(0)}</td>
                 <td style="padding: 10px; border: 1px solid #cbd5e1; text-align: right; font-weight: 900; color: #1d4ed8;">${formatMoney(d.valor_total)}</td>
             </tr>
         `;
@@ -2279,9 +2421,17 @@ function executarImpressaoFolha() {
             </table>
             
             <div style="display: flex; justify-content: flex-end; margin-bottom: 40px;">
-                <div style="width: 300px; background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px;">
-                    <div style="display: flex; justify-content: space-between;">
-                        <span style="font-weight: bold;">TOTAL GERAL:</span>
+                <div style="width: 340px; background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="font-weight: bold;">TOTAL BRUTO:</span>
+                        <span style="font-weight: 900; color: #334155;">${formatMoney(somaBruto)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="font-weight: bold;">TOTAL VALES:</span>
+                        <span style="font-weight: 900; color: #be123c;">- ${formatMoney(somaVales)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; border-top: 1px solid #e2e8f0; padding-top: 6px;">
+                        <span style="font-weight: bold;">TOTAL LIQUIDO:</span>
                         <span style="font-weight: 900; color: #b91c1c; font-size: 18px;">${formatMoney(somaGeral)}</span>
                     </div>
                 </div>
@@ -3474,6 +3624,9 @@ function carregarTabelaSaldoEmpreita() {
     if (registros.length === 0) {
         document.getElementById('saldo-empreita-sem-registros').classList.remove('hidden');
         document.getElementById('saldo-empreita-total-valor').innerText = formatMoney(0);
+        if (typeof renderResumoValeModal === 'function') {
+            renderResumoValeModal('saldo-empreita-vale-resumo', equipeId, resumo.valorPendentePeriodo);
+        }
         return;
     }
     document.getElementById('saldo-empreita-sem-registros').classList.add('hidden');
@@ -3501,6 +3654,9 @@ function carregarTabelaSaldoEmpreita() {
         tbody.appendChild(tr);
     });
     document.getElementById('saldo-empreita-total-valor').innerText = formatMoney(totalFiltro);
+    if (typeof renderResumoValeModal === 'function') {
+        renderResumoValeModal('saldo-empreita-vale-resumo', equipeId, resumo.valorPendentePeriodo);
+    }
 }
 
 function excluirMedicaoEmpreitaAdmin(medicaoId) {
@@ -3589,46 +3745,64 @@ async function fecharPagamentoSaldoEmpreita() {
     if (dataInicio) registros = registros.filter(m => m.data_medicao >= dataInicio);
     if (dataFim) registros = registros.filter(m => m.data_medicao <= dataFim);
     if (registros.length === 0) return showToast('Nenhuma medição pendente para fechar.', true);
-    const valorTotal = registros.reduce((sum, r) => sum + parseFloat(r.valor || 0), 0);
+    const valorBruto = registros.reduce((sum, r) => sum + parseFloat(r.valor || 0), 0);
     const percentTotal = registros.reduce((sum, r) => sum + parseFloat(r.percentual || 0), 0);
+    const valesAbertosEmp = rvValesAbertos(STATE.vales || [], equipeId);
+    const simValeEmp = rvSimularAbatimentos(valesAbertosEmp, valorBruto);
+    const valorTotal = simValeEmp.saldoLiquido;
     const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
     const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
     const periodoDesc = dataIniFormatada && dataFimFormatada ? `${dataIniFormatada} a ${dataFimFormatada}` : 'período selecionado';
-    if (!confirm(`Fechar pagamento de ${formatMoney(valorTotal)} (${percentTotal.toFixed(2)}% do contrato)?`)) return;
+    let confirmMsg = `Fechar pagamento de ${formatMoney(valorBruto)} (${percentTotal.toFixed(2)}% do contrato).`;
+    if (simValeEmp.total > 0) confirmMsg += `\nVales a abater: -${formatMoney(simValeEmp.total)}`;
+    confirmMsg += `\nLíquido a pagar: ${formatMoney(valorTotal)}`;
+    if (!confirm(confirmMsg)) return;
     showLoading(true);
     const descricao = `Pagamento de empreita - ${func.nome} - Período ${periodoDesc}`;
+    const observacaoEmp = `Fechamento de empreita - Colaborador: ${func.nome} - Percentual: ${percentTotal.toFixed(2)}% - Valor: ${valorBruto.toFixed(2)} - Bruto: ${valorBruto.toFixed(2)} - Vales: ${simValeEmp.total.toFixed(2)}`;
+    const statusFinEmp = valorTotal > 0 ? 'PENDENTE' : 'PAGO';
+    const logIdEmp = getNextIdNum(STATE.logs).toString();
+    let fechamentoUidEmp = null;
     let persistiuRemoto = false;
     try {
-        const { error: errFin } = await sb.from('jsp_logs').insert([{
-            id: getNextIdNum(STATE.logs).toString(),
+        const { data: logCriadoEmp, error: errFin } = await sb.from('jsp_logs').insert([{
+            id: logIdEmp,
             obra_id: func.obra_atual_id ? parseInt(func.obra_atual_id) : null,
             tipo: 'despesa',
             produto_nome: descricao,
             valor_total: valorTotal,
             data: new Date().toISOString(),
             vencimento: new Date().toISOString(),
-            status_financeiro: 'PENDENTE',
+            status_financeiro: statusFinEmp,
             categoria: 'Mão de Obra (Empreita)',
-            observacao: `Fechamento de empreita - Colaborador: ${func.nome} - Percentual: ${percentTotal.toFixed(2)}% - Valor: ${valorTotal.toFixed(2)}`
-        }]);
+            observacao: observacaoEmp
+        }]).select('uid');
         if (errFin) throw errFin;
+        fechamentoUidEmp = logCriadoEmp?.[0]?.uid || null;
         const ids = registros.map(r => r.id);
         const { error: errMed } = await sb.from('jsp_medicoes_empreita').update({ status: 'PAGO' }).in('id', ids);
         if (errMed) throw errMed;
         persistiuRemoto = true;
     } catch (err) {
+        fechamentoUidEmp = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : ('fech-' + Date.now());
         STATE.logs.push({
-            id: getNextIdNum(STATE.logs).toString(),
+            id: logIdEmp,
+            uid: fechamentoUidEmp,
             obra_id: func.obra_atual_id ? parseInt(func.obra_atual_id) : null,
             tipo: 'despesa',
             produto_nome: descricao,
             valor_total: valorTotal,
             data: new Date().toISOString(),
             vencimento: new Date().toISOString(),
-            status_financeiro: 'PENDENTE',
+            status_financeiro: statusFinEmp,
             categoria: 'Mão de Obra (Empreita)',
-            observacao: `Fechamento de empreita - Colaborador: ${func.nome} - Percentual: ${percentTotal.toFixed(2)}% - Valor: ${valorTotal.toFixed(2)}`
+            observacao: observacaoEmp
         });
+    }
+    try {
+        await registrarAbatimentosVale(equipeId, fechamentoUidEmp, simValeEmp);
+    } catch (eVale) {
+        showToast('Fechamento salvo, mas falhou ao registrar o abatimento de vale: ' + (eVale.message || eVale), true);
     }
     const idsSet = new Set(registros.map(r => r.id));
     STATE.medicoes_empreita = obterMedicoesEmpreita().map(m => idsSet.has(m.id) ? { ...m, status: 'PAGO' } : m);
@@ -3682,6 +3856,7 @@ async function estornarUltimoFechamentoEmpreita() {
         const ids = STATE.medicoes_empreita.filter(m => m.equipe_id === equipeId && m.status === 'PENDENTE').map(m => m.id);
         if (ids.length) await sb.from('jsp_medicoes_empreita').update({ status: 'PENDENTE' }).in('id', ids);
     } catch (e) {}
+    await reverterAbatimentosVale(ultima.uid);
     showLoading(false);
     carregarTabelaSaldoEmpreita();
     renderEquipe();
@@ -3695,7 +3870,15 @@ function imprimirReciboEmpreitaDoModal() {
     const dataInicio = document.getElementById('saldo-empreita-data-inicio').value;
     const dataFim = document.getElementById('saldo-empreita-data-fim').value;
     const resumo = calcularResumoEmpreita(equipeId, dataInicio, dataFim);
-    const valorTotal = resumo.valorPendentePeriodo;
+    const valorBrutoNum = parseFloat(resumo.valorPendentePeriodo) || 0;
+    const simValeReceb = rvSimularAbatimentos(rvValesAbertos(STATE.vales || [], equipeId), valorBrutoNum);
+    const valorTotal = simValeReceb.saldoLiquido;
+    const blocoValesReceb = simValeReceb.total > 0 ? `
+        <div style="font-size: 13px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; margin-bottom: 30px;">
+            <div style="display:flex; justify-content:space-between;"><span>Valor bruto da medição:</span><strong>${formatMoney(valorBrutoNum)}</strong></div>
+            <div style="display:flex; justify-content:space-between; color:#be123c;"><span>(-) Vales / adiantamentos abatidos:</span><strong>- ${formatMoney(simValeReceb.total)}</strong></div>
+            <div style="display:flex; justify-content:space-between; border-top:1px solid #e2e8f0; padding-top:6px; margin-top:6px;"><span>Valor líquido pago:</span><strong>${formatMoney(simValeReceb.saldoLiquido)}</strong></div>
+        </div>` : '';
     const hoje = new Date().toLocaleDateString('pt-BR');
     const dataIniFormatada = dataInicio ? new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR') : '';
     const dataFimFormatada = dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '';
@@ -3715,6 +3898,7 @@ function imprimirReciboEmpreitaDoModal() {
                 correspondendo a <strong>${resumo.percentPendente.toFixed(2)}%</strong> do contrato de <strong>${formatMoney(resumo.valorContrato)}</strong>.
                 Saldo restante do contrato: <strong>${formatMoney(resumo.saldoContrato)}</strong>.
             </div>
+            ${blocoValesReceb}
             <div style="text-align: center; margin-bottom: 30px; font-size: 14px;">Jataí - GO, ${hoje}.</div>
             <div style="margin-top: 60px; display: flex; justify-content: center;">
                 <div style="text-align: center; width: 60%; border-top: 1px solid #000; padding-top: 10px;">

@@ -706,6 +706,8 @@
                 </button>
             </div>
 
+            <div id="saldo-vale-resumo" class="mb-4"></div>
+
             <!-- Tabela de registros -->
             <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
                 <table class="w-full text-sm">
@@ -827,6 +829,8 @@
                   <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Extrato
               </button>
           </div>
+
+            <div id="saldo-metros-vale-resumo" class="mb-4"></div>
 
             <!-- Tabela de registros -->
             <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
@@ -965,6 +969,8 @@
                     <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Extrato
                 </button>
             </div>
+
+            <div id="saldo-empreita-vale-resumo" class="mb-4"></div>
 
             <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
                 <table class="w-full text-sm">
@@ -1805,7 +1811,8 @@
         const [
           resObras, resForn, resProd, resLog,
           resEqp, resFases, resPonto, resTerc,
-          resPontoDiario, resHistPrecos, resProdTerc, resMedicoesEmp
+          resPontoDiario, resHistPrecos, resProdTerc, resMedicoesEmp,
+          resVales, resValeAbat
         ] = await Promise.all([
           fetchAllRecords('jsp_obras'),
           fetchAllRecords('jsp_fornecedores'),
@@ -1818,7 +1825,9 @@
           fetchAllRecords('jsp_ponto_diario').catch(() => ({ data: [] })),
           fetchAllRecords('jsp_historico_precos').catch(() => ({ data: [] })),
           fetchAllRecords('jsp_producao_terc').catch(() => ({ data: [] })),
-          fetchAllRecords('jsp_medicoes_empreita').catch(() => ({ data: [] }))
+          fetchAllRecords('jsp_medicoes_empreita').catch(() => ({ data: [] })),
+          fetchAllRecords('jsp_vales').catch(() => ({ data: [] })),
+          fetchAllRecords('jsp_vale_abatimentos').catch(() => ({ data: [] }))
         ]);
 
         STATE.obras = resObras.data || [];
@@ -1834,6 +1843,8 @@
         STATE.historico_precos = resHistPrecos.data || [];
         STATE.producao_terc = resProdTerc.data || [];
         STATE.medicoes_empreita = resMedicoesEmp.data || [];
+        STATE.vales = resVales.data || [];
+        STATE.vale_abatimentos = resValeAbat.data || [];
         if (!STATE.medicoes_empreita.length) {
             try {
                 const localMed = JSON.parse(localStorage.getItem('rv_medicoes_empreita') || '[]');
@@ -2472,6 +2483,9 @@
         function openExpenseEdit(uid) {
             const l = STATE.logs.find(x => String(x.uid) === String(uid) && x.tipo === 'despesa');
             if (!l) return showToast('Despesa não encontrada.', true);
+            if (typeof valeEhLog === 'function' && valeEhLog(l)) {
+                return showToast('Este lançamento é um Vale / Adiantamento. Gerencie-o pelo botão VALE na aba Equipe.', true);
+            }
             if (l.status_financeiro === 'PAGO') return showToast('Lançamento já baixado. Estorne para editar.', true);
             document.getElementById('exp-id').value = l.uid;
             document.getElementById('exp-obra').value = l.obra_id || '';
@@ -2953,11 +2967,20 @@
         }
 
         async function excluirLancamento(uid) {
+            const logVale = STATE.logs.find(l => String(l.uid) === String(uid));
+            const ehVale = logVale && typeof valeEhLog === 'function' && valeEhLog(logVale);
+            const valeRef = ehVale ? (STATE.vales || []).find(v => String(v.log_uid) === String(uid)) : null;
+            if (valeRef && Number(valeRef.valor_aberto) < Number(valeRef.valor)) {
+                return showToast('Vale já utilizado em fechamento. Estorne o fechamento antes.', true);
+            }
             if(!confirm("Tem certeza que deseja CANCELAR este lançamento? Ele será removido definitivamente das pendências.")) return;
             showLoading(true);
             const {error} = await sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }).eq('uid', uid);
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
-            showToast("Lançamento Cancelado!"); loadData();
+            if (valeRef) {
+                await sb.from('jsp_vales').update({ status: 'ESTORNADO', valor_aberto: 0 }).eq('id', valeRef.id);
+            }
+            showToast(ehVale ? "Vale estornado!" : "Lançamento Cancelado!"); loadData();
         }
 
         async function baixarLogOC(id) {
@@ -4261,9 +4284,10 @@
       
         function fazerLogout() { try { sb.auth.signOut(); } catch (_) {} localStorage.removeItem('rv_user'); window.location.href = "index.html?t=" + Date.now();  }
     </script>
-     <script src="js/equipe-core.js?v=20261006a"></script>
+     <script src="js/equipe-core.js?v=20261006c"></script>
      <script src="js/precos.js?v=20261006a"></script>
      <script src="js/contrato.js?v=20260922c"></script>
-     <script src="js/equipe.js?v=20260922e"></script>
+     <script src="js/equipe.js?v=20261006c"></script>
+     <script src="js/vales.js?v=20261006c"></script>
   </body>
 </html>

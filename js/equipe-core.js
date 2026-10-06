@@ -118,6 +118,56 @@
         );
     }
 
+    // ---------- Vales / adiantamentos (sempre em R$ direto) ----------
+    // Regra de abatimento FIFO: os vales mais antigos sao consumidos primeiro.
+    function rvMoney(v) {
+        return Math.round((parseFloat(v) || 0) * 100) / 100;
+    }
+
+    // Vales de um colaborador com saldo em aberto, em ordem FIFO (data asc, created_at).
+    function rvValesAbertos(vales, colaboradorId) {
+        return (vales || [])
+            .filter(v =>
+                v &&
+                String(v.colaborador_id) === String(colaboradorId) &&
+                v.status === 'ABERTO' &&
+                rvMoney(v.valor_aberto) > 0
+            )
+            .sort((a, b) => {
+                const da = a.data || '';
+                const db = b.data || '';
+                if (da < db) return -1;
+                if (da > db) return 1;
+                const ca = a.created_at || '';
+                const cb = b.created_at || '';
+                if (ca < cb) return -1;
+                if (ca > cb) return 1;
+                return 0;
+            });
+    }
+
+    // Simula o abatimento de um valor bruto sobre a lista de vales em aberto.
+    // Retorna { total, itens: [{ vale, valor }], saldoLiquido }.
+    function rvSimularAbatimentos(valesAbertos, bruto) {
+        let restante = rvMoney(bruto);
+        const itens = [];
+        for (const vale of (valesAbertos || [])) {
+            if (restante <= 0) break;
+            const aberto = rvMoney(vale.valor_aberto);
+            if (aberto <= 0) continue;
+            const usar = Math.min(aberto, restante);
+            itens.push({ vale, valor: rvMoney(usar) });
+            restante = rvMoney(restante - usar);
+        }
+        const total = rvMoney(itens.reduce((s, i) => s + i.valor, 0));
+        return {
+            total,
+            itens,
+            saldoLiquido: rvMoney(Math.max(0, rvMoney(bruto) - total)),
+            sobra: restante
+        };
+    }
+
     const core = {
         rvRoundHalfDown,
         rvHoraDate,
@@ -126,7 +176,10 @@
         rvParsePeriodo,
         rvRefLog,
         rvSelecionarVinculadosDiaria,
-        rvSelecionarVinculadosMetro
+        rvSelecionarVinculadosMetro,
+        rvMoney,
+        rvValesAbertos,
+        rvSimularAbatimentos
     };
 
     global.RVEquipeCore = core;
@@ -142,4 +195,7 @@
     global.refLog = rvRefLog;
     global.rvSelecionarVinculadosDiaria = rvSelecionarVinculadosDiaria;
     global.rvSelecionarVinculadosMetro = rvSelecionarVinculadosMetro;
+    global.rvMoney = rvMoney;
+    global.rvValesAbertos = rvValesAbertos;
+    global.rvSimularAbatimentos = rvSimularAbatimentos;
 })(typeof window !== 'undefined' ? window : globalThis);
