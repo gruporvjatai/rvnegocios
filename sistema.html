@@ -225,24 +225,11 @@
       <div id="view-fin" class="hidden-section">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <h2 class="text-2xl font-bold text-slate-800">Financeiro das Obras</h2>
-            <div class="w-full md:w-auto flex flex-col md:flex-row gap-3 items-end">
-                <div class="w-full md:w-64">
-                    <label class="text-xs font-bold text-slate-500 uppercase">Filtrar por Obra</label>
-                    <select id="fin-obra-filter" onchange="renderFinance()" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white font-bold text-blue-700 shadow-sm focus:border-blue-600 outline-none">
-                        <option value="">Todas as Obras / Geral</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="text-xs font-bold text-slate-500 uppercase">De</label>
-                    <input type="date" id="fin-date-start" onchange="renderFinance()" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white font-medium focus:border-blue-600 outline-none">
-                </div>
-                <div>
-                    <label class="text-xs font-bold text-slate-500 uppercase">Até</label>
-                    <input type="date" id="fin-date-end" onchange="renderFinance()" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white font-medium focus:border-blue-600 outline-none">
-                </div>
-                <button type="button" onclick="limparFiltroDatasFin()" class="p-2 border border-slate-300 rounded-lg bg-white text-slate-500 hover:bg-slate-100 hover:text-red-600 transition" title="Limpar intervalo de datas">
-                    <i data-lucide="x" class="w-4 h-4"></i>
-                </button>
+            <div class="w-full md:w-1/3">
+                <label class="text-xs font-bold text-slate-500 uppercase">Filtrar por Obra</label>
+                <select id="fin-obra-filter" onchange="renderFinance()" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white font-bold text-blue-700 shadow-sm focus:border-blue-600 outline-none">
+                    <option value="">Todas as Obras / Geral</option>
+                </select>
             </div>
         </div>
         
@@ -275,16 +262,21 @@
             </div>
             
             <div class="p-3 border-b bg-white flex flex-col gap-2">
-                <div class="flex gap-2">
-                    <div class="relative flex-1">
+                <div class="flex flex-wrap gap-2 items-center">
+                    <div class="relative flex-1 min-w-[160px]">
                         <i data-lucide="search" class="absolute left-2 top-2 text-slate-400 w-4 h-4"></i>
-                        <input type="text" id="exp-search" placeholder="Buscar..." class="w-full pl-8 p-1.5 border rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none" onkeyup="renderFinance()">
+                        <input type="text" id="exp-search" placeholder="Buscar nome, descrição ou valor..." class="w-full pl-8 p-1.5 border rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none" onkeyup="renderFinance()">
                     </div>
                     <select id="exp-status" class="w-32 p-1.5 border rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none" onchange="renderFinance()">
                         <option value="">Todos</option>
                         <option value="PENDENTE">Pendentes</option>
                         <option value="PAGO">Pagos</option>
                     </select>
+                    <input type="date" id="exp-date-start" onchange="renderFinance()" class="p-1.5 border rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none" title="De">
+                    <input type="date" id="exp-date-end" onchange="renderFinance()" class="p-1.5 border rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none" title="Até">
+                    <button type="button" onclick="limparFiltroDatasFin('exp')" class="p-1.5 border rounded text-slate-500 hover:bg-slate-100 hover:text-red-600" title="Limpar intervalo de datas">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
                 </div>
             </div>
         
@@ -312,6 +304,25 @@
                 <button onclick="openRevenueModal()" class="bg-blue-700 hover:bg-blue-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md transition-all flex items-center gap-1"><i data-lucide="plus" class="w-4 h-4"></i> Lançar Medição</button>
                 </div>
              </div>
+
+            <div class="p-3 border-b bg-white flex flex-col gap-2">
+                <div class="flex flex-wrap gap-2 items-center">
+                    <div class="relative flex-1 min-w-[160px]">
+                        <i data-lucide="search" class="absolute left-2 top-2 text-slate-400 w-4 h-4"></i>
+                        <input type="text" id="rev-search" placeholder="Buscar nome, descrição ou valor..." class="w-full pl-8 p-1.5 border rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none" onkeyup="renderFinance()">
+                    </div>
+                    <select id="rev-status" class="w-32 p-1.5 border rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none" onchange="renderFinance()">
+                        <option value="">Todos</option>
+                        <option value="PENDENTE">Pendentes</option>
+                        <option value="PAGO">Recebidos</option>
+                    </select>
+                    <input type="date" id="rev-date-start" onchange="renderFinance()" class="p-1.5 border rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none" title="De">
+                    <input type="date" id="rev-date-end" onchange="renderFinance()" class="p-1.5 border rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none" title="Até">
+                    <button type="button" onclick="limparFiltroDatasFin('rev')" class="p-1.5 border rounded text-slate-500 hover:bg-slate-100 hover:text-red-600" title="Limpar intervalo de datas">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
             
             <div class="overflow-y-auto flex-1 p-0">
                 <table class="w-full text-sm text-left">
@@ -2496,9 +2507,11 @@
             document.getElementById('modal-revenue').classList.remove('hidden');
         }
 
-        function limparFiltroDatasFin() {
-            document.getElementById('fin-date-start').value = '';
-            document.getElementById('fin-date-end').value = '';
+        function limparFiltroDatasFin(prefixo) {
+            const start = document.getElementById(prefixo + '-date-start');
+            const end = document.getElementById(prefixo + '-date-end');
+            if (start) start.value = '';
+            if (end) end.value = '';
             renderFinance();
         }
 
@@ -2515,10 +2528,50 @@
             return `${year}-${month}-${day}`;
         }
 
+        function aplicaFiltroDatas(arr, dtStart, dtEnd) {
+            if (!dtStart && !dtEnd) return arr;
+            return arr.filter(l => {
+                const d = dataLancamentoFin(l);
+                if (!d) return false;
+                if (dtStart && d < dtStart) return false;
+                if (dtEnd && d > dtEnd) return false;
+                return true;
+            });
+        }
+
+        function lancamentoBateBusca(l, term) {
+            if (!term) return true;
+            const t = term.toLowerCase().trim();
+            const obra = STATE.obras.find(x => x.id == l.obra_id);
+            const valor = parseFloat(l.valor_total) || 0;
+            const textos = [
+                l.produto_nome,
+                l.categoria,
+                l.observacao,
+                l.fase_obra,
+                String(l.id || ''),
+                obra ? obra.nome : '',
+                l.is_oc ? ('O.C. #' + l.id + ' Compra Consolidada') : ''
+            ].filter(Boolean).join(' ').toLowerCase();
+            if (textos.includes(t)) return true;
+            const valorFix = valor.toFixed(2);
+            const valorBr = valorFix.replace('.', ',');
+            const valorMilhar = valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const money = formatMoney(valor).toLowerCase();
+            if (money.includes(t) || valorFix.includes(t) || valorBr.includes(t) || valorMilhar.toLowerCase().includes(t) || String(valor).includes(t)) return true;
+            const termNum = t.replace(/\s/g, '').replace('r$', '');
+            if (/[\d]/.test(termNum)) {
+                const nTerm = parseFloat(termNum.replace(/\./g, '').replace(',', '.'));
+                if (!isNaN(nTerm) && Math.round(nTerm * 100) === Math.round(valor * 100)) return true;
+                const digitsTerm = termNum.replace(/[^\d]/g, '');
+                const digitsVal = valorFix.replace(/[^\d]/g, '');
+                if (digitsTerm.length >= 2 && digitsVal.includes(digitsTerm)) return true;
+            }
+            return false;
+        }
+
         function renderFinance() {
             const obraFilter = document.getElementById('fin-obra-filter').value;
-            const dtStart = document.getElementById('fin-date-start').value;
-            const dtEnd = document.getElementById('fin-date-end').value;
             let logsFilt = STATE.logs.filter(l => l.tipo !== 'oc_pendente' && l.status_financeiro !== 'CANCELADO');
             
             let totDesp = 0; let totRec = 0;
@@ -2528,16 +2581,6 @@
                 logsFilt = logsFilt.filter(l => String(l.obra_id) === String(obraFilter));
                 const o = STATE.obras.find(x => x.id == obraFilter);
                 if(o) valorContratoFiltrado = parseFloat(o.valor_contrato) || 0;
-            }
-
-            if (dtStart || dtEnd) {
-                logsFilt = logsFilt.filter(l => {
-                    const d = dataLancamentoFin(l);
-                    if (!d) return false;
-                    if (dtStart && d < dtStart) return false;
-                    if (dtEnd && d > dtEnd) return false;
-                    return true;
-                });
             }
 
             const listaDesp = document.getElementById('fin-expense-history-list');
@@ -2559,11 +2602,14 @@
                 }
             });
             
-            const expSearch = document.getElementById('exp-search').value.toLowerCase();
+            const expSearch = document.getElementById('exp-search').value;
             const expStatus = document.getElementById('exp-status').value;
+            const expDateStart = document.getElementById('exp-date-start').value;
+            const expDateEnd = document.getElementById('exp-date-end').value;
             
-            if(expSearch) despArr = despArr.filter(l => (l.produto_nome && l.produto_nome.toLowerCase().includes(expSearch)) || String(l.id).includes(expSearch) || (l.categoria && l.categoria.toLowerCase().includes(expSearch)));
+            if(expSearch) despArr = despArr.filter(l => lancamentoBateBusca(l, expSearch));
             if(expStatus) despArr = despArr.filter(l => l.status_financeiro === expStatus);
+            despArr = aplicaFiltroDatas(despArr, expDateStart, expDateEnd);
             
             despArr.sort((a,b)=> new Date(b.vencimento || b.data) - new Date(a.vencimento || a.data));
             
@@ -2614,6 +2660,17 @@
 
             const listaRec = document.getElementById('fin-receivables-list');
             let recArr = logsFilt.filter(l => l.tipo === 'receita');
+            const revSearchEl = document.getElementById('rev-search');
+            const revStatusEl = document.getElementById('rev-status');
+            const revDateStartEl = document.getElementById('rev-date-start');
+            const revDateEndEl = document.getElementById('rev-date-end');
+            const revSearch = revSearchEl ? revSearchEl.value : '';
+            const revStatus = revStatusEl ? revStatusEl.value : '';
+            const revDateStart = revDateStartEl ? revDateStartEl.value : '';
+            const revDateEnd = revDateEndEl ? revDateEndEl.value : '';
+            if(revSearch) recArr = recArr.filter(l => lancamentoBateBusca(l, revSearch));
+            if(revStatus) recArr = recArr.filter(l => l.status_financeiro === revStatus);
+            recArr = aplicaFiltroDatas(recArr, revDateStart, revDateEnd);
             recArr.sort((a,b)=> new Date(b.vencimento || b.data) - new Date(a.vencimento || a.data));
             
             listaRec.innerHTML = recArr.map(l => {
