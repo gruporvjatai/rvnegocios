@@ -62,7 +62,10 @@
     function contasAtivas() { return contas().filter(function (c) { return c.ativa !== false; }); }
     function saldoTotalReal() {
         var t = 0;
-        contasAtivas().forEach(function (c) { t += saldoConta(c.id); });
+        contasAtivas().forEach(function (c) {
+            if (c.tipo === 'cartao_credito') return;
+            t += saldoConta(c.id);
+        });
         return t;
     }
     function saldoDisponivelGeral() {
@@ -508,7 +511,7 @@
                 '<div class="bg-white p-4 rounded-xl border-l-4 border-l-blue-600 shadow-sm">' +
                     '<p class="text-slate-500 text-[10px] font-bold uppercase">Saldo em Contas (Real)</p>' +
                     '<h3 class="text-2xl font-black ' + (totalReal < 0 ? 'text-red-600' : 'text-blue-700') + '">' + money(totalReal) + '</h3>' +
-                    '<p class="text-[9px] text-slate-400 font-semibold">Caixa + Bancos - Cartoes (a pagar)</p>' +
+                    '<p class="text-[9px] text-slate-400 font-semibold">Somente Caixa + Bancos (cartoes aparecem separados)</p>' +
                 '</div>' +
                 '<div class="bg-white p-4 rounded-xl border-l-4 border-l-green-500 shadow-sm">' +
                     '<p class="text-slate-500 text-[10px] font-bold uppercase">Disponivel Geral</p>' +
