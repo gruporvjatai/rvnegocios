@@ -992,7 +992,7 @@
 
     <script src="js/ui.js?v=20261006b"></script>
     <script src="js/equipe-core.js?v=20261006c"></script>
-    <script src="js/equipe.js?v=20261006f"></script>
+    <script src="js/equipe.js?v=20261006g"></script>
     <script src="js/vales.js?v=20261006d"></script>
     <script src="js/contas.js?v=20261006a"></script>
     <script>window.__rvFolhaShared = (typeof executarImpressaoFolha === 'function') ? executarImpressaoFolha : null;
@@ -1482,10 +1482,24 @@
       
           document.getElementById('equipe-list').innerHTML = listHtml || '<p class="text-center text-slate-400 text-xs mt-4">Nenhum colaborador encontrado.</p>';
           
-          // Atualiza o total geral
+          // Atualiza o total geral (abate todos os vales emitidos / em aberto)
+          let totalVales = 0;
+          fil.forEach(c => {
+              totalVales += rvValesAbertos(STATE.vales || [], c.id)
+                  .reduce((s, v) => s + rvMoney(v.valor_aberto), 0);
+          });
+          totalVales = rvMoney(totalVales);
+          const liquidoGeral = rvMoney(somaGeral - totalVales);
           const totalEl = document.getElementById('equipe-total-geral-mobile');
           if (totalEl) {
-              totalEl.innerHTML = `Total geral: ${formatMoney(somaGeral)}`;
+              if (totalVales > 0) {
+                  totalEl.innerHTML =
+                      `<div>Total geral: <span class="font-bold text-slate-700">${formatMoney(somaGeral)}</span></div>` +
+                      `<div class="text-rose-600">(-) Vales em aberto: <span class="font-bold">${formatMoney(totalVales)}</span></div>` +
+                      `<div>Líquido a pagar: <span class="font-black text-green-700">${formatMoney(liquidoGeral)}</span></div>`;
+              } else {
+                  totalEl.innerHTML = `Total geral: <span class="font-bold text-slate-700">${formatMoney(somaGeral)}</span>`;
+              }
           }
           
           lucide.createIcons();

@@ -163,9 +163,26 @@
                 // Após o fechamento do forEach e antes do lucide.createIcons()
                 let somaGeral = 0;
                 fil.forEach(c => { somaGeral += (c.valor_total || 0); });
+
+                // Abate TODOS os vales emitidos (em aberto / ainda não baixados) dos colaboradores filtrados
+                let totalVales = 0;
+                fil.forEach(c => {
+                    totalVales += rvValesAbertos(STATE.vales || [], c.id)
+                        .reduce((s, v) => s + rvMoney(v.valor_aberto), 0);
+                });
+                totalVales = rvMoney(totalVales);
+                const liquidoGeral = rvMoney(somaGeral - totalVales);
+
                 const totalEl = document.getElementById('equipe-total-geral');
                 if (totalEl) {
-                    totalEl.innerHTML = `Total geral (filtro): <span class="font-bold text-slate-700">${formatMoney(somaGeral)}</span>`;
+                    if (totalVales > 0) {
+                        totalEl.innerHTML =
+                            `Total geral (filtro): <span class="font-bold text-slate-700">${formatMoney(somaGeral)}</span>` +
+                            ` &nbsp;·&nbsp; (-) Vales em aberto: <span class="font-bold text-rose-600">${formatMoney(totalVales)}</span>` +
+                            ` &nbsp;·&nbsp; Líquido a pagar: <span class="font-black text-green-700">${formatMoney(liquidoGeral)}</span>`;
+                    } else {
+                        totalEl.innerHTML = `Total geral (filtro): <span class="font-bold text-slate-700">${formatMoney(somaGeral)}</span>`;
+                    }
                 }
                     
                     lucide.createIcons();
