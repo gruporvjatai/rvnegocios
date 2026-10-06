@@ -20,6 +20,11 @@
         s.id = STYLE_ID;
         s.textContent =
             '.rvui-stack{position:fixed;top:20px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:10px;max-width:370px;width:calc(100% - 40px);}' +
+            '.rvui-overlay{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.45);animation:rvui-fade .18s ease;}' +
+            '@keyframes rvui-fade{from{opacity:0}to{opacity:1}}' +
+            '.rvui-overlay.rvui-out{animation:rvui-fade-out .18s ease forwards;}' +
+            '@keyframes rvui-fade-out{to{opacity:0}}' +
+            '.rvui-overlay .rvui-card{max-width:420px;width:100%;box-shadow:0 25px 60px -12px rgba(15,23,42,.5);}' +
             '.rvui-card{background:#fff;border-radius:14px;box-shadow:0 20px 45px -12px rgba(15,23,42,.35);border:1px solid #e2e8f0;overflow:hidden;animation:rvui-in .22s ease;font-family:inherit;}' +
             '@keyframes rvui-in{from{opacity:0;transform:translateY(-8px) scale(.98)}to{opacity:1;transform:none}}' +
             '.rvui-card.rvui-out{animation:rvui-out .18s ease forwards;}' +
@@ -95,15 +100,23 @@
         opts = opts || {};
         ensureStyles();
         return new Promise(function (resolve) {
+            var overlay = document.createElement('div');
+            overlay.className = 'rvui-overlay';
             var c = buildCard(opts.danger ? 'danger' : '', msg,
                 '<div class="rvui-actions">' +
                 '<button type="button" class="rvui-btn cancel">' + (opts.cancelText || 'Cancelar') + '</button>' +
                 '<button type="button" class="rvui-btn ok' + (opts.danger ? ' danger' : '') + '">' + (opts.confirmText || 'Confirmar') + '</button>' +
                 '</div>');
-            var done = function (v) { close(c); resolve(v); };
+            var done = function (v) {
+                close(c);
+                overlay.classList.add('rvui-out');
+                setTimeout(function () { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 180);
+                resolve(v);
+            };
             c.querySelector('.rvui-btn.cancel').addEventListener('click', function () { done(false); });
             c.querySelector('.rvui-btn.ok').addEventListener('click', function () { done(true); });
-            stack().appendChild(c);
+            overlay.appendChild(c);
+            document.body.appendChild(overlay);
         });
     }
 
