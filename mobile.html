@@ -1075,6 +1075,28 @@
         // ====== DADOS ======
         async function fetchAllRecords(table) { let allRecords = []; let from=0; const step=1000; let keepFetching=true; while(keepFetching){ const {data,error}=await sb.from(table).select('*').range(from,from+step-1); if(error) throw error; if(data && data.length>0){ allRecords.push(...data); if(data.length<step) keepFetching=false; else from+=step; } else keepFetching=false; } return {data: allRecords}; }
 
+        function getProdutoById(id) {
+            if (id === undefined || id === null || id === '') return null;
+            return STATE.produtos.find(p => Number(p.id) === Number(id)) || null;
+        }
+        function produtoIdDoCarrinho(item) {
+            if (item && item.id) return parseInt(item.id, 10) || null;
+            if (item && item.produto_id) return parseInt(item.produto_id, 10) || null;
+            const nome = item && item.name ? String(item.name).trim().toLowerCase() : '';
+            if (!nome) return null;
+            const prod = STATE.produtos.find(p => (p.nome || '').trim().toLowerCase() === nome);
+            return prod ? Number(prod.id) : null;
+        }
+        function syncLogsComProdutos() {
+            if (!STATE.logs || !STATE.produtos) return;
+            STATE.logs = STATE.logs.map(l => {
+                if (!l.produto_id) return l;
+                const prod = getProdutoById(l.produto_id);
+                if (!prod) return l;
+                return Object.assign({}, l, { produto_nome: prod.nome, categoria: prod.categoria || l.categoria });
+            });
+        }
+
         async function loadData() {
           try {
               const [
@@ -1105,6 +1127,7 @@
               STATE.fornecedores = resForn.data || [];
               STATE.produtos = resProd.data || [];
               STATE.logs = resLog.data || [];
+              syncLogsComProdutos();
               STATE.fases = (resFases.data || []).sort((a, b) => a.ordem - b.ordem);
               STATE.equipe = resEquipe.data || [];
               STATE.terceirizados = resTerceirizados.data || [];
@@ -1219,7 +1242,8 @@
               id: newId.toString(), 
               obra_id: parseInt(obraId), 
               fornecedor_id: fornId ? parseInt(fornId) : null, 
-              tipo: 'oc_pendente', 
+              tipo: 'oc_pendente',
+              produto_id: produtoIdDoCarrinho(i),
               produto_nome: i.name, 
               quantidade: i.qty, 
               valor_total: (i.qty * i.price), 
@@ -1248,12 +1272,17 @@
             const itemsLog = STATE.logs.filter(l => String(l.id) === String(id) && l.tipo === 'oc_pendente'); 
             if(!itemsLog.length) return; 
             
-            CART = itemsLog.map(i => ({ 
-                name: i.produto_nome, 
-                qty: parseFloat(i.quantidade), 
-                price: (parseFloat(i.valor_total) / parseFloat(i.quantidade)), 
-                total: parseFloat(i.valor_total)
-            })); 
+            CART = itemsLog.map(i => {
+                const prod = getProdutoById(i.produto_id);
+                return {
+                    id: i.produto_id ? Number(i.produto_id) : (prod ? Number(prod.id) : null),
+                    name: prod ? prod.nome : i.produto_nome,
+                    qty: parseFloat(i.quantidade),
+                    price: (parseFloat(i.valor_total) / parseFloat(i.quantidade)),
+                    total: parseFloat(i.valor_total),
+                    cat: prod ? (prod.categoria || i.categoria) : i.categoria
+                };
+            }); 
             CURRENT_OC_ID = id; 
             
             document.getElementById('pos-obra').value = itemsLog[0].obra_id || ''; 
@@ -1302,7 +1331,7 @@
         async function saveFornecedor(e){ e.preventDefault(); showLoading(true); const isNew=!document.getElementById('forn-id').value; const payload={ nome:document.getElementById('forn-name').value, telefone:document.getElementById('forn-phone').value, documento:document.getElementById('forn-doc').value, endereco:document.getElementById('forn-addr').value }; if(!isNew) payload.id=document.getElementById('forn-id').value; await sb.from('jsp_fornecedores').upsert(payload); closeOverlayForm('fornecedor-form-container'); showToast("Salvo!"); loadData(); }
         function renderProducts(){ const term=document.getElementById('prod-search').value.toLowerCase(); const fil=STATE.produtos.filter(p=>p.nome.toLowerCase().includes(term)); document.getElementById('prod-list').innerHTML=fil.map(p=>`<div class="bg-white p-3 rounded-xl border flex justify-between"><div><h4 class="font-bold text-xs">${p.nome}</h4><span class="text-[9px] bg-slate-100 px-1 rounded">${p.categoria||'GERAL'}</span></div><div class="flex items-center gap-3"><span class="font-bold text-xs">${formatMoney(p.preco)}</span><button onclick="openProductForm('${p.id}')" class="p-1.5 bg-slate-100 text-blue-600 rounded"><i data-lucide="edit-3" class="w-4 h-4"></i></button></div></div>`).join(''); lucide.createIcons(); }
         function openProductForm(id){ if(id){ const p=STATE.produtos.find(x=>x.id==id); document.getElementById('prd-id').value=p.id; document.getElementById('prd-name').value=p.nome; document.getElementById('prd-cat').value=p.categoria; document.getElementById('prd-price').value=p.preco; } else { document.getElementById('prod-form-container').querySelector('form').reset(); document.getElementById('prd-id').value=''; } openOverlayForm('prod-form-container'); }
-        async function saveProduct(e){ e.preventDefault(); showLoading(true); const isNew=!document.getElementById('prd-id').value; const payload={ nome:document.getElementById('prd-name').value, categoria:document.getElementById('prd-cat').value, preco:document.getElementById('prd-price').value }; if(!isNew) payload.id=document.getElementById('prd-id').value; await sb.from('jsp_produtos').upsert(payload); closeOverlayForm('prod-form-container'); showToast("Salvo!"); loadData(); }
+        async function saveProduct(e){ e.preventDefault(); showLoading(true); const isNew=!document.getElementById('prd-id').value; const nome=document.getElementById('prd-name').value; const categoria=document.getElementById('prd-cat').value; const payload={ nome:nome, categoria:categoria, preco:document.getElementById('prd-price').value }; if(!isNew) payload.id=parseInt(document.getElementById('prd-id').value,10); const {error}=await sb.from('jsp_produtos').upsert(payload); if(error){ showLoading(false); return showToast("Erro: "+error.message,true); } if(!isNew && payload.id){ await sb.from('jsp_logs').update({ produto_nome:nome, categoria:categoria||'Geral' }).eq('produto_id', payload.id).in('tipo', ['oc_pendente','compra']); } closeOverlayForm('prod-form-container'); showToast("Salvo!"); loadData(); }
 
         // ====== FUNÇÕES DE EQUIPE UNIFICADA ======
         function getColaboradoresUnificados(){ const equipe=STATE.equipe.map(e=>{ const isEmpreita=(e.categoria||'')==='Empreita'; return {...e, tipo:isEmpreita?'empreita':'diaria', valor_base:parseFloat(e.valor_diaria||0), unidade:isEmpreita?'contrato':'dias', table_origin:'equipe'}; }); const terceirizados=STATE.terceirizados.map(t=>({...t, nome:t.nome, categoria:'Terceirizado (Metro)', telefone:t.telefone, cpf:t.cpf_cnpj, rg:t.rg, endereco:t.endereco, chave_pix:t.chave_pix, obra_atual_id:t.obra_atual_id, ativo:t.ativo, tipo:'metro', valor_base:parseFloat(t.valor_metro||0), unidade:'metros', table_origin:'terceirizados'})); return [...equipe, ...terceirizados]; }

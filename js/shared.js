@@ -3366,6 +3366,7 @@ function executarImpressaoFolha() {
                 obra_id: parseInt(obraId),
                 fornecedor_id: fornId ? parseInt(fornId) : null,
                 tipo: 'oc_pendente',
+                produto_id: (typeof produtoIdDoCarrinho === 'function' ? produtoIdDoCarrinho(i) : (i.id ? parseInt(i.id, 10) : null)),
                 produto_nome: i.name,
                 quantidade: i.qty,
                 valor_total: (i.qty * i.price),
@@ -3445,7 +3446,17 @@ function executarImpressaoFolha() {
             const itemsLog = STATE.logs.filter(l => String(l.id) === String(id) && l.tipo === 'oc_pendente');
             if(!itemsLog.length) return;
 
-            CART = itemsLog.map(i => ({ name: i.produto_nome, qty: parseFloat(i.quantidade), price: (parseFloat(i.valor_total)/parseFloat(i.quantidade)), total: parseFloat(i.valor_total), cat: i.categoria }));
+            CART = itemsLog.map(i => {
+                const prod = (typeof getProdutoById === 'function') ? getProdutoById(i.produto_id) : (STATE.produtos || []).find(p => Number(p.id) === Number(i.produto_id));
+                return {
+                    id: i.produto_id ? Number(i.produto_id) : (prod ? Number(prod.id) : null),
+                    name: prod ? prod.nome : i.produto_nome,
+                    qty: parseFloat(i.quantidade),
+                    price: (parseFloat(i.valor_total)/parseFloat(i.quantidade)),
+                    total: parseFloat(i.valor_total),
+                    cat: prod ? (prod.categoria || i.categoria) : (i.categoria || 'Geral')
+                };
+            });
             CURRENT_OC_ID = id;
             
             document.getElementById('pos-obra').value = itemsLog[0].obra_id || '';
@@ -4495,7 +4506,7 @@ function executarImpressaoFolha() {
                 <td class="p-4 font-black text-slate-800">${formatMoney(p.preco)}</td>
                 <td class="p-4 text-center">
                     <div class="flex items-center justify-center gap-2">
-                        <button onclick="openProductHistory('${p.nome.replace(/'/g, "\\'")}')" class="p-2 border border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded bg-indigo-50/50" title="Ver Histórico de Compras e Preços"><i data-lucide="history" width="16"></i></button>
+                        <button onclick="openProductHistory('${p.id}')" class="p-2 border border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded bg-indigo-50/50" title="Ver Histórico de Compras e Preços"><i data-lucide="history" width="16"></i></button>
                         <button onclick="openProductForm('${p.id}')" class="p-2 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar Material"><i data-lucide="edit-3" width="16"></i></button>
                     </div>
                 </td>
@@ -4503,11 +4514,17 @@ function executarImpressaoFolha() {
             lucide.createIcons();
         }
 
-        function openProductHistory(prodNome) {
+        function openProductHistory(prodId) {
+            const prod = (typeof getProdutoById === 'function') ? getProdutoById(prodId) : (STATE.produtos || []).find(p => Number(p.id) === Number(prodId));
+            const prodNome = prod ? prod.nome : String(prodId);
             document.getElementById('hist-prod-name').innerText = prodNome;
             const tbody = document.getElementById('hist-prod-list');
             
-            let historico = STATE.logs.filter(l => l.tipo === 'compra' && l.produto_nome === prodNome);
+            let historico = STATE.logs.filter(l => {
+                if (l.tipo !== 'compra') return false;
+                if (prod && l.produto_id) return Number(l.produto_id) === Number(prod.id);
+                return l.produto_nome === prodNome;
+            });
             
             if(historico.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400 font-medium">Nenhuma compra registrada para este material ainda.</td></tr>`;
@@ -4549,14 +4566,26 @@ function executarImpressaoFolha() {
         async function saveProduct(e) {
             e.preventDefault(); showLoading(true);
             const isNew = !document.getElementById('prd-id').value;
+            const nome = document.getElementById('prd-name').value;
+            const categoria = document.getElementById('prd-cat').value;
             const payload = {
-                nome: document.getElementById('prd-name').value,
-                categoria: document.getElementById('prd-cat').value,
+                nome: nome,
+                categoria: categoria,
                 preco: document.getElementById('prd-price').value
             };
-            if(!isNew) payload.id = document.getElementById('prd-id').value;
+            if(!isNew) payload.id = parseInt(document.getElementById('prd-id').value, 10);
             const {error} = await sb.from('jsp_produtos').upsert(payload);
             if(error) { showLoading(false); return showToast("Erro", true); }
+            if(!isNew && payload.id) {
+                const { error: errLogs } = await sb.from('jsp_logs')
+                    .update({ produto_nome: nome, categoria: categoria || 'Geral' })
+                    .eq('produto_id', payload.id)
+                    .in('tipo', ['oc_pendente', 'compra']);
+                if(errLogs) {
+                    showLoading(false);
+                    return showToast("Material salvo, mas as O.C. não atualizaram: " + errLogs.message, true);
+                }
+            }
             document.getElementById('prod-form-container').classList.add('hidden');
             showToast("Material salvo!"); loadData();
         }

@@ -282,7 +282,7 @@
                             <th class="p-3 font-semibold">Venc/Data</th>
                             <th class="p-3 font-semibold">Descrição / Categoria / Obra</th>
                             <th class="p-3 font-semibold">Valor</th>
-                            <th class="p-3 font-semibold text-right w-28">Ações</th>
+                            <th class="p-3 font-semibold text-right w-40">Ações</th>
                         </tr>
                     </thead>
                     <tbody id="fin-expense-history-list" class="divide-y"></tbody>
@@ -307,7 +307,7 @@
                             <th class="p-3 font-semibold">Venc/Data</th>
                             <th class="p-3 font-semibold">Descrição / Origem</th>
                             <th class="p-3 font-semibold">Valor</th>
-                            <th class="p-3 font-semibold text-right w-28">Ações</th>
+                            <th class="p-3 font-semibold text-right w-40">Ações</th>
                         </tr>
                     </thead>
                     <tbody id="fin-receivables-list" class="divide-y"></tbody>
@@ -1102,7 +1102,7 @@
       <div id="modal-expense" class="hidden fixed inset-0 bg-black/60 z-50 flex justify-center items-center p-4">
         <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
             <div class="p-5 border-b flex justify-between items-center bg-slate-50">
-                <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i data-lucide="minus-circle" class="text-red-500"></i> Lançar Despesa / Custo</h3>
+                <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i data-lucide="minus-circle" class="text-red-500"></i> <span id="exp-modal-title-text">Lançar Despesa / Custo</span></h3>
                 <button onclick="document.getElementById('modal-expense').classList.add('hidden')" class="text-slate-400 hover:text-red-500"><i data-lucide="x"></i></button>
             </div>
             <div class="p-6 space-y-4 overflow-y-auto">
@@ -1157,7 +1157,7 @@
             </div>
             <div class="p-5 border-t bg-slate-50 flex gap-3">
                 <button onclick="document.getElementById('modal-expense').classList.add('hidden')" class="flex-1 py-3 bg-white border border-slate-300 rounded-xl font-bold text-slate-600 hover:bg-slate-100">Cancelar</button>
-                <button onclick="saveExpense()" class="flex-1 py-3 bg-red-600 rounded-xl font-bold text-white hover:bg-red-700 shadow-lg">Salvar Despesa</button>
+                <button id="exp-save-btn" onclick="saveExpense()" class="flex-1 py-3 bg-red-600 rounded-xl font-bold text-white hover:bg-red-700 shadow-lg">Salvar Despesa</button>
             </div>
         </div>
       </div>
@@ -1165,10 +1165,11 @@
       <div id="modal-revenue" class="hidden fixed inset-0 bg-black/60 z-50 flex justify-center items-center p-4">
         <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
             <div class="p-5 border-b flex justify-between items-center bg-slate-50">
-                <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i data-lucide="plus-circle" class="text-green-600"></i> Lançar Medição (Receita)</h3>
+                <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2"><i data-lucide="plus-circle" class="text-green-600"></i> <span id="rev-modal-title-text">Lançar Medição (Receita)</span></h3>
                 <button onclick="document.getElementById('modal-revenue').classList.add('hidden')" class="text-slate-400 hover:text-red-500"><i data-lucide="x"></i></button>
             </div>
             <div class="p-6 space-y-4 overflow-y-auto">
+                <input type="hidden" id="rev-id">
                 <div>
                     <label class="block text-sm font-bold text-slate-700 mb-1">Obra (Destino da Medição)</label>
                     <select id="rev-obra" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none bg-white font-bold text-slate-700"></select>
@@ -1201,7 +1202,7 @@
             </div>
             <div class="p-5 border-t bg-slate-50 flex gap-3">
                 <button onclick="document.getElementById('modal-revenue').classList.add('hidden')" class="flex-1 py-3 bg-white border border-slate-300 rounded-xl font-bold text-slate-600 hover:bg-slate-100">Cancelar</button>
-                <button onclick="saveRevenue()" class="flex-1 py-3 bg-green-600 rounded-xl font-bold text-white hover:bg-green-700 shadow-lg">Salvar Medição</button>
+                <button id="rev-save-btn" onclick="saveRevenue()" class="flex-1 py-3 bg-green-600 rounded-xl font-bold text-white hover:bg-green-700 shadow-lg">Salvar Medição</button>
             </div>
         </div>
       </div>
@@ -1735,6 +1736,33 @@
             return { data: allRecords };
         }
 
+        function getProdutoById(id) {
+            if (id === undefined || id === null || id === '') return null;
+            return STATE.produtos.find(p => Number(p.id) === Number(id)) || null;
+        }
+
+        function produtoIdDoCarrinho(item) {
+            if (item && item.id) return parseInt(item.id, 10) || null;
+            if (item && item.produto_id) return parseInt(item.produto_id, 10) || null;
+            const nome = item && item.name ? String(item.name).trim().toLowerCase() : '';
+            if (!nome) return null;
+            const prod = STATE.produtos.find(p => (p.nome || '').trim().toLowerCase() === nome);
+            return prod ? Number(prod.id) : null;
+        }
+
+        function syncLogsComProdutos() {
+            if (!STATE.logs || !STATE.produtos) return;
+            STATE.logs = STATE.logs.map(l => {
+                if (!l.produto_id) return l;
+                const prod = getProdutoById(l.produto_id);
+                if (!prod) return l;
+                return Object.assign({}, l, {
+                    produto_nome: prod.nome,
+                    categoria: prod.categoria || l.categoria
+                });
+            });
+        }
+
         async function loadData() {
     try {
         const [
@@ -1760,6 +1788,7 @@
         STATE.fornecedores = resForn.data || [];
         STATE.produtos = resProd.data || [];
         STATE.logs = resLog.data || [];
+        syncLogsComProdutos();
         STATE.equipe = resEqp.data || [];
         STATE.fases = (resFases.data || []).sort((a,b) => a.ordem - b.ordem);
         STATE.ponto = resPonto.data || [];
@@ -2116,6 +2145,7 @@
                 obra_id: parseInt(obraId),
                 fornecedor_id: fornId ? parseInt(fornId) : null,
                 tipo: 'oc_pendente',
+                produto_id: produtoIdDoCarrinho(i),
                 produto_nome: i.name,
                 quantidade: i.qty,
                 valor_total: (i.qty * i.price),
@@ -2196,7 +2226,17 @@
             const itemsLog = STATE.logs.filter(l => String(l.id) === String(id) && l.tipo === 'oc_pendente');
             if(!itemsLog.length) return;
 
-            CART = itemsLog.map(i => ({ name: i.produto_nome, qty: parseFloat(i.quantidade), price: (parseFloat(i.valor_total)/parseFloat(i.quantidade)), total: parseFloat(i.valor_total), cat: i.categoria }));
+            CART = itemsLog.map(i => {
+                const prod = getProdutoById(i.produto_id);
+                return {
+                    id: i.produto_id ? Number(i.produto_id) : (prod ? Number(prod.id) : null),
+                    name: prod ? prod.nome : i.produto_nome,
+                    qty: parseFloat(i.quantidade),
+                    price: (parseFloat(i.valor_total)/parseFloat(i.quantidade)),
+                    total: parseFloat(i.valor_total),
+                    cat: prod ? (prod.categoria || i.categoria) : (i.categoria || 'Geral')
+                };
+            });
             CURRENT_OC_ID = id;
             
             document.getElementById('pos-obra').value = itemsLog[0].obra_id || '';
@@ -2352,6 +2392,29 @@
             lucide.createIcons();
         }
 
+        function toInputDate(value) {
+            if (!value) return getTodayDate();
+            const s = String(value);
+            if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+            const d = new Date(value);
+            if (isNaN(d.getTime())) return getTodayDate();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function parseObsDespesa(obs) {
+            const out = { tipo: 'Material/Produto', equipe: '' };
+            if (!obs) return out;
+            String(obs).split('|').forEach(part => {
+                const p = part.trim();
+                if (p.toLowerCase().startsWith('tipo:')) out.tipo = p.slice(5).trim();
+                if (p.toLowerCase().startsWith('equipe:')) out.equipe = p.slice(7).trim();
+            });
+            return out;
+        }
+
         function openExpenseModal() {
             document.getElementById('exp-id').value = '';
             document.getElementById('exp-item').value = '';
@@ -2360,15 +2423,61 @@
             document.getElementById('exp-tipo').value = 'Material/Produto';
             document.getElementById('exp-fase').value = '';
             document.getElementById('exp-categoria').value = '';
+            document.getElementById('exp-status-val').value = 'PENDENTE';
+            const obraFiltro = document.getElementById('fin-obra-filter');
+            if (obraFiltro && obraFiltro.value) document.getElementById('exp-obra').value = obraFiltro.value;
+            document.getElementById('exp-modal-title-text').innerText = 'Lançar Despesa / Custo';
+            document.getElementById('exp-save-btn').innerText = 'Salvar Despesa';
             toggleEquipeSelect();
             document.getElementById('modal-expense').classList.remove('hidden');
         }
 
+        function openExpenseEdit(uid) {
+            const l = STATE.logs.find(x => String(x.uid) === String(uid) && x.tipo === 'despesa');
+            if (!l) return showToast('Despesa não encontrada.', true);
+            document.getElementById('exp-id').value = l.uid;
+            document.getElementById('exp-obra').value = l.obra_id || '';
+            document.getElementById('exp-fase').value = l.fase_obra || '';
+            document.getElementById('exp-categoria').value = l.categoria || '';
+            document.getElementById('exp-item').value = l.produto_nome || '';
+            document.getElementById('exp-cost').value = l.valor_total || '';
+            document.getElementById('exp-date').value = toInputDate(l.vencimento || l.data);
+            document.getElementById('exp-status-val').value = l.status_financeiro === 'PAGO' ? 'PAGO' : 'PENDENTE';
+            const parsed = parseObsDespesa(l.observacao);
+            document.getElementById('exp-tipo').value = parsed.tipo || 'Material/Produto';
+            toggleEquipeSelect();
+            if (parsed.equipe) document.getElementById('exp-equipe').value = parsed.equipe;
+            document.getElementById('exp-modal-title-text').innerText = 'Editar Despesa / Custo';
+            document.getElementById('exp-save-btn').innerText = 'Atualizar Despesa';
+            document.getElementById('modal-expense').classList.remove('hidden');
+        }
+
         function openRevenueModal() {
+            document.getElementById('rev-id').value = '';
             document.getElementById('rev-desc').value = '';
             document.getElementById('rev-val').value = '';
             document.getElementById('rev-due').value = getTodayDate();
             document.getElementById('rev-fase').value = '';
+            document.getElementById('rev-status-val').value = 'PENDENTE';
+            const obraFiltro = document.getElementById('fin-obra-filter');
+            if (obraFiltro && obraFiltro.value) document.getElementById('rev-obra').value = obraFiltro.value;
+            document.getElementById('rev-modal-title-text').innerText = 'Lançar Medição (Receita)';
+            document.getElementById('rev-save-btn').innerText = 'Salvar Medição';
+            document.getElementById('modal-revenue').classList.remove('hidden');
+        }
+
+        function openRevenueEdit(uid) {
+            const l = STATE.logs.find(x => String(x.uid) === String(uid) && x.tipo === 'receita');
+            if (!l) return showToast('Medição não encontrada.', true);
+            document.getElementById('rev-id').value = l.uid;
+            document.getElementById('rev-obra').value = l.obra_id || '';
+            document.getElementById('rev-fase').value = l.fase_obra || '';
+            document.getElementById('rev-desc').value = l.produto_nome || '';
+            document.getElementById('rev-val').value = l.valor_total || '';
+            document.getElementById('rev-due').value = toInputDate(l.vencimento || l.data);
+            document.getElementById('rev-status-val').value = l.status_financeiro === 'PAGO' ? 'PAGO' : 'PENDENTE';
+            document.getElementById('rev-modal-title-text').innerText = 'Editar Medição (Receita)';
+            document.getElementById('rev-save-btn').innerText = 'Atualizar Medição';
             document.getElementById('modal-revenue').classList.remove('hidden');
         }
 
@@ -2427,6 +2536,7 @@
                         <button onclick="baixarLogOC('${l.id}')" class="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded shadow flex items-center gap-1 text-[10px] font-bold" title="Pagar O.C. Completa"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> BAIXAR</button>
                         <button onclick="excluirLancamentoOC('${l.id}')" class="bg-slate-200 hover:bg-slate-300 text-slate-600 p-1.5 rounded shadow" title="Cancelar Lançamento"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>
                     ` : `
+                        <button onclick="openExpenseEdit('${l.uid}')" class="bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 p-1.5 rounded shadow" title="Editar Despesa"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
                         <button onclick="baixarLog('${l.uid}')" class="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded shadow flex items-center gap-1 text-[10px] font-bold" title="Baixar Despesa"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> BAIXAR</button>
                         <button onclick="excluirLancamento('${l.uid}')" class="bg-slate-200 hover:bg-slate-300 text-slate-600 p-1.5 rounded shadow" title="Cancelar Lançamento"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>
                     `;
@@ -2435,6 +2545,7 @@
                         <span class="text-[10px] font-bold text-green-700 bg-green-200 px-2 py-1 rounded">PAGO</span>
                         <button onclick="estornarBaixaOC('${l.id}')" class="bg-slate-200 hover:bg-slate-300 text-slate-600 p-1.5 rounded shadow" title="Estornar Baixa da O.C."><i data-lucide="rotate-ccw" class="w-3 h-3"></i></button>
                     ` : `
+                        <button onclick="openExpenseEdit('${l.uid}')" class="bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 p-1.5 rounded shadow" title="Editar Despesa"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
                         <span class="text-[10px] font-bold text-green-700 bg-green-200 px-2 py-1 rounded">PAGO</span>
                         <button onclick="estornarBaixa('${l.uid}')" class="bg-slate-200 hover:bg-slate-300 text-slate-600 p-1.5 rounded shadow" title="Estornar Baixa"><i data-lucide="rotate-ccw" class="w-3 h-3"></i></button>
                     `;
@@ -2478,9 +2589,11 @@
                     <td class="p-3 font-bold text-sm text-green-700">${formatMoney(l.valor_total)}</td>
                     <td class="p-3 text-right flex items-center justify-end gap-1">
                         ${!isPago ? `
+                            <button onclick="openRevenueEdit('${l.uid}')" class="bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 p-1.5 rounded shadow" title="Editar Medição"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
                             <button onclick="baixarLog('${l.uid}')" class="bg-green-600 hover:bg-green-700 text-white p-1.5 rounded shadow flex items-center gap-1 text-[10px] font-bold" title="Confirmar Recebimento"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> RECEBER</button>
                             <button onclick="excluirLancamento('${l.uid}')" class="bg-slate-200 hover:bg-slate-300 text-slate-600 p-1.5 rounded shadow" title="Cancelar Lançamento"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>
                         ` : `
+                            <button onclick="openRevenueEdit('${l.uid}')" class="bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 p-1.5 rounded shadow" title="Editar Medição"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
                             <span class="text-[10px] font-bold text-green-700 bg-green-200 px-2 py-1 rounded">RECEBIDO</span>
                             <button onclick="estornarBaixa('${l.uid}')" class="bg-slate-200 hover:bg-slate-300 text-slate-600 p-1.5 rounded shadow" title="Estornar Baixa"><i data-lucide="rotate-ccw" class="w-3 h-3"></i></button>
                         `}
@@ -2599,11 +2712,9 @@
             if(tipoLancamento === 'Mão de Obra' && equipeNome) obsArr.push(`Equipe: ${equipeNome}`);
             
             const obsFinal = obsArr.join(' | ');
-
-            const {error} = await sb.from('jsp_logs').insert([{
-                id: getNextIdNum(STATE.logs).toString(),
+            const uidEdit = document.getElementById('exp-id').value;
+            const payload = {
                 obra_id: obra_id ? parseInt(obra_id) : null,
-                tipo: 'despesa',
                 produto_nome: desc,
                 valor_total: val,
                 data: dt, vencimento: dt,
@@ -2611,12 +2722,25 @@
                 fase_obra: faseObra,
                 categoria: categoria || 'Geral',
                 observacao: obsFinal
-            }]);
+            };
+
+            let error;
+            if (uidEdit) {
+                const res = await sb.from('jsp_logs').update(payload).eq('uid', uidEdit).eq('tipo', 'despesa');
+                error = res.error;
+            } else {
+                const res = await sb.from('jsp_logs').insert([{
+                    id: getNextIdNum(STATE.logs).toString(),
+                    tipo: 'despesa',
+                    ...payload
+                }]);
+                error = res.error;
+            }
             
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
             
             document.getElementById('modal-expense').classList.add('hidden');
-            showToast("Despesa Salva!"); loadData();
+            showToast(uidEdit ? "Despesa atualizada!" : "Despesa Salva!"); loadData();
         }
 
         async function saveRevenue() {
@@ -2631,22 +2755,33 @@
             showLoading(true);
             
             const obsFinal = 'Medição de Receita';
-
-            const {error} = await sb.from('jsp_logs').insert([{
-                id: getNextIdNum(STATE.logs).toString(),
+            const uidEdit = document.getElementById('rev-id').value;
+            const payload = {
                 obra_id: obra_id ? parseInt(obra_id) : null,
-                tipo: 'receita',
                 produto_nome: desc,
                 valor_total: val,
                 data: dt, vencimento: dt,
                 status_financeiro: status,
                 fase_obra: faseObra,
                 observacao: obsFinal
-            }]);
+            };
+
+            let error;
+            if (uidEdit) {
+                const res = await sb.from('jsp_logs').update(payload).eq('uid', uidEdit).eq('tipo', 'receita');
+                error = res.error;
+            } else {
+                const res = await sb.from('jsp_logs').insert([{
+                    id: getNextIdNum(STATE.logs).toString(),
+                    tipo: 'receita',
+                    ...payload
+                }]);
+                error = res.error;
+            }
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
             
             document.getElementById('modal-revenue').classList.add('hidden');
-            showToast("Medição Salva!"); loadData();
+            showToast(uidEdit ? "Medição atualizada!" : "Medição Salva!"); loadData();
         }
 
         function gerarRelatorio() {
@@ -3445,7 +3580,7 @@
                 <td class="p-4 font-black text-slate-800">${formatMoney(p.preco)}</td>
                 <td class="p-4 text-center">
                     <div class="flex items-center justify-center gap-2">
-                        <button onclick="openProductHistory('${p.nome.replace(/'/g, "\\'")}')" class="p-2 border border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded bg-indigo-50/50" title="Ver Histórico de Compras e Preços"><i data-lucide="history" width="16"></i></button>
+                        <button onclick="openProductHistory('${p.id}')" class="p-2 border border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded bg-indigo-50/50" title="Ver Histórico de Compras e Preços"><i data-lucide="history" width="16"></i></button>
                         <button onclick="openProductForm('${p.id}')" class="p-2 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar Material"><i data-lucide="edit-3" width="16"></i></button>
                     </div>
                 </td>
@@ -3453,11 +3588,17 @@
             lucide.createIcons();
         }
 
-        function openProductHistory(prodNome) {
+        function openProductHistory(prodId) {
+            const prod = getProdutoById(prodId);
+            const prodNome = prod ? prod.nome : String(prodId);
             document.getElementById('hist-prod-name').innerText = prodNome;
             const tbody = document.getElementById('hist-prod-list');
             
-            let historico = STATE.logs.filter(l => l.tipo === 'compra' && l.produto_nome === prodNome);
+            let historico = STATE.logs.filter(l => {
+                if (l.tipo !== 'compra') return false;
+                if (prod && l.produto_id) return Number(l.produto_id) === Number(prod.id);
+                return l.produto_nome === prodNome;
+            });
             
             if(historico.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400 font-medium">Nenhuma compra registrada para este material ainda.</td></tr>`;
@@ -3499,14 +3640,26 @@
         async function saveProduct(e) {
             e.preventDefault(); showLoading(true);
             const isNew = !document.getElementById('prd-id').value;
+            const nome = document.getElementById('prd-name').value;
+            const categoria = document.getElementById('prd-cat').value;
             const payload = {
-                nome: document.getElementById('prd-name').value,
-                categoria: document.getElementById('prd-cat').value,
+                nome: nome,
+                categoria: categoria,
                 preco: document.getElementById('prd-price').value
             };
-            if(!isNew) payload.id = document.getElementById('prd-id').value;
+            if(!isNew) payload.id = parseInt(document.getElementById('prd-id').value, 10);
             const {error} = await sb.from('jsp_produtos').upsert(payload);
             if(error) { showLoading(false); return showToast("Erro", true); }
+            if(!isNew && payload.id) {
+                const { error: errLogs } = await sb.from('jsp_logs')
+                    .update({ produto_nome: nome, categoria: categoria || 'Geral' })
+                    .eq('produto_id', payload.id)
+                    .in('tipo', ['oc_pendente', 'compra']);
+                if(errLogs) {
+                    showLoading(false);
+                    return showToast("Material salvo, mas as O.C. não atualizaram: " + errLogs.message, true);
+                }
+            }
             document.getElementById('prod-form-container').classList.add('hidden');
             showToast("Material salvo!"); loadData();
         }
@@ -3759,8 +3912,9 @@
                   id: novoId.toString(),                           // mesmo ID para todos os itens
                   obra_id: item.obra_id,
                   fornecedor_id: item.fornecedor_id,               // mantém o mesmo fornecedor
-                  tipo: 'oc_pendente',                             // sempre pendente
-                  produto_nome: item.produto_nome,
+                   tipo: 'oc_pendente',                             // sempre pendente
+                   produto_id: item.produto_id ? Number(item.produto_id) : null,
+                   produto_nome: item.produto_nome,
                   quantidade: item.quantidade,
                   valor_total: precoUnitario * parseFloat(item.quantidade),
                   data: dataAtual,
@@ -3815,9 +3969,9 @@
       
         function fazerLogout() { try { sb.auth.signOut(); } catch (_) {} localStorage.removeItem('rv_user'); window.location.href = "index.html?t=" + Date.now();  }
     </script>
-    <script src="js/equipe-core.js?v=20260922c"></script>
-    <script src="js/precos.js?v=20260922c"></script>
-    <script src="js/contrato.js?v=20260922c"></script>
-    <script src="js/equipe.js?v=20260922e"></script>
+     <script src="js/equipe-core.js?v=20261006a"></script>
+     <script src="js/precos.js?v=20261006a"></script>
+     <script src="js/contrato.js?v=20260922c"></script>
+     <script src="js/equipe.js?v=20260922e"></script>
   </body>
 </html>

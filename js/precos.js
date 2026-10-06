@@ -598,10 +598,12 @@ async function registrarPrecosAutomaticos(ocId) {
   const dataOC = itensOC[0]?.data ? new Date(itensOC[0].data).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
 
   for (const item of itensOC) {
-    const produto = STATE.produtos.find(p => p.nome.trim().toLowerCase() === item.produto_nome.trim().toLowerCase());
+    const produto = item.produto_id
+      ? STATE.produtos.find(p => Number(p.id) === Number(item.produto_id))
+      : STATE.produtos.find(p => (p.nome || '').trim().toLowerCase() === (item.produto_nome || '').trim().toLowerCase());
     const precoUnitario = parseFloat(item.valor_total) / parseFloat(item.quantidade);
     inserts.push({
-      produto_id: produto ? Number(produto.id) : null,
+      produto_id: produto ? Number(produto.id) : (item.produto_id ? Number(item.produto_id) : null),
       data_preco: dataOC,
       preco_unitario: precoUnitario,
       fornecedor_id: item.fornecedor_id ? Number(item.fornecedor_id) : null,
