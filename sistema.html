@@ -250,6 +250,9 @@
             <button id="tab-receber" onclick="switchFinTab('receber')" class="px-6 py-3 font-bold text-sm uppercase tracking-wider text-slate-400 border-b-2 border-transparent hover:border-slate-300 transition">
                 <i data-lucide="arrow-down-circle" class="inline w-4 h-4 mr-2"></i> Entrada Medições 
             </button>
+            <button id="tab-contas" onclick="switchFinTab('contas')" class="px-6 py-3 font-bold text-sm uppercase tracking-wider text-slate-400 border-b-2 border-transparent hover:border-slate-300 transition">
+                <i data-lucide="wallet" class="inline w-4 h-4 mr-2"></i> Contas
+            </button>
         </div>
         
         <!-- Container Contas a Pagar -->
@@ -351,6 +354,9 @@
                 </table>
             </div>
         </div>
+
+        <!-- Container Contas / Carteiras / Cartao -->
+        <div id="fin-contas-container" class="hidden"></div>
       </div>
 
       <div id="view-equipe" class="hidden-section">
@@ -1197,6 +1203,21 @@
                         <option value="PAGO">Já Pago</option>
                     </select>
                 </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Forma de Pagamento</label>
+                    <select id="exp-forma" onchange="RVContas.onFormaExpChange()" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none bg-white font-bold text-slate-700">
+                        <option value="Dinheiro">Dinheiro</option>
+                        <option value="PIX">PIX</option>
+                        <option value="Cartão de Débito">Cartão de Débito</option>
+                        <option value="Boleto">Boleto</option>
+                        <option value="Cartão de Crédito">Cartão de Crédito</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Conta</label>
+                    <select id="exp-conta" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none bg-white font-bold text-blue-700"></select>
+                    <p id="exp-conta-hint" class="text-[10px] text-slate-400 font-semibold mt-1"></p>
+                </div>
             </div>
             <div class="p-5 border-t bg-slate-50 flex gap-3">
                 <button onclick="document.getElementById('modal-expense').classList.add('hidden')" class="flex-1 py-3 bg-white border border-slate-300 rounded-xl font-bold text-slate-600 hover:bg-slate-100">Cancelar</button>
@@ -1241,6 +1262,11 @@
                         <option value="PENDENTE">A Receber (Previsão)</option>
                         <option value="PAGO">Recebido / Em Caixa</option>
                     </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Conta de Destino</label>
+                    <select id="rev-conta" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-600 outline-none bg-white font-bold text-blue-700"></select>
+                    <p class="text-[10px] text-slate-400 font-semibold mt-1">Usada quando a medição for recebida (baixa).</p>
                 </div>
             </div>
             <div class="p-5 border-t bg-slate-50 flex gap-3">
@@ -1812,7 +1838,7 @@
           resObras, resForn, resProd, resLog,
           resEqp, resFases, resPonto, resTerc,
           resPontoDiario, resHistPrecos, resProdTerc, resMedicoesEmp,
-          resVales, resValeAbat
+          resVales, resValeAbat, resContas, resMovs, resFats
         ] = await Promise.all([
           fetchAllRecords('jsp_obras'),
           fetchAllRecords('jsp_fornecedores'),
@@ -1827,7 +1853,10 @@
           fetchAllRecords('jsp_producao_terc').catch(() => ({ data: [] })),
           fetchAllRecords('jsp_medicoes_empreita').catch(() => ({ data: [] })),
           fetchAllRecords('jsp_vales').catch(() => ({ data: [] })),
-          fetchAllRecords('jsp_vale_abatimentos').catch(() => ({ data: [] }))
+          fetchAllRecords('jsp_vale_abatimentos').catch(() => ({ data: [] })),
+          fetchAllRecords('jsp_contas').catch(() => ({ data: [] })),
+          fetchAllRecords('jsp_movimentacoes').catch(() => ({ data: [] })),
+          fetchAllRecords('jsp_faturas').catch(() => ({ data: [] }))
         ]);
 
         STATE.obras = resObras.data || [];
@@ -1845,6 +1874,9 @@
         STATE.medicoes_empreita = resMedicoesEmp.data || [];
         STATE.vales = resVales.data || [];
         STATE.vale_abatimentos = resValeAbat.data || [];
+        STATE.contas = resContas.data || [];
+        STATE.movimentacoes = resMovs.data || [];
+        STATE.faturas = resFats.data || [];
         if (!STATE.medicoes_empreita.length) {
             try {
                 const localMed = JSON.parse(localStorage.getItem('rv_medicoes_empreita') || '[]');
@@ -2472,6 +2504,8 @@
             document.getElementById('exp-fase').value = '';
             document.getElementById('exp-categoria').value = '';
             document.getElementById('exp-status-val').value = 'PENDENTE';
+            document.getElementById('exp-forma').value = 'Dinheiro';
+            if (typeof RVContas !== 'undefined') { RVContas.onFormaExpChange(); }
             const obraFiltro = document.getElementById('fin-obra-filter');
             if (obraFiltro && obraFiltro.value) document.getElementById('exp-obra').value = obraFiltro.value;
             document.getElementById('exp-modal-title-text').innerText = 'Lançar Despesa / Custo';
@@ -2495,6 +2529,8 @@
             document.getElementById('exp-cost').value = l.valor_total || '';
             document.getElementById('exp-date').value = toInputDate(l.vencimento || l.data);
             document.getElementById('exp-status-val').value = l.status_financeiro === 'PAGO' ? 'PAGO' : 'PENDENTE';
+            document.getElementById('exp-forma').value = l.forma_pagamento || 'Dinheiro';
+            if (typeof RVContas !== 'undefined') { document.getElementById('exp-conta').value = l.conta_id || ''; RVContas.onFormaExpChange(); }
             const parsed = parseObsDespesa(l.observacao);
             document.getElementById('exp-tipo').value = parsed.tipo || 'Material/Produto';
             toggleEquipeSelect();
@@ -2511,6 +2547,7 @@
             document.getElementById('rev-due').value = getTodayDate();
             document.getElementById('rev-fase').value = '';
             document.getElementById('rev-status-val').value = 'PENDENTE';
+            if (typeof RVContas !== 'undefined') RVContas.preencherSelectContas('rev-conta', '', false);
             const obraFiltro = document.getElementById('fin-obra-filter');
             if (obraFiltro && obraFiltro.value) document.getElementById('rev-obra').value = obraFiltro.value;
             document.getElementById('rev-modal-title-text').innerText = 'Lançar Medição (Receita)';
@@ -2529,6 +2566,7 @@
             document.getElementById('rev-val').value = l.valor_total || '';
             document.getElementById('rev-due').value = toInputDate(l.vencimento || l.data);
             document.getElementById('rev-status-val').value = l.status_financeiro === 'PAGO' ? 'PAGO' : 'PENDENTE';
+            if (typeof RVContas !== 'undefined') RVContas.preencherSelectContas('rev-conta', l.conta_id || '', false);
             document.getElementById('rev-modal-title-text').innerText = 'Editar Medição (Receita)';
             document.getElementById('rev-save-btn').innerText = 'Atualizar Medição';
             document.getElementById('modal-revenue').classList.remove('hidden');
@@ -2781,6 +2819,8 @@
             };
 
             const cardsContainer = document.getElementById('fin-cards-container');
+            const saldoRealContas = (typeof RVContas !== 'undefined') ? RVContas.saldoTotalReal() : (totRec - totDesp);
+            const temContas = (typeof RVContas !== 'undefined') && (STATE.contas || []).length > 0;
             if(obraFilter) {
                 cardsContainer.innerHTML = `
                     <div class="bg-white p-4 rounded-xl border-l-4 border-l-slate-800 shadow-sm">
@@ -2801,7 +2841,8 @@
                     </div>
                     <div class="bg-white p-4 rounded-xl border-l-4 border-l-blue-600 shadow-sm">
                         <p class="text-slate-500 text-xs font-bold uppercase">Caixa da Obra</p>
-                        <h3 class="text-xl font-black text-blue-700 mt-1">${formatMoney(totRec - totDesp)}</h3>
+                        <h3 class="text-xl font-black text-blue-700 mt-1">${formatMoney(temContas ? saldoRealContas : (totRec - totDesp))}</h3>
+                        ${temContas ? `<p class="text-[10px] text-slate-400 font-bold mt-1">Saldo real das contas (regime caixa do filtro: ${formatMoney(totRec - totDesp)})</p>` : ''}
                     </div>
                 `;
             } else {
@@ -2816,7 +2857,8 @@
                     </div>
                     <div class="bg-white p-4 rounded-xl border-l-4 border-l-blue-600 shadow-sm md:col-span-1">
                         <p class="text-slate-500 text-xs font-bold uppercase">Saldo Geral de Caixa</p>
-                        <h3 class="text-2xl font-black text-blue-700 mt-1">${formatMoney(totRec - totDesp)}</h3>
+                        <h3 class="text-2xl font-black text-blue-700 mt-1">${formatMoney(temContas ? saldoRealContas : (totRec - totDesp))}</h3>
+                        ${temContas ? `<p class="text-[10px] text-slate-400 font-bold mt-1">Saldo real das contas (regime caixa geral: ${formatMoney(totRec - totDesp)})</p>` : ''}
                     </div>
                 `;
             }
@@ -2951,15 +2993,19 @@
         }
 
         async function baixarLog(uid) {
-            if(!confirm("Confirmar a baixa financeira deste lançamento? O valor vai entrar no caixa.")) return;
+            const l = STATE.logs.find(x => String(x.uid) === String(uid));
+            if (l && l.eh_cartao) return showToast('Despesa no cartão: a baixa é feita pelo pagamento da fatura (aba Contas).', true);
+            if (typeof RVContas !== 'undefined') return RVContas.abrirModalBaixa(uid, l ? l.tipo : 'despesa');
+            if(!confirm("Confirmar a baixa financeira deste lançamento?")) return;
             showLoading(true);
             const {error} = await sb.from('jsp_logs').update({ status_financeiro: 'PAGO' }).eq('uid', uid);
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
-            showToast("Baixa realizada! Valor computado."); loadData();
+            showToast("Baixa realizada!"); loadData();
         }
 
         async function estornarBaixa(uid) {
-            if(!confirm("Tem certeza que deseja ESTORNAR a baixa? O status voltará para PENDENTE e sairá do caixa/dashboard.")) return;
+            if (typeof RVContas !== 'undefined') return RVContas.estornarBaixa(uid);
+            if(!confirm("Tem certeza que deseja ESTORNAR a baixa?")) return;
             showLoading(true);
             const {error} = await sb.from('jsp_logs').update({ status_financeiro: 'PENDENTE' }).eq('uid', uid);
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
@@ -2968,10 +3014,23 @@
 
         async function excluirLancamento(uid) {
             const logVale = STATE.logs.find(l => String(l.uid) === String(uid));
-            const ehVale = logVale && typeof valeEhLog === 'function' && valeEhLog(logVale);
+            if (!logVale) return;
+            const movAtivo = (typeof RVContas !== 'undefined') ? RVContas.movDoLog(uid) : null;
+            if (movAtivo) return showToast('Lançamento já baixado. Estorne a baixa antes de cancelar.', true);
+            const ehVale = typeof valeEhLog === 'function' && valeEhLog(logVale);
             const valeRef = ehVale ? (STATE.vales || []).find(v => String(v.log_uid) === String(uid)) : null;
             if (valeRef && Number(valeRef.valor_aberto) < Number(valeRef.valor)) {
                 return showToast('Vale já utilizado em fechamento. Estorne o fechamento antes.', true);
+            }
+            if (logVale.eh_cartao) {
+                if (!confirm("Cancelar esta compra no cartão e o lançamento?")) return;
+                showLoading(true);
+                const r = await sb.rpc('rv_estornar_compra_cartao', { p_uid: uid });
+                if (r.error) { showLoading(false); return showToast("Erro: "+r.error.message, true); }
+                const {error} = await sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }).eq('uid', uid);
+                showLoading(false);
+                if (error) return showToast("Erro: "+error.message, true);
+                showToast("Compra no cartão cancelada!"); loadData(); return;
             }
             if(!confirm("Tem certeza que deseja CANCELAR este lançamento? Ele será removido definitivamente das pendências.")) return;
             showLoading(true);
@@ -2984,7 +3043,8 @@
         }
 
         async function baixarLogOC(id) {
-            if(!confirm("Confirmar a baixa financeira desta O.C.? Todos os itens vinculados serão marcados como pagos.")) return;
+            if (typeof RVContas !== 'undefined') return RVContas.abrirModalBaixaOC(id);
+            if(!confirm("Confirmar a baixa financeira desta O.C.?")) return;
             showLoading(true);
             const {error} = await sb.from('jsp_logs').update({ status_financeiro: 'PAGO' }).eq('id', id).eq('tipo', 'compra');
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
@@ -2992,6 +3052,7 @@
         }
 
         async function estornarBaixaOC(id) {
+            if (typeof RVContas !== 'undefined') return RVContas.estornarBaixaOC(id);
             if(!confirm("Tem certeza que deseja ESTORNAR a baixa de toda esta O.C.?")) return;
             showLoading(true);
             const {error} = await sb.from('jsp_logs').update({ status_financeiro: 'PENDENTE' }).eq('id', id).eq('tipo', 'compra');
@@ -3000,6 +3061,8 @@
         }
 
         async function excluirLancamentoOC(id) {
+            const temBaixa = (typeof RVContas !== 'undefined') && (STATE.movimentacoes || []).some(m => String(m.oc_id) === String(id) && m.origem === 'baixa_oc' && m.estornada !== true);
+            if (temBaixa) return showToast('O.C. já baixada. Estorne a baixa antes de cancelar.', true);
             if(!confirm("Deseja CANCELAR esta O.C. no Financeiro? Ela será removida das pendências.")) return;
             showLoading(true);
             const {error} = await sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }).eq('id', id).eq('tipo', 'compra');
@@ -3018,8 +3081,13 @@
             const equipeNome = document.getElementById('exp-equipe').value;
             const faseObra = document.getElementById('exp-fase').value;
             const categoria = document.getElementById('exp-categoria').value;
+            const forma = document.getElementById('exp-forma').value || 'Dinheiro';
+            const contaId = document.getElementById('exp-conta').value || null;
+            const ehCartao = forma === 'Cartão de Crédito';
 
-            if(!desc || isNaN(val)) return showToast("Preencha descrição e valor!", true);
+            if(!desc || isNaN(val)) { showLoading(false); return showToast("Preencha descrição e valor!", true); }
+            if (ehCartao && !contaId) { showLoading(false); return showToast("Selecione o cartão de crédito.", true); }
+            if (!ehCartao && status === 'PAGO' && !contaId) { showLoading(false); return showToast("Selecione a conta do pagamento.", true); }
             showLoading(true);
 
             let obsArr = [];
@@ -3028,31 +3096,55 @@
             
             const obsFinal = obsArr.join(' | ');
             const uidEdit = document.getElementById('exp-id').value;
+            let wasCard = false;
+            if (uidEdit) {
+                const atual = STATE.logs.find(x => String(x.uid) === String(uidEdit));
+                wasCard = !!(atual && atual.eh_cartao);
+            }
             const payload = {
                 obra_id: obra_id ? parseInt(obra_id) : null,
                 produto_nome: desc,
                 valor_total: val,
                 data: dt, vencimento: dt,
-                status_financeiro: status,
+                status_financeiro: 'PENDENTE',
                 fase_obra: faseObra,
                 categoria: categoria || 'Geral',
-                observacao: obsFinal
+                observacao: obsFinal,
+                forma_pagamento: forma,
+                conta_id: contaId,
+                eh_cartao: ehCartao
             };
 
-            let error;
-            if (uidEdit) {
-                const res = await sb.from('jsp_logs').update(payload).eq('uid', uidEdit).eq('tipo', 'despesa');
-                error = res.error;
-            } else {
-                const res = await sb.from('jsp_logs').insert([{
-                    id: getNextIdNum(STATE.logs).toString(),
-                    tipo: 'despesa',
-                    ...payload
-                }]);
-                error = res.error;
+            let logUid = uidEdit;
+            try {
+                if (uidEdit) {
+                    if (wasCard) {
+                        const r0 = await sb.rpc('rv_estornar_compra_cartao', { p_uid: uidEdit });
+                        if (r0.error) throw r0.error;
+                    }
+                    const res = await sb.from('jsp_logs').update(payload).eq('uid', uidEdit).eq('tipo', 'despesa');
+                    if (res.error) throw res.error;
+                } else {
+                    const res = await sb.from('jsp_logs').insert([{
+                        id: getNextIdNum(STATE.logs).toString(),
+                        tipo: 'despesa',
+                        ...payload
+                    }]).select();
+                    if (res.error) throw res.error;
+                    logUid = res.data && res.data[0] ? res.data[0].uid : null;
+                }
+
+                if (ehCartao) {
+                    const r = await sb.rpc('rv_cartao_compra', { p_uid: logUid, p_conta: contaId });
+                    if (r.error) throw r.error;
+                } else if (status === 'PAGO') {
+                    const r = await sb.rpc('rv_baixar_lancamento', { p_uid: logUid, p_conta: contaId });
+                    if (r.error) throw r.error;
+                }
+            } catch (e) {
+                showLoading(false);
+                return showToast("Erro: " + (e.message || e), true);
             }
-            
-            if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
             
             document.getElementById('modal-expense').classList.add('hidden');
             showToast(uidEdit ? "Despesa atualizada!" : "Despesa Salva!"); loadData();
@@ -3065,8 +3157,10 @@
             const dt = document.getElementById('rev-due').value || new Date().toISOString();
             const status = document.getElementById('rev-status-val').value;
             const faseObra = document.getElementById('rev-fase').value;
+            const contaId = document.getElementById('rev-conta') ? (document.getElementById('rev-conta').value || null) : null;
 
             if(!desc || isNaN(val)) return showToast("Preencha descrição e valor!", true);
+            if (status === 'PAGO' && !contaId) return showToast("Selecione a conta de destino.", true);
             showLoading(true);
             
             const obsFinal = 'Medição de Receita';
@@ -3076,24 +3170,35 @@
                 produto_nome: desc,
                 valor_total: val,
                 data: dt, vencimento: dt,
-                status_financeiro: status,
+                status_financeiro: 'PENDENTE',
                 fase_obra: faseObra,
-                observacao: obsFinal
+                observacao: obsFinal,
+                conta_id: contaId
             };
 
-            let error;
-            if (uidEdit) {
-                const res = await sb.from('jsp_logs').update(payload).eq('uid', uidEdit).eq('tipo', 'receita');
-                error = res.error;
-            } else {
-                const res = await sb.from('jsp_logs').insert([{
-                    id: getNextIdNum(STATE.logs).toString(),
-                    tipo: 'receita',
-                    ...payload
-                }]);
-                error = res.error;
+            let logUid = uidEdit;
+            try {
+                if (uidEdit) {
+                    const res = await sb.from('jsp_logs').update(payload).eq('uid', uidEdit).eq('tipo', 'receita');
+                    if (res.error) throw res.error;
+                } else {
+                    const res = await sb.from('jsp_logs').insert([{
+                        id: getNextIdNum(STATE.logs).toString(),
+                        tipo: 'receita',
+                        ...payload
+                    }]).select();
+                    if (res.error) throw res.error;
+                    logUid = res.data && res.data[0] ? res.data[0].uid : null;
+                }
+
+                if (status === 'PAGO') {
+                    const r = await sb.rpc('rv_baixar_lancamento', { p_uid: logUid, p_conta: contaId });
+                    if (r.error) throw r.error;
+                }
+            } catch (e) {
+                showLoading(false);
+                return showToast("Erro: " + (e.message || e), true);
             }
-            if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
             
             document.getElementById('modal-revenue').classList.add('hidden');
             showToast(uidEdit ? "Medição atualizada!" : "Medição Salva!"); loadData();
@@ -4179,24 +4284,20 @@
       function switchFinTab(tab) {
           const btnPagar = document.getElementById('tab-pagar');
           const btnReceber = document.getElementById('tab-receber');
+          const btnContas = document.getElementById('tab-contas');
           const containerPagar = document.getElementById('fin-pagar-container');
           const containerReceber = document.getElementById('fin-receber-container');
-      
-          if (tab === 'pagar') {
-              btnPagar.classList.add('border-blue-600', 'text-slate-600');
-              btnPagar.classList.remove('text-slate-400', 'border-transparent');
-              btnReceber.classList.remove('border-blue-600', 'text-slate-600');
-              btnReceber.classList.add('text-slate-400', 'border-transparent');
-              containerPagar.classList.remove('hidden');
-              containerReceber.classList.add('hidden');
-          } else {
-              btnReceber.classList.add('border-blue-600', 'text-slate-600');
-              btnReceber.classList.remove('text-slate-400', 'border-transparent');
-              btnPagar.classList.remove('border-blue-600', 'text-slate-600');
-              btnPagar.classList.add('text-slate-400', 'border-transparent');
-              containerReceber.classList.remove('hidden');
-              containerPagar.classList.add('hidden');
-          }
+          const containerContas = document.getElementById('fin-contas-container');
+          const allBtns = [btnPagar, btnReceber, btnContas].filter(Boolean);
+          const allCtrs = [containerPagar, containerReceber, containerContas].filter(Boolean);
+          allBtns.forEach(b => { b.classList.remove('border-blue-600', 'text-slate-600'); b.classList.add('text-slate-400', 'border-transparent'); });
+          allCtrs.forEach(c => c.classList.add('hidden'));
+
+          const map = { pagar: [btnPagar, containerPagar], receber: [btnReceber, containerReceber], contas: [btnContas, containerContas] };
+          const sel = map[tab] || map.pagar;
+          if (sel[0]) { sel[0].classList.add('border-blue-600', 'text-slate-600'); sel[0].classList.remove('text-slate-400', 'border-transparent'); }
+          if (sel[1]) sel[1].classList.remove('hidden');
+          if (tab === 'contas' && typeof RVContas !== 'undefined') RVContas.render('fin-contas-container');
       }     
 
 
@@ -4289,5 +4390,6 @@
      <script src="js/contrato.js?v=20260922c"></script>
      <script src="js/equipe.js?v=20261006e"></script>
      <script src="js/vales.js?v=20261006c"></script>
+     <script src="js/contas.js?v=20261006a"></script>
   </body>
 </html>

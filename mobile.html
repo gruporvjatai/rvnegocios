@@ -209,6 +209,7 @@
         <div class="flex gap-2 mb-4 bg-slate-200 p-1 rounded-xl">
             <button onclick="toggleFinTab('despesas')" id="tab-despesas" class="flex-1 py-1.5 text-xs font-bold bg-white text-slate-800 rounded-lg shadow-sm transition-colors">Custos</button>
             <button onclick="toggleFinTab('receitas')" id="tab-receitas" class="flex-1 py-1.5 text-xs font-bold text-slate-500 rounded-lg transition-colors">Medições</button>
+            <button onclick="toggleFinTab('contas')" id="tab-contas" class="flex-1 py-1.5 text-xs font-bold text-slate-500 rounded-lg transition-colors">Contas</button>
         </div>
 
         <div id="fin-section-despesas">
@@ -217,6 +218,10 @@
 
         <div id="fin-section-receitas" class="hidden">
             <div id="fin-receivables-list" class="flex flex-col gap-2 pb-4"></div>
+        </div>
+
+        <div id="fin-section-contas" class="hidden">
+            <div id="fin-contas-container"></div>
         </div>
       </div>
 
@@ -982,6 +987,7 @@
     <script src="js/equipe-core.js?v=20261006c"></script>
     <script src="js/equipe.js?v=20261006e"></script>
     <script src="js/vales.js?v=20261006c"></script>
+    <script src="js/contas.js?v=20261006a"></script>
     <script>window.__rvFolhaShared = (typeof executarImpressaoFolha === 'function') ? executarImpressaoFolha : null;
     window.__rvReciboMetrosShared = (typeof imprimirReciboMetrosDoModal === 'function') ? imprimirReciboMetrosDoModal : null;</script>
     <script>
@@ -995,7 +1001,7 @@
         const supabaseKey = 'sb_publishable_B2a4vA22qf4XGcrxPDRAaw_13rW51uI';
         const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], fases: [], equipe: [], ponto_diario: [], terceirizados: [], producao_terc: [], medicoes_empreita: [] };
+        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], fases: [], equipe: [], ponto_diario: [], terceirizados: [], producao_terc: [], medicoes_empreita: [], contas: [], movimentacoes: [], faturas: [] };
         let CART = [];
         let CURRENT_OC_ID = null; 
 
@@ -1079,7 +1085,7 @@
 
         function openNovaOC() { document.getElementById('view-oc').classList.replace('active-section', 'hidden-section'); document.getElementById('view-pos').classList.replace('hidden-section', 'active-section'); updateSelects(); window.scrollTo(0,0); }
         function closeNovaOC() { document.getElementById('view-pos').classList.replace('active-section', 'hidden-section'); document.getElementById('view-oc').classList.replace('hidden-section', 'active-section'); clearCart(); renderOCList(); }
-        function toggleFinTab(tab) { const secDesp = document.getElementById('fin-section-despesas'); const secRec = document.getElementById('fin-section-receitas'); if(tab === 'despesas') { secDesp.classList.remove('hidden'); secRec.classList.add('hidden'); document.getElementById('tab-despesas').classList.replace('text-slate-500','text-slate-800').classList.add('bg-white','shadow-sm'); document.getElementById('tab-receitas').classList.replace('text-slate-800','text-slate-500').classList.remove('bg-white','shadow-sm'); } else { secDesp.classList.add('hidden'); secRec.classList.remove('hidden'); document.getElementById('tab-receitas').classList.replace('text-slate-500','text-slate-800').classList.add('bg-white','shadow-sm'); document.getElementById('tab-despesas').classList.replace('text-slate-800','text-slate-500').classList.remove('bg-white','shadow-sm'); } }
+        function toggleFinTab(tab) { const secs={despesas:'fin-section-despesas',receitas:'fin-section-receitas',contas:'fin-section-contas'}; const tabs={despesas:'tab-despesas',receitas:'tab-receitas',contas:'tab-contas'}; Object.keys(secs).forEach(function(k){ const sec=document.getElementById(secs[k]); if(sec) sec.classList.toggle('hidden', k!==tab); const btn=document.getElementById(tabs[k]); if(btn){ if(k===tab){ btn.classList.add('bg-white','text-slate-800','shadow-sm'); btn.classList.remove('text-slate-500'); } else { btn.classList.remove('bg-white','shadow-sm','text-slate-800'); btn.classList.add('text-slate-500'); } } }); if(tab==='contas' && typeof RVContas!=='undefined') RVContas.render('fin-contas-container'); }
 
         // ====== DADOS ======
         async function fetchAllRecords(table) { let allRecords = []; let from=0; const step=1000; let keepFetching=true; while(keepFetching){ const {data,error}=await sb.from(table).select('*').range(from,from+step-1); if(error) throw error; if(data && data.length>0){ allRecords.push(...data); if(data.length<step) keepFetching=false; else from+=step; } else keepFetching=false; } return {data: allRecords}; }
@@ -1120,7 +1126,10 @@
                   resProducaoTerc,
                   resMedicoesEmpreita,
                   resVales,
-                  resValeAbat
+                  resValeAbat,
+                  resContas,
+                  resMov,
+                  resFaturas
               ] = await Promise.all([
                   fetchAllRecords('jsp_obras'),
                   fetchAllRecords('jsp_fornecedores'),
@@ -1133,7 +1142,10 @@
                   fetchAllRecords('jsp_producao_terc').catch(() => ({ data: [] })),
                   fetchAllRecords('jsp_medicoes_empreita').catch(() => ({ data: [] })),
                   fetchAllRecords('jsp_vales').catch(() => ({ data: [] })),
-                  fetchAllRecords('jsp_vale_abatimentos').catch(() => ({ data: [] }))
+                  fetchAllRecords('jsp_vale_abatimentos').catch(() => ({ data: [] })),
+                  fetchAllRecords('jsp_contas').catch(() => ({ data: [] })),
+                  fetchAllRecords('jsp_movimentacoes').catch(() => ({ data: [] })),
+                  fetchAllRecords('jsp_faturas').catch(() => ({ data: [] }))
               ]);
       
               STATE.obras = resObras.data || [];
@@ -1149,6 +1161,9 @@
               STATE.medicoes_empreita = resMedicoesEmpreita.data || [];
               STATE.vales = resVales.data || [];
               STATE.vale_abatimentos = resValeAbat.data || [];
+              STATE.contas = resContas.data || [];
+              STATE.movimentacoes = resMov.data || [];
+              STATE.faturas = resFaturas.data || [];
       
                   
               updateSelects();
