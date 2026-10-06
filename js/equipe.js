@@ -706,7 +706,7 @@ function carregarTabelaSaldoMetros() {
       // ========== MODAL ADMINISTRATIVO DE METROS ==========
 async function abrirModalAdminRegistrosMetros(tercId) {
     if (typeof usuarioPodeGerenciar !== 'function' || !usuarioPodeGerenciar()) {
-        alert("Acesso restrito. Permissão de gerenciamento necessária.");
+        RVUI.alert("Acesso restrito. Permissão de gerenciamento necessária.", { error: true });
         return;
     }
     
@@ -779,7 +779,7 @@ async function carregarListaAdminRegistrosMetros(tercId) {
 }
 
 async function excluirRegistroAdminMetros(registroId) {
-    if (!confirm("Tem certeza que deseja excluir este registro permanentemente? Esta ação não pode ser desfeita.")) {
+    if (!(await RVUI.confirm("Tem certeza que deseja excluir este registro permanentemente? Esta ação não pode ser desfeita.", { danger: true, confirmText: "Excluir" }))) {
         return;
     }
     
@@ -881,7 +881,7 @@ async function fecharPagamentoSaldoMetros() {
     confirmMsg += `\nBruto: ${formatMoney(valorBruto)}`;
     if (simValeMetro.total > 0) confirmMsg += `\nVales a abater: -${formatMoney(simValeMetro.total)}`;
     confirmMsg += `\nLíquido a pagar: ${formatMoney(valorTotal)}`;
-    if (!confirm(confirmMsg)) return;
+    if (!(await RVUI.confirm(confirmMsg))) return;
     
     showLoading(true);
     
@@ -966,7 +966,7 @@ async function estornarUltimoFechamentoMetros() {
     if (periodo) confirmMsg += `\nPeríodo: ${periodo}`;
     confirmMsg += `\n\nOs registros de metragem voltarão a ficar pendentes.`;
     
-    if (!confirm(confirmMsg)) return;
+    if (!(await RVUI.confirm(confirmMsg))) return;
 
     showLoading(true);
 
@@ -1197,10 +1197,10 @@ function imprimirReciboMetrosDoModal() {
 
       async function excluirRegistroPonto(registroId) {
           if (typeof usuarioPodeGerenciar !== 'function' || !usuarioPodeGerenciar()) {
-              alert("Acesso restrito. Permissão de gerenciamento necessária.");
+              RVUI.alert("Acesso restrito. Permissão de gerenciamento necessária.", { error: true });
               return;
           }
-          if (!confirm("Tem certeza que deseja excluir este registro permanentemente? Esta ação não pode ser desfeita.")) {
+          if (!(await RVUI.confirm("Tem certeza que deseja excluir este registro permanentemente? Esta ação não pode ser desfeita.", { danger: true, confirmText: "Excluir" }))) {
               return;
           }
           
@@ -1306,7 +1306,7 @@ async function fecharPagamentoSaldo() {
     confirmMsg += `\nBruto: ${formatMoney(valorBruto)}`;
     if (simValeDiaria.total > 0) confirmMsg += `\nVales a abater: -${formatMoney(simValeDiaria.total)}`;
     confirmMsg += `\nLíquido a pagar: ${formatMoney(valorTotal)}`;
-    if (!confirm(confirmMsg)) return;
+    if (!(await RVUI.confirm(confirmMsg))) return;
     
     showLoading(true);
     
@@ -1951,7 +1951,7 @@ async function estornarUltimoFechamento() {
     }
     confirmMsg += `\n\nOs registros de ponto voltarão a ficar pendentes.`;
     
-    if (!confirm(confirmMsg)) return;
+    if (!(await RVUI.confirm(confirmMsg))) return;
 
     showLoading(true);
 
@@ -2729,7 +2729,7 @@ async function saveTerc(e) {
 }
 
 async function toggleStatusTerc(id, isAtivo) {
-    if(!confirm(`Tem certeza que deseja ${isAtivo ? 'DESATIVAR' : 'REATIVAR'} este terceirizado?`)) return;
+    if(!(await RVUI.confirm(`Tem certeza que deseja ${isAtivo ? 'DESATIVAR' : 'REATIVAR'} este terceirizado?`, { danger: isAtivo }))) return;
     showLoading(true);
     const { error } = await sb.from('jsp_terceirizados').update({ ativo: !isAtivo }).eq('id', id);
     if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
@@ -2822,7 +2822,7 @@ async function lancarProducaoTerc() {
 }
 
 async function deleteProducaoTerc(prodId, tercId) {
-    if(!confirm("Remover esta medição?")) return;
+    if(!(await RVUI.confirm("Remover esta medição?", { danger: true, confirmText: "Remover" }))) return;
     showLoading(true);
     const { error } = await sb.from('jsp_producao_terc').delete().eq('id', prodId);
     if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
@@ -3002,7 +3002,7 @@ function imprimirRelatorioTerc() {
     const dataFim = document.getElementById('terc-filter-data-fim')?.value || '';
     const t = STATE.terceirizados.find(x => x.id == tercId);
 
-    if(!confirm(`Deseja dar baixa (Marcar como PAGO) em TODAS AS MEDIÇÕES PENDENTES no período selecionado para ${t.nome}?`)) return;
+    if(!(await RVUI.confirm(`Deseja dar baixa (Marcar como PAGO) em TODAS AS MEDIÇÕES PENDENTES no período selecionado para ${t.nome}?`, { confirmText: 'Dar baixa' }))) return;
 
     showLoading(true);
 
@@ -3164,7 +3164,7 @@ function imprimirRelatorioTerc() {
 
 async function abrirModalAdminRegistros(funcId) {
     if (typeof usuarioPodeGerenciar !== 'function' || !usuarioPodeGerenciar()) {
-        alert("Acesso restrito. Permissão de gerenciamento necessária.");
+        RVUI.alert("Acesso restrito. Permissão de gerenciamento necessária.", { error: true });
         return;
     }
     
@@ -3250,7 +3250,7 @@ async function carregarListaAdminRegistros(funcId) {
 }
 
 async function excluirRegistroAdmin(registroId) {
-    if (!confirm("Tem certeza que deseja excluir este registro permanentemente? Esta ação não pode ser desfeita.")) {
+    if (!(await RVUI.confirm("Tem certeza que deseja excluir este registro permanentemente? Esta ação não pode ser desfeita.", { danger: true, confirmText: "Excluir" }))) {
         return;
     }
     
@@ -3387,7 +3387,7 @@ function calcularResumoEmpreita(equipeId, dataInicio, dataFim) {
 
       async function toggleStatusTerceirizado(id, isAtivo) {
     const acao = isAtivo ? "DESATIVAR" : "REATIVAR";
-    if(!confirm(`Tem certeza que deseja ${acao} este terceirizado?`)) return;
+    if(!(await RVUI.confirm(`Tem certeza que deseja ${acao} este terceirizado?`, { danger: /desativar|excluir/i.test(acao) }))) return;
     
     showLoading(true);
     const { error } = await sb.from('jsp_terceirizados').update({ ativo: !isAtivo }).eq('id', id);
@@ -3570,7 +3570,7 @@ function calcularResumoEmpreita(equipeId, dataInicio, dataFim) {
 
         async function toggleStatusEquipe(id, isAtivo) {
           const acao = isAtivo ? "DESATIVAR" : "REATIVAR";
-          if (!confirm(`Tem certeza que deseja ${acao} este colaborador?`)) return;
+          if (!(await RVUI.confirm(`Tem certeza que deseja ${acao} este colaborador?`, { danger: /desativar|excluir/i.test(acao) }))) return;
           
           showLoading(true);
           try {
@@ -3689,9 +3689,9 @@ function carregarTabelaSaldoEmpreita() {
     }
 }
 
-function excluirMedicaoEmpreitaAdmin(medicaoId) {
+async function excluirMedicaoEmpreitaAdmin(medicaoId) {
     if (typeof usuarioPodeGerenciar !== 'function' || !usuarioPodeGerenciar()) {
-        alert('Acesso restrito. Permissão de gerenciamento necessária.');
+        RVUI.alert("Acesso restrito. Permissão de gerenciamento necessária.", { error: true });
         return;
     }
     const medicao = obterMedicoesEmpreita().find(m => m.id === medicaoId);
@@ -3702,7 +3702,7 @@ function excluirMedicaoEmpreitaAdmin(medicaoId) {
     const msg = medicao.status === 'PAGO'
         ? 'Este lançamento já está PAGO. Excluir mesmo assim? Ele sairá do histórico, mas a despesa financeira já lançada não será removida automaticamente.'
         : 'Tem certeza que deseja excluir este lançamento? Esta ação não pode ser desfeita.';
-    if (!confirm(msg)) return;
+    if (!(await RVUI.confirm(msg))) return;
     showLoading(true);
     (async () => {
         try {
@@ -3786,7 +3786,7 @@ async function fecharPagamentoSaldoEmpreita() {
     let confirmMsg = `Fechar pagamento de ${formatMoney(valorBruto)} (${percentTotal.toFixed(2)}% do contrato).`;
     if (simValeEmp.total > 0) confirmMsg += `\nVales a abater: -${formatMoney(simValeEmp.total)}`;
     confirmMsg += `\nLíquido a pagar: ${formatMoney(valorTotal)}`;
-    if (!confirm(confirmMsg)) return;
+    if (!(await RVUI.confirm(confirmMsg))) return;
     showLoading(true);
     const descricao = `Pagamento de empreita - ${func.nome} - Período ${periodoDesc}`;
     const observacaoEmp = `Fechamento de empreita - Colaborador: ${func.nome} - Percentual: ${percentTotal.toFixed(2)}% - Valor: ${valorBruto.toFixed(2)} - Bruto: ${valorBruto.toFixed(2)} - Vales: ${simValeEmp.total.toFixed(2)}`;
@@ -3857,7 +3857,7 @@ async function estornarUltimoFechamentoEmpreita() {
     ).sort((a, b) => new Date(b.data) - new Date(a.data));
     if (despesas.length === 0) return showToast('Nenhum pagamento de empreita para estornar.', true);
     const ultima = despesas[0];
-    if (!confirm(`Estornar o pagamento de ${formatMoney(ultima.valor_total)}? As medições voltam a ficar pendentes.`)) return;
+    if (!(await RVUI.confirm(`Estornar o pagamento de ${formatMoney(ultima.valor_total)}? As medições voltam a ficar pendentes.`, { danger: true, confirmText: 'Estornar' }))) return;
     showLoading(true);
     try {
         await filtrarLogPorRef(

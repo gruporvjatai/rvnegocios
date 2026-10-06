@@ -61,7 +61,7 @@
     const tipo = document.getElementById('doc-tipo-select').value;
     
     if (!tipo) {
-        alert("Por favor, selecione um documento na lista antes de imprimir.");
+        if (typeof RVUI !== 'undefined') RVUI.alert("Por favor, selecione um documento na lista antes de imprimir.", { error: true });
         return;
     }
 
@@ -74,7 +74,7 @@
     }
 
     if (!pessoa) {
-        alert("Erro ao encontrar os dados do colaborador.");
+        if (typeof RVUI !== 'undefined') RVUI.alert("Erro ao encontrar os dados do colaborador.", { error: true });
         return;
     }
 

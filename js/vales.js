@@ -429,7 +429,7 @@
         if (log && log.status_financeiro === 'PAGO')
             return showToast('Vale ja baixado no financeiro. Estorne a baixa antes.', true);
 
-        if (!confirm('Estornar o vale de ' + vMoney(v.valor) + ' de ' + (v.colaborador_nome || '') + '? A despesa sera cancelada no financeiro.')) return;
+        if (!(await RVUI.confirm('Estornar o vale de ' + vMoney(v.valor) + ' de ' + (v.colaborador_nome || '') + '? A despesa sera cancelada no financeiro.', { danger: true, confirmText: 'Estornar' }))) return;
 
         showLoading(true);
         try {
