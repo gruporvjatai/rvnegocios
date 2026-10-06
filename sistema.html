@@ -233,7 +233,8 @@
             </div>
         </div>
         
-        <div id="fin-cards-container" class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-6"></div>
+        <div id="fin-cards-container" class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-2"></div>
+        <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wide mb-4">Cards: totais pagos da obra selecionada. Busca, status e datas filtram so a lista.</p>
         
         <!-- sub abas -->
         <div class="flex border-b border-slate-200 mb-4">
@@ -2574,7 +2575,6 @@
             const obraFilter = document.getElementById('fin-obra-filter').value;
             let logsFilt = STATE.logs.filter(l => l.tipo !== 'oc_pendente' && l.status_financeiro !== 'CANCELADO');
             
-            let totDesp = 0; let totRec = 0;
             let valorContratoFiltrado = 0;
 
             if(obraFilter) {
@@ -2582,6 +2582,13 @@
                 const o = STATE.obras.find(x => x.id == obraFilter);
                 if(o) valorContratoFiltrado = parseFloat(o.valor_contrato) || 0;
             }
+
+            const totDesp = logsFilt
+                .filter(l => (l.tipo === 'compra' || l.tipo === 'despesa') && l.status_financeiro === 'PAGO')
+                .reduce((acc, l) => acc + (parseFloat(l.valor_total) || 0), 0);
+            const totRec = logsFilt
+                .filter(l => l.tipo === 'receita' && l.status_financeiro === 'PAGO')
+                .reduce((acc, l) => acc + (parseFloat(l.valor_total) || 0), 0);
 
             const listaDesp = document.getElementById('fin-expense-history-list');
             let despArrRaw = logsFilt.filter(l => l.tipo === 'compra' || l.tipo === 'despesa');
@@ -2615,7 +2622,6 @@
             
             listaDesp.innerHTML = despArr.map(l => {
                 const isPago = l.status_financeiro === 'PAGO';
-                if(isPago) totDesp += parseFloat(l.valor_total);
                 
                 const obra = STATE.obras.find(x=>x.id==l.obra_id);
                 const extraInfo = (!l.is_oc && l.observacao) ? `<div class="text-[9px] text-slate-500 font-bold uppercase mt-0.5">${l.observacao}</div>` : '';
@@ -2675,7 +2681,6 @@
             
             listaRec.innerHTML = recArr.map(l => {
                 const isPago = l.status_financeiro === 'PAGO';
-                if(isPago) totRec += parseFloat(l.valor_total);
 
                 const obra = STATE.obras.find(x=>x.id==l.obra_id);
                 const extraInfo = (l.observacao) ? `<div class="text-[9px] text-slate-500 font-bold uppercase mt-0.5">${l.observacao}</div>` : '';
