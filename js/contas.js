@@ -648,6 +648,7 @@
         var wrap = document.createElement('div');
         wrap.innerHTML = html;
         document.body.appendChild(wrap);
+        if (global.RVModals) global.RVModals.registerAll();
         icons();
     }
 

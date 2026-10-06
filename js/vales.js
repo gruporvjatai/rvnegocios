@@ -216,6 +216,7 @@
                 '</div>' +
             '</div>';
         document.body.appendChild(div);
+        if (typeof RVModals !== 'undefined') RVModals.registerAll();
     }
 
     function popularSelectVale(selecionadoId) {
@@ -251,6 +252,7 @@
             sel.disabled = false;
         }
         renderTabelaVales(colabId || (sel ? sel.value : ''));
+        if (typeof RVModals !== 'undefined') RVModals.clearDirty('modal-vale');
         document.getElementById('modal-vale').classList.remove('hidden');
         if (typeof lucide !== 'undefined') lucide.createIcons();
     }
@@ -345,6 +347,7 @@
                 await loadData();
                 renderTabelaVales(colabId);
                 showLoading(false);
+                if (typeof RVModals !== 'undefined') RVModals.clearDirty('modal-vale');
                 showToast('Vale atualizado.');
                 return;
             }
@@ -390,6 +393,7 @@
             document.getElementById('vale-observacao').value = '';
             renderTabelaVales(colabId);
             showLoading(false);
+            if (typeof RVModals !== 'undefined') RVModals.clearDirty('modal-vale');
             showToast('Vale lancado! Despesa criada como pendente no financeiro.');
         } catch (err) {
             showLoading(false);
@@ -414,6 +418,7 @@
         document.getElementById('vale-modal-title').innerText = 'Editar Vale / Adiantamento';
         document.getElementById('vale-save-btn').innerHTML = '<i data-lucide="save" class="w-4 h-4"></i> Atualizar Vale';
         renderTabelaVales(v.colaborador_id);
+        if (typeof RVModals !== 'undefined') RVModals.clearDirty('modal-vale');
         document.getElementById('modal-vale').classList.remove('hidden');
         if (typeof lucide !== 'undefined') lucide.createIcons();
     }
