@@ -73,7 +73,7 @@
             
             fil.forEach(c => {
                 const phoneClean = (c.telefone || '').replace(/\D/g, '');
-                const wppBtn = phoneClean ? `<a href="https://wa.me/55${phoneClean}" target="_blank" class="p-1.5 border border-green-200 text-green-600 hover:bg-green-50 rounded bg-green-50/50" title="WhatsApp"><i data-lucide="message-circle" width="14"></i></a>` : '';
+                const wppBtn = phoneClean ? `<a href="https://wa.me/55${phoneClean}" target="_blank" class="h-8 w-8 border border-green-200 text-green-600 hover:bg-green-50 rounded bg-green-50/50 flex items-center justify-center" title="WhatsApp"><i data-lucide="message-circle" width="14"></i></a>` : '';
                 
                 const obraAtual = STATE.obras.find(o => o.id == c.obra_atual_id);
                 const nomeObra = obraAtual ? obraAtual.nome : '<span class="text-slate-400 italic">Sem obra fixa</span>';
@@ -94,31 +94,31 @@
                 let botoesAcao = '';
                 if (c.tipo === 'diaria') {
                     botoesAcao = `
-                        <button onclick="abrirModalSaldo('${c.id}')" class="p-1.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded shadow font-bold text-[10px] flex items-center gap-1">
+                        <button onclick="abrirModalSaldo('${c.id}')" class="h-8 px-2.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded shadow font-bold text-[10px] flex items-center gap-1">
                             <i data-lucide="calculator" width="12"></i> CALCULAR
                         </button>
                         ${wppBtn}
-                        <button onclick="abrirMenuAcoesEquipe(event, '${c.id}', 'diaria', ${c.ativo !== false})" class="p-1.5 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Mais opções">
+                        <button onclick="abrirMenuAcoesEquipe(event, '${c.id}', 'diaria', ${c.ativo !== false})" class="h-8 w-8 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded flex items-center justify-center" title="Mais opções">
                             ${RV_MORE_ICON_SVG}
                         </button>
                     `;
                 } else if (c.tipo === 'empreita') {
                     botoesAcao = `
-                        <button onclick="abrirModalSaldoEmpreita('${c.id}')" class="p-1.5 bg-amber-700 text-white hover:bg-amber-800 rounded shadow font-bold text-[10px] flex items-center gap-1">
+                        <button onclick="abrirModalSaldoEmpreita('${c.id}')" class="h-8 px-2.5 bg-amber-700 text-white hover:bg-amber-800 rounded shadow font-bold text-[10px] flex items-center gap-1">
                             <i data-lucide="calculator" width="12"></i> CALCULAR
                         </button>
                         ${wppBtn}
-                        <button onclick="abrirMenuAcoesEquipe(event, '${c.id}', 'empreita', ${c.ativo !== false})" class="p-1.5 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Mais opções">
+                        <button onclick="abrirMenuAcoesEquipe(event, '${c.id}', 'empreita', ${c.ativo !== false})" class="h-8 w-8 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded flex items-center justify-center" title="Mais opções">
                             ${RV_MORE_ICON_SVG}
                         </button>
                     `;
                 } else {
                     botoesAcao = `
-                        <button onclick="abrirModalSaldoMetros('${c.id}')" class="px-2 py-1.5 bg-slate-800 text-white hover:bg-black rounded shadow font-bold text-[10px] flex items-center gap-1">
+                        <button onclick="abrirModalSaldoMetros('${c.id}')" class="h-8 px-2.5 bg-slate-800 text-white hover:bg-black rounded shadow font-bold text-[10px] flex items-center gap-1">
                             <i data-lucide="calculator" width="12"></i> CALCULAR
                         </button>
                         ${wppBtn}
-                        <button onclick="abrirMenuAcoesEquipe(event, '${c.id}', 'metro', ${c.ativo !== false})" class="p-1.5 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Mais opções">
+                        <button onclick="abrirMenuAcoesEquipe(event, '${c.id}', 'metro', ${c.ativo !== false})" class="h-8 w-8 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded flex items-center justify-center" title="Mais opções">
                             ${RV_MORE_ICON_SVG}
                         </button>
                     `;
@@ -172,7 +172,7 @@
                 }
 
       // ====== MENU "MAIS OPCOES" DAS ACOES DO COLABORADOR ======
-      const RV_MORE_ICON_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.9"></circle><circle cx="12" cy="12" r="1.9"></circle><circle cx="12" cy="19" r="1.9"></circle></svg>';
+      const RV_MORE_ICON_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="display:block"><circle cx="12" cy="5" r="1.9"></circle><circle cx="12" cy="12" r="1.9"></circle><circle cx="12" cy="19" r="1.9"></circle></svg>';
 
       function fecharMenuAcoesEquipe() {
           const m = document.getElementById('rv-menu-acoes');

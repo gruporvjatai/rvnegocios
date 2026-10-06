@@ -2699,10 +2699,10 @@
                 tfootDesp.innerHTML = `<tr>
                     <td class="p-3 text-[10px] font-bold uppercase text-slate-500" colspan="2">${despArr.length} lancamento(s) filtrado(s)</td>
                     <td class="p-3 text-right" colspan="2">
-                        <div class="flex flex-col items-end gap-0.5">
-                            <span class="text-[10px] font-bold text-slate-500 uppercase">Pendente ${formatMoney(totDespFiltPend)}</span>
-                            <span class="text-[10px] font-bold text-green-700 uppercase">Pago ${formatMoney(totDespFiltPago)}</span>
-                            <span class="text-sm font-black text-red-600">Total ${formatMoney(totDespFiltGeral)}</span>
+                        <div class="flex flex-wrap items-center justify-end gap-x-4 gap-y-1">
+                            <span class="text-[10px] font-bold text-slate-500 uppercase whitespace-nowrap">Pendente ${formatMoney(totDespFiltPend)}</span>
+                            <span class="text-[10px] font-bold text-green-700 uppercase whitespace-nowrap">Pago ${formatMoney(totDespFiltPago)}</span>
+                            <span class="text-sm font-black text-red-600 whitespace-nowrap">Total ${formatMoney(totDespFiltGeral)}</span>
                         </div>
                     </td>
                 </tr>`;
@@ -2760,10 +2760,10 @@
                 tfootRec.innerHTML = `<tr>
                     <td class="p-3 text-[10px] font-bold uppercase text-slate-500" colspan="2">${recArr.length} lancamento(s) filtrado(s)</td>
                     <td class="p-3 text-right" colspan="2">
-                        <div class="flex flex-col items-end gap-0.5">
-                            <span class="text-[10px] font-bold text-slate-500 uppercase">A receber ${formatMoney(totRecFiltPend)}</span>
-                            <span class="text-[10px] font-bold text-green-700 uppercase">Recebido ${formatMoney(totRecFiltPago)}</span>
-                            <span class="text-sm font-black text-green-700">Total ${formatMoney(totRecFiltGeral)}</span>
+                        <div class="flex flex-wrap items-center justify-end gap-x-4 gap-y-1">
+                            <span class="text-[10px] font-bold text-slate-500 uppercase whitespace-nowrap">A receber ${formatMoney(totRecFiltPend)}</span>
+                            <span class="text-[10px] font-bold text-green-700 uppercase whitespace-nowrap">Recebido ${formatMoney(totRecFiltPago)}</span>
+                            <span class="text-sm font-black text-green-700 whitespace-nowrap">Total ${formatMoney(totRecFiltGeral)}</span>
                         </div>
                     </td>
                 </tr>`;
@@ -4287,7 +4287,7 @@
      <script src="js/equipe-core.js?v=20261006c"></script>
      <script src="js/precos.js?v=20261006a"></script>
      <script src="js/contrato.js?v=20260922c"></script>
-     <script src="js/equipe.js?v=20261006d"></script>
+     <script src="js/equipe.js?v=20261006e"></script>
      <script src="js/vales.js?v=20261006c"></script>
   </body>
 </html>
