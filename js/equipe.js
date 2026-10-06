@@ -94,7 +94,7 @@
                 let botoesAcao = '';
                 if (c.tipo === 'diaria') {
                     botoesAcao = `
-                        <button onclick="abrirModalSaldo('${c.id}')" class="h-8 px-2.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded shadow font-bold text-[10px] flex items-center gap-1">
+                        <button onclick="abrirModalSaldo('${c.id}')" class="h-8 px-2.5 bg-sky-600 text-white hover:bg-sky-700 rounded shadow font-bold text-[10px] flex items-center gap-1">
                             <i data-lucide="calculator" width="12"></i> CALCULAR
                         </button>
                         ${wppBtn}
@@ -114,7 +114,7 @@
                     `;
                 } else {
                     botoesAcao = `
-                        <button onclick="abrirModalSaldoMetros('${c.id}')" class="h-8 px-2.5 bg-sky-700 text-white hover:bg-sky-800 rounded shadow font-bold text-[10px] flex items-center gap-1">
+                        <button onclick="abrirModalSaldoMetros('${c.id}')" class="h-8 px-2.5 bg-indigo-800 text-white hover:bg-indigo-900 rounded shadow font-bold text-[10px] flex items-center gap-1">
                             <i data-lucide="calculator" width="12"></i> CALCULAR
                         </button>
                         ${wppBtn}
