@@ -207,20 +207,26 @@
         </div>
 
         <div class="flex gap-2 mb-4 bg-slate-200 p-1 rounded-xl">
-            <button onclick="toggleFinTab('despesas')" id="tab-despesas" class="flex-1 py-1.5 text-xs font-bold bg-white text-slate-800 rounded-lg shadow-sm transition-colors">Custos</button>
-            <button onclick="toggleFinTab('receitas')" id="tab-receitas" class="flex-1 py-1.5 text-xs font-bold text-slate-500 rounded-lg transition-colors">Medições</button>
-            <button onclick="toggleFinTab('contas')" id="tab-contas" class="flex-1 py-1.5 text-xs font-bold text-slate-500 rounded-lg transition-colors">Contas</button>
+            <button onclick="toggleFinTop('mov')" id="fintop-mov" class="flex-1 py-1.5 text-xs font-bold bg-white text-slate-800 rounded-lg shadow-sm transition-colors">Entradas e Despesas</button>
+            <button onclick="toggleFinTop('contas')" id="fintop-contas" class="flex-1 py-1.5 text-xs font-bold text-slate-500 rounded-lg transition-colors">Contas</button>
         </div>
 
-        <div id="fin-section-despesas">
-            <div id="fin-expense-history-list" class="flex flex-col gap-2 pb-4"></div>
+        <div id="fin-sec-mov">
+            <div class="flex gap-2 mb-4 bg-slate-200 p-1 rounded-xl">
+                <button onclick="toggleFinTab('despesas')" id="tab-despesas" class="flex-1 py-1.5 text-xs font-bold bg-white text-slate-800 rounded-lg shadow-sm transition-colors">Custos</button>
+                <button onclick="toggleFinTab('receitas')" id="tab-receitas" class="flex-1 py-1.5 text-xs font-bold text-slate-500 rounded-lg transition-colors">Medições</button>
+            </div>
+
+            <div id="fin-section-despesas">
+                <div id="fin-expense-history-list" class="flex flex-col gap-2 pb-4"></div>
+            </div>
+
+            <div id="fin-section-receitas" class="hidden">
+                <div id="fin-receivables-list" class="flex flex-col gap-2 pb-4"></div>
+            </div>
         </div>
 
-        <div id="fin-section-receitas" class="hidden">
-            <div id="fin-receivables-list" class="flex flex-col gap-2 pb-4"></div>
-        </div>
-
-        <div id="fin-section-contas" class="hidden">
+        <div id="fin-sec-contas" class="hidden">
             <div id="fin-contas-container"></div>
         </div>
       </div>
@@ -1075,7 +1081,7 @@
           if(activeBtn && viewId !== 'pos') activeBtn.classList.add('nav-active');
           if(viewId === 'dash') renderDashboard();
           if(viewId === 'oc') { updateSelects(); renderOCList(); }
-          if(viewId === 'fin') { updateSelects(); renderFinance(); }
+          if(viewId === 'fin') { updateSelects(); renderFinance(); toggleFinTop('mov'); }
           if(viewId === 'fornecedores') renderFornecedores();
           if(viewId === 'prod') renderProducts();
           if(viewId === 'equipe') { updateSelects(); renderEquipe(); }
@@ -1085,7 +1091,8 @@
 
         function openNovaOC() { document.getElementById('view-oc').classList.replace('active-section', 'hidden-section'); document.getElementById('view-pos').classList.replace('hidden-section', 'active-section'); updateSelects(); window.scrollTo(0,0); }
         function closeNovaOC() { document.getElementById('view-pos').classList.replace('active-section', 'hidden-section'); document.getElementById('view-oc').classList.replace('hidden-section', 'active-section'); clearCart(); renderOCList(); }
-        function toggleFinTab(tab) { const secs={despesas:'fin-section-despesas',receitas:'fin-section-receitas',contas:'fin-section-contas'}; const tabs={despesas:'tab-despesas',receitas:'tab-receitas',contas:'tab-contas'}; Object.keys(secs).forEach(function(k){ const sec=document.getElementById(secs[k]); if(sec) sec.classList.toggle('hidden', k!==tab); const btn=document.getElementById(tabs[k]); if(btn){ if(k===tab){ btn.classList.add('bg-white','text-slate-800','shadow-sm'); btn.classList.remove('text-slate-500'); } else { btn.classList.remove('bg-white','shadow-sm','text-slate-800'); btn.classList.add('text-slate-500'); } } }); if(tab==='contas' && typeof RVContas!=='undefined') RVContas.render('fin-contas-container'); }
+        function toggleFinTop(tab) { const mov=document.getElementById('fin-sec-mov'); const contas=document.getElementById('fin-sec-contas'); const bMov=document.getElementById('fintop-mov'); const bContas=document.getElementById('fintop-contas'); const ativo=(tab==='contas'); if(bMov&&bContas){ const bOn=ativo?bContas:bMov; const bOff=ativo?bMov:bContas; bOn.classList.add('bg-white','text-slate-800','shadow-sm'); bOn.classList.remove('text-slate-500'); bOff.classList.remove('bg-white','shadow-sm','text-slate-800'); bOff.classList.add('text-slate-500'); } if(mov) mov.classList.toggle('hidden', ativo); if(contas) contas.classList.toggle('hidden', !ativo); if(ativo && typeof RVContas!=='undefined') RVContas.render('fin-contas-container'); }
+        function toggleFinTab(tab) { if(tab==='contas') return toggleFinTop('contas'); if(tab==='mov') return toggleFinTop('mov'); const secs={despesas:'fin-section-despesas',receitas:'fin-section-receitas'}; const tabs={despesas:'tab-despesas',receitas:'tab-receitas'}; Object.keys(secs).forEach(function(k){ const sec=document.getElementById(secs[k]); if(sec) sec.classList.toggle('hidden', k!==tab); const btn=document.getElementById(tabs[k]); if(btn){ if(k===tab){ btn.classList.add('bg-white','text-slate-800','shadow-sm'); btn.classList.remove('text-slate-500'); } else { btn.classList.remove('bg-white','shadow-sm','text-slate-800'); btn.classList.add('text-slate-500'); } } }); }
 
         // ====== DADOS ======
         async function fetchAllRecords(table) { let allRecords = []; let from=0; const step=1000; let keepFetching=true; while(keepFetching){ const {data,error}=await sb.from(table).select('*').range(from,from+step-1); if(error) throw error; if(data && data.length>0){ allRecords.push(...data); if(data.length<step) keepFetching=false; else from+=step; } else keepFetching=false; } return {data: allRecords}; }

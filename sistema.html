@@ -231,7 +231,7 @@
       <div id="view-fin" class="hidden-section">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <h2 class="text-2xl font-bold text-slate-800">Financeiro das Obras</h2>
-            <div class="w-full md:w-1/3">
+            <div id="fin-obra-filter-wrap" class="w-full md:w-1/3">
                 <label class="text-xs font-bold text-slate-500 uppercase">Filtrar por Obra</label>
                 <select id="fin-obra-filter" onchange="renderFinance()" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white font-bold text-blue-700 shadow-sm focus:border-blue-600 outline-none">
                     <option value="">Todas as Obras / Geral</option>
@@ -239,21 +239,29 @@
             </div>
         </div>
         
-        <div id="fin-cards-container" class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-2"></div>
-        <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wide mb-4">Cards: totais pagos da obra selecionada. Busca, status e datas filtram so a lista abaixo.</p>
-        
-        <!-- sub abas -->
-        <div class="flex border-b border-slate-200 mb-4">
-            <button id="tab-pagar" onclick="switchFinTab('pagar')" class="px-6 py-3 font-bold text-sm uppercase tracking-wider text-slate-600 border-b-2 border-blue-600 transition">
-                <i data-lucide="arrow-up-circle" class="inline w-4 h-4 mr-2"></i> Contas a Pagar
+        <!-- Sub-abas principais: Entradas e Despesas / Contas -->
+        <div class="flex border-b-2 border-slate-300 mb-4 gap-2">
+            <button id="fintop-mov" onclick="switchFinTop('mov')" class="px-6 py-3 font-black text-sm uppercase tracking-wider text-slate-800 border-b-2 border-blue-600 -mb-[2px] transition flex items-center gap-2">
+                <i data-lucide="arrow-left-right" class="w-4 h-4"></i> Entradas e Despesas
             </button>
-            <button id="tab-receber" onclick="switchFinTab('receber')" class="px-6 py-3 font-bold text-sm uppercase tracking-wider text-slate-400 border-b-2 border-transparent hover:border-slate-300 transition">
-                <i data-lucide="arrow-down-circle" class="inline w-4 h-4 mr-2"></i> Entrada Medições 
-            </button>
-            <button id="tab-contas" onclick="switchFinTab('contas')" class="px-6 py-3 font-bold text-sm uppercase tracking-wider text-slate-400 border-b-2 border-transparent hover:border-slate-300 transition">
-                <i data-lucide="wallet" class="inline w-4 h-4 mr-2"></i> Contas
+            <button id="fintop-contas" onclick="switchFinTop('contas')" class="px-6 py-3 font-black text-sm uppercase tracking-wider text-slate-400 border-b-2 border-transparent hover:border-slate-300 -mb-[2px] transition flex items-center gap-2">
+                <i data-lucide="wallet" class="w-4 h-4"></i> Contas
             </button>
         </div>
+
+        <div id="fin-sec-mov">
+            <div id="fin-cards-container" class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-2"></div>
+            <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wide mb-4">Cards: totais pagos da obra selecionada. Busca, status e datas filtram so a lista abaixo.</p>
+            
+            <!-- sub abas -->
+            <div class="flex border-b border-slate-200 mb-4">
+                <button id="tab-pagar" onclick="switchFinTab('pagar')" class="px-6 py-3 font-bold text-sm uppercase tracking-wider text-slate-600 border-b-2 border-blue-600 transition">
+                    <i data-lucide="arrow-up-circle" class="inline w-4 h-4 mr-2"></i> Contas a Pagar
+                </button>
+                <button id="tab-receber" onclick="switchFinTab('receber')" class="px-6 py-3 font-bold text-sm uppercase tracking-wider text-slate-400 border-b-2 border-transparent hover:border-slate-300 transition">
+                    <i data-lucide="arrow-down-circle" class="inline w-4 h-4 mr-2"></i> Entrada Medições 
+                </button>
+            </div>
         
         <!-- Container Contas a Pagar -->
         <div id="fin-pagar-container" class="bg-white rounded-xl border shadow-sm flex flex-col h-[650px]">
@@ -355,8 +363,12 @@
             </div>
         </div>
 
+        </div><!-- /fin-sec-mov -->
+
         <!-- Container Contas / Carteiras / Cartao -->
-        <div id="fin-contas-container" class="hidden"></div>
+        <div id="fin-sec-contas" class="hidden">
+            <div id="fin-contas-container"></div>
+        </div>
       </div>
 
       <div id="view-equipe" class="hidden-section">
@@ -1762,7 +1774,7 @@
             if(viewId === 'pos') { updateSelects(); }
             if(viewId === 'oc') renderOCList();
            //if(viewId === 'fin') { updateSelects(); renderFinance(); }
-            if(viewId === 'fin') { updateSelects(); renderFinance(); switchFinTab('pagar'); }
+            if(viewId === 'fin') { updateSelects(); renderFinance(); switchFinTop('mov'); switchFinTab('pagar'); }
             if(viewId === 'equipe') renderEquipe();
             if(viewId === 'fornecedores') renderFornecedores();
             if(viewId === 'prod') renderProducts();
@@ -4281,24 +4293,44 @@
         }
 
 
+      function switchFinTop(tab) {
+          const mov = document.getElementById('fin-sec-mov');
+          const contas = document.getElementById('fin-sec-contas');
+          const bMov = document.getElementById('fintop-mov');
+          const bContas = document.getElementById('fintop-contas');
+          const ativo = (tab === 'contas');
+          const onCls = ['border-blue-600', 'text-slate-800'];
+          const offCls = ['border-transparent', 'text-slate-400'];
+          if (bMov && bContas) {
+              const bOn = ativo ? bContas : bMov;
+              const bOff = ativo ? bMov : bContas;
+              bOn.classList.remove(...offCls); bOn.classList.add(...onCls);
+              bOff.classList.remove(...onCls); bOff.classList.add(...offCls);
+          }
+          if (mov) mov.classList.toggle('hidden', ativo);
+          if (contas) contas.classList.toggle('hidden', !ativo);
+          const filtroWrap = document.getElementById('fin-obra-filter-wrap');
+          if (filtroWrap) filtroWrap.classList.toggle('hidden', ativo);
+          if (ativo && typeof RVContas !== 'undefined') RVContas.render('fin-contas-container');
+      }
+
       function switchFinTab(tab) {
+          if (tab === 'contas') return switchFinTop('contas');
+          if (tab === 'mov') return switchFinTop('mov');
           const btnPagar = document.getElementById('tab-pagar');
           const btnReceber = document.getElementById('tab-receber');
-          const btnContas = document.getElementById('tab-contas');
           const containerPagar = document.getElementById('fin-pagar-container');
           const containerReceber = document.getElementById('fin-receber-container');
-          const containerContas = document.getElementById('fin-contas-container');
-          const allBtns = [btnPagar, btnReceber, btnContas].filter(Boolean);
-          const allCtrs = [containerPagar, containerReceber, containerContas].filter(Boolean);
-          allBtns.forEach(b => { b.classList.remove('border-blue-600', 'text-slate-600'); b.classList.add('text-slate-400', 'border-transparent'); });
-          allCtrs.forEach(c => c.classList.add('hidden'));
-
-          const map = { pagar: [btnPagar, containerPagar], receber: [btnReceber, containerReceber], contas: [btnContas, containerContas] };
-          const sel = map[tab] || map.pagar;
-          if (sel[0]) { sel[0].classList.add('border-blue-600', 'text-slate-600'); sel[0].classList.remove('text-slate-400', 'border-transparent'); }
-          if (sel[1]) sel[1].classList.remove('hidden');
-          if (tab === 'contas' && typeof RVContas !== 'undefined') RVContas.render('fin-contas-container');
-      }     
+          const pagar = (tab !== 'receber');
+          if (btnPagar && btnReceber) {
+              const bOn = pagar ? btnPagar : btnReceber;
+              const bOff = pagar ? btnReceber : btnPagar;
+              bOn.classList.add('border-blue-600', 'text-slate-600'); bOn.classList.remove('text-slate-400', 'border-transparent');
+              bOff.classList.remove('border-blue-600', 'text-slate-600'); bOff.classList.add('text-slate-400', 'border-transparent');
+          }
+          if (containerPagar) containerPagar.classList.toggle('hidden', !pagar);
+          if (containerReceber) containerReceber.classList.toggle('hidden', pagar);
+      }
 
 
       async function duplicarOC(id) {
