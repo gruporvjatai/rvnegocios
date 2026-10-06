@@ -1537,6 +1537,7 @@
             if(statusFiltro==='PENDENTE') registros=registros.filter(p=>!p.pago_em_fechamento);
             else if(statusFiltro==='PAGO') registros=registros.filter(p=>p.pago_em_fechamento===true);
             function diffMinutesUTC(start,end){ return (new Date(end)-new Date(start))/(1000*60); }
+            function formatHoraUTC(isoString){ if(!isoString) return '--:--'; const d=new Date(isoString); return String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0'); }
             function roundHalfDown(v){ if(v<=0) return 0; if(v>=1) return 1; let cents=v*100; let dec=cents-Math.floor(cents); if(Math.abs(dec-0.5)<0.0001) return Math.floor(cents)/100; return Math.round(cents)/100; }
             const porDia={};
             registros.forEach(p=>{ const dataDia=new Date(p.hora_registro).toLocaleDateString('pt-BR',{timeZone:'UTC'}); if(!porDia[dataDia]) porDia[dataDia]={entradas:[],saidas:[],ajustes:[]}; if(p.tipo==='ENTRADA') porDia[dataDia].entradas.push(p.hora_registro); else if(p.tipo==='SAIDA') porDia[dataDia].saidas.push(p.hora_registro); else if(p.tipo==='AJUSTE_MANUAL') porDia[dataDia].ajustes.push(p); });
