@@ -2609,7 +2609,10 @@
             const parsed = parseObsDespesa(l.observacao);
             document.getElementById('exp-tipo').value = parsed.tipo || 'Material/Produto';
             toggleEquipeSelect();
-            if (parsed.equipe) document.getElementById('exp-equipe').value = parsed.equipe;
+            if (parsed.equipe || l.equipe_id) {
+                const eqId = l.equipe_id || (STATE.equipe.find(x => window.rvEqFold(x.nome, parsed.equipe)) || {}).id || '';
+                if (eqId) document.getElementById('exp-equipe').value = eqId;
+            }
             document.getElementById('exp-modal-title-text').innerText = 'Editar Despesa / Custo';
             document.getElementById('exp-save-btn').innerText = 'Atualizar Despesa';
             document.getElementById('modal-expense').classList.remove('hidden');
@@ -3155,7 +3158,7 @@
             const status = document.getElementById('exp-status-val').value;
             
             const tipoLancamento = document.getElementById('exp-tipo').value;
-            const equipeNome = document.getElementById('exp-equipe').value;
+            const equipeId = document.getElementById('exp-equipe').value;
             const faseObra = document.getElementById('exp-fase').value;
             const categoria = document.getElementById('exp-categoria').value;
             const forma = document.getElementById('exp-forma').value || 'Dinheiro';
@@ -3169,7 +3172,10 @@
 
             let obsArr = [];
             obsArr.push(`Tipo: ${tipoLancamento}`);
-            if(tipoLancamento === 'Mão de Obra' && equipeNome) obsArr.push(`Equipe: ${equipeNome}`);
+            if(tipoLancamento === 'Mão de Obra' && equipeId) {
+                const eq = STATE.equipe.find(x => String(x.id) === String(equipeId));
+                obsArr.push(`Equipe: ${eq ? eq.nome : equipeId}`);
+            }
             
             const obsFinal = obsArr.join(' | ');
             const uidEdit = document.getElementById('exp-id').value;
@@ -3189,7 +3195,8 @@
                 observacao: obsFinal,
                 forma_pagamento: forma,
                 conta_id: contaId,
-                eh_cartao: ehCartao
+                eh_cartao: ehCartao,
+                equipe_id: (tipoLancamento === 'Mão de Obra' && equipeId) ? equipeId : null
             };
 
             let logUid = uidEdit;
@@ -4103,11 +4110,9 @@
             document.getElementById('hist-prod-name').innerText = prodNome;
             const tbody = document.getElementById('hist-prod-list');
             
-            let historico = STATE.logs.filter(l => {
-                if (l.tipo !== 'compra') return false;
-                if (prod && l.produto_id) return Number(l.produto_id) === Number(prod.id);
-                return window.rvEqFold(l.produto_nome, prodNome);
-            });
+            let historico = STATE.logs.filter(l =>
+                l.tipo === 'compra' && prod && l.produto_id && Number(l.produto_id) === Number(prod.id)
+            );
             
             if(historico.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400 font-medium">Nenhuma compra registrada para este material ainda.</td></tr>`;

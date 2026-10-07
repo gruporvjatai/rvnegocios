@@ -942,7 +942,9 @@ async function fecharPagamentoSaldoMetros() {
         vencimento: new Date().toISOString(),
         status_financeiro: statusFin,
         categoria: 'Mão de Obra (Terceirizado)',
-        observacao: `Fechamento de metragem - Terceirizado: ${terc.nome} - Total metros: ${totalMetros.toFixed(2)} - Bruto: ${valorBruto.toFixed(2)} - Vales: ${simValeMetro.total.toFixed(2)}`
+        observacao: `Fechamento de metragem - Terceirizado: ${terc.nome} - Total metros: ${totalMetros.toFixed(2)} - Bruto: ${valorBruto.toFixed(2)} - Vales: ${simValeMetro.total.toFixed(2)}`,
+        ref_tipo: 'metragem',
+        ref_uuid: tercId
     }]).select('uid');
     
     if (errFin) {
@@ -983,12 +985,13 @@ async function estornarUltimoFechamentoMetros() {
     const terc = STATE.terceirizados.find(t => t.id === tercId);
     if (!terc) return;
 
-    // Busca a despesa mais recente gerada para este terceirizado (metragem)
-    const despesas = STATE.logs.filter(l => 
-        l.tipo === 'despesa' &&
-        l.produto_nome && window.rvHasFold(l.produto_nome, `Pagamento de metragem - ${terc.nome}`) &&
-        (l.status_financeiro === 'PENDENTE' || l.status_financeiro === 'PAGO')
-    ).sort((a, b) => new Date(b.data) - new Date(a.data));
+    // Busca a despesa mais recente do fechamento deste terceirizado:
+    // preferencia por ref_tipo/ref_uuid; fallback legado por descricao.
+    const despesas = rvFechamentoCandidatos(STATE.logs, {
+        refTipo: 'metragem',
+        refUuid: tercId,
+        nome: `Pagamento de metragem - ${terc.nome}`
+    });
 
     if (despesas.length === 0) {
         return showToast('Nenhum pagamento de metragem encontrado para estornar.', true);
@@ -1367,7 +1370,10 @@ async function fecharPagamentoSaldo() {
         vencimento: new Date().toISOString(),
         status_financeiro: statusFin,
         categoria: 'Mão de Obra',
-        observacao: `Fechamento de ponto - Funcionário: ${func.nome} - Total diárias: ${totalDiarias.toFixed(2)} - Bruto: ${valorBruto.toFixed(2)} - Vales: ${simValeDiaria.total.toFixed(2)}`
+        observacao: `Fechamento de ponto - Funcionário: ${func.nome} - Total diárias: ${totalDiarias.toFixed(2)} - Bruto: ${valorBruto.toFixed(2)} - Vales: ${simValeDiaria.total.toFixed(2)}`,
+        equipe_id: funcId,
+        ref_tipo: 'ponto',
+        ref_uuid: funcId
     }]).select('uid');
     
     if (errFin) {
@@ -1965,12 +1971,13 @@ async function estornarUltimoFechamento() {
     const func = STATE.equipe.find(e => e.id === funcId);
     if (!func) return;
 
-    // Busca a despesa mais recente gerada para este funcionário com a descrição padrão
-    const despesas = STATE.logs.filter(l => 
-        l.tipo === 'despesa' &&
-        l.produto_nome && window.rvHasFold(l.produto_nome, `Pagamento de ponto - ${func.nome}`) &&
-        (l.status_financeiro === 'PENDENTE' || l.status_financeiro === 'PAGO')
-    ).sort((a, b) => new Date(b.data) - new Date(a.data));
+    // Busca a despesa mais recente do fechamento deste funcionário:
+    // preferencia por ref_tipo/equipe_id; fallback legado por descricao.
+    const despesas = rvFechamentoCandidatos(STATE.logs, {
+        refTipo: 'ponto',
+        equipeId: funcId,
+        nome: `Pagamento de ponto - ${func.nome}`
+    });
 
     if (despesas.length === 0) {
         return showToast('Nenhum pagamento de ponto encontrado para estornar.', true);
@@ -2614,7 +2621,7 @@ function executarImpressaoFolha() {
             const wrap = document.getElementById('exp-equipe-wrapper');
             if(tipo === 'Mão de Obra') {
                 wrap.classList.remove('hidden');
-                document.getElementById('exp-equipe').innerHTML = '<option value="">-- Selecione o membro (Opcional) --</option>' + STATE.equipe.map(e => `<option value="${e.nome}">${e.nome} (${e.categoria || 'Geral'})</option>`).join('');
+                document.getElementById('exp-equipe').innerHTML = '<option value="">-- Selecione o membro (Opcional) --</option>' + STATE.equipe.map(e => `<option value="${e.id}">${e.nome} (${e.categoria || 'Geral'})</option>`).join('');
             } else {
                 wrap.classList.add('hidden');
                 document.getElementById('exp-equipe').value = '';
@@ -3863,7 +3870,10 @@ async function fecharPagamentoSaldoEmpreita() {
             vencimento: new Date().toISOString(),
             status_financeiro: statusFinEmp,
             categoria: 'Mão de Obra (Empreita)',
-            observacao: observacaoEmp
+            observacao: observacaoEmp,
+            equipe_id: equipeId,
+            ref_tipo: 'empreita',
+            ref_uuid: equipeId
         }]).select('uid');
         if (errFin) throw errFin;
         fechamentoUidEmp = logCriadoEmp?.[0]?.uid || null;
@@ -3884,7 +3894,10 @@ async function fecharPagamentoSaldoEmpreita() {
             vencimento: new Date().toISOString(),
             status_financeiro: statusFinEmp,
             categoria: 'Mão de Obra (Empreita)',
-            observacao: observacaoEmp
+            observacao: observacaoEmp,
+            equipe_id: equipeId,
+            ref_tipo: 'empreita',
+            ref_uuid: equipeId
         });
     }
     try {
@@ -3908,11 +3921,11 @@ async function estornarUltimoFechamentoEmpreita() {
     const equipeId = document.getElementById('saldo-empreita-id').value;
     const func = STATE.equipe.find(e => e.id === equipeId);
     if (!func) return;
-    const despesas = STATE.logs.filter(l =>
-        l.tipo === 'despesa' &&
-        l.produto_nome && window.rvHasFold(l.produto_nome, `Pagamento de empreita - ${func.nome}`) &&
-        (l.status_financeiro === 'PENDENTE' || l.status_financeiro === 'PAGO')
-    ).sort((a, b) => new Date(b.data) - new Date(a.data));
+    const despesas = rvFechamentoCandidatos(STATE.logs, {
+        refTipo: 'empreita',
+        equipeId: equipeId,
+        nome: `Pagamento de empreita - ${func.nome}`
+    });
     if (despesas.length === 0) return showToast('Nenhum pagamento de empreita para estornar.', true);
     const ultima = despesas[0];
     if (!(await RVUI.confirm(`Estornar o pagamento de ${formatMoney(ultima.valor_total)}? As medições voltam a ficar pendentes.`, { danger: true, confirmText: 'Estornar' }))) return;

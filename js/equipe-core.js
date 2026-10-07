@@ -118,6 +118,24 @@
         );
     }
 
+    // ---------- Selecao da despesa de fechamento (estorno) ----------
+    // Preferencia total por id: ref_tipo + (ref_uuid ou equipe_id). Sem isso,
+    // cai no legado por descricao (nome). Retorna ordenado do mais recente.
+    function rvFechamentoCandidatos(logs, opts) {
+        const o = opts || {};
+        const aberta = (l) => l && l.tipo === 'despesa' &&
+            (l.status_financeiro === 'PENDENTE' || l.status_financeiro === 'PAGO');
+        const base = (logs || []).filter(aberta);
+        const casaRef = (l) => o.refTipo && l.ref_tipo === o.refTipo &&
+            ((o.refUuid && l.ref_uuid && String(l.ref_uuid) === String(o.refUuid)) ||
+             (o.equipeId && l.equipe_id && String(l.equipe_id) === String(o.equipeId)));
+        let lista = base.filter(casaRef);
+        if (!lista.length && o.nome) {
+            lista = base.filter(l => l.produto_nome && global.rvHasFold && global.rvHasFold(l.produto_nome, o.nome));
+        }
+        return lista.sort((a, b) => new Date(b.data) - new Date(a.data));
+    }
+
     // ---------- Vales / adiantamentos (sempre em R$ direto) ----------
     // Regra de abatimento FIFO: os vales mais antigos sao consumidos primeiro.
     function rvMoney(v) {
@@ -177,6 +195,7 @@
         rvRefLog,
         rvSelecionarVinculadosDiaria,
         rvSelecionarVinculadosMetro,
+        rvFechamentoCandidatos,
         rvMoney,
         rvValesAbertos,
         rvSimularAbatimentos
@@ -195,6 +214,7 @@
     global.refLog = rvRefLog;
     global.rvSelecionarVinculadosDiaria = rvSelecionarVinculadosDiaria;
     global.rvSelecionarVinculadosMetro = rvSelecionarVinculadosMetro;
+    global.rvFechamentoCandidatos = rvFechamentoCandidatos;
     global.rvMoney = rvMoney;
     global.rvValesAbertos = rvValesAbertos;
     global.rvSimularAbatimentos = rvSimularAbatimentos;
