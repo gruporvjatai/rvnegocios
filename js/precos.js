@@ -75,7 +75,7 @@ function renderViewHistoricoPrecos() {
         <div class="flex flex-wrap gap-4 items-end mb-6">
         <div>
           <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Buscar</label>
-          <input type="text" id="filtro-preco-busca" placeholder="Nome do produto ou fornecedor..." oninput="atualizarVisualizacao()" class="p-2 border rounded-lg text-sm bg-slate-50 w-64">
+          <input type="text" id="filtro-preco-busca" placeholder="Produto, fornecedor ou observação..." oninput="atualizarVisualizacao()" class="p-2 border rounded-lg text-sm bg-slate-50 w-64">
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Produto</label>
@@ -102,9 +102,15 @@ function renderViewHistoricoPrecos() {
         <button onclick="imprimirRelatorioHistoricoPrecos()" class="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2 rounded-lg font-bold flex items-center gap-2 shadow">
           <i data-lucide="printer" class="w-4 h-4"></i> Imprimir Relatório
         </button>
+        <button onclick="exportarPrecosCSV()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-2 rounded-lg font-bold flex items-center gap-2 shadow">
+          <i data-lucide="download" class="w-4 h-4"></i> Exportar CSV
+        </button>
       </div>
       <!-- RESUMO RÁPIDO -->
       <div id="resumo-precos" class="mb-4 p-4 bg-slate-50 rounded-lg border border-slate-200 grid grid-cols-2 md:grid-cols-4 gap-4 text-center"></div>
+
+      <!-- RANKING DE VARIAÇÃO -->
+      <div id="ranking-precos" class="mb-6"></div>
 
       <div class="overflow-x-auto">
         <table class="w-full text-sm text-left">
@@ -145,15 +151,15 @@ function atualizarVisualizacao() {
   atualizarGrafico();
 }
 
-// ========== TABELA COM VARIAÇÃO PERCENTUAL ==========
-function carregarTabelaHistoricoPrecos() {
+// ========== FILTRO COMPARTILHADO (tabela, ranking, CSV e relatório) ==========
+function obterRegistrosPrecosFiltrados() {
   const produtoId = parseInt(document.getElementById('filtro-preco-produto')?.value) || null;
   const dataIni = document.getElementById('filtro-preco-inicio')?.value || '';
   const dataFim = document.getElementById('filtro-preco-fim')?.value || '';
   const origem = document.getElementById('filtro-preco-origem')?.value || '';
   const busca = (document.getElementById('filtro-preco-busca')?.value || '').toLowerCase().trim();
 
-  let registros = (STATE.historico_precos || []).filter(r => {
+  return (STATE.historico_precos || []).filter(r => {
     if (produtoId && (Number(r.produto_id) || 0) !== produtoId) return false;
     if (dataIni && r.data_preco < dataIni) return false;
     if (dataFim && r.data_preco > dataFim) return false;
@@ -163,12 +169,17 @@ function carregarTabelaHistoricoPrecos() {
       const forn = STATE.fornecedores.find(f => Number(f.id) === Number(r.fornecedor_id));
       const nomeProd = prod ? prod.nome.toLowerCase() : '';
       const nomeForn = forn ? forn.nome.toLowerCase() : '';
-      if (!nomeProd.includes(busca) && !nomeForn.includes(busca)) return false;
+      const obs = (r.observacao || '').toLowerCase();
+      if (!nomeProd.includes(busca) && !nomeForn.includes(busca) && !obs.includes(busca)) return false;
     }
     return true;
-  });
+  }).sort((a, b) => new Date(a.data_preco) - new Date(b.data_preco));
+}
 
-  registros.sort((a, b) => new Date(a.data_preco) - new Date(b.data_preco));
+// ========== TABELA COM VARIAÇÃO PERCENTUAL ==========
+function carregarTabelaHistoricoPrecos() {
+  const produtoId = parseInt(document.getElementById('filtro-preco-produto')?.value) || null;
+  const registros = obterRegistrosPrecosFiltrados();
 
   // Encontrar o primeiro preço de cada produto dentro do período filtrado (base para variação %)
   const primeiroPrecoPorProduto = {};
@@ -215,9 +226,10 @@ function carregarTabelaHistoricoPrecos() {
       }
     }
 
+    const obsTitle = (r.observacao || '').replace(/"/g, '&quot;');
     const origemBadge = r.origem === 'automatico' 
-      ? '<span class="px-2 py-1 rounded text-[10px] font-bold bg-green-100 text-green-700">O.C.</span>' 
-      : '<span class="px-2 py-1 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700">Manual</span>';
+      ? `<span class="px-2 py-1 rounded text-[10px] font-bold bg-green-100 text-green-700" title="${obsTitle || 'Gerado por Ordem de Compra'}">O.C.</span>` 
+      : `<span class="px-2 py-1 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700" title="${obsTitle || 'Lançamento manual'}">Manual</span>`;
 
     const acoes = r.origem === 'manual' 
       ? `<button onclick="editarPrecoManualHist('${r.id}')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Editar"><i data-lucide="edit-3" width="14"></i></button>
@@ -269,7 +281,79 @@ function carregarTabelaHistoricoPrecos() {
     </tr>
   `).join('') : `<tr><td colspan="7" class="p-6 text-center text-slate-400">Nenhum registro encontrado.</td></tr>`;
 
+  renderRankingPrecos(registros);
   lucide.createIcons();
+}
+
+// ========== RANKING DE VARIAÇÃO (maiores altas e quedas) ==========
+function renderRankingPrecos(registros) {
+  const el = document.getElementById('ranking-precos');
+  if (!el) return;
+
+  const grupos = {};
+  let avulsos = 0;
+  registros.forEach(r => {
+    const temProduto = r.produto_id != null && Number(r.produto_id) > 0;
+    if (!temProduto) { avulsos++; return; }
+    const pid = Number(r.produto_id);
+    if (!grupos[pid]) grupos[pid] = [];
+    grupos[pid].push(Number(r.preco_unitario));
+  });
+
+  const lista = Object.entries(grupos)
+    .filter(([, ps]) => ps.length >= 2)
+    .map(([pid, ps]) => {
+      const primeiro = ps[0];
+      const ultimo = ps[ps.length - 1];
+      const variacao = primeiro > 0 ? ((ultimo - primeiro) / primeiro) * 100 : 0;
+      const prod = STATE.produtos.find(p => Number(p.id) === Number(pid));
+      return { pid: Number(pid), nome: prod ? prod.nome : `PRODUTO #${pid}`, primeiro, ultimo, variacao };
+    });
+
+  if (!lista.length && avulsos === 0) { el.innerHTML = ''; return; }
+
+  const altas = [...lista].filter(x => x.variacao > 0).sort((a, b) => b.variacao - a.variacao).slice(0, 5);
+  const quedas = [...lista].filter(x => x.variacao < 0).sort((a, b) => a.variacao - b.variacao).slice(0, 5);
+
+  const linhaRank = (x, cor) => `
+    <tr class="border-b last:border-0 hover:bg-white cursor-pointer transition" onclick="filtrarPrecoPorProduto(${x.pid})" title="Ver evolução de ${x.nome}">
+      <td class="py-1.5 pr-2 font-medium text-slate-700">${x.nome}</td>
+      <td class="py-1.5 px-2 text-right text-xs text-slate-500 whitespace-nowrap">${formatMoney(x.primeiro)} → ${formatMoney(x.ultimo)}</td>
+      <td class="py-1.5 pl-2 text-right font-bold ${cor} whitespace-nowrap">${x.variacao > 0 ? '+' : ''}${x.variacao.toFixed(1)}%</td>
+    </tr>`;
+
+  const coluna = (titulo, arr, cor, icone) => `
+    <div>
+      <div class="text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-1">
+        <i data-lucide="${icone}" class="w-3.5 h-3.5 ${cor}"></i> ${titulo}
+      </div>
+      ${arr.length
+        ? `<table class="w-full text-sm"><tbody>${arr.map(x => linhaRank(x, cor)).join('')}</tbody></table>`
+        : '<div class="text-xs text-slate-400 py-2">Sem variações no período.</div>'}
+    </div>`;
+
+  const avisoAvulso = avulsos > 0
+    ? `<div class="mt-3 pt-3 border-t border-slate-200 text-xs text-slate-500"><i data-lucide="package" class="w-3.5 h-3.5 inline"></i> ${avulsos} registro(s) sem produto vinculado (item avulso) não participam do ranking.</div>`
+    : '';
+
+  el.innerHTML = `
+    <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+      <div class="font-bold text-slate-700 mb-3 flex items-center gap-2">
+        <i data-lucide="bar-chart-3" class="w-4 h-4 text-blue-600"></i> Ranking de Variação no Período
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        ${coluna('Maiores Altas', altas, 'text-red-600', 'trending-up')}
+        ${coluna('Maiores Quedas', quedas, 'text-green-600', 'trending-down')}
+      </div>
+      ${avisoAvulso}
+    </div>`;
+}
+
+function filtrarPrecoPorProduto(pid) {
+  const sel = document.getElementById('filtro-preco-produto');
+  if (!sel) return;
+  sel.value = String(pid);
+  atualizarVisualizacao();
 }
 
 // ========== GRÁFICO COM CHART.JS ==========
@@ -323,36 +407,60 @@ function atualizarGrafico() {
     }
   });
   const precos = registros.map(r => Number(r.preco_unitario));
+  const media = precos.reduce((a, b) => a + b, 0) / precos.length;
 
   chartInstancia = new Chart(canvas, {
     type: 'line',
     data: {
       labels: labels,
-      datasets: [{
-        label: 'Preço Unitário (R$)',
-        data: precos,
-        borderColor: '#1d4ed8',
-        backgroundColor: 'rgba(29, 78, 216, 0.1)',
-        fill: true,
-        tension: 0.3,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        pointBackgroundColor: '#1d4ed8',
-        pointBorderColor: '#ffffff',
-        pointBorderWidth: 2
-      }]
+      datasets: [
+        {
+          label: 'Preço Unitário (R$)',
+          data: precos,
+          borderColor: '#1d4ed8',
+          backgroundColor: 'rgba(29, 78, 216, 0.1)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#1d4ed8',
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 2
+        },
+        {
+          label: `Média (${formatMoney(media)})`,
+          data: labels.map(() => media),
+          borderColor: '#f59e0b',
+          borderDash: [6, 4],
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 0,
+          fill: false,
+          tension: 0
+        }
+      ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
       plugins: {
         tooltip: {
           callbacks: {
-            label: (ctx) => `R$ ${Number(ctx.raw).toFixed(2)}`
+            label: (ctx) => {
+              if (ctx.datasetIndex === 1) return `Média: ${formatMoney(ctx.raw)}`;
+              const r = registros[ctx.dataIndex] || {};
+              const forn = STATE.fornecedores.find(f => Number(f.id) === Number(r.fornecedor_id));
+              const linhas = [`Preço: ${formatMoney(ctx.raw)}`, `Origem: ${r.origem === 'automatico' ? 'O.C.' : 'Manual'}`];
+              if (forn) linhas.push(`Fornecedor: ${forn.nome}`);
+              if (r.observacao) linhas.push(r.observacao);
+              return linhas;
+            }
           }
         },
         legend: {
-          display: false
+          display: true,
+          labels: { boxWidth: 12, usePointStyle: true, font: { size: 11 } }
         }
       },
       scales: {
@@ -378,13 +486,7 @@ function imprimirRelatorioHistoricoPrecos() {
   const dataFim = document.getElementById('filtro-preco-fim')?.value || '';
   const origem = document.getElementById('filtro-preco-origem')?.value || '';
 
-  const registros = (STATE.historico_precos || []).filter(r => {
-    if (produtoId && (Number(r.produto_id) || 0) !== produtoId) return false;
-    if (dataIni && r.data_preco < dataIni) return false;
-    if (dataFim && r.data_preco > dataFim) return false;
-    if (origem && r.origem !== origem) return false;
-    return true;
-  }).sort((a, b) => new Date(a.data_preco) - new Date(b.data_preco));
+  const registros = obterRegistrosPrecosFiltrados();
 
   if (registros.length === 0) {
     showToast('Nenhum dado para imprimir.', true);
@@ -527,6 +629,43 @@ function imprimirRelatorioHistoricoPrecos() {
   setTimeout(() => window.print(), 500);
 }
 
+// ========== EXPORTAÇÃO CSV ==========
+function exportarPrecosCSV() {
+  const registros = obterRegistrosPrecosFiltrados();
+  if (!registros.length) {
+    showToast('Nenhum dado para exportar.', true);
+    return;
+  }
+
+  const linhas = [['Data', 'Produto', 'Preco Unitario', 'Fornecedor', 'Origem', 'Observacao']];
+  registros.forEach(r => {
+    const temProduto = r.produto_id != null && Number(r.produto_id) > 0;
+    const prod = temProduto ? STATE.produtos.find(p => Number(p.id) === Number(r.produto_id)) : null;
+    const forn = r.fornecedor_id ? STATE.fornecedores.find(f => Number(f.id) === Number(r.fornecedor_id)) : null;
+    const nome = prod ? prod.nome : (temProduto ? `PRODUTO #${r.produto_id}` : 'ITEM AVULSO (SEM PRODUTO)');
+    linhas.push([
+      r.data_preco || '',
+      nome,
+      Number(r.preco_unitario).toFixed(2).replace('.', ','),
+      forn ? forn.nome : '',
+      r.origem === 'automatico' ? 'O.C.' : 'Manual',
+      r.observacao || ''
+    ]);
+  });
+
+  const csv = linhas.map(l => l.map(c => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\r\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `historico-precos_${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('CSV exportado.');
+}
+
 // ========== CRUD MANUAL (já existente, mantido) ==========
 async function salvarPrecoManualHist(e) {
   e.preventDefault();
@@ -540,6 +679,21 @@ async function salvarPrecoManualHist(e) {
 
   if (!produtoId || !dataYMD || isNaN(valor) || valor <= 0) {
     return showToast('Preencha todos os campos obrigatórios corretamente.', true);
+  }
+
+  // Aviso de possível duplicidade (mesmo produto, data e valor) em novo lançamento
+  if (!editId) {
+    const duplicado = (STATE.historico_precos || []).find(r =>
+      Number(r.produto_id) === Number(produtoId) &&
+      String(r.data_preco) === String(dataYMD) &&
+      Number(r.preco_unitario) === Number(valor)
+    );
+    if (duplicado) {
+      const seguir = (typeof RVUI !== 'undefined' && RVUI.confirm)
+        ? await RVUI.confirm('Já existe um registro com este produto, data e valor. Deseja lançar mesmo assim?', { confirmText: 'Lançar' })
+        : confirm('Já existe um registro com este produto, data e valor. Deseja lançar mesmo assim?');
+      if (!seguir) return;
+    }
   }
 
   showLoading(true);
@@ -657,8 +811,23 @@ async function registrarPrecosAutomaticos(ocId) {
     console.warn(`registrarPrecosAutomaticos: ${semProduto} item(ns) da O.C. #${ocId} sem produto_id (item avulso).`);
   }
 
-  if (inserts.length > 0) {
-    const { error } = await sb.from('jsp_historico_precos').insert(inserts);
+  // Deduplicação: evita relançar O.C. já registrada (mesmo produto+data+preço+origem+observação)
+  const chaveDe = (i) => `${i.produto_id ?? 'null'}|${i.data_preco}|${Number(i.preco_unitario).toFixed(4)}|${i.origem}|${i.observacao ?? ''}`;
+  const existentes = new Set((STATE.historico_precos || []).map(chaveDe));
+  const vistos = new Set();
+  const novos = inserts.filter(i => {
+    const k = chaveDe(i);
+    if (existentes.has(k) || vistos.has(k)) return false;
+    vistos.add(k);
+    return true;
+  });
+  const ignorados = inserts.length - novos.length;
+  if (ignorados > 0) {
+    console.info(`registrarPrecosAutomaticos: ${ignorados} item(ns) duplicado(s) da O.C. #${ocId} ignorado(s).`);
+  }
+
+  if (novos.length > 0) {
+    const { error } = await sb.from('jsp_historico_precos').insert(novos);
     if (error) {
       console.error('Erro ao registrar preços automáticos:', error);
     } else {
