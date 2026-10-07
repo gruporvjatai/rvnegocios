@@ -17,7 +17,8 @@
         'prod-form-container', 'fase-form-container', 'user-form-container',
         'terc-form-container', 'modal-expense', 'modal-revenue',
         'modal-producao-terc', 'modal-vale', 'modal-conta',
-        'modal-transferencia', 'modal-ajuste', 'modal-baixa', 'modal-pagar-fatura'
+        'modal-transferencia', 'modal-ajuste', 'modal-baixa', 'modal-pagar-fatura',
+        'modal-preco-manual'
     ];
 
     var dirty = {};
