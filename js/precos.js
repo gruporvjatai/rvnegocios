@@ -7,6 +7,62 @@
 let chartInstancia = null;
 
 // ============================================================
+// DETECÇÃO DE PREÇOS FORA DO PADRÃO
+// Heurística: mesma O.C./produto pode vir em unidades diferentes
+// (m³ x caminhão fechado, unidade x pacote) ou conter erro de
+// digitação. Sem campo de unidade, marcamos como fora do padrão
+// quando o preço unitário destoa da mediana do produto em mais
+// de 3x (para cima ou para baixo). Esses registros ficam fora dos
+// KPIs/ranking/gráfico por padrão, mas podem ser exibidos no filtro.
+// ============================================================
+const FATOR_FORA_PADRAO = 3;
+let _medianasPrecosCache = { ref: null, map: null };
+
+function medianasPrecosPorProduto() {
+  const arr = STATE.historico_precos || [];
+  if (_medianasPrecosCache.ref === arr && _medianasPrecosCache.map) return _medianasPrecosCache.map;
+
+  const porProduto = {};
+  arr.forEach(r => {
+    const pid = Number(r.produto_id) || 0;
+    if (!pid) return;
+    if (!porProduto[pid]) porProduto[pid] = [];
+    porProduto[pid].push(Number(r.preco_unitario));
+  });
+
+  const med = {};
+  Object.keys(porProduto).forEach(pid => {
+    const precos = porProduto[pid];
+    if (precos.length < 4) return;
+    const ordenado = precos.slice().sort((a, b) => a - b);
+    const meio = Math.floor(ordenado.length / 2);
+    const m = ordenado.length % 2 ? ordenado[meio] : (ordenado[meio - 1] + ordenado[meio]) / 2;
+    if (m > 0) med[pid] = m;
+  });
+
+  _medianasPrecosCache = { ref: arr, map: med };
+  return med;
+}
+
+function precoForaDoPadrao(r) {
+  const pid = Number(r.produto_id) || 0;
+  if (!pid) return false;
+  const mediana = medianasPrecosPorProduto()[pid];
+  if (!mediana || mediana <= 0) return false;
+  const preco = Number(r.preco_unitario);
+  if (!(preco > 0)) return true;
+  return preco > mediana * FATOR_FORA_PADRAO || preco < mediana / FATOR_FORA_PADRAO;
+}
+
+function exibirForaDoPadrao() {
+  return !!document.getElementById('filtro-preco-fora-padrao')?.checked;
+}
+
+function contarForaDoPadrao(registros) {
+  return (registros || []).filter(precoForaDoPadrao).length;
+}
+
+// ============================================================
 // RENDER DA ABA
 // ============================================================
 function renderViewHistoricoPrecos() {
@@ -46,6 +102,10 @@ function renderViewHistoricoPrecos() {
         </h3>
         <button onclick="limparFiltrosPrecos()" class="text-xs font-bold text-blue-700 hover:text-blue-900 hover:underline">Limpar filtros</button>
       </div>
+      <label class="flex items-center gap-2 mb-4 text-xs font-semibold text-slate-500 cursor-pointer select-none">
+        <input type="checkbox" id="filtro-preco-fora-padrao" onchange="atualizarVisualizacao()" class="accent-blue-700 w-4 h-4">
+        Incluir preços fora do padrão (variação acima de 3x a mediana do produto)
+      </label>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
         <div class="lg:col-span-2">
           <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Buscar</label>
@@ -239,12 +299,14 @@ function obterRegistrosPrecosFiltrados() {
   const dataFim = document.getElementById('filtro-preco-fim')?.value || '';
   const origem = document.getElementById('filtro-preco-origem')?.value || '';
   const busca = (document.getElementById('filtro-preco-busca')?.value || '').toLowerCase().trim();
+  const incluirForaDoPadrao = exibirForaDoPadrao();
 
   return (STATE.historico_precos || []).filter(r => {
     if (produtoId && (Number(r.produto_id) || 0) !== produtoId) return false;
     if (dataIni && r.data_preco < dataIni) return false;
     if (dataFim && r.data_preco > dataFim) return false;
     if (origem && r.origem !== origem) return false;
+    if (!incluirForaDoPadrao && precoForaDoPadrao(r)) return false;
     if (busca) {
       const prod = STATE.produtos.find(p => Number(p.id) === Number(r.produto_id));
       const forn = STATE.fornecedores.find(f => Number(f.id) === Number(r.fornecedor_id));
@@ -260,6 +322,8 @@ function obterRegistrosPrecosFiltrados() {
 function limparFiltrosPrecos() {
   ['filtro-preco-busca', 'filtro-preco-produto', 'filtro-preco-origem', 'filtro-preco-inicio', 'filtro-preco-fim']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const chkFora = document.getElementById('filtro-preco-fora-padrao');
+  if (chkFora) chkFora.checked = false;
   atualizarVisualizacao();
 }
 
@@ -331,14 +395,17 @@ function carregarTabelaHistoricoPrecos() {
          <button onclick="excluirPrecoHist('${r.id}')" class="p-1.5 border border-red-200 text-red-500 hover:bg-red-50 rounded ml-1" title="Excluir"><i data-lucide="trash-2" width="14"></i></button>`
       : `<button onclick="editarPrecoManualHist('${r.id}')" class="p-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 rounded" title="Corrigir produto"><i data-lucide="edit-3" width="14"></i></button>`;
 
-    return { ...r, nomeProduto, nomeFornecedor, dataExibicao, variacaoHtml, origemBadge, acoes };
+    return { ...r, nomeProduto, nomeFornecedor, dataExibicao, variacaoHtml, origemBadge, acoes, foraPadrao: precoForaDoPadrao(r) };
   });
 
   renderResumoPrecos(registros, produtoId);
   renderRankingPrecos(registros);
 
   const contador = document.getElementById('contador-precos');
-  if (contador) contador.textContent = `${registros.length} registro(s)`;
+  if (contador) {
+    const ocultos = exibirForaDoPadrao() ? 0 : contarForaDoPadrao(STATE.historico_precos || []);
+    contador.textContent = `${registros.length} registro(s)` + (ocultos > 0 ? ` · ${ocultos} fora do padrão oculto(s)` : '');
+  }
 
   const tbody = document.getElementById('tabela-historico-precos');
   tbody.innerHTML = linhas.length ? linhas.map(r => `
@@ -347,7 +414,7 @@ function carregarTabelaHistoricoPrecos() {
       <td class="p-3 font-medium">${r.nomeProduto}</td>
       <td class="p-3 text-xs text-slate-500">${r.nomeFornecedor}</td>
       <td class="p-3 text-center">${r.origemBadge}</td>
-      <td class="p-3 text-right font-bold whitespace-nowrap">${formatMoney(Number(r.preco_unitario))}</td>
+      <td class="p-3 text-right font-bold whitespace-nowrap">${formatMoney(Number(r.preco_unitario))}${r.foraPadrao ? '<span class="ml-2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-700 align-middle" title="Destoa da mediana do produto em mais de 3x (provavel unidade de compra diferente ou erro de digitacao)">FORA DO PADRÃO</span>' : ''}</td>
       <td class="p-3 text-right whitespace-nowrap">${r.variacaoHtml}</td>
       <td class="p-3 text-center whitespace-nowrap">${r.acoes}</td>
     </tr>
@@ -729,7 +796,7 @@ function exportarPrecosCSV() {
     return;
   }
 
-  const linhas = [['Data', 'Produto', 'Preco Unitario', 'Fornecedor', 'Origem', 'Observacao']];
+  const linhas = [['Data', 'Produto', 'Preco Unitario', 'Fornecedor', 'Origem', 'Observacao', 'Fora do Padrao']];
   registros.forEach(r => {
     const temProduto = r.produto_id != null && Number(r.produto_id) > 0;
     const prod = temProduto ? STATE.produtos.find(p => Number(p.id) === Number(r.produto_id)) : null;
@@ -741,7 +808,8 @@ function exportarPrecosCSV() {
       Number(r.preco_unitario).toFixed(2).replace('.', ','),
       forn ? forn.nome : '',
       r.origem === 'automatico' ? 'O.C.' : 'Manual',
-      r.observacao || ''
+      r.observacao || '',
+      precoForaDoPadrao(r) ? 'Sim' : 'Nao'
     ]);
   });
 
