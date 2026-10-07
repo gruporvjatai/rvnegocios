@@ -17,7 +17,7 @@ function renderViewHistoricoPrecos() {
       <p class="text-sm text-slate-500 mt-2">Acompanhe a evolução dos preços unitários. Registre compras antigas manualmente ou automaticamente pelas Ordens de Compra confirmadas.</p>
     </div>
 
-    <!-- GRÁFICO
+    <!-- GRÁFICO -->
     <div class="bg-white p-6 rounded-xl shadow-sm border mb-6">
       <h3 class="font-bold text-slate-700 text-lg mb-4 flex items-center gap-2">
         <i data-lucide="line-chart" class="w-5 h-5 text-blue-600"></i> Evolução do Preço
@@ -25,8 +25,8 @@ function renderViewHistoricoPrecos() {
       <div style="height: 300px;">
         <canvas id="grafico-historico-precos"></canvas>
       </div>
-      <p id="grafico-sem-dados" class="text-center text-slate-400 mt-4 hidden">Selecione um produto para visualizar o gráfico.</p>
-    </div>-->
+      <p id="grafico-sem-dados" class="text-center text-slate-400 mt-4">Selecione um produto para visualizar o gráfico.</p>
+    </div>
 
     <!-- FORMULÁRIO DE LANÇAMENTO MANUAL -->
     <div class="bg-white p-6 rounded-xl shadow-sm border mb-6">
@@ -179,15 +179,19 @@ function carregarTabelaHistoricoPrecos() {
     }
   });
 
-  const linhas = registros.map((r, idx) => {
+  const jaBase = {};
+  const linhas = registros.map((r) => {
     const preco = Number(r.preco_unitario);
-    const pid = Number(r.produto_id) || 0;
-    const base = primeiroPrecoPorProduto[pid] || preco;
+    const temProduto = r.produto_id != null && Number(r.produto_id) > 0;
+    const pid = temProduto ? Number(r.produto_id) : null;
+    const chave = temProduto ? String(pid) : 'AVULSO';
     let variacaoHtml = '—';
-    if (base > 0) {
-      if (idx === 0 || preco === base) {
+    if (temProduto) {
+      const base = primeiroPrecoPorProduto[pid] || preco;
+      if (!jaBase[chave]) {
+        jaBase[chave] = true;
         variacaoHtml = '<span class="text-slate-400">Base</span>';
-      } else {
+      } else if (base > 0) {
         const perc = ((preco - base) / base) * 100;
         const cor = perc > 0 ? 'text-red-600' : (perc < 0 ? 'text-green-600' : 'text-slate-500');
         const sinal = perc > 0 ? '+' : '';
@@ -195,8 +199,8 @@ function carregarTabelaHistoricoPrecos() {
       }
     }
 
-    const prod = STATE.produtos.find(p => Number(p.id) === pid);
-    const nomeProduto = prod ? prod.nome : `Produto #${pid || '?'}`;
+    const prod = temProduto ? STATE.produtos.find(p => Number(p.id) === pid) : null;
+    const nomeProduto = prod ? prod.nome : (temProduto ? `PRODUTO #${pid}` : 'ITEM AVULSO (SEM PRODUTO)');
 
     const fornId = Number(r.fornecedor_id);
     const fornecedor = STATE.fornecedores.find(f => Number(f.id) === fornId);
@@ -223,20 +227,30 @@ function carregarTabelaHistoricoPrecos() {
     return { ...r, nomeProduto, nomeFornecedor, dataExibicao, variacaoHtml, origemBadge, acoes };
   });
 
-  // Resumo rápido – considera todos os registros, mas a variação total é entre o menor e o maior preço geral (útil para uma visão global)
+  // Resumo rápido: com produto filtrado mostra a variação no período (último x primeiro); sem filtro, mostra a contagem
   const resumoDiv = document.getElementById('resumo-precos');
   if (registros.length > 0) {
     const precos = registros.map(r => Number(r.preco_unitario));
     const min = Math.min(...precos);
     const max = Math.max(...precos);
     const avg = precos.reduce((a, b) => a + b, 0) / precos.length;
-    const variacaoTotal = min > 0 ? ((max - min) / min) * 100 : 0;
+
+    let quartoKpi;
+    if (produtoId) {
+      const primeiro = Number(registros[0].preco_unitario);
+      const ultimo = Number(registros[registros.length - 1].preco_unitario);
+      const variacaoPeriodo = primeiro > 0 ? ((ultimo - primeiro) / primeiro) * 100 : 0;
+      const corVar = variacaoPeriodo > 0 ? 'text-red-600' : (variacaoPeriodo < 0 ? 'text-green-600' : 'text-slate-600');
+      quartoKpi = `<div><div class="text-xs text-slate-500 uppercase">Variação no Período</div><div class="font-bold ${corVar}">${variacaoPeriodo > 0 ? '+' : ''}${variacaoPeriodo.toFixed(1)}%</div></div>`;
+    } else {
+      quartoKpi = `<div><div class="text-xs text-slate-500 uppercase">Registros</div><div class="font-bold text-slate-700">${registros.length}</div></div>`;
+    }
 
     resumoDiv.innerHTML = `
       <div><div class="text-xs text-slate-500 uppercase">Menor Preço</div><div class="font-bold text-green-700">${formatMoney(min)}</div></div>
       <div><div class="text-xs text-slate-500 uppercase">Maior Preço</div><div class="font-bold text-red-700">${formatMoney(max)}</div></div>
       <div><div class="text-xs text-slate-500 uppercase">Média</div><div class="font-bold text-slate-700">${formatMoney(avg)}</div></div>
-      <div><div class="text-xs text-slate-500 uppercase">Variação Total</div><div class="font-bold ${variacaoTotal > 0 ? 'text-red-600' : 'text-green-600'}">${variacaoTotal.toFixed(1)}%</div></div>
+      ${quartoKpi}
     `;
   } else {
     resumoDiv.innerHTML = `<div class="col-span-full text-slate-400 text-sm py-2">Nenhum registro para exibir resumo.</div>`;
@@ -284,8 +298,16 @@ function atualizarGrafico() {
     chartInstancia = null;
   }
 
+  if (!produtoId) {
+    canvas.style.display = 'none';
+    semDados.textContent = 'Selecione um produto para visualizar o gráfico.';
+    semDados.classList.remove('hidden');
+    return;
+  }
+
   if (registros.length < 2) {
     canvas.style.display = 'none';
+    semDados.textContent = 'Registros insuficientes para este produto no período.';
     semDados.classList.remove('hidden');
     return;
   }
@@ -376,14 +398,16 @@ function imprimirRelatorioHistoricoPrecos() {
     graficoImagem = canvasGrafico.toDataURL('image/png');
   }
 
-  // Agrupa por produto
+  // Agrupa por produto_id (identidade estável); nome apenas para exibição
   const agrupado = {};
   registros.forEach(r => {
-    const prodId = Number(r.produto_id);
-    const prod = STATE.produtos.find(p => Number(p.id) === prodId);
-    const nome = prod ? prod.nome : `Produto #${r.produto_id || '?'}`;
-    if (!agrupado[nome]) agrupado[nome] = [];
-    agrupado[nome].push(r);
+    const temProduto = r.produto_id != null && Number(r.produto_id) > 0;
+    const prodId = temProduto ? Number(r.produto_id) : null;
+    const chave = temProduto ? `P:${prodId}` : 'AVULSO';
+    const prod = temProduto ? STATE.produtos.find(p => Number(p.id) === prodId) : null;
+    const nome = prod ? prod.nome : (temProduto ? `PRODUTO #${prodId}` : 'ITEM AVULSO (SEM PRODUTO)');
+    if (!agrupado[chave]) agrupado[chave] = { nome, items: [] };
+    agrupado[chave].items.push(r);
   });
 
   let html = `
@@ -414,7 +438,9 @@ function imprimirRelatorioHistoricoPrecos() {
   }
 
   // Para cada produto, monta tabela e resumo
-  for (const [produto, items] of Object.entries(agrupado)) {
+  for (const grupo of Object.values(agrupado)) {
+    const produto = grupo.nome;
+    const items = grupo.items;
     const precos = items.map(i => Number(i.preco_unitario));
     const min = Math.min(...precos);
     const max = Math.max(...precos);
@@ -518,12 +544,24 @@ async function salvarPrecoManualHist(e) {
 
   showLoading(true);
 
+  let origem = 'manual';
+  if (editId) {
+    const atual = STATE.historico_precos.find(r => Number(r.id) === Number(editId));
+    if (atual && atual.origem === 'automatico') {
+      const mudouProduto = Number(atual.produto_id || 0) !== Number(produtoId);
+      const mudouPreco = Number(atual.preco_unitario) !== Number(valor);
+      const mudouData = String(atual.data_preco) !== String(dataYMD);
+      const mudouForn = Number(atual.fornecedor_id || 0) !== Number(fornecedorId || 0);
+      origem = (mudouProduto || mudouPreco || mudouData || mudouForn) ? 'manual' : 'automatico';
+    }
+  }
+
   const payload = {
     produto_id: produtoId,
     data_preco: dataYMD,
     preco_unitario: valor,
     fornecedor_id: fornecedorId,
-    origem: 'manual',
+    origem,
     observacao: obs || null,
   };
 
@@ -574,7 +612,10 @@ function limparFormPrecoHist() {
 }
 
 async function excluirPrecoHist(id) {
-  if (!confirm('Deseja excluir este registro de preço?')) return;
+  const confirmou = (typeof RVUI !== 'undefined' && RVUI.confirm)
+    ? await RVUI.confirm('Deseja excluir este registro de preço?', { danger: true, confirmText: 'Excluir' })
+    : confirm('Deseja excluir este registro de preço?');
+  if (!confirmou) return;
   showLoading(true);
   try {
     const { error } = await sb.from('jsp_historico_precos').delete().eq('id', id);
@@ -596,20 +637,24 @@ async function registrarPrecosAutomaticos(ocId) {
 
   const inserts = [];
   const dataOC = itensOC[0]?.data ? new Date(itensOC[0].data).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+  let semProduto = 0;
 
   for (const item of itensOC) {
-    const produto = item.produto_id
-      ? STATE.produtos.find(p => Number(p.id) === Number(item.produto_id))
-      : STATE.produtos.find(p => (p.nome || '').trim().toLowerCase() === (item.produto_nome || '').trim().toLowerCase());
+    const produtoId = item.produto_id != null && Number(item.produto_id) > 0 ? Number(item.produto_id) : null;
+    if (!produtoId) semProduto++;
     const precoUnitario = parseFloat(item.valor_total) / parseFloat(item.quantidade);
     inserts.push({
-      produto_id: produto ? Number(produto.id) : (item.produto_id ? Number(item.produto_id) : null),
+      produto_id: produtoId,
       data_preco: dataOC,
       preco_unitario: precoUnitario,
       fornecedor_id: item.fornecedor_id ? Number(item.fornecedor_id) : null,
       origem: 'automatico',
       observacao: `O.C. #${ocId}`
     });
+  }
+
+  if (semProduto > 0) {
+    console.warn(`registrarPrecosAutomaticos: ${semProduto} item(ns) da O.C. #${ocId} sem produto_id (item avulso).`);
   }
 
   if (inserts.length > 0) {

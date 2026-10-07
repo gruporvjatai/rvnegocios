@@ -1131,12 +1131,10 @@
             return STATE.produtos.find(p => Number(p.id) === Number(id)) || null;
         }
         function produtoIdDoCarrinho(item) {
-            if (item && item.id) return parseInt(item.id, 10) || null;
-            if (item && item.produto_id) return parseInt(item.produto_id, 10) || null;
-            const nome = item && item.name ? String(item.name).trim().toLowerCase() : '';
-            if (!nome) return null;
-            const prod = STATE.produtos.find(p => (p.nome || '').trim().toLowerCase() === nome);
-            return prod ? Number(prod.id) : null;
+            if (!item) return null;
+            if (item.id != null && Number(item.id) > 0) return Number(item.id);
+            if (item.produto_id != null && Number(item.produto_id) > 0) return Number(item.produto_id);
+            return null;
         }
         function syncLogsComProdutos() {
             if (!STATE.logs || !STATE.produtos) return;

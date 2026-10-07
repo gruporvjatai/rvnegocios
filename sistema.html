@@ -1887,12 +1887,10 @@
         }
 
         function produtoIdDoCarrinho(item) {
-            if (item && item.id) return parseInt(item.id, 10) || null;
-            if (item && item.produto_id) return parseInt(item.produto_id, 10) || null;
-            const nome = item && item.name ? String(item.name).trim().toLowerCase() : '';
-            if (!nome) return null;
-            const prod = STATE.produtos.find(p => (p.nome || '').trim().toLowerCase() === nome);
-            return prod ? Number(prod.id) : null;
+            if (!item) return null;
+            if (item.id != null && Number(item.id) > 0) return Number(item.id);
+            if (item.produto_id != null && Number(item.produto_id) > 0) return Number(item.produto_id);
+            return null;
         }
 
         function syncLogsComProdutos() {
@@ -4500,7 +4498,7 @@
      <script src="js/ui.js?v=20261006b"></script>
      <script src="js/modals.js?v=20261006a"></script>
      <script src="js/equipe-core.js?v=20261006c"></script>
-     <script src="js/precos.js?v=20261006a"></script>
+     <script src="js/precos.js?v=20261007a"></script>
      <script src="js/contrato.js?v=20260922d"></script>
      <script src="js/equipe.js?v=20261007f"></script>
      <script src="js/vales.js?v=20261007c"></script>
