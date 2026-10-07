@@ -986,7 +986,7 @@ async function estornarUltimoFechamentoMetros() {
     // Busca a despesa mais recente gerada para este terceirizado (metragem)
     const despesas = STATE.logs.filter(l => 
         l.tipo === 'despesa' &&
-        l.produto_nome && l.produto_nome.includes(`Pagamento de metragem - ${terc.nome}`) &&
+        l.produto_nome && window.rvHasFold(l.produto_nome, `Pagamento de metragem - ${terc.nome}`) &&
         (l.status_financeiro === 'PENDENTE' || l.status_financeiro === 'PAGO')
     ).sort((a, b) => new Date(b.data) - new Date(a.data));
 
@@ -998,7 +998,7 @@ async function estornarUltimoFechamentoMetros() {
     
     // Extrai período da descrição (formato "Pagamento de metragem - Nome - Período dd/mm/aaaa a dd/mm/aaaa")
     let periodo = null;
-    const match = ultimaDespesa.produto_nome.match(/Período (.*)$/);
+    const match = ultimaDespesa.produto_nome.match(/Período (.*)$/i);
     if (match) {
         periodo = match[1];
     }
@@ -1968,7 +1968,7 @@ async function estornarUltimoFechamento() {
     // Busca a despesa mais recente gerada para este funcionário com a descrição padrão
     const despesas = STATE.logs.filter(l => 
         l.tipo === 'despesa' &&
-        l.produto_nome && l.produto_nome.includes(`Pagamento de ponto - ${func.nome}`) &&
+        l.produto_nome && window.rvHasFold(l.produto_nome, `Pagamento de ponto - ${func.nome}`) &&
         (l.status_financeiro === 'PENDENTE' || l.status_financeiro === 'PAGO')
     ).sort((a, b) => new Date(b.data) - new Date(a.data));
 
@@ -2286,7 +2286,7 @@ function executarImpressaoFolha() {
             // Lógica original para diaristas (baseada em despesas financeiras)
             const despesasPonto = STATE.logs.filter(l => 
                 l.tipo === 'despesa' &&
-                l.produto_nome && l.produto_nome.includes(`Pagamento de ponto - ${c.nome}`) &&
+                l.produto_nome && window.rvHasFold(l.produto_nome, `Pagamento de ponto - ${c.nome}`) &&
                 (statusFinanceiro === 'TODOS' || l.status_financeiro === statusFinanceiro)
             );
             
@@ -2308,10 +2308,10 @@ function executarImpressaoFolha() {
             let totalVales = 0;
             despesasFiltradas.forEach(d => {
                 totalValor += parseFloat(d.valor_total);
-                const diariasMatch = d.observacao?.match(/Total diárias: ([\d.]+)/);
+                const diariasMatch = d.observacao?.match(/Total diárias: ([\d.]+)/i);
                 if (diariasMatch) totalDiarias += parseFloat(diariasMatch[1]);
-                const brutoMatch = d.observacao?.match(/Bruto:\s*([\d.]+)/);
-                const valesMatch = d.observacao?.match(/Vales:\s*([\d.]+)/);
+                const brutoMatch = d.observacao?.match(/Bruto:\s*([\d.]+)/i);
+                const valesMatch = d.observacao?.match(/Vales:\s*([\d.]+)/i);
                 totalBruto += brutoMatch ? parseFloat(brutoMatch[1]) : parseFloat(d.valor_total);
                 totalVales += valesMatch ? parseFloat(valesMatch[1]) : 0;
             });
@@ -2332,7 +2332,7 @@ function executarImpressaoFolha() {
         } else if (c.tipo === 'empreita') {
             const despesasEmp = STATE.logs.filter(l =>
                 l.tipo === 'despesa' &&
-                l.produto_nome && l.produto_nome.includes(`Pagamento de empreita - ${c.nome}`) &&
+                l.produto_nome && window.rvHasFold(l.produto_nome, `Pagamento de empreita - ${c.nome}`) &&
                 (statusFinanceiro === 'TODOS' || l.status_financeiro === statusFinanceiro)
             );
             let despesasFiltradas = despesasEmp;
@@ -2351,10 +2351,10 @@ function executarImpressaoFolha() {
             let totalVales = 0;
             despesasFiltradas.forEach(d => {
                 totalValor += parseFloat(d.valor_total);
-                const pctMatch = d.observacao?.match(/Percentual:\s*([\d.]+)/);
+                const pctMatch = d.observacao?.match(/Percentual:\s*([\d.]+)/i);
                 if (pctMatch) totalPercent += parseFloat(pctMatch[1]);
-                const brutoMatch = d.observacao?.match(/Bruto:\s*([\d.]+)/);
-                const valesMatch = d.observacao?.match(/Vales:\s*([\d.]+)/);
+                const brutoMatch = d.observacao?.match(/Bruto:\s*([\d.]+)/i);
+                const valesMatch = d.observacao?.match(/Vales:\s*([\d.]+)/i);
                 totalBruto += brutoMatch ? parseFloat(brutoMatch[1]) : parseFloat(d.valor_total);
                 totalVales += valesMatch ? parseFloat(valesMatch[1]) : 0;
             });
@@ -2379,7 +2379,7 @@ function executarImpressaoFolha() {
             const despesasTerc = STATE.logs.filter(l => 
                 l.tipo === 'despesa' &&
                 l.categoria === 'Mão de Obra (Terceirizado)' &&
-                l.observacao && l.observacao.includes(`Terceirizado: ${c.nome}`) &&
+                l.observacao && window.rvHasFold(l.observacao, `Terceirizado: ${c.nome}`) &&
                 (statusFinanceiro === 'TODOS' || l.status_financeiro === statusFinanceiro)
             );
             
@@ -2404,10 +2404,10 @@ function executarImpressaoFolha() {
                 // Extrai a metragem salva na observação. O fechamento grava
                 // "Total metros: 150.00" (ver fecharPagamentoSaldoMetros); o padrão
                 // legado era "Metragem: 150.00 m". Aceita ambos e vírgula decimal.
-                const metrosMatch = d.observacao?.match(/(?:Total metros|Metragem):\s*([\d.,]+)/);
+                const metrosMatch = d.observacao?.match(/(?:Total metros|Metragem):\s*([\d.,]+)/i);
                 if (metrosMatch) totalMetros += parseFloat(metrosMatch[1].replace(',', '.'));
-                const brutoMatch = d.observacao?.match(/Bruto:\s*([\d.]+)/);
-                const valesMatch = d.observacao?.match(/Vales:\s*([\d.]+)/);
+                const brutoMatch = d.observacao?.match(/Bruto:\s*([\d.]+)/i);
+                const valesMatch = d.observacao?.match(/Vales:\s*([\d.]+)/i);
                 totalBruto += brutoMatch ? parseFloat(brutoMatch[1]) : parseFloat(d.valor_total);
                 totalVales += valesMatch ? parseFloat(valesMatch[1]) : 0;
             });
@@ -3910,7 +3910,7 @@ async function estornarUltimoFechamentoEmpreita() {
     if (!func) return;
     const despesas = STATE.logs.filter(l =>
         l.tipo === 'despesa' &&
-        l.produto_nome && l.produto_nome.includes(`Pagamento de empreita - ${func.nome}`) &&
+        l.produto_nome && window.rvHasFold(l.produto_nome, `Pagamento de empreita - ${func.nome}`) &&
         (l.status_financeiro === 'PENDENTE' || l.status_financeiro === 'PAGO')
     ).sort((a, b) => new Date(b.data) - new Date(a.data));
     if (despesas.length === 0) return showToast('Nenhum pagamento de empreita para estornar.', true);
@@ -3926,7 +3926,7 @@ async function estornarUltimoFechamentoEmpreita() {
     ultima.status_financeiro = 'CANCELADO';
     let periodoInicio = null;
     let periodoFim = null;
-    const match = ultima.produto_nome.match(/Período (.*) a (.*)$/);
+    const match = ultima.produto_nome.match(/Período (.*) a (.*)$/i);
     if (match) {
         const pIni = match[1].split('/');
         const pFim = match[2].split('/');

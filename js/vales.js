@@ -37,7 +37,7 @@
     }
     function valeEhLog(log) {
         return !!(log && log.tipo === 'despesa' && log.produto_nome &&
-            String(log.produto_nome).indexOf(PREFIXO_VALE) === 0);
+            window.rvUp(log.produto_nome).indexOf(window.rvUp(PREFIXO_VALE)) === 0);
     }
     function categoriaPorTipo(tipo) {
         if (tipo === 'metro') return 'Mão de Obra (Terceirizado)';

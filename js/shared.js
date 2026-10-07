@@ -1147,7 +1147,7 @@ async function estornarUltimoFechamentoMetros() {
     // Busca a despesa mais recente gerada para este terceirizado (metragem)
     const despesas = STATE.logs.filter(l => 
         l.tipo === 'despesa' &&
-        l.produto_nome && l.produto_nome.includes(`Pagamento de metragem - ${terc.nome}`) &&
+        l.produto_nome && window.rvHasFold(l.produto_nome, `Pagamento de metragem - ${terc.nome}`) &&
         (l.status_financeiro === 'PENDENTE' || l.status_financeiro === 'PAGO')
     ).sort((a, b) => new Date(b.data) - new Date(a.data));
 
@@ -1159,7 +1159,7 @@ async function estornarUltimoFechamentoMetros() {
     
     // Extrai período da descrição (formato "Pagamento de metragem - Nome - Período dd/mm/aaaa a dd/mm/aaaa")
     let periodo = null;
-    const match = ultimaDespesa.produto_nome.match(/Período (.*)$/);
+    const match = ultimaDespesa.produto_nome.match(/Período (.*)$/i);
     if (match) {
         periodo = match[1];
     }
@@ -2112,7 +2112,7 @@ async function estornarUltimoFechamento() {
     // Busca a despesa mais recente gerada para este funcionário com a descrição padrão
     const despesas = STATE.logs.filter(l => 
         l.tipo === 'despesa' &&
-        l.produto_nome && l.produto_nome.includes(`Pagamento de ponto - ${func.nome}`) &&
+        l.produto_nome && window.rvHasFold(l.produto_nome, `Pagamento de ponto - ${func.nome}`) &&
         (l.status_financeiro === 'PENDENTE' || l.status_financeiro === 'PAGO')
     ).sort((a, b) => new Date(b.data) - new Date(a.data));
 
@@ -2124,7 +2124,7 @@ async function estornarUltimoFechamento() {
     
     // Extrai mês/ano da descrição (formato "Pagamento de ponto - Nome - Período MM/AAAA")
     let mesAno = null;
-    const match = ultimaDespesa.produto_nome.match(/Período (\d{2})\/(\d{4})/);
+    const match = ultimaDespesa.produto_nome.match(/Período (\d{2})\/(\d{4})/i);
     if (match) {
         mesAno = { mes: match[1], ano: match[2] };
     }
@@ -2495,7 +2495,7 @@ function executarImpressaoFolha() {
         if (c.tipo === 'diaria') {
             const despesasPonto = STATE.logs.filter(l => 
                 l.tipo === 'despesa' &&
-                l.produto_nome && l.produto_nome.includes(`Pagamento de ponto - ${c.nome}`) &&
+                l.produto_nome && window.rvHasFold(l.produto_nome, `Pagamento de ponto - ${c.nome}`) &&
                 (statusFinanceiro === 'TODOS' || l.status_financeiro === statusFinanceiro)
             );
             
@@ -2515,7 +2515,7 @@ function executarImpressaoFolha() {
             let totalDiarias = 0;
             despesasFiltradas.forEach(d => {
                 totalValor += parseFloat(d.valor_total);
-                const diariasMatch = d.observacao?.match(/Total diárias: ([\d.]+)/);
+                const diariasMatch = d.observacao?.match(/Total diárias: ([\d.]+)/i);
                 if (diariasMatch) totalDiarias += parseFloat(diariasMatch[1]);
             });
             
@@ -3474,9 +3474,9 @@ function executarImpressaoFolha() {
             const fullObs = itemsLog[0].observacao || '';
             let sol = '';
             let justObs = fullObs;
-            if(fullObs.includes(' | Obs: ')) {
-                const parts = fullObs.split(' | Obs: ');
-                sol = parts[0].replace('Solicitante: ', '');
+            if((/ \| obs: /i).test(fullObs)) {
+                const parts = fullObs.split(/ \| obs: /i);
+                sol = parts[0].replace(/solicitante:\s*/i, '');
                 justObs = parts[1];
             }
             
@@ -4116,8 +4116,8 @@ function executarImpressaoFolha() {
             
             let fullObs = o.observacao || 'Nenhuma observação informada.';
             let justObs = fullObs;
-            if(fullObs.includes(' | Obs: ')) {
-                const parts = fullObs.split(' | Obs: ');
+            if((/ \| obs: /i).test(fullObs)) {
+                const parts = fullObs.split(/ \| obs: /i);
                 justObs = parts[0] + '<br>' + parts[1];
             }
 
@@ -4225,8 +4225,8 @@ function executarImpressaoFolha() {
             const forn = STATE.fornecedores.find(x => x.id == o.fornecedor_id) || { nome: 'A Definir', documento: '', telefone: '' };
             
             let justObs = o.observacao || 'Nenhuma observação informada.';
-            if(justObs.includes(' | Obs: ')) {
-                const parts = justObs.split(' | Obs: ');
+            if((/ \| obs: /i).test(justObs)) {
+                const parts = justObs.split(/ \| obs: /i);
                 justObs = parts[0] + '\n' + parts[1];
             }
 
@@ -4400,8 +4400,8 @@ function executarImpressaoFolha() {
             
             let fullObs = o.observacao || 'Nenhuma observação informada.';
             let justObs = fullObs;
-            if(fullObs.includes(' | Obs: ')) {
-                const parts = fullObs.split(' | Obs: ');
+            if((/ \| obs: /i).test(fullObs)) {
+                const parts = fullObs.split(/ \| obs: /i);
                 justObs = parts[0] + '<br>' + parts[1];
             }
 
@@ -4523,7 +4523,7 @@ function executarImpressaoFolha() {
             let historico = STATE.logs.filter(l => {
                 if (l.tipo !== 'compra') return false;
                 if (prod && l.produto_id) return Number(l.produto_id) === Number(prod.id);
-                return l.produto_nome === prodNome;
+                return window.rvEqFold(l.produto_nome, prodNome);
             });
             
             if(historico.length === 0) {
@@ -4761,7 +4761,7 @@ function executarImpressaoFolha() {
             const descProcurada = `Pagamento Mensal (${mes}/${ano}) - ${e.nome}`;
             const logVinculado = STATE.logs.find(l => 
                 l.tipo === 'despesa' && 
-                l.produto_nome === descProcurada && 
+                window.rvEqFold(l.produto_nome, descProcurada) && 
                 l.status_financeiro === 'PAGO'
             );
             
