@@ -469,7 +469,10 @@
       <div id="view-prod" class="hidden-section">
           <div class="flex justify-between items-center mb-4">
               <h2 class="text-2xl font-bold text-slate-800">Materiais / Insumos</h2>
-              <button onclick="openProductForm()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="plus"></i> Novo Material</button>
+              <div class="flex items-center gap-2">
+                  <button onclick="abrirConciliacaoItens()" class="bg-white border border-blue-200 text-blue-700 hover:bg-blue-50 px-4 py-2 rounded font-bold shadow-sm flex items-center gap-2"><i data-lucide="link-2"></i> Conciliar Itens</button>
+                  <button onclick="openProductForm()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="plus"></i> Novo Material</button>
+              </div>
           </div>
           <div class="flex gap-2 mb-4 bg-white p-4 rounded-xl shadow-sm border">
               <input type="text" id="prod-search" placeholder="Buscar material..." class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium" onkeyup="renderProducts()">
@@ -1405,6 +1408,47 @@
                 <button onclick="executarTransferenciaPortal()" class="flex-1 p-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 shadow-md flex items-center justify-center gap-2">
                     <i data-lucide="arrow-right-circle" class="w-4 h-4"></i> Transferir
                 </button>
+            </div>
+        </div>
+      </div>
+
+      <div id="modal-conciliacao" class="hidden fixed inset-0 bg-slate-900/60 z-[60] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl flex flex-col max-h-[92vh] overflow-hidden">
+            <div class="p-4 border-b flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2">
+                    <i data-lucide="link-2" class="text-blue-700"></i> Conciliação de Itens
+                </h3>
+                <button onclick="fecharConciliacaoItens()" class="text-slate-400 hover:text-red-500"><i data-lucide="x"></i></button>
+            </div>
+            <div class="p-3 border-b bg-blue-50/60 text-xs text-slate-700" id="conc-resumo"></div>
+            <div class="p-3 border-b flex flex-wrap items-center gap-2">
+                <div class="relative flex-1 min-w-[220px]">
+                    <i data-lucide="search" class="absolute left-3 top-2.5 text-slate-400 w-4 h-4"></i>
+                    <input id="conc-filtro" type="text" oninput="concSetFiltro(this.value)" placeholder="Filtrar itens avulsos..." class="w-full pl-9 p-2 border rounded outline-none focus:border-blue-600 font-medium text-sm">
+                </div>
+                <label class="flex items-center gap-2 text-xs font-bold text-slate-600">
+                    <input id="conc-mostrar-ignorados" type="checkbox" onchange="concToggleIgnorados(this.checked)"> Mostrar ignorados
+                </label>
+                <button id="conc-btn-sugestoes" onclick="concAplicarSugestoes()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded text-xs font-bold flex items-center gap-1.5 shadow-sm"></button>
+            </div>
+            <div class="flex-1 overflow-y-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-100 text-slate-700 sticky top-0 border-b shadow-sm z-10">
+                        <tr>
+                            <th class="p-3 font-semibold">Item (sem produto)</th>
+                            <th class="p-3 text-center font-semibold w-16">Qtd</th>
+                            <th class="p-3 text-right font-semibold w-28">Total</th>
+                            <th class="p-3 font-semibold w-72">Produto do catálogo</th>
+                            <th class="p-3 text-center font-semibold w-32">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="conc-list" class="divide-y"></tbody>
+                </table>
+            </div>
+            <datalist id="conc-prod-datalist"></datalist>
+            <div class="p-4 border-t bg-slate-50 flex justify-between items-center">
+                <span class="text-[11px] text-slate-400">Vincular não altera o nome do item, apenas o associa ao produto.</span>
+                <button onclick="fecharConciliacaoItens()" class="px-6 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl transition shadow-md">Fechar</button>
             </div>
         </div>
       </div>
@@ -4504,6 +4548,7 @@
      <script src="js/modals.js?v=20261007a"></script>
      <script src="js/equipe-core.js?v=20261006c"></script>
      <script src="js/precos.js?v=20261007d"></script>
+     <script src="js/conciliacao.js?v=20261007a"></script>
      <script src="js/contrato.js?v=20260922d"></script>
      <script src="js/equipe.js?v=20261007f"></script>
      <script src="js/vales.js?v=20261007c"></script>
