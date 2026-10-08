@@ -27,6 +27,21 @@
     function nomeEquipe(id) { const e = (STATE.equipe || []).find(x => String(x.id) === String(id)); return e ? e.nome : ''; }
     function nomeTerc(id) { const t = (STATE.terceirizados || []).find(x => String(x.id) === String(id)); return t ? t.nome : ''; }
     function ehVale(l) { return global.valeEhLog && global.valeEhLog(l); }
+    function fold(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+    function normCat(s) {
+        const v = fold(s || 'Outros / Sem Categoria');
+        return global.rvUp ? global.rvUp(v) : v.toUpperCase();
+    }
+    function agruparCategoria(logs) {
+        const map = {};
+        logs.forEach(l => {
+            const raw = l.categoria || 'Outros / Sem Categoria';
+            const k = normCat(raw);
+            if (!map[k]) map[k] = { c: raw, v: 0 };
+            map[k].v += num(l.valor_total);
+        });
+        return Object.keys(map).map(k => map[k]).sort((a, b) => b.v - a.v);
+    }
 
     function filtros() {
         return {
@@ -140,9 +155,7 @@
             html += titulo('Resumo por Obra') + tabela(['Obra', 'Receitas', 'Despesas', 'Saldo'], rows, ['left', 'right', 'right', 'right']);
         }
 
-        const cats = {};
-        despesas.forEach(l => { const c = l.categoria || 'Outros / Sem Categoria'; cats[c] = (cats[c] || 0) + num(l.valor_total); });
-        const catArr = Object.keys(cats).map(c => ({ c, v: cats[c] })).sort((a, b) => b.v - a.v);
+        const catArr = agruparCategoria(despesas);
         const maxV = catArr.length ? catArr[0].v : 0;
         if (catArr.length) {
             html += '<div class="mt-6">' + titulo('Custos por Categoria') + '<div class="space-y-2">' +
@@ -165,9 +178,7 @@
             .sort((a, b) => new Date(dataRef(a, f.regime)) - new Date(dataRef(b, f.regime)));
         const total = logs.reduce((s, l) => s + num(l.valor_total), 0);
 
-        const cats = {};
-        logs.forEach(l => { const c = l.categoria || 'Outros / Sem Categoria'; cats[c] = (cats[c] || 0) + num(l.valor_total); });
-        const catArr = Object.keys(cats).map(c => ({ c, v: cats[c] })).sort((a, b) => b.v - a.v);
+        const catArr = agruparCategoria(logs);
 
         const kpis = [
             { label: 'Total ' + tituloTxt, valor: money(total), cor: corKpi },
@@ -232,8 +243,20 @@
     // ---------- Mao de obra ----------
     function parseNomeObs(l) {
         const s = (l.observacao || '') + ' ' + (l.produto_nome || '');
-        const m = s.match(/Funcion[aá]rio:\s*([^|\-]+)/i) || s.match(/Terceirizado:\s*([^|\-]+)/i) || s.match(/Equipe:\s*([^|\-]+)/i);
+        const m = s.match(/Funcion[aá]rio:\s*([^|\-]+)/i) || s.match(/Colaborador:\s*([^|\-]+)/i) ||
+
+            s.match(/Terceirizado:\s*([^|\-]+)/i) || s.match(/Equipe:\s*([^|\-]+)/i);
         return m ? m[1].trim() : '';
+    }
+    function nomeDeLog(l) {
+        const obs = parseNomeObs(l);
+        if (obs) return obs;
+        const pn = String(l.produto_nome || '');
+        const rest = pn.replace(/^(?:pagamento|fechamento)\s+de\s+(?:ponto|metragem|empreita)\s*-\s*/i, '');
+        if (rest !== pn) return rest.split(/\s+-\s+(?:per[íi]odo|ref)\b/i)[0].replace(/\s+-\s*$/, '').trim();
+        const mv = pn.match(/vale\s*\/\s*adiantamento\s*-\s*(.+)$/i);
+        if (mv && mv[1]) return mv[1].split(/\s+-\s+/)[0].trim();
+        return '';
     }
     function isLabor(l) {
         if (l.tipo === 'receita') return false;
@@ -246,34 +269,44 @@
         const rt = l.ref_tipo;
         if (rt === 'metragem') {
             const id = l.ref_uuid;
-            return { tipo: 'Metragem', id: id || '', nome: nomeTerc(id) || parseNomeObs(l) || 'Terceirizado' };
+            return { tipo: 'Metragem', id: id || '', nome: nomeTerc(id) || nomeDeLog(l) || 'Terceirizado' };
         }
         if (rt === 'empreita') {
             const id = l.equipe_id || l.ref_uuid;
-            return { tipo: 'Empreita', id: id || '', nome: nomeEquipe(id) || parseNomeObs(l) || 'Equipe' };
+            return { tipo: 'Empreita', id: id || '', nome: nomeEquipe(id) || nomeDeLog(l) || 'Equipe' };
         }
         if (rt === 'ponto') {
             const id = l.equipe_id || l.ref_uuid;
-            return { tipo: 'Diária', id: id || '', nome: nomeEquipe(id) || parseNomeObs(l) || 'Colaborador' };
+            return { tipo: 'Diária', id: id || '', nome: nomeEquipe(id) || nomeDeLog(l) || 'Colaborador' };
         }
         const pn = String(l.produto_nome || '');
-        if (/metragem/i.test(pn)) return { tipo: 'Metragem', id: l.ref_uuid || '', nome: parseNomeObs(l) || 'Terceirizado' };
-        if (/empreita/i.test(pn)) return { tipo: 'Empreita', id: l.equipe_id || l.ref_uuid || '', nome: nomeEquipe(l.equipe_id || l.ref_uuid) || parseNomeObs(l) || 'Equipe' };
-        return { tipo: 'Diária', id: l.equipe_id || l.ref_uuid || '', nome: nomeEquipe(l.equipe_id || l.ref_uuid) || parseNomeObs(l) || 'Colaborador' };
+        if (/metragem/i.test(pn)) return { tipo: 'Metragem', id: l.ref_uuid || '', nome: nomeDeLog(l) || 'Terceirizado' };
+        if (/empreita/i.test(pn)) return { tipo: 'Empreita', id: l.equipe_id || l.ref_uuid || '', nome: nomeEquipe(l.equipe_id || l.ref_uuid) || nomeDeLog(l) || 'Equipe' };
+        return { tipo: 'Diária', id: l.equipe_id || l.ref_uuid || '', nome: nomeEquipe(l.equipe_id || l.ref_uuid) || nomeDeLog(l) || 'Colaborador' };
     }
     function valesPeriodo() {
         const f = filtros();
-        const map = {};
+        const porId = {}, porNome = {};
         (STATE.vales || []).forEach(v => {
-            if (String(v.status || '').toUpperCase() === 'CANCELADO') return;
+            const st = String(v.status || '').toUpperCase();
+            if (st === 'CANCELADO' || st === 'ESTORNADO') return;
             const d = new Date(v.data || v.created_at);
             if (f.ini && !isNaN(d) && d < new Date(f.ini + 'T00:00:00')) return;
             if (f.fim && !isNaN(d) && d > new Date(f.fim + 'T23:59:59')) return;
             if (f.obraId && v.obra_id && String(v.obra_id) !== String(f.obraId)) return;
+            const valor = num(v.valor);
             const k = String(v.colaborador_id || '');
-            map[k] = (map[k] || 0) + num(v.valor);
+            if (k) porId[k] = (porId[k] || 0) + valor;
+            const n = normCat(v.colaborador_nome);
+            if (n && n !== 'OUTROS / SEM CATEGORIA') porNome[n] = (porNome[n] || 0) + valor;
         });
-        return map;
+        return { porId: porId, porNome: porNome };
+    }
+    function valeDePessoa(vales, p) {
+        if (p.id && vales.porId[String(p.id)] != null) return vales.porId[String(p.id)];
+        const n = normCat(p.nome);
+        if (n && vales.porNome[n] != null) return vales.porNome[n];
+        return 0;
     }
 
     function repMaoDeObra() {
@@ -304,14 +337,15 @@
         let totalVales = 0, totalLiquido = 0;
         const rows = Object.keys(pessoas).map(k => {
             const p = pessoas[k];
-            const v = p.id ? (vales[String(p.id)] || 0) : 0;
+            const v = valeDePessoa(vales, p);
             totalVales += v;
             const liq = p.bruto - v;
             totalLiquido += liq;
             return [esc(p.nome), esc(p.tipo), String(p.qtd), money(p.bruto), money(v), money(liq)];
         }).sort((a, b) => a[0].localeCompare(b[0]));
 
-        const totalValesTodos = Object.keys(vales).reduce((s, k) => s + vales[k], 0);
+        const totalValesTodos = Object.keys(vales.porId).reduce((s, k) => s + vales.porId[k], 0) ||
+            Object.keys(vales.porNome).reduce((s, k) => s + vales.porNome[k], 0);
         kpis.push({ label: 'Vales no Período', valor: money(totalValesTodos), cor: 'vermelho' });
 
         let html = tabela(['Pessoa', 'Tipo', 'Lanç.', 'Bruto', 'Vales', 'Líquido'], rows,
@@ -326,7 +360,7 @@
 
         const csv = {
             headers: ['Pessoa', 'Tipo', 'Lancamentos', 'Bruto', 'Vales', 'Liquido'],
-            rows: Object.keys(pessoas).map(k => { const p = pessoas[k]; const v = p.id ? (vales[String(p.id)] || 0) : 0; return [p.nome, p.tipo, p.qtd, p.bruto.toFixed(2), v.toFixed(2), (p.bruto - v).toFixed(2)]; })
+            rows: Object.keys(pessoas).map(k => { const p = pessoas[k]; const v = valeDePessoa(vales, p); return [p.nome, p.tipo, p.qtd, p.bruto.toFixed(2), v.toFixed(2), (p.bruto - v).toFixed(2)]; })
         };
         return { kpis, html, csv };
     }
