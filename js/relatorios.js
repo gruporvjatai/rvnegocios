@@ -567,4 +567,6 @@
     global.repFiltros = filtros;
     global.repLogsBase = logsBase;
     global.repIsLabor = isLabor;
+    global.repAgruparCategoria = agruparCategoria;
+    global.repNomeDeLog = nomeDeLog;
 })(typeof window !== 'undefined' ? window : globalThis);
