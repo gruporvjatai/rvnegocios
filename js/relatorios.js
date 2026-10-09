@@ -13,6 +13,7 @@
     function el(id) { return document.getElementById(id); }
     function val(id) { const e = el(id); return e ? e.value : ''; }
     function num(v) { return parseFloat(v) || 0; }
+    function r2(v) { return Math.round((num(v)) * 100) / 100; }
     function esc(s) {
         return String(s == null ? '' : s)
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -83,6 +84,30 @@
         });
     }
 
+    // Ajustes de caixa (jsp_movimentacoes origem 'ajuste'): entram no saldo,
+    // mas nunca nas Receitas/Medições. Por obra e por período.
+    function ajustesCaixa(f) {
+        const porObra = {};
+        let total = 0;
+        (STATE.movimentacoes || []).forEach(m => {
+            if (String(m.origem) !== 'ajuste') return;
+            const tipo = String(m.tipo || '');
+            if (tipo.indexOf('AJUSTE') !== 0) return;
+            if (m.estornada === true) return;
+            if (f.obraId && String(m.obra_id) !== String(f.obraId)) return;
+            const d = new Date(String(m.data || '').slice(0, 10));
+            if (!isNaN(d)) {
+                if (f.ini && d < new Date(f.ini + 'T00:00:00')) return;
+                if (f.fim && d > new Date(f.fim + 'T23:59:59')) return;
+            }
+            const v = (tipo === 'AJUSTE_SAIDA' ? -1 : 1) * num(m.valor);
+            const k = String(m.obra_id || 0);
+            porObra[k] = (porObra[k] || 0) + v;
+            total += v;
+        });
+        return { porObra, total };
+    }
+
     function descLog(l) {
         if (l.tipo === 'receita') return 'Medição: ' + (l.produto_nome || '-');
         if (l.tipo === 'compra') return 'O.C. #' + l.id + ' - ' + (l.produto_nome || '-');
@@ -127,6 +152,7 @@
         const despesas = logs.filter(l => l.tipo === 'compra' || l.tipo === 'despesa');
         const totalRec = receitas.reduce((s, l) => s + num(l.valor_total), 0);
         const totalDesp = despesas.reduce((s, l) => s + num(l.valor_total), 0);
+        const aj = ajustesCaixa(f);
 
         const kpis = [];
         if (f.obraId) {
@@ -135,7 +161,8 @@
         }
         kpis.push({ label: 'Receitas (Medições)', valor: money(totalRec), cor: 'verde' });
         kpis.push({ label: 'Despesas', valor: money(totalDesp), cor: 'vermelho' });
-        kpis.push({ label: 'Saldo', valor: money(totalRec - totalDesp), cor: 'azul' });
+        if (Math.abs(aj.total) >= 0.005) kpis.push({ label: 'Ajustes de Caixa', valor: money(aj.total), cor: 'amber' });
+        kpis.push({ label: 'Saldo', valor: money(r2(totalRec - totalDesp + aj.total)), cor: 'azul' });
 
         let html = '';
         const csvRows = [];
@@ -147,12 +174,14 @@
                 if (!map[k]) map[k] = { rec: 0, desp: 0 };
                 if (l.tipo === 'receita') map[k].rec += num(l.valor_total); else map[k].desp += num(l.valor_total);
             });
+            Object.keys(aj.porObra).forEach(k => { if (!map[k]) map[k] = { rec: 0, desp: 0 }; });
             const rows = Object.keys(map).map(k => {
                 const m = map[k];
-                csvRows.push([k === '0' ? 'Sem obra' : nomeObra(k), m.rec.toFixed(2), m.desp.toFixed(2), (m.rec - m.desp).toFixed(2)]);
-                return [esc(k === '0' ? 'Sem obra' : nomeObra(k)), money(m.rec), money(m.desp), money(m.rec - m.desp)];
+                const a = aj.porObra[k] || 0;
+                csvRows.push([k === '0' ? 'Sem obra' : nomeObra(k), m.rec.toFixed(2), m.desp.toFixed(2), a.toFixed(2), r2(m.rec - m.desp + a).toFixed(2)]);
+                return [esc(k === '0' ? 'Sem obra' : nomeObra(k)), money(m.rec), money(m.desp), money(a), money(r2(m.rec - m.desp + a))];
             }).sort((a, b) => a[0].localeCompare(b[0]));
-            html += titulo('Resumo por Obra') + tabela(['Obra', 'Receitas', 'Despesas', 'Saldo'], rows, ['left', 'right', 'right', 'right']);
+            html += titulo('Resumo por Obra') + tabela(['Obra', 'Receitas', 'Despesas', 'Ajustes', 'Saldo'], rows, ['left', 'right', 'right', 'right', 'right']);
         }
 
         const catArr = agruparCategoria(despesas);
@@ -377,11 +406,23 @@
             if (!map[k]) map[k] = { ent: 0, sai: 0 };
             if (l.tipo === 'receita') map[k].ent += num(l.valor_total); else map[k].sai += num(l.valor_total);
         });
+        (STATE.movimentacoes || []).forEach(m => {
+            if (String(m.origem) !== 'ajuste') return;
+            const tipo = String(m.tipo || '');
+            if (tipo.indexOf('AJUSTE') !== 0 || m.estornada === true) return;
+            if (f.obraId && String(m.obra_id) !== String(f.obraId)) return;
+            const d = new Date(String(m.data || '').slice(0, 10)); if (isNaN(d)) return;
+            if (f.ini && d < new Date(f.ini + 'T00:00:00')) return;
+            if (f.fim && d > new Date(f.fim + 'T23:59:59')) return;
+            const k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            if (!map[k]) map[k] = { ent: 0, sai: 0 };
+            if (tipo === 'AJUSTE_SAIDA') map[k].sai += num(m.valor); else map[k].ent += num(m.valor);
+        });
         const keys = Object.keys(map).sort();
         let ent = 0, sai = 0, saldo = 0;
         const dados = keys.map(k => {
             const m = map[k]; ent += m.ent; sai += m.sai; saldo += m.ent - m.sai;
-            return { mes: mesLabel(k), ent: m.ent, sai: m.sai, res: m.ent - m.sai, ac: saldo };
+            return { mes: mesLabel(k), ent: m.ent, sai: m.sai, res: r2(m.ent - m.sai), ac: r2(saldo) };
         });
         const rows = dados.map(d => [d.mes, money(d.ent), money(d.sai), money(d.res), money(d.ac)]);
         const kpis = [

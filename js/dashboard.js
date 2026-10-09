@@ -127,9 +127,24 @@
         else aging.futuras += v;
     }
 
-    function temContasObra(obraId) {
-        return contas().some(c => String(c.obra_id) === String(obraId));
+    // Ajustes de caixa (jsp_movimentacoes com origem 'ajuste'): neutralizam
+    // lancamentos historicos incompletos. Entram no RESULTADO, mas nunca no
+    // Faturamento (medições), para nao distorcer o percentual de contrato.
+    function ajustes(range, obraId) {
+        const list = (global.RVContas && global.RVContas.movs) ? global.RVContas.movs() : (STATE.movimentacoes || []);
+        let t = 0;
+        list.forEach(m => {
+            if (String(m.origem) !== 'ajuste') return;
+            const tipo = String(m.tipo || '');
+            if (tipo.indexOf('AJUSTE') !== 0) return;
+            if (m.estornada === true) return;
+            if (obraId && String(m.obra_id) !== String(obraId)) return;
+            if (range && !dentroRange(m.data, range)) return;
+            t += (tipo === 'AJUSTE_SAIDA') ? -num(m.valor) : num(m.valor);
+        });
+        return t;
     }
+    const ALL_RANGE = { ini: '', fim: '' };
 
     function semData() {
         let n = 0, total = 0;
@@ -149,8 +164,12 @@
         const prev = prevRange(range);
         const atual = calcPeriodo(range, obraId);
         const anterior = prev ? calcPeriodo(prev, obraId) : null;
+        const ajustesPeriodo = ajustes(range, obraId);
+        const ajustesAnterior = prev ? ajustes(prev, obraId) : 0;
+        const resultadoGer = atual.rec - atual.desp + ajustesPeriodo;
+        const resultadoAnt = anterior ? (anterior.rec - anterior.desp + ajustesAnterior) : null;
         const pos = posicao(obraId);
-        const estimado = pos.recebido - pos.custo;
+        const estimado = pos.recebido - pos.custo + ajustes(ALL_RANGE, obraId);
         const temC = temContas();
         const caixa = temC ? caixaReal(obraId) : estimado;
         const caixaFonte = temC ? 'contas' : 'estimado (lançamentos pagos)';
@@ -161,19 +180,17 @@
             const p = posicao(o.id);
             const contrato = num(o.valor_contrato);
             const margemOper = p.recebido - p.custo;
-            // Coerencia com o Caixa: se a obra tem contas, o resultado do card vem das contas.
-            const usaContas = temContasObra(o.id);
-            const resultado = usaContas ? caixaReal(o.id) : margemOper;
+            const aj = ajustes(ALL_RANGE, o.id);
+            const margem = Math.round((margemOper + aj) * 100) / 100;
             const pctRec = contrato > 0 ? (p.recebido / contrato) * 100 : 0;
             const pctCus = contrato > 0 ? (p.custo / contrato) * 100 : 0;
             let nivel = 'ok';
-            if (resultado < 0) nivel = 'critico';
-            else if (usaContas && margemOper < 0) nivel = 'atencao';
+            if (margem < -0.005) nivel = 'critico';
             else if (contrato > 0 && p.custo > contrato * 0.8) nivel = 'atencao';
-            return { obra: o, contrato, recebido: p.recebido, custo: p.custo, aReceber: p.aReceber, aPagar: p.aPagar, ocAberto: p.ocAberto, margem: resultado, margemOper, usaContas, pctRec, pctCus, nivel };
+            return { obra: o, contrato, recebido: p.recebido, custo: p.custo, aReceber: p.aReceber, aPagar: p.aPagar, ocAberto: p.ocAberto, margem, margemOper, ajuste: aj, pctRec, pctCus, nivel };
         });
 
-        return { f, obraId, range, prev, atual, anterior, pos, caixa, caixaFonte, cartoes, estimado, semData: sd, porObra };
+        return { f, obraId, range, prev, atual, anterior, ajustesPeriodo, resultadoGer, resultadoAnt, pos, caixa, caixaFonte, cartoes, estimado, semData: sd, porObra };
     }
 
     // ---------- Render: filtros ----------
@@ -219,15 +236,18 @@
     }
     function renderKpis(m) {
         const box = el('dash-kpis'); if (!box) return;
-        const margem = m.atual.rec > 0 ? (m.atual.resultado / m.atual.rec) * 100 : 0;
+        const margem = m.atual.rec > 0 ? (m.resultadoGer / m.atual.rec) * 100 : 0;
         const subCaixa = m.caixaFonte === 'contas'
             ? '<span class="text-[10px] font-bold text-slate-400">cartões ' + money(m.cartoes) + ' · estimado ' + money(m.estimado) + '</span>'
             : '<span class="text-[10px] font-bold text-slate-400">fonte: estimado por lançamentos pagos</span>';
+        const aj = m.ajustesPeriodo || 0;
+        const subRes = '<span class="text-[10px] font-bold ' + (margem >= 0 ? 'text-green-600' : 'text-red-600') + '">margem ' + margem.toFixed(1) + '%</span>'
+            + (Math.abs(aj) >= 0.005 ? ' · <span class="text-[10px] font-bold text-amber-600">ajustes ' + (aj > 0 ? '+' : '') + money(aj) + '</span>' : '');
         const cards = [
             kpiCard('Caixa disponível', money(m.caixa), subCaixa, m.caixa >= 0 ? 'azul' : 'rose'),
             kpiCard('Faturamento (medições)', money(m.atual.rec), delta(m.atual.rec, m.anterior && m.anterior.rec), 'verde'),
             kpiCard('Custos pagos', money(m.atual.desp), delta(m.atual.desp, m.anterior && m.anterior.desp), 'vermelho'),
-            kpiCard('Resultado do período', money(m.atual.resultado), '<span class="text-[10px] font-bold ' + (margem >= 0 ? 'text-green-600' : 'text-red-600') + '">margem ' + margem.toFixed(1) + '%</span>', 'indigo'),
+            kpiCard('Resultado do período', money(m.resultadoGer), subRes, 'indigo'),
             kpiCard('A receber', money(m.pos.aReceber), '<span class="text-[10px] font-bold text-orange-600">vencidas ' + money(m.pos.agingRec.vencidas) + '</span>', 'amber'),
             kpiCard('A pagar', money(m.pos.aPagar), '<span class="text-[10px] font-bold text-red-600">vencidas ' + money(m.pos.agingPag.vencidas) + '</span>', 'rose')
         ];
@@ -239,11 +259,7 @@
         const box = el('dash-alertas'); if (!box) return;
         const alertas = [];
         m.porObra.forEach(o => {
-            if (o.usaContas) {
-                if (o.margemOper < 0) alertas.push({ icone: 'trending-down', cor: 'amber', txt: 'Resultado operacional negativo em <b>' + esc(o.obra.nome) + '</b>: ' + money(o.margemOper) + ' (caixa ' + money(o.margem) + ')', acao: "dashVerFinanceiro('" + esc(o.obra.id) + "')" });
-            } else if (o.margem < 0) {
-                alertas.push({ icone: 'trending-down', cor: 'red', txt: 'Obra no negativo <b>' + esc(o.obra.nome) + '</b>: ' + money(o.margem), acao: "dashVerFinanceiro('" + esc(o.obra.id) + "')" });
-            }
+            if (o.margem < -0.005) alertas.push({ icone: 'trending-down', cor: 'red', txt: 'Obra no negativo <b>' + esc(o.obra.nome) + '</b>: ' + money(o.margem), acao: "dashVerFinanceiro('" + esc(o.obra.id) + "')" });
             if (o.contrato > 0 && o.custo > o.contrato * 0.8) alertas.push({ icone: 'alert-triangle', cor: 'amber', txt: 'Custo em ' + pct(o.custo, o.contrato) + ' do contrato em <b>' + esc(o.obra.nome) + '</b>', acao: "dashVerFinanceiro('" + esc(o.obra.id) + "')" });
         });
         if (m.pos.agingPag.vencidas > 0) alertas.push({ icone: 'calendar-x', cor: 'red', txt: 'Despesas vencidas: <b>' + money(m.pos.agingPag.vencidas) + '</b>', acao: "navigate('fin')" });
@@ -286,9 +302,9 @@
                 mini('A pagar', money(o.aPagar), 'rose') + mini('O.C. aberto', money(o.ocAberto), 'slate') +
                 '</div>' +
                 '<div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">' +
-                '<span class="text-[10px] font-bold text-slate-500 uppercase">' + (o.usaContas ? 'Caixa da obra (contas)' : 'Resultado (recebido - pago)') + '</span>' +
-                '<span class="font-black text-lg ' + (o.margem >= 0 ? 'text-blue-700' : 'text-red-600') + '">' + money(o.margem) + '</span></div>' +
-                (o.usaContas ? '<div class="text-[10px] text-slate-400 text-right">operacional (recebido - pago): ' + money(o.margemOper) + '</div>' : '') +
+                '<span class="text-[10px] font-bold text-slate-500 uppercase">Resultado (recebido - pago + ajustes)</span>' +
+                '<span class="font-black text-lg ' + (o.margem >= -0.005 ? 'text-blue-700' : 'text-red-600') + '">' + money(o.margem) + '</span></div>' +
+                (Math.abs(o.ajuste) >= 0.005 ? '<div class="text-[10px] text-slate-400 text-right">inclui ajustes de caixa: ' + (o.ajuste > 0 ? '+' : '') + money(o.ajuste) + '</div>' : '') +
                 '<div class="mt-3 flex gap-2">' +
                 '<button onclick="openObraForm(\'' + esc(o.obra.id) + '\')" class="flex-1 text-[10px] font-bold px-2 py-1.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600">Editar</button>' +
                 '<button onclick="dashVerFinanceiro(\'' + esc(o.obra.id) + '\')" class="flex-1 text-[10px] font-bold px-2 py-1.5 rounded bg-blue-700 hover:bg-blue-800 text-white">Financeiro</button>' +
