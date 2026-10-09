@@ -71,11 +71,16 @@
     <main class="p-4" id="main-content">
       
       <div id="view-dash" class="active-section no-print">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold">Visão Geral</h2>
+        <div class="flex justify-between items-center mb-3">
+            <div>
+              <h2 class="text-xl font-bold">Visão Geral</h2>
+              <p id="dash-updated" class="text-[10px] text-slate-400"></p>
+            </div>
             <button onclick="openObraForm()" class="bg-blue-700 text-white px-3 py-2 rounded-xl text-sm font-bold shadow flex items-center gap-1"><i data-lucide="plus" class="w-4 h-4"></i> Obra</button>
         </div>
-        <div id="dash-grid" class="flex flex-col gap-4 pb-4"></div>
+        <div id="dash-resumo" class="grid grid-cols-2 gap-3 mb-3"></div>
+        <div id="dash-alertas" class="flex gap-2 overflow-x-auto no-scrollbar mb-3"></div>
+        <div id="dash-grid" class="flex flex-col gap-3 pb-4"></div>
       </div>
 
       <div id="view-oc" class="hidden-section no-print relative min-h-[80vh]">
@@ -1258,7 +1263,67 @@
         }
 
         // ====== RENDER DASHBOARD ======
+        function mvNum(v){ return parseFloat(v)||0; }
+        function mvVale(l){ return typeof valeEhLog==='function' && valeEhLog(l); }
+        function mvAjustes(obraId){ var t=0; (STATE.movimentacoes||[]).forEach(function(m){ if(String(m.origem)!=='ajuste') return; var tipo=String(m.tipo||''); if(tipo.indexOf('AJUSTE')!==0) return; if(m.estornada===true) return; if(obraId && String(m.obra_id)!==String(obraId)) return; t += (tipo==='AJUSTE_SAIDA'?-1:1) * mvNum(m.valor); }); return t; }
+        function mvPosicao(obraId){ var o={recebido:0,custo:0,aPagar:0,ocAberto:0}; (STATE.logs||[]).forEach(function(l){ if(l.status_financeiro==='CANCELADO') return; if(obraId && String(l.obra_id)!==String(obraId)) return; var v=mvNum(l.valor_total); if(l.tipo==='oc_pendente'){ o.ocAberto+=v; return; } if(mvVale(l)) return; if(l.tipo==='receita'){ if(l.status_financeiro==='PAGO') o.recebido+=v; } else if(l.tipo==='compra'||l.tipo==='despesa'){ if(l.status_financeiro==='PAGO') o.custo+=v; else o.aPagar+=v; } }); return o; }
+        function mvResultado(obraId){ var p=mvPosicao(obraId); return Math.round((p.recebido - p.custo + mvAjustes(obraId))*100)/100; }
+        function dashVerFinObra(id){ navigate('fin'); var s=document.getElementById('fin-obra-filter'); if(s){ s.value=id; if(typeof renderFinance==='function') renderFinance(); } }
         function renderDashboard() {
+            var resumo=document.getElementById('dash-resumo');
+            var alertasBox=document.getElementById('dash-alertas');
+            var grid=document.getElementById('dash-grid');
+            if(!grid) return;
+            var gResult=mvResultado(null);
+            var caixa=0, cartoes=0;
+            if(typeof RVContas!=='undefined' && RVContas.saldoTotalReal){ try{ caixa=parseFloat(RVContas.saldoTotalReal(null))||0; }catch(e){} }
+            if(typeof RVContas!=='undefined' && RVContas.saldoDisponivelGeral){ try{ cartoes=(parseFloat(RVContas.saldoDisponivelGeral(null))||0)-caixa; }catch(e){} }
+            if(resumo){
+                resumo.innerHTML =
+                  '<div class="p-3 rounded-2xl border '+(gResult>=0?'border-blue-200 bg-blue-50':'border-red-200 bg-red-50')+'">'
+                  + '<div class="text-[10px] font-black uppercase text-slate-500">Resultado geral</div>'
+                  + '<div class="text-xl font-black '+(gResult>=0?'text-blue-700':'text-red-600')+'">'+formatMoney(gResult)+'</div>'
+                  + '<div class="text-[9px] text-slate-400">recebido - pago + ajustes</div></div>'
+                  + '<div class="p-3 rounded-2xl border border-slate-200 bg-white">'
+                  + '<div class="text-[10px] font-black uppercase text-slate-500">Caixa</div>'
+                  + '<div class="text-xl font-black text-slate-800">'+formatMoney(caixa)+'</div>'
+                  + '<div class="text-[9px] text-slate-400">cartões '+formatMoney(cartoes)+'</div></div>';
+            }
+            if(alertasBox){
+                var chips=[];
+                (STATE.obras||[]).forEach(function(o){ if(mvResultado(o.id)<-0.005){ chips.push({txt:o.nome+' no negativo', cls:'bg-red-50 text-red-700 border-red-200', acao:"dashVerFinObra('"+o.id+"')"}); } });
+                var hp=(typeof getTodayDate==='function')?getTodayDate():new Date().toISOString().slice(0,10);
+                var venc=0;
+                (STATE.logs||[]).forEach(function(l){ if(l.status_financeiro==='CANCELADO'||l.status_financeiro==='PAGO') return; if(mvVale(l)) return; if(l.tipo!=='compra'&&l.tipo!=='despesa') return; var d=new Date(String(l.vencimento||l.data||'').slice(0,10)); if(!isNaN(d)&&d<new Date(hp+'T00:00:00')) venc+=mvNum(l.valor_total); });
+                if(venc>0){ chips.push({txt:'Vencidos '+formatMoney(venc), cls:'bg-red-50 text-red-700 border-red-200', acao:"navigate('fin')"}); }
+                var va=(STATE.vales||[]).filter(function(v){ return String(v.status||'').toUpperCase()==='ABERTO'; });
+                if(va.length){ var tv=va.reduce(function(s,v){ return s+mvNum(v.valor_aberto!=null?v.valor_aberto:v.valor); },0); chips.push({txt:'Vales '+formatMoney(tv)+' ('+va.length+')', cls:'bg-amber-50 text-amber-700 border-amber-200', acao:"navigate('equipe')"}); }
+                alertasBox.innerHTML = chips.length
+                  ? chips.map(function(c){ return '<button onclick="'+c.acao+'" class="shrink-0 text-[10px] font-bold px-3 py-1.5 rounded-full border '+c.cls+'">'+c.txt+'</button>'; }).join('')
+                  : '<span class="text-[10px] font-bold px-3 py-1.5 rounded-full border bg-green-50 text-green-700 border-green-200">Tudo em ordem</span>';
+            }
+            grid.innerHTML = (STATE.obras||[]).map(function(o){
+                var p=mvPosicao(o.id);
+                var contrato=parseFloat(o.valor_contrato)||0;
+                var res=mvResultado(o.id);
+                var pct=contrato>0?Math.min((p.recebido/contrato)*100,100):0;
+                var nivel=(res<-0.005)?'critico':((contrato>0&&p.custo>contrato*0.8)?'atencao':'ok');
+                var cor=nivel==='critico'?'bg-red-500':(nivel==='atencao'?'bg-amber-500':'bg-green-500');
+                return '<button onclick="dashVerFinObra(\''+o.id+'\')" class="text-left bg-white p-4 rounded-2xl border border-slate-200 shadow-sm w-full">'
+                  + '<div class="flex justify-between items-start gap-2 mb-2"><div class="min-w-0"><h4 class="font-black text-base truncate">'+o.nome+'</h4><p class="text-[10px] text-slate-500 truncate">'+(o.endereco||'-')+'</p></div><span class="w-2.5 h-2.5 rounded-full '+cor+' mt-1 shrink-0"></span></div>'
+                  + '<div class="w-full bg-slate-100 rounded-full h-1.5 mb-1"><div class="bg-blue-600 h-1.5 rounded-full" style="width:'+pct+'%"></div></div>'
+                  + '<div class="text-[9px] text-slate-400 text-right mb-3">'+pct.toFixed(1)+'% recebido</div>'
+                  + '<div class="grid grid-cols-2 gap-2">'
+                  + '<div class="bg-slate-50 p-2 rounded-xl"><div class="text-[9px] text-slate-400 uppercase">Resultado</div><div class="font-black '+(res>=0?'text-blue-700':'text-red-600')+'">'+formatMoney(res)+'</div></div>'
+                  + '<div class="bg-rose-50 p-2 rounded-xl"><div class="text-[9px] text-rose-500 uppercase">A pagar</div><div class="font-black text-rose-700">'+formatMoney(p.aPagar)+'</div></div>'
+                  + '</div></button>';
+            }).join('');
+            var up=document.getElementById('dash-updated');
+            if(up) up.textContent='Atualizado às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+            if(typeof lucide!=='undefined') lucide.createIcons();
+        }
+        // ====== RENDER DASHBOARD (LEGACY, nao usado) ======
+        function renderDashboardLegacy() {
             const grid = document.getElementById('dash-grid');
             const saldos = {}; STATE.obras.forEach(o=>{ saldos[o.id]={custos:0,medicoes:0,valor_contrato:parseFloat(o.valor_contrato)||0}; });
             STATE.logs.forEach(l=>{ if(l.status_financeiro==='CANCELADO') return; if(!saldos[l.obra_id]) return; if(l.tipo==='receita' && l.status_financeiro==='PAGO') saldos[l.obra_id].medicoes+=parseFloat(l.valor_total||0); if((l.tipo==='compra'||l.tipo==='despesa') && l.status_financeiro==='PAGO') saldos[l.obra_id].custos+=parseFloat(l.valor_total||0); });
