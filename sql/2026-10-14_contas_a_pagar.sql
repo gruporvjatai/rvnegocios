@@ -119,3 +119,49 @@ $function$;
 grant execute on function public.rv_baixar_multiplo(jsonb, uuid, date, text) to authenticated;
 
 comment on column public.jsp_movimentacoes.lote_id is 'Agrupa movimentos de um mesmo pagamento multiplo (lote) da tela Contas a Pagar.';
+
+-- Estorno de um lote inteiro: reverte os titulos para PENDENTE e gera movimentos
+-- de estorno espelhando cada baixa. Nao altera valor/tipo/itens/datas dos titulos.
+create or replace function public.rv_estornar_lote(p_lote uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+declare
+  m public.jsp_movimentacoes;
+  v_n int := 0;
+begin
+  if not public.jsp_pode_operar() then raise exception 'Sem permissao para operar.'; end if;
+  if p_lote is null then raise exception 'Lote invalido.'; end if;
+
+  for m in
+    select * from public.jsp_movimentacoes
+     where lote_id = p_lote and estornada = false
+       and origem in ('baixa_oc','baixa_receita','baixa_despesa')
+     order by created_at
+  loop
+    insert into public.jsp_movimentacoes(conta_id, tipo, valor, data, descricao, categoria, obra_id, oc_id, log_uid, origem, estorno_de_id, created_by)
+    values (m.conta_id,
+            case when m.tipo = 'ENTRADA' then 'SAIDA' else 'ENTRADA' end,
+            m.valor, current_date, 'Estorno lote: ' || coalesce(m.descricao,''), m.categoria,
+            m.obra_id, m.oc_id, m.log_uid, 'estorno', m.id, coalesce(auth.jwt()->>'email',''));
+
+    update public.jsp_movimentacoes set estornada = true where id = m.id;
+
+    if m.oc_id is not null then
+      update public.jsp_logs set status_financeiro = 'PENDENTE', liquidado_em = null
+       where id::text = m.oc_id and tipo = 'compra' and status_financeiro = 'PAGO';
+    elsif m.log_uid is not null then
+      update public.jsp_logs set status_financeiro = 'PENDENTE', valor_pago = null, liquidado_em = null
+       where uid = m.log_uid and status_financeiro = 'PAGO';
+    end if;
+
+    v_n := v_n + 1;
+  end loop;
+
+  return jsonb_build_object('lote_id', p_lote, 'estornados', v_n);
+end;
+$function$;
+
+grant execute on function public.rv_estornar_lote(uuid) to authenticated;
