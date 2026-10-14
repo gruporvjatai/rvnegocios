@@ -233,6 +233,14 @@
             </div>
 
             <div id="fin-section-despesas">
+                <div id="mv-lotes-strip" class="hidden mb-2 bg-amber-50 border border-amber-200 rounded-xl p-2 text-[10px]"></div>
+                <div id="mv-pag-bar" class="hidden mb-2 bg-blue-50 border border-blue-200 rounded-xl p-2 flex justify-between items-center gap-2">
+                    <span id="mv-pag-info" class="text-[10px] font-bold text-blue-800"></span>
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" onclick="mvLimparSelPag()" class="px-2 py-1 bg-white border border-slate-300 rounded-lg text-[10px] font-bold text-slate-600">Limpar</button>
+                        <button type="button" onclick="mvAbrirModalBaixa()" class="px-2 py-1 bg-green-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-1"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Pagar</button>
+                    </div>
+                </div>
                 <div id="fin-expense-history-list" class="flex flex-col gap-2 pb-4"></div>
             </div>
 
@@ -1028,6 +1036,26 @@
 
     <div id="print-area" class="print-only"></div>
 
+    <div id="modal-baixa-multipla-mv" class="hidden fixed inset-0 bg-black/60 z-[80] flex justify-center items-end p-0">
+        <div class="bg-white rounded-t-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-3 border-b flex justify-between items-center bg-slate-50 rounded-t-2xl">
+                <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2"><i data-lucide="check-circle" class="w-4 h-4 text-green-600"></i> Pagar selecionados</h3>
+                <button onclick="mvFecharModalBaixa()" class="text-slate-400"><i data-lucide="x"></i></button>
+            </div>
+            <div class="p-3 space-y-3 overflow-y-auto">
+                <div id="mv-mpx-resumo" class="text-[11px] text-slate-600 bg-slate-50 border rounded-lg p-2 max-h-36 overflow-y-auto"></div>
+                <div><label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Conta / Carteira (uma para o lote)</label><select id="mv-mpx-conta" class="w-full p-2 border rounded-lg text-xs font-bold"></select></div>
+                <div><label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Data do pagamento</label><input type="date" id="mv-mpx-data" class="w-full p-2 border rounded-lg text-xs"></div>
+                <div><label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Observacao (opcional)</label><input type="text" id="mv-mpx-obs" placeholder="Ex.: pagamento fim de mes" class="w-full p-2 border rounded-lg text-xs"></div>
+                <div id="mv-mpx-total" class="text-right font-black text-red-600 text-base"></div>
+            </div>
+            <div class="p-3 border-t bg-slate-50 flex gap-2 rounded-b-2xl pb-5">
+                <button onclick="mvFecharModalBaixa()" class="flex-1 py-2 bg-white border rounded-lg font-bold text-slate-600 text-sm">Cancelar</button>
+                <button onclick="mvConfirmarBaixa()" class="flex-1 py-2 bg-green-600 text-white rounded-lg font-bold text-sm">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
     window.rvUp = function (v) { return String(v == null ? '' : v).toUpperCase(); };
     window.rvHasFold = function (hay, needle) { return window.rvUp(hay).indexOf(window.rvUp(needle)) !== -1; };
@@ -1520,7 +1548,7 @@
         async function executeConfirmOC(){ const id=document.getElementById('confirm-oc-id').value; const formPagto=document.getElementById('confirm-oc-payment').value; showLoading(true); let statusFinal=formPagto==='PIX'?'PAGO':'PENDENTE'; let dataVenc=new Date(); if(formPagto!=='PIX') dataVenc.setDate(dataVenc.getDate()+30); const {error}=await sb.from('jsp_logs').update({ tipo:'compra', forma_pagamento:formPagto, status_financeiro:statusFinal, data:new Date().toISOString(), vencimento:dataVenc.toISOString() }).eq('id',id).eq('tipo','oc_pendente'); if(error){ showLoading(false); return showToast("Erro: "+error.message,true); } closeOverlayForm('modal-confirm-oc'); showToast("Compra efetivada!"); await loadData(); if(typeof registrarPrecosAutomaticos==='function') await registrarPrecosAutomaticos(id); }
 
         // ====== FINANCEIRO ======
-        function renderFinance(){ const obraFilter=document.getElementById('fin-obra-filter').value; const faseFilter=document.getElementById('fin-fase-filter').value; const catFilter=document.getElementById('fin-cat-filter').value; const term=document.getElementById('fin-search').value.toLowerCase(); const dtStart=document.getElementById('fin-start').value; const dtEnd=document.getElementById('fin-end').value; let logsFilt=STATE.logs.filter(l=>l.tipo!=='oc_pendente'&&l.status_financeiro!=='CANCELADO'); if(obraFilter) logsFilt=logsFilt.filter(l=>String(l.obra_id)===String(obraFilter)); if(faseFilter) logsFilt=logsFilt.filter(l=>(l.fase_obra||'')===faseFilter); if(term) logsFilt=logsFilt.filter(l=>(l.produto_nome||'').toLowerCase().includes(term)); if(catFilter){ logsFilt=logsFilt.filter(l=>{ const prod=STATE.produtos.find(p=>window.rvEqFold(p.nome, l.produto_nome)); return prod&&prod.categoria===catFilter; }); } if(dtStart) logsFilt=logsFilt.filter(l=>new Date(l.data||l.vencimento)>=new Date(dtStart)); if(dtEnd){ let endD=new Date(dtEnd); endD.setHours(23,59,59); logsFilt=logsFilt.filter(l=>new Date(l.data||l.vencimento)<=endD); } let totDesp=0, totRec=0; const listaDesp=document.getElementById('fin-expense-history-list'); let despArrRaw=logsFilt.filter(l=>l.tipo==='compra'||l.tipo==='despesa'); let despArr=[], groupedOCs={}; despArrRaw.forEach(l=>{ if(l.tipo==='compra'){ if(!groupedOCs[l.id]){ groupedOCs[l.id]={...l,valor_total:0,is_oc:true}; despArr.push(groupedOCs[l.id]); } groupedOCs[l.id].valor_total+=parseFloat(l.valor_total); } else { despArr.push(l); } }); despArr.sort((a,b)=>new Date(b.vencimento||b.data)-new Date(a.vencimento||a.data)); listaDesp.innerHTML=despArr.map(l=>{ const isPago=l.status_financeiro==='PAGO'; if(isPago) totDesp+=parseFloat(l.valor_total); const obra=STATE.obras.find(x=>x.id==l.obra_id); const forn=l.is_oc?STATE.fornecedores.find(x=>x.id==l.fornecedor_id):null; return `<div class="bg-white p-2.5 rounded-xl border-l-4 ${isPago?'border-l-green-500':'border-l-red-500'} shadow-sm flex flex-col gap-1"><div class="flex justify-between"><div><span class="text-[9px] font-bold text-slate-400">${formatDate(l.vencimento||l.data)}</span><div class="font-bold text-xs flex items-center gap-1">${l.is_oc?`O.C. #${l.id} - Consolidada <button onclick="verOC('${l.id}')" class="p-1 bg-slate-100 text-slate-500 rounded shrink-0" title="Visualizar O.C."><i data-lucide="eye" class="w-3 h-3"></i></button>`:l.produto_nome}</div>${l.is_oc?`<div class="text-[9px] text-slate-600 font-bold mt-0.5"><i data-lucide="truck" class="inline w-3 h-3"></i> Fornecedor: ${forn?.nome||'A Definir'}</div>`:''}<div class="text-[9px] text-blue-700 font-bold mt-1"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Geral'} <span class="text-slate-400">| ${l.fase_obra||'-'}</span></div></div><div class="text-right"><div class="font-black ${isPago?'text-slate-500':'text-red-600'} text-sm">${formatMoney(l.valor_total)}</div>${!isPago?`<div class="text-[8px] text-slate-400">${l.forma_pagamento||'-'}</div>`:`<span class="bg-green-100 text-green-700 text-[8px] font-bold px-1 rounded">PAGO</span>`}</div></div></div>`; }).join(''); const listaRec=document.getElementById('fin-receivables-list'); let recArr=logsFilt.filter(l=>l.tipo==='receita'); recArr.sort((a,b)=>new Date(b.vencimento||b.data)-new Date(a.vencimento||a.data)); listaRec.innerHTML=recArr.map(l=>{ const isPago=l.status_financeiro==='PAGO'; if(isPago) totRec+=parseFloat(l.valor_total); const obra=STATE.obras.find(x=>x.id==l.obra_id); return `<div class="bg-white p-2.5 rounded-xl border-l-4 ${isPago?'border-l-green-500':'border-l-orange-400'} shadow-sm flex flex-col gap-1"><div class="flex justify-between"><div><span class="text-[9px] font-bold text-slate-400">${formatDate(l.vencimento||l.data)}</span><div class="font-bold text-xs">${l.produto_nome}</div><div class="text-[9px] text-blue-700 font-bold mt-1"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Geral'}</div></div><div class="text-right"><div class="font-black text-green-700 text-sm">${formatMoney(l.valor_total)}</div>${isPago?`<span class="bg-green-100 text-green-700 text-[8px] font-bold px-1 rounded">RECEBIDO</span>`:`<span class="bg-orange-100 text-orange-700 text-[8px] font-bold px-1 rounded">A REC.</span>`}</div></div></div>`; }).join(''); document.getElementById('fin-expenses').innerText=formatMoney(totDesp); document.getElementById('fin-income').innerText=formatMoney(totRec); lucide.createIcons(); window.financeiroAtual={despArr,recArr,totDesp,totRec}; }
+        function renderFinance(){ const obraFilter=document.getElementById('fin-obra-filter').value; const faseFilter=document.getElementById('fin-fase-filter').value; const catFilter=document.getElementById('fin-cat-filter').value; const term=document.getElementById('fin-search').value.toLowerCase(); const dtStart=document.getElementById('fin-start').value; const dtEnd=document.getElementById('fin-end').value; let logsFilt=STATE.logs.filter(l=>l.tipo!=='oc_pendente'&&l.status_financeiro!=='CANCELADO'); if(obraFilter) logsFilt=logsFilt.filter(l=>String(l.obra_id)===String(obraFilter)); if(faseFilter) logsFilt=logsFilt.filter(l=>(l.fase_obra||'')===faseFilter); if(term) logsFilt=logsFilt.filter(l=>(l.produto_nome||'').toLowerCase().includes(term)); if(catFilter){ logsFilt=logsFilt.filter(l=>{ const prod=STATE.produtos.find(p=>window.rvEqFold(p.nome, l.produto_nome)); return prod&&prod.categoria===catFilter; }); } if(dtStart) logsFilt=logsFilt.filter(l=>new Date(l.data||l.vencimento)>=new Date(dtStart)); if(dtEnd){ let endD=new Date(dtEnd); endD.setHours(23,59,59); logsFilt=logsFilt.filter(l=>new Date(l.data||l.vencimento)<=endD); } let totDesp=0, totRec=0; const listaDesp=document.getElementById('fin-expense-history-list'); let despArrRaw=logsFilt.filter(l=>l.tipo==='compra'||l.tipo==='despesa'); let despArr=[], groupedOCs={}; despArrRaw.forEach(l=>{ if(l.tipo==='compra'){ if(!groupedOCs[l.id]){ groupedOCs[l.id]={...l,valor_total:0,is_oc:true}; despArr.push(groupedOCs[l.id]); } groupedOCs[l.id].valor_total+=parseFloat(l.valor_total); } else { despArr.push(l); } }); despArr.sort((a,b)=>new Date(b.vencimento||b.data)-new Date(a.vencimento||a.data)); mvConstruirItensPag(despArr); listaDesp.innerHTML=despArr.map(l=>{ const isPago=l.status_financeiro==='PAGO'; if(isPago) totDesp+=parseFloat(l.valor_total); const obra=STATE.obras.find(x=>x.id==l.obra_id); const forn=l.is_oc?STATE.fornecedores.find(x=>x.id==l.fornecedor_id):null; const pagKey=l.is_oc?('oc:'+l.id):('lg:'+l.uid); const podeSel=!isPago&&!l.eh_cartao&&(l.tipo==='compra'||l.tipo==='despesa'); const selMarcado=window.MV_PAG_SEL&&window.MV_PAG_SEL.has(pagKey); return `<div class="bg-white p-2.5 rounded-xl border-l-4 ${isPago?'border-l-green-500':'border-l-red-500'} shadow-sm flex flex-col gap-1">${podeSel?`<label class="flex items-center gap-2 text-[9px] font-bold text-blue-700 bg-blue-50 rounded px-2 py-1"><input type="checkbox" class="mv-pag-sel w-4 h-4" data-key="${pagKey}" ${selMarcado?'checked':''} onchange="mvToggleSelPag('${pagKey}',this.checked)"> Selecionar para pagamento</label>`:''}<div class="flex justify-between"><div><span class="text-[9px] font-bold text-slate-400">${formatDate(l.vencimento||l.data)}</span><div class="font-bold text-xs flex items-center gap-1">${l.is_oc?`O.C. #${l.id} - Consolidada <button onclick="verOC('${l.id}')" class="p-1 bg-slate-100 text-slate-500 rounded shrink-0" title="Visualizar O.C."><i data-lucide="eye" class="w-3 h-3"></i></button>`:l.produto_nome}</div>${l.is_oc?`<div class="text-[9px] text-slate-600 font-bold mt-0.5"><i data-lucide="truck" class="inline w-3 h-3"></i> Fornecedor: ${forn?.nome||'A Definir'}</div>`:''}<div class="text-[9px] text-blue-700 font-bold mt-1"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Geral'} <span class="text-slate-400">| ${l.fase_obra||'-'}</span></div></div><div class="text-right"><div class="font-black ${isPago?'text-slate-500':'text-red-600'} text-sm">${formatMoney(l.valor_total)}</div>${!isPago?`<div class="text-[8px] text-slate-400">${l.forma_pagamento||'-'}</div>`:`<span class="bg-green-100 text-green-700 text-[8px] font-bold px-1 rounded">PAGO</span>`}</div></div></div>`; }).join(''); const listaRec=document.getElementById('fin-receivables-list'); let recArr=logsFilt.filter(l=>l.tipo==='receita'); recArr.sort((a,b)=>new Date(b.vencimento||b.data)-new Date(a.vencimento||a.data)); listaRec.innerHTML=recArr.map(l=>{ const isPago=l.status_financeiro==='PAGO'; if(isPago) totRec+=parseFloat(l.valor_total); const obra=STATE.obras.find(x=>x.id==l.obra_id); return `<div class="bg-white p-2.5 rounded-xl border-l-4 ${isPago?'border-l-green-500':'border-l-orange-400'} shadow-sm flex flex-col gap-1"><div class="flex justify-between"><div><span class="text-[9px] font-bold text-slate-400">${formatDate(l.vencimento||l.data)}</span><div class="font-bold text-xs">${l.produto_nome}</div><div class="text-[9px] text-blue-700 font-bold mt-1"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Geral'}</div></div><div class="text-right"><div class="font-black text-green-700 text-sm">${formatMoney(l.valor_total)}</div>${isPago?`<span class="bg-green-100 text-green-700 text-[8px] font-bold px-1 rounded">RECEBIDO</span>`:`<span class="bg-orange-100 text-orange-700 text-[8px] font-bold px-1 rounded">A REC.</span>`}</div></div></div>`; }).join(''); document.getElementById('fin-expenses').innerText=formatMoney(totDesp); document.getElementById('fin-income').innerText=formatMoney(totRec); mvPagAtualizarBarra(); mvRenderLotesRecentes(); lucide.createIcons(); window.financeiroAtual={despArr,recArr,totDesp,totRec}; }
         function imprimirFinanceiro(){ if(!window.financeiroAtual) return showToast("Filtre o financeiro primeiro."); const {despArr,recArr,totDesp,totRec}=window.financeiroAtual; const dtStart=document.getElementById('fin-start').value; const dtEnd=document.getElementById('fin-end').value; const obraFilter=document.getElementById('fin-obra-filter'); const nomeObraFiltro=obraFilter.options[obraFilter.selectedIndex].text; let htmlTabela=`<div style="font-family: Arial; padding:15px;"><h2 style="margin:0 0 5px 0;">Relatório Financeiro</h2><h3 style="margin:0 0 10px 0;">Filtro: ${nomeObraFiltro}</h3><p style="font-size:10px;">Período: ${dtStart?formatDate(dtStart):'Início'} até ${dtEnd?formatDate(dtEnd):'Hoje'}</p><table width="100%" style="border-collapse:collapse; font-size:10px;"><thead><tr style="background:#f1f5f9;"><th style="padding:6px;">Data</th><th style="padding:6px;">Descrição</th><th style="padding:6px;">Obra/Fase</th><th style="padding:6px;">Status</th><th style="padding:6px;">Valor</th></tr></thead><tbody>`; if(despArr.length){ htmlTabela+=`<tr><td colspan="5" style="background:#fee2e2; font-weight:bold;">CUSTOS</td></tr>`; despArr.forEach(l=>{ const obra=STATE.obras.find(x=>x.id==l.obra_id); const isPago=l.status_financeiro==='PAGO'; htmlTabela+=`<tr><td style="padding:5px;">${formatDate(l.vencimento||l.data)}</td><td>${l.is_oc?`O.C. #${l.id}`:l.produto_nome}</td><td>${obra?.nome||'Geral'} <span style="font-size:8px;">${l.fase_obra||'-'}</span></td><td align="center">${isPago?'PAGO':'PEND.'}</td><td align="right" style="color:#b91c1c;">${formatMoney(l.valor_total)}</td></tr>`; }); } if(recArr.length){ htmlTabela+=`<tr><td colspan="5" style="background:#dcfce7; font-weight:bold;">MEDIÇÕES</td></tr>`; recArr.forEach(l=>{ const obra=STATE.obras.find(x=>x.id==l.obra_id); const isPago=l.status_financeiro==='PAGO'; htmlTabela+=`<tr><td style="padding:5px;">${formatDate(l.vencimento||l.data)}</td><td>${l.produto_nome}</td><td>${obra?.nome||'Geral'}</td><td align="center">${isPago?'REC.':'PEND.'}</td><td align="right" style="color:#15803d;">${formatMoney(l.valor_total)}</td></tr>`; }); } htmlTabela+=`</tbody></table><table width="100%" style="margin-top:10px;"><tr><td align="right">Total Custos Pagos:</td><td align="right" style="color:#b91c1c;">${formatMoney(totDesp)}</td></tr><tr><td align="right">Total Medições Rec:</td><td align="right" style="color:#15803d;">${formatMoney(totRec)}</td></tr></table></div>`; const printArea=document.getElementById('print-area'); printArea.innerHTML=htmlTabela; printArea.classList.add('print-active'); window.print(); setTimeout(()=>printArea.classList.remove('print-active'),1000); }
 
         // ====== FORNECEDORES E PRODUTOS ======
@@ -2879,6 +2907,127 @@ async function getLogoBase64(url) {
       
       
         function fazerLogout(){ try { sb.auth.signOut(); } catch (_) {} localStorage.removeItem('rv_user'); window.location.replace('index.html'); }
+    </script>
+
+    <script>
+    // ====== CONTAS A PAGAR (mobile): selecao multipla e pagamento em lote ======
+    window.MV_PAG_SEL = window.MV_PAG_SEL || new Set();
+    window.MV_PAG_ITENS = window.MV_PAG_ITENS || {};
+
+    function mvConstruirItensPag(arr) {
+        window.MV_PAG_ITENS = {};
+        (arr || []).forEach(l => {
+            if (l.status_financeiro === 'PAGO') return;
+            if (l.eh_cartao) return;
+            if (!(l.tipo === 'compra' || l.tipo === 'despesa')) return;
+            const key = l.is_oc ? ('oc:' + l.id) : ('lg:' + l.uid);
+            window.MV_PAG_ITENS[key] = { tipo: l.is_oc ? 'oc' : 'lancamento', id: l.is_oc ? String(l.id) : l.uid, valor: parseFloat(l.valor_total) || 0 };
+        });
+        if (window.MV_PAG_SEL) Array.from(window.MV_PAG_SEL).forEach(k => { if (!window.MV_PAG_ITENS[k]) window.MV_PAG_SEL.delete(k); });
+    }
+    function mvPagAtualizarBarra() {
+        const sel = window.MV_PAG_SEL || new Set();
+        const bar = document.getElementById('mv-pag-bar');
+        const info = document.getElementById('mv-pag-info');
+        if (!bar) return;
+        let total = 0, n = 0;
+        sel.forEach(k => { const it = (window.MV_PAG_ITENS || {})[k]; if (it) { total += it.valor; n++; } });
+        if (n > 0) {
+            bar.classList.remove('hidden');
+            if (info) info.innerText = `${n} titulo(s) - ${formatMoney(total)}`;
+        } else {
+            bar.classList.add('hidden');
+            if (info) info.innerText = '';
+        }
+    }
+    function mvToggleSelPag(key, checked) {
+        if (!window.MV_PAG_SEL) window.MV_PAG_SEL = new Set();
+        if (checked) window.MV_PAG_SEL.add(key); else window.MV_PAG_SEL.delete(key);
+        mvPagAtualizarBarra();
+    }
+    function mvLimparSelPag() {
+        window.MV_PAG_SEL = new Set();
+        document.querySelectorAll('#fin-expense-history-list .mv-pag-sel').forEach(b => { b.checked = false; });
+        mvPagAtualizarBarra();
+    }
+    function mvAbrirModalBaixa() {
+        const sel = window.MV_PAG_SEL || new Set();
+        const itens = [];
+        sel.forEach(k => { const it = (window.MV_PAG_ITENS || {})[k]; if (it) itens.push(it); });
+        if (!itens.length) return showToast('Selecione ao menos um titulo.', true);
+        const total = itens.reduce((a, i) => a + i.valor, 0);
+        document.getElementById('mv-mpx-resumo').innerHTML = itens.map(i => `<div class="flex justify-between gap-2"><span class="truncate">${i.tipo === 'oc' ? ('O.C. #' + i.id) : ('Lancamento ' + String(i.id).slice(0, 8))}</span><span class="font-bold">${formatMoney(i.valor)}</span></div>`).join('');
+        document.getElementById('mv-mpx-total').innerText = formatMoney(total);
+        if (typeof RVContas !== 'undefined' && RVContas.preencherSelectContas) RVContas.preencherSelectContas('mv-mpx-conta', '', false, '');
+        const dt = document.getElementById('mv-mpx-data'); if (dt) dt.value = new Date().toISOString().slice(0, 10);
+        const obs = document.getElementById('mv-mpx-obs'); if (obs) obs.value = '';
+        document.getElementById('modal-baixa-multipla-mv').classList.remove('hidden');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+    function mvFecharModalBaixa() {
+        const m = document.getElementById('modal-baixa-multipla-mv'); if (m) m.classList.add('hidden');
+    }
+    async function mvConfirmarBaixa() {
+        const sel = window.MV_PAG_SEL || new Set();
+        const itens = [];
+        sel.forEach(k => { const it = (window.MV_PAG_ITENS || {})[k]; if (it) itens.push(it); });
+        if (!itens.length) return showToast('Selecione ao menos um titulo.', true);
+        const conta = document.getElementById('mv-mpx-conta').value;
+        const data = document.getElementById('mv-mpx-data').value || null;
+        const obs = document.getElementById('mv-mpx-obs').value || null;
+        if (!conta) return showToast('Selecione a conta.', true);
+        if (!confirm(`Confirmar o pagamento de ${itens.length} titulo(s)?`)) return;
+        showLoading(true);
+        const payload = itens.map(i => ({ tipo: i.tipo, id: String(i.id) }));
+        const { data: res, error } = await sb.rpc('rv_baixar_multiplo', { p_itens: payload, p_conta: conta, p_data: data, p_obs: obs });
+        showLoading(false);
+        if (error) return showToast('Erro: ' + error.message, true);
+        const pagos = (res && res.pagos) ? res.pagos : 0;
+        const falhas = (res && res.itens) ? res.itens.filter(x => !x.ok) : [];
+        mvFecharModalBaixa();
+        mvLimparSelPag();
+        showToast(`${pagos} titulo(s) pago(s)${falhas.length ? ' - ' + falhas.length + ' ignorado(s)' : ''}!`);
+        await loadData();
+        renderFinance();
+    }
+    function mvRenderLotesRecentes() {
+        const strip = document.getElementById('mv-lotes-strip');
+        if (!strip) return;
+        const movs = (STATE.movimentacoes || []).filter(m => m.lote_id && !m.estornada && (m.origem === 'baixa_oc' || m.origem === 'baixa_despesa' || m.origem === 'baixa_receita'));
+        const map = new Map();
+        movs.forEach(m => {
+            const k = m.lote_id;
+            if (!map.has(k)) map.set(k, { lote: k, data: m.data || m.created_at, total: 0, n: 0 });
+            const g = map.get(k);
+            g.total += parseFloat(m.valor) || 0;
+            g.n += 1;
+            const dt = m.data || m.created_at;
+            if (dt && (!g.data || new Date(dt) > new Date(g.data))) g.data = dt;
+        });
+        const list = Array.from(map.values()).sort((a, b) => new Date(b.data) - new Date(a.data)).slice(0, 5);
+        if (!list.length) { strip.classList.add('hidden'); strip.innerHTML = ''; return; }
+        strip.classList.remove('hidden');
+        strip.innerHTML = `<div class="flex items-center gap-2 flex-wrap">
+            <span class="text-[9px] font-black uppercase text-amber-800 flex items-center gap-1"><i data-lucide="package" class="w-3 h-3"></i> Lotes recentes</span>
+            ${list.map(g => `<span class="inline-flex items-center gap-1.5 bg-white border border-amber-300 rounded-lg px-2 py-1 font-bold text-slate-700">
+                <span>${formatDate(String(g.data).slice(0,10))} - ${g.n} - ${formatMoney(g.total)}</span>
+                <button onclick="mvEstornarLote('${g.lote}')" class="text-amber-700 hover:text-red-600 underline" title="Desfazer este lote">Desfazer</button>
+            </span>`).join('')}
+        </div>`;
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+    async function mvEstornarLote(loteId) {
+        if (!loteId) return;
+        if (!confirm('Desfazer este lote de pagamento? Os titulos voltam para PENDENTE.')) return;
+        showLoading(true);
+        const { data, error } = await sb.rpc('rv_estornar_lote', { p_lote: loteId });
+        showLoading(false);
+        if (error) return showToast('Erro: ' + error.message, true);
+        const n = (data && data.estornados) ? data.estornados : 0;
+        showToast(`${n} pagamento(s) desfeito(s)!`);
+        await loadData();
+        renderFinance();
+    }
     </script>
      <script src="js/contrato.js?v=20260922d"></script>
   </body>
