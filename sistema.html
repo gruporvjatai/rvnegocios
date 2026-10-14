@@ -2568,6 +2568,8 @@
 
         async function estornarCompra(id) {
             if(!confirm("Deseja estornar a confirmação desta O.C.? Ela voltará a ser Pendente e sairá do quadro Financeiro.")) return;
+            const temBaixa = (typeof RVContas !== 'undefined') && (STATE.movimentacoes || []).some(m => String(m.oc_id) === String(id) && m.origem === 'baixa_oc' && m.estornada !== true);
+            if (temBaixa) return showToast('O.C. já baixada. Estorne a baixa no Financeiro antes de estornar a confirmação.', true);
             showLoading(true);
             const { error } = await sb.from('jsp_logs').update({ 
                 tipo: 'oc_pendente', 
