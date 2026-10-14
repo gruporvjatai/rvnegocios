@@ -963,7 +963,9 @@ async function registrarPrecosAutomaticos(ocId) {
   for (const item of itensOC) {
     const produtoId = item.produto_id != null && Number(item.produto_id) > 0 ? Number(item.produto_id) : null;
     if (!produtoId) semProduto++;
-    const precoUnitario = parseFloat(item.valor_total) / parseFloat(item.quantidade);
+    // Usa o valor bruto (sem desconto geral da O.C.) para nao poluir o historico de precos.
+    const valorBase = item.valor_bruto != null ? parseFloat(item.valor_bruto) : parseFloat(item.valor_total);
+    const precoUnitario = valorBase / parseFloat(item.quantidade);
     inserts.push({
       produto_id: produtoId,
       data_preco: dataOC,

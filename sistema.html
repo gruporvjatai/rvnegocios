@@ -235,9 +235,17 @@
                         </div>
                     </div>
                     
-                    <div class="flex justify-between items-end border-t border-slate-200 pt-3">
+                    <div class="flex justify-between items-end border-t border-slate-200 pt-3 gap-4 flex-wrap">
                         <div class="text-sm font-bold text-slate-500">Total de Itens: <span id="cart-count" class="text-blue-700">0</span></div>
-                        <div class="text-right flex items-center gap-4">
+                        <div class="flex items-end gap-5 flex-wrap justify-end">
+                            <div class="text-right">
+                                <div class="text-[10px] text-slate-500 font-bold uppercase">Subtotal</div>
+                                <div id="pos-subtotal-display" class="text-lg font-bold text-slate-600 leading-none">R$ 0,00</div>
+                            </div>
+                            <div class="text-right">
+                                <label for="pos-desconto" class="block text-[10px] text-slate-500 font-bold uppercase">Desconto (R$)</label>
+                                <input type="number" step="0.01" min="0" id="pos-desconto" inputmode="decimal" placeholder="0,00" oninput="renderTotaisCarrinho()" class="w-28 p-2 border rounded-lg bg-slate-50 text-right text-sm font-bold text-red-600 focus:border-blue-600 outline-none">
+                            </div>
                             <div>
                                 <div class="text-xs text-slate-500 font-bold uppercase">Total da O.C.</div>
                                 <div id="pos-total-display" class="text-3xl font-black text-slate-800 leading-none">R$ 0,00</div>
@@ -1834,6 +1842,49 @@
         let CART = [];
         let CURRENT_OC_ID = null; 
 
+        // ====== DESCONTO GERAL DA O.C. (em reais) ======
+        // Soma o subtotal (sem desconto) dos itens do carrinho.
+        function subtotalCarrinho() {
+            return CART.reduce((acc, i) => acc + ((parseFloat(i.qty) || 0) * (parseFloat(i.price) || 0)), 0);
+        }
+        // Le o desconto atual digitado, sempre limitado entre 0 e o subtotal.
+        function descontoCarrinhoAtual() {
+            const el = document.getElementById('pos-desconto');
+            const sub = subtotalCarrinho();
+            let d = el ? (parseFloat(el.value) || 0) : 0;
+            if (d < 0) d = 0;
+            if (d > sub) d = sub;
+            return d;
+        }
+        // Distribui o desconto proporcionalmente entre os itens.
+        // Retorna { brutos, nets, desconto } garantindo que sum(nets) === subtotal - desconto.
+        function distribuirDescontoNosItens(desconto) {
+            const brutos = CART.map(i => Number(((parseFloat(i.qty) || 0) * (parseFloat(i.price) || 0)).toFixed(2)));
+            const sub = Number(brutos.reduce((a, b) => a + b, 0).toFixed(2));
+            let d = parseFloat(desconto) || 0;
+            if (d < 0) d = 0;
+            if (d > sub) d = sub;
+            if (sub <= 0 || d <= 0) return { brutos, nets: brutos, desconto: 0 };
+            const fator = d / sub;
+            let acc = 0;
+            const nets = brutos.map((b, idx) => {
+                if (idx === brutos.length - 1) return Number((sub - d - acc).toFixed(2));
+                const net = Number((b * (1 - fator)).toFixed(2));
+                acc = Number((acc + net).toFixed(2));
+                return net;
+            });
+            return { brutos, nets, desconto: d };
+        }
+        // Atualiza subtotal e total exibidos sem mexer no campo de desconto.
+        function renderTotaisCarrinho() {
+            const sub = subtotalCarrinho();
+            const d = descontoCarrinhoAtual();
+            const subEl = document.getElementById('pos-subtotal-display');
+            if (subEl) subEl.innerText = formatMoney(sub);
+            document.getElementById('pos-total-display').innerText = formatMoney(sub - d);
+            document.getElementById('cart-count').innerText = CART.length;
+        }
+
         // ====== INICIALIZAÇÃO ======
        document.addEventListener('DOMContentLoaded', function() { 
             const hoje = new Date();
@@ -2251,8 +2302,7 @@
             const box = document.getElementById('pos-cart-items');
             if(!CART.length) { 
                 box.innerHTML='<div class="flex flex-col items-center justify-center h-full text-slate-400 mt-10"><i data-lucide="shopping-basket" class="w-16 h-16 mb-4 opacity-50"></i><p class="text-sm">Nenhum item adicionado.</p></div>'; 
-                document.getElementById('pos-total-display').innerText=formatMoney(0); 
-                document.getElementById('cart-count').innerText='0'; 
+                renderTotaisCarrinho();
                 lucide.createIcons();
                 return; 
             }
@@ -2274,8 +2324,7 @@
                     <button onclick="CART.splice(${idx},1);renderCart()" class="text-red-400 hover:text-red-600 shrink-0 p-2 rounded-lg hover:bg-red-50"><i data-lucide="x-circle" width="18"></i></button>
                 </div>`;
             }).join('');
-            document.getElementById('pos-total-display').innerText = formatMoney(sub);
-            document.getElementById('cart-count').innerText = CART.length;
+            renderTotaisCarrinho();
             lucide.createIcons();
         }
         function updateCart(idx, field, value) { CART[idx][field] = parseFloat(value)||0; renderCart(); }
@@ -2287,6 +2336,8 @@
             document.getElementById('pos-fornecedor').value = '';
             document.getElementById('pos-fornecedor-btn').querySelector('span').innerText = 'Selecione Fornecedor';
             document.getElementById('pos-fase').value = '';
+            const descEl = document.getElementById('pos-desconto');
+            if (descEl) descEl.value = '';
             renderCart(); 
         }
 
@@ -2351,9 +2402,12 @@
 
             const obsFinal = `Solicitante: ${solicitante || 'Não informado'} | Obs: ${obs}`;
 
+            // Aplica o desconto geral (em reais): valor_total fica liquido e valor_bruto guarda o original.
+            const { brutos, nets, desconto } = distribuirDescontoNosItens(descontoCarrinhoAtual());
+
             if(CURRENT_OC_ID) await sb.from('jsp_logs').delete().eq('id', CURRENT_OC_ID).eq('tipo', 'oc_pendente');
 
-            const inserts = CART.map(i => ({
+            const inserts = CART.map((i, idx) => ({
                 id: newId.toString(),
                 obra_id: parseInt(obraId),
                 fornecedor_id: fornId ? parseInt(fornId) : null,
@@ -2361,7 +2415,9 @@
                 produto_id: produtoIdDoCarrinho(i),
                 produto_nome: i.name,
                 quantidade: i.qty,
-                valor_total: (i.qty * i.price),
+                valor_total: nets[idx],
+                valor_bruto: brutos[idx],
+                desconto: desconto,
                 data: dt,
                 vencimento: dt,
                 status_financeiro: 'PENDENTE',
@@ -2382,11 +2438,12 @@
             
             const ocs = {};
             STATE.logs.filter(l => (l.tipo === 'oc_pendente' || l.tipo === 'compra') && l.status_financeiro !== 'CANCELADO').forEach(l => {
-                if(!ocs[l.id]) ocs[l.id] = { id: l.id, data: l.data, itemsLog: [], itemsText: [], total: 0, obra_id: l.obra_id, forn_id: l.fornecedor_id, obs: l.observacao, tipo: l.tipo, fase: l.fase_obra };
+                if(!ocs[l.id]) ocs[l.id] = { id: l.id, data: l.data, itemsLog: [], itemsText: [], total: 0, desconto: 0, obra_id: l.obra_id, forn_id: l.fornecedor_id, obs: l.observacao, tipo: l.tipo, fase: l.fase_obra };
                 
                 ocs[l.id].itemsLog.push({ name: l.produto_nome, qty: l.quantidade, price: (parseFloat(l.valor_total) / parseFloat(l.quantidade)) });
                 ocs[l.id].itemsText.push(l.produto_nome + ` (x${l.quantidade})`);
                 ocs[l.id].total += parseFloat(l.valor_total);
+                if(parseFloat(l.desconto) > 0) ocs[l.id].desconto = parseFloat(l.desconto);
             });
 
            let arr = Object.values(ocs).sort((a,b)=> parseInt(b.id) - parseInt(a.id));
@@ -2411,7 +2468,10 @@
                         <span class="px-2 py-1 rounded text-[10px] font-bold ${o.tipo === 'compra' ? 'bg-indigo-100 text-indigo-700' : 'bg-orange-100 text-orange-700'}">${o.tipo === 'compra' ? 'CONFIRMADA' : 'PENDENTE'}</span>
                     </td>
                     <td class="p-4 text-xs text-slate-500 truncate max-w-[200px]" title="${o.itemsText.join(', ')}">${o.itemsText.join(', ')}</td>
-                    <td class="p-4 text-right font-bold text-slate-800">${formatMoney(o.total)}</td>
+                    <td class="p-4 text-right">
+                        <div class="font-bold text-slate-800">${formatMoney(o.total)}</div>
+                        ${o.desconto > 0 ? `<div class="text-[9px] text-green-600 font-bold">Desc. -${formatMoney(o.desconto)}</div>` : ''}
+                    </td>
                     <td class="p-4 text-center">
                         <div class="flex justify-center gap-2">
                             ${o.tipo === 'oc_pendente' ? `
@@ -2441,12 +2501,14 @@
 
             CART = itemsLog.map(i => {
                 const prod = getProdutoById(i.produto_id);
+                const qty = parseFloat(i.quantidade) || 0;
+                const bruto = parseFloat(i.valor_bruto != null ? i.valor_bruto : i.valor_total) || 0;
                 return {
                     id: i.produto_id ? Number(i.produto_id) : (prod ? Number(prod.id) : null),
                     name: prod ? prod.nome : i.produto_nome,
-                    qty: parseFloat(i.quantidade),
-                    price: (parseFloat(i.valor_total)/parseFloat(i.quantidade)),
-                    total: parseFloat(i.valor_total),
+                    qty: qty,
+                    price: qty > 0 ? (bruto / qty) : 0,
+                    total: bruto,
                     cat: prod ? (prod.categoria || i.categoria) : (i.categoria || 'Geral')
                 };
             });
@@ -2475,6 +2537,14 @@
             
             document.getElementById('pos-solicitante').value = sol;
             document.getElementById('pos-custom-obs').value = justObs;
+
+            // Restaura o desconto salvo (ou recalcula a partir de bruto - liquido)
+            const somaBruta = itemsLog.reduce((a, i) => a + (parseFloat(i.valor_bruto != null ? i.valor_bruto : i.valor_total) || 0), 0);
+            const somaTotal = itemsLog.reduce((a, i) => a + (parseFloat(i.valor_total) || 0), 0);
+            let descSalvo = parseFloat(itemsLog[0].desconto) || 0;
+            if (descSalvo <= 0) descSalvo = Math.max(0, Number((somaBruta - somaTotal).toFixed(2)));
+            const descInput = document.getElementById('pos-desconto');
+            if (descInput) descInput.value = descSalvo > 0 ? descSalvo : '';
 
             navigate('pos');
             renderCart();
@@ -3293,19 +3363,21 @@
                 justObs = parts[0] + '<br>' + parts[1];
             }
 
-            let total = 0;
+            let subtotal = 0;
             const linhas = logsOC.map((i, index) => {
-                const valor = parseFloat(i.valor_total);
-                total += valor;
-                const price = valor / parseFloat(i.quantidade);
+                const bruto = parseFloat(i.valor_bruto != null ? i.valor_bruto : i.valor_total) || 0;
+                subtotal += bruto;
+                const price = parseFloat(i.quantidade) > 0 ? (bruto / parseFloat(i.quantidade)) : 0;
                 const bg = index % 2 === 0 ? '#ffffff' : '#f8fafc';
                 return `<tr style="background-color: ${bg};">
                     <td style="border-bottom: 1px solid #000; padding: 8px;">${i.produto_nome}</td>
                     <td align="center" style="border-bottom: 1px solid #000; padding: 8px;">${i.quantidade}</td>
                     <td align="right" style="border-bottom: 1px solid #000; padding: 8px;">${formatMoney(price)}</td>
-                    <td align="right" style="border-bottom: 1px solid #000; padding: 8px;">${formatMoney(valor)}</td>
+                    <td align="right" style="border-bottom: 1px solid #000; padding: 8px;">${formatMoney(bruto)}</td>
                 </tr>`;
             }).join('');
+            const total = logsOC.reduce((a, i) => a + (parseFloat(i.valor_total) || 0), 0);
+            const descontoOC = Math.max(0, Number((subtotal - total).toFixed(2)));
 
             return `
             <div style="font-family: 'Helvetica', sans-serif; padding: 15px; width: 100%; border: 1px solid #000; min-height: 27.5cm;">
@@ -3369,7 +3441,16 @@
                         <td width="250" valign="top">
                             <table width="100%" style="font-size: 12px; border-collapse: collapse;">
                                 <tr>
-                                    <td style="padding: 10px 0; font-weight: 900;">TOTAL ESTIMADO:</td>
+                                    <td style="padding: 4px 0;">SUBTOTAL:</td>
+                                    <td align="right" style="padding: 4px 0;">${formatMoney(subtotal)}</td>
+                                </tr>
+                                ${descontoOC > 0 ? `
+                                <tr>
+                                    <td style="padding: 4px 0; color: #16a34a; font-weight: 700;">DESCONTO:</td>
+                                    <td align="right" style="padding: 4px 0; color: #16a34a; font-weight: 700;">- ${formatMoney(descontoOC)}</td>
+                                </tr>` : ''}
+                                <tr>
+                                    <td style="padding: 10px 0; font-weight: 900;">TOTAL:</td>
                                     <td align="right" style="padding: 10px 0; font-size: 14px; font-weight: 900;">${formatMoney(total)}</td>
                                 </tr>
                             </table>
@@ -3414,7 +3495,7 @@
                 justObs = parts[0] + '\n' + parts[1];
             }
 
-            let total = 0;
+            let subtotal = 0;
             const bodyTabela = [
                 [
                     { text: 'Descrição', style: 'tableHeader', alignment: 'left' },
@@ -3425,18 +3506,20 @@
             ];
 
             logsOC.forEach((i, index) => {
-                const valor = parseFloat(i.valor_total);
-                total += valor;
-                const price = valor / parseFloat(i.quantidade);
+                const bruto = parseFloat(i.valor_bruto != null ? i.valor_bruto : i.valor_total) || 0;
+                subtotal += bruto;
+                const price = parseFloat(i.quantidade) > 0 ? (bruto / parseFloat(i.quantidade)) : 0;
                 const bgColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
 
                 bodyTabela.push([
                     { text: i.produto_nome, fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 },
                     { text: i.quantidade.toString(), alignment: 'center', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 },
                     { text: formatMoney(price), alignment: 'right', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 },
-                    { text: formatMoney(valor), alignment: 'right', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 }
+                    { text: formatMoney(bruto), alignment: 'right', fillColor: bgColor, margin: [4, 6, 4, 6], fontSize: 10 }
                 ]);
             });
+            const total = logsOC.reduce((a, i) => a + (parseFloat(i.valor_total) || 0), 0);
+            const descontoOC = Math.max(0, Number((subtotal - total).toFixed(2)));
 
             async function getLogoBase64(url) {
                 return new Promise((resolve) => {
@@ -3559,7 +3642,15 @@
                             },
                             {
                                 width: '40%', alignment: 'right', margin: [0, 10, 0, 0],
-                                text: [ { text: 'TOTAL ESTIMADO:   ', bold: true, fontSize: 10 }, { text: formatMoney(total), bold: true, fontSize: 13 } ]
+                                table: {
+                                    widths: ['*', 'auto'],
+                                    body: [
+                                        [ { text: 'SUBTOTAL:', fontSize: 9 }, { text: formatMoney(subtotal), fontSize: 9, alignment: 'right' } ],
+                                        ...(descontoOC > 0 ? [[ { text: 'DESCONTO:', fontSize: 9, color: '#16a34a' }, { text: '- ' + formatMoney(descontoOC), fontSize: 9, alignment: 'right', color: '#16a34a' } ]] : []),
+                                        [ { text: 'TOTAL:', fontSize: 10, bold: true }, { text: formatMoney(total), fontSize: 13, bold: true, alignment: 'right' } ]
+                                    ]
+                                },
+                                layout: 'noBorders'
                             }
                         ],
                         margin: [0, 0, 0, 60]
@@ -4230,27 +4321,29 @@
           const dataAtual = new Date().toISOString();
       
           // Monta os novos registros (um por item)
-          const novosItens = itensOriginais.map(item => {
-              const precoUnitario = parseFloat(item.valor_total) / parseFloat(item.quantidade) || 0;
-              return {
-                  id: novoId.toString(),                           // mesmo ID para todos os itens
-                  obra_id: item.obra_id,
-                  fornecedor_id: item.fornecedor_id,               // mantém o mesmo fornecedor
-                   tipo: 'oc_pendente',                             // sempre pendente
-                   produto_id: item.produto_id ? Number(item.produto_id) : null,
-                   produto_nome: item.produto_nome,
-                  quantidade: item.quantidade,
-                  valor_total: precoUnitario * parseFloat(item.quantidade),
-                  data: dataAtual,
-                  vencimento: dataAtual,
-                  status_financeiro: 'PENDENTE',
-                  fase_obra: item.fase_obra || '',
-                  categoria: item.categoria || 'Geral',
-                  observacao: item.observacao 
-                      ? `(Cópia da O.C. #${id}) - ${item.observacao}` 
-                      : `(Cópia da O.C. #${id})`
-              };
-          });
+            const novosItens = itensOriginais.map(item => {
+                const brutoItem = parseFloat(item.valor_bruto != null ? item.valor_bruto : item.valor_total) || 0;
+                return {
+                    id: novoId.toString(),                           // mesmo ID para todos os itens
+                    obra_id: item.obra_id,
+                    fornecedor_id: item.fornecedor_id,               // mantém o mesmo fornecedor
+                     tipo: 'oc_pendente',                             // sempre pendente
+                    produto_id: item.produto_id ? Number(item.produto_id) : null,
+                    produto_nome: item.produto_nome,
+                   quantidade: item.quantidade,
+                   valor_total: parseFloat(item.valor_total) || 0,
+                   valor_bruto: brutoItem,
+                   desconto: parseFloat(item.desconto) || 0,
+                   data: dataAtual,
+                   vencimento: dataAtual,
+                   status_financeiro: 'PENDENTE',
+                   fase_obra: item.fase_obra || '',
+                   categoria: item.categoria || 'Geral',
+                   observacao: item.observacao 
+                       ? `(Cópia da O.C. #${id}) - ${item.observacao}` 
+                       : `(Cópia da O.C. #${id})`
+               };
+           });
       
           // Insere todos os novos itens no banco
           const { error } = await sb.from('jsp_logs').insert(novosItens);
