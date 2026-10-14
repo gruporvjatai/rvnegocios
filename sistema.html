@@ -327,11 +327,20 @@
                     </button>
                 </div>
             </div>
+
+            <div id="pag-sel-bar" class="hidden px-4 py-2 bg-blue-50 border-b border-blue-200 flex flex-wrap justify-between items-center gap-2">
+                <span id="pag-sel-info" class="text-xs font-bold text-blue-800"></span>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="limparSelPag()" class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100">Limpar</button>
+                    <button type="button" onclick="abrirModalBaixaMultipla()" class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-bold shadow flex items-center gap-1"><i data-lucide="check-circle" class="w-4 h-4"></i> Pagar selecionados</button>
+                </div>
+            </div>
         
             <div class="overflow-y-auto flex-1 p-0">
                 <table class="w-full text-sm text-left">
                     <thead class="text-slate-500 bg-slate-100 sticky top-0 border-b z-10">
                         <tr>
+                            <th class="p-3 w-9"><input type="checkbox" id="pag-sel-all" onclick="toggleSelAllPag(this.checked)" class="w-4 h-4 cursor-pointer" title="Selecionar todos os pendentes listados"></th>
                             <th class="p-3 font-semibold">Venc/Data</th>
                             <th class="p-3 font-semibold">Descrição / Categoria / Obra</th>
                             <th class="p-3 font-semibold">Valor</th>
@@ -1819,6 +1828,36 @@
 
     <div id="print-area" class="print-only"></div>
 
+    <!-- Modal: Pagamento multiplo (Contas a Pagar) -->
+    <div id="modal-baixa-multipla" class="hidden fixed inset-0 bg-black/60 z-[80] flex justify-center items-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-4 border-b flex justify-between items-center bg-slate-50 rounded-t-2xl">
+                <h3 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i> Pagar selecionados</h3>
+                <button onclick="fecharModalBaixaMultipla()" class="text-slate-400 hover:text-red-500"><i data-lucide="x"></i></button>
+            </div>
+            <div class="p-4 space-y-3 overflow-y-auto">
+                <div id="mpx-resumo" class="text-xs text-slate-600 bg-slate-50 border rounded-lg p-3 max-h-40 overflow-y-auto"></div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Conta / Carteira (uma para o lote)</label>
+                    <select id="mpx-conta" class="w-full p-2 border rounded-lg text-sm font-bold"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data do pagamento</label>
+                    <input type="date" id="mpx-data" class="w-full p-2 border rounded-lg text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Observacao (opcional)</label>
+                    <input type="text" id="mpx-obs" placeholder="Ex.: pagamento fim de mes" class="w-full p-2 border rounded-lg text-sm">
+                </div>
+                <div id="mpx-total" class="text-right font-black text-red-600 text-lg"></div>
+            </div>
+            <div class="p-4 border-t bg-slate-50 flex gap-2 rounded-b-2xl">
+                <button onclick="fecharModalBaixaMultipla()" class="flex-1 py-2 bg-white border rounded-lg font-bold text-slate-600">Cancelar</button>
+                <button onclick="confirmarBaixaMultipla()" class="flex-1 py-2 bg-green-600 text-white rounded-lg font-bold">Confirmar pagamento</button>
+            </div>
+        </div>
+    </div>
+
     <script>
     window.rvUp = function (v) { return String(v == null ? '' : v).toUpperCase(); };
     window.rvHasFold = function (hay, needle) { return window.rvUp(hay).indexOf(window.rvUp(needle)) !== -1; };
@@ -2763,6 +2802,7 @@
             if (!term) return true;
             const t = term.toLowerCase().trim();
             const obra = STATE.obras.find(x => x.id == l.obra_id);
+            const forn = l.is_oc ? STATE.fornecedores.find(x => x.id == l.fornecedor_id) : null;
             const valor = parseFloat(l.valor_total) || 0;
             const textos = [
                 l.produto_nome,
@@ -2771,6 +2811,7 @@
                 l.fase_obra,
                 String(l.id || ''),
                 obra ? obra.nome : '',
+                forn ? forn.nome : '',
                 l.is_oc ? ('O.C. #' + l.id + ' Compra Consolidada') : ''
             ].filter(Boolean).join(' ').toLowerCase();
             if (textos.includes(t)) return true;
@@ -2788,6 +2829,90 @@
                 if (digitsTerm.length >= 2 && digitsVal.includes(digitsTerm)) return true;
             }
             return false;
+        }
+
+        // ====== CONTAS A PAGAR: SELECAO MULTIPLA (PAGAMENTO EM LOTE) ======
+        window.PAG_SEL = window.PAG_SEL || new Set();
+
+        function pagAtualizarBarra() {
+            const sel = window.PAG_SEL || new Set();
+            const bar = document.getElementById('pag-sel-bar');
+            const info = document.getElementById('pag-sel-info');
+            if (!bar) return;
+            let total = 0, n = 0;
+            sel.forEach(k => { const it = (window.PAG_ITENS || {})[k]; if (it) { total += it.valor; n++; } });
+            if (n > 0) {
+                bar.classList.remove('hidden');
+                info.innerText = `${n} titulo(s) selecionado(s) - Total ${formatMoney(total)}`;
+            } else {
+                bar.classList.add('hidden');
+                if (info) info.innerText = '';
+            }
+            const boxes = Array.from(document.querySelectorAll('#fin-expense-history-list .pag-sel'));
+            const all = document.getElementById('pag-sel-all');
+            if (all) all.checked = boxes.length > 0 && boxes.every(b => b.checked);
+        }
+        function toggleSelPag(key, checked) {
+            if (!window.PAG_SEL) window.PAG_SEL = new Set();
+            if (checked) window.PAG_SEL.add(key); else window.PAG_SEL.delete(key);
+            pagAtualizarBarra();
+        }
+        function toggleSelAllPag(checked) {
+            if (!window.PAG_SEL) window.PAG_SEL = new Set();
+            document.querySelectorAll('#fin-expense-history-list .pag-sel').forEach(b => {
+                b.checked = checked;
+                const k = b.getAttribute('data-key');
+                if (checked) window.PAG_SEL.add(k); else window.PAG_SEL.delete(k);
+            });
+            pagAtualizarBarra();
+        }
+        function limparSelPag() {
+            window.PAG_SEL = new Set();
+            document.querySelectorAll('#fin-expense-history-list .pag-sel').forEach(b => { b.checked = false; });
+            const all = document.getElementById('pag-sel-all');
+            if (all) all.checked = false;
+            pagAtualizarBarra();
+        }
+        function abrirModalBaixaMultipla() {
+            const sel = window.PAG_SEL || new Set();
+            const itens = [];
+            sel.forEach(k => { const it = (window.PAG_ITENS || {})[k]; if (it) itens.push(it); });
+            if (!itens.length) return showToast('Selecione ao menos um titulo.', true);
+            const total = itens.reduce((a, i) => a + i.valor, 0);
+            const resumo = document.getElementById('mpx-resumo');
+            resumo.innerHTML = itens.map(i => `<div class="flex justify-between gap-2"><span class="truncate">${i.tipo === 'oc' ? ('O.C. #' + i.id) : ('Lancamento ' + String(i.id).slice(0, 8))}</span><span class="font-bold">${formatMoney(i.valor)}</span></div>`).join('');
+            document.getElementById('mpx-total').innerText = formatMoney(total);
+            if (typeof RVContas !== 'undefined' && RVContas.preencherSelectContas) RVContas.preencherSelectContas('mpx-conta', '', false, '');
+            const dt = document.getElementById('mpx-data'); if (dt) dt.value = (typeof getTodayDate === 'function' ? getTodayDate() : new Date().toISOString().slice(0, 10));
+            const obs = document.getElementById('mpx-obs'); if (obs) obs.value = '';
+            document.getElementById('modal-baixa-multipla').classList.remove('hidden');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+        function fecharModalBaixaMultipla() {
+            const m = document.getElementById('modal-baixa-multipla'); if (m) m.classList.add('hidden');
+        }
+        async function confirmarBaixaMultipla() {
+            const sel = window.PAG_SEL || new Set();
+            const itens = [];
+            sel.forEach(k => { const it = (window.PAG_ITENS || {})[k]; if (it) itens.push(it); });
+            if (!itens.length) return showToast('Selecione ao menos um titulo.', true);
+            const conta = document.getElementById('mpx-conta').value;
+            const data = document.getElementById('mpx-data').value || null;
+            const obs = document.getElementById('mpx-obs').value || null;
+            if (!conta) return showToast('Selecione a conta.', true);
+            if (!confirm(`Confirmar o pagamento de ${itens.length} titulo(s)?`)) return;
+            showLoading(true);
+            const payload = itens.map(i => ({ tipo: i.tipo, id: String(i.id) }));
+            const { data: res, error } = await sb.rpc('rv_baixar_multiplo', { p_itens: payload, p_conta: conta, p_data: data, p_obs: obs });
+            showLoading(false);
+            if (error) return showToast('Erro: ' + error.message, true);
+            const pagos = (res && res.pagos) ? res.pagos : 0;
+            const falhas = (res && res.itens) ? res.itens.filter(x => !x.ok) : [];
+            fecharModalBaixaMultipla();
+            limparSelPag();
+            showToast(`${pagos} titulo(s) pago(s)${falhas.length ? ' - ' + falhas.length + ' ignorado(s)' : ''}!`);
+            await loadData();
+            renderFinance();
         }
 
         function renderFinance() {
@@ -2828,6 +2953,17 @@
                 }
             });
             
+            // Mapa de titulos pagaveis (selecao multipla) - usa a lista antes dos filtros de busca/status/data
+            window.PAG_ITENS = {};
+            despArr.forEach(l => {
+                if (l.status_financeiro === 'PAGO') return;
+                if (l.eh_cartao) return;
+                if (!(l.tipo === 'compra' || l.tipo === 'despesa')) return;
+                const key = l.is_oc ? ('oc:' + l.id) : ('lg:' + l.uid);
+                window.PAG_ITENS[key] = { tipo: l.is_oc ? 'oc' : 'lancamento', id: l.is_oc ? String(l.id) : l.uid, valor: parseFloat(l.valor_total) || 0 };
+            });
+            if (window.PAG_SEL) Array.from(window.PAG_SEL).forEach(k => { if (!window.PAG_ITENS[k]) window.PAG_SEL.delete(k); });
+
             const expSearch = document.getElementById('exp-search').value;
             const expStatus = document.getElementById('exp-status').value;
             const expDateStart = document.getElementById('exp-date-start').value;
@@ -2847,6 +2983,9 @@
                 const isPago = l.status_financeiro === 'PAGO';
                 
                 const obra = STATE.obras.find(x=>x.id==l.obra_id);
+                const pagKey = l.is_oc ? ('oc:' + l.id) : ('lg:' + l.uid);
+                const podeSel = !isPago && !l.eh_cartao && (l.tipo === 'compra' || l.tipo === 'despesa');
+                const selMarcado = window.PAG_SEL && window.PAG_SEL.has(pagKey);
                 const forn = l.is_oc ? STATE.fornecedores.find(x=>x.id==l.fornecedor_id) : null;
                 const extraInfo = (!l.is_oc && l.observacao) ? `<div class="text-[9px] text-slate-500 font-bold uppercase mt-0.5">${l.observacao}</div>` : '';
 
@@ -2873,6 +3012,7 @@
                 }
 
                 return `<tr class="border-b ${isPago?'bg-green-50':'bg-red-50/20'} transition">
+                    <td class="p-3 text-center">${podeSel ? `<input type="checkbox" class="pag-sel w-4 h-4 cursor-pointer" data-key="${pagKey}" ${selMarcado?'checked':''} onchange="toggleSelPag('${pagKey}', this.checked)">` : ''}</td>
                     <td class="p-3 text-xs font-bold text-slate-700">${formatDate(l.vencimento || l.data)}</td>
                     <td class="p-3">
                         <div class="font-bold text-slate-800 text-xs flex items-center gap-2">${l.is_oc ? `O.C. #${l.id} - Compra Consolidada <button onclick="verOC('${l.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 p-1 rounded shrink-0" title="Visualizar O.C. (sem imprimir)"><i data-lucide="eye" class="w-3.5 h-3.5"></i></button>` : l.produto_nome}</div>
@@ -2892,7 +3032,7 @@
             const tfootDesp = document.getElementById('fin-expense-totals');
             if (tfootDesp) {
                 tfootDesp.innerHTML = `<tr>
-                    <td class="p-3 text-[10px] font-bold uppercase text-slate-500" colspan="2">${despArr.length} lancamento(s) filtrado(s)</td>
+                    <td class="p-3 text-[10px] font-bold uppercase text-slate-500" colspan="3">${despArr.length} lancamento(s) filtrado(s)</td>
                     <td class="p-3 text-right" colspan="2">
                         <div class="flex flex-wrap items-center justify-end gap-x-4 gap-y-1">
                             <span class="text-[10px] font-bold text-slate-500 uppercase whitespace-nowrap">Pendente ${formatMoney(totDespFiltPend)}</span>
@@ -2902,6 +3042,8 @@
                     </td>
                 </tr>`;
             }
+
+            pagAtualizarBarra();
 
             const listaRec = document.getElementById('fin-receivables-list');
             let recArr = logsFilt.filter(l => l.tipo === 'receita');
