@@ -2867,19 +2867,72 @@
             const all = document.getElementById('pag-sel-all');
             if (all) all.checked = boxes.length > 0 && boxes.every(b => b.checked);
         }
+        function pagObraDe(it) { return (it && it.obra_id != null && it.obra_id !== '') ? String(it.obra_id) : null; }
+        function pagObraNome(id) { const o = (STATE.obras || []).find(x => String(x.id) === String(id)); return o ? o.nome : 'obra'; }
+        function pagObraSelecionada() {
+            const sel = window.PAG_SEL || new Set();
+            let obra = null;
+            sel.forEach(k => { const o = pagObraDe((window.PAG_ITENS || {})[k]); if (o != null && obra == null) obra = o; });
+            return obra;
+        }
+        function pagConflitoObra(key) {
+            const nova = pagObraDe((window.PAG_ITENS || {})[key]);
+            if (nova == null) return false;
+            const atual = pagObraSelecionada();
+            return atual != null && atual !== nova;
+        }
+        function pagAplicarBloqueioObra() {
+            const obraSel = pagObraSelecionada();
+            document.querySelectorAll('#fin-expense-history-list .pag-sel').forEach(b => {
+                const o = pagObraDe((window.PAG_ITENS || {})[b.getAttribute('data-key')]);
+                const bloq = obraSel != null && o != null && o !== obraSel;
+                b.disabled = bloq;
+                const wrap = b.closest('label') || b.closest('td');
+                if (wrap) wrap.classList.toggle('opacity-40', bloq);
+                b.title = bloq ? 'Titulo de outra obra. Filtre por obra ou limpe a selecao.' : '';
+            });
+        }
         function toggleSelPag(key, checked) {
             if (!window.PAG_SEL) window.PAG_SEL = new Set();
-            if (checked) window.PAG_SEL.add(key); else window.PAG_SEL.delete(key);
+            if (checked) {
+                if (pagConflitoObra(key)) {
+                    showToast('Este titulo e de outra obra. Faca um lote por obra.', true);
+                    const b = document.querySelector(`#fin-expense-history-list .pag-sel[data-key="${key}"]`);
+                    if (b) b.checked = false;
+                    return;
+                }
+                window.PAG_SEL.add(key);
+            } else {
+                window.PAG_SEL.delete(key);
+            }
             pagAtualizarBarra();
+            pagAplicarBloqueioObra();
         }
         function toggleSelAllPag(checked) {
             if (!window.PAG_SEL) window.PAG_SEL = new Set();
-            document.querySelectorAll('#fin-expense-history-list .pag-sel').forEach(b => {
-                b.checked = checked;
-                const k = b.getAttribute('data-key');
-                if (checked) window.PAG_SEL.add(k); else window.PAG_SEL.delete(k);
-            });
+            const boxes = Array.from(document.querySelectorAll('#fin-expense-history-list .pag-sel'));
+            if (!checked) {
+                boxes.forEach(b => { b.checked = false; window.PAG_SEL.delete(b.getAttribute('data-key')); });
+            } else {
+                const obras = new Set();
+                boxes.forEach(b => { const o = pagObraDe((window.PAG_ITENS || {})[b.getAttribute('data-key')]); if (o != null) obras.add(o); });
+                let alvo = pagObraSelecionada();
+                let aviso = false;
+                if (alvo == null && obras.size > 1 && boxes.length) {
+                    alvo = pagObraDe((window.PAG_ITENS || {})[boxes[0].getAttribute('data-key')]);
+                    aviso = true;
+                }
+                boxes.forEach(b => {
+                    const k = b.getAttribute('data-key');
+                    const o = pagObraDe((window.PAG_ITENS || {})[k]);
+                    const permite = (alvo == null) || (o == null) || (o === alvo);
+                    b.checked = permite;
+                    if (permite) window.PAG_SEL.add(k); else window.PAG_SEL.delete(k);
+                });
+                if (aviso) showToast('Ha titulos de obras diferentes. Selecionei apenas os da ' + pagObraNome(alvo) + '.');
+            }
             pagAtualizarBarra();
+            pagAplicarBloqueioObra();
         }
         function limparSelPag() {
             window.PAG_SEL = new Set();
@@ -2887,6 +2940,7 @@
             const all = document.getElementById('pag-sel-all');
             if (all) all.checked = false;
             pagAtualizarBarra();
+            pagAplicarBloqueioObra();
         }
         function abrirModalBaixaMultipla() {
             const sel = window.PAG_SEL || new Set();
@@ -2911,6 +2965,8 @@
             const itens = [];
             sel.forEach(k => { const it = (window.PAG_ITENS || {})[k]; if (it) itens.push(it); });
             if (!itens.length) return showToast('Selecione ao menos um titulo.', true);
+            const _obras = new Set(itens.map(i => pagObraDe(i)).filter(o => o != null));
+            if (_obras.size > 1) return showToast('Selecione titulos de uma unica obra.', true);
             const conta = document.getElementById('mpx-conta').value;
             const data = document.getElementById('mpx-data').value || null;
             const obs = document.getElementById('mpx-obs').value || null;
@@ -3127,7 +3183,7 @@
                 if (l.eh_cartao) return;
                 if (!(l.tipo === 'compra' || l.tipo === 'despesa')) return;
                 const key = l.is_oc ? ('oc:' + l.id) : ('lg:' + l.uid);
-                window.PAG_ITENS[key] = { tipo: l.is_oc ? 'oc' : 'lancamento', id: l.is_oc ? String(l.id) : l.uid, valor: parseFloat(l.valor_total) || 0 };
+                window.PAG_ITENS[key] = { tipo: l.is_oc ? 'oc' : 'lancamento', id: l.is_oc ? String(l.id) : l.uid, valor: parseFloat(l.valor_total) || 0, obra_id: (l.obra_id != null && l.obra_id !== '') ? String(l.obra_id) : null };
             });
             if (window.PAG_SEL) Array.from(window.PAG_SEL).forEach(k => { if (!window.PAG_ITENS[k]) window.PAG_SEL.delete(k); });
 
@@ -3224,6 +3280,7 @@
             }
 
             pagAtualizarBarra();
+            pagAplicarBloqueioObra();
             renderLotesRecentes();
 
             const listaRec = document.getElementById('fin-receivables-list');

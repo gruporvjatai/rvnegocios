@@ -7,6 +7,8 @@
 --     tipo, itens e datas permanecem intactos.
 --   * Cada titulo pago gera 1 movimento (mantem relatorio por obra/fornecedor),
 --     todos marcados com o mesmo lote_id para permitir estorno em lote depois.
+--   * Um lote so pode conter titulos da mesma obra (obras nulas/"Geral" sao
+--     compativeis com qualquer obra); misturar obras levanta excecao.
 
 alter table public.jsp_movimentacoes add column if not exists lote_id uuid;
 
@@ -35,6 +37,7 @@ declare
   v_uid uuid;
   v_total numeric;
   v_obra int;
+  v_obra_ref int := null;
   v_desc text := coalesce(nullif(btrim(p_obs), ''), 'Pagamento em lote');
   v_res jsonb := '[]'::jsonb;
   v_pagos int := 0;
@@ -58,6 +61,11 @@ begin
       if coalesce(v_total,0) <= 0 then
         v_res := v_res || jsonb_build_object('tipo', v_tipo, 'id', v_id, 'ok', false, 'erro', 'O.C. nao encontrada ou ja baixada');
         continue;
+      end if;
+
+      if v_obra is not null then
+        if v_obra_ref is null then v_obra_ref := v_obra;
+        elsif v_obra_ref <> v_obra then raise exception 'Selecione titulos de uma unica obra.'; end if;
       end if;
 
       insert into public.jsp_movimentacoes(conta_id, tipo, valor, data, descricao, obra_id, oc_id, origem, lote_id, created_by)
@@ -89,6 +97,11 @@ begin
       if v_total is null then
         v_res := v_res || jsonb_build_object('tipo', v_tipo, 'id', v_id, 'ok', false, 'erro', 'Lancamento nao encontrado, ja baixado ou no cartao');
         continue;
+      end if;
+
+      if v_obra is not null then
+        if v_obra_ref is null then v_obra_ref := v_obra;
+        elsif v_obra_ref <> v_obra then raise exception 'Selecione titulos de uma unica obra.'; end if;
       end if;
 
       insert into public.jsp_movimentacoes(conta_id, tipo, valor, data, descricao, categoria, obra_id, log_uid, origem, lote_id, created_by)
