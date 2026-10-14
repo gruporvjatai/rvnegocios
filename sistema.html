@@ -2991,10 +2991,82 @@
                 <span class="text-[10px] font-black uppercase text-amber-800 flex items-center gap-1"><i data-lucide="package" class="w-3.5 h-3.5"></i> Lotes recentes</span>
                 ${list.map(g => `<span class="inline-flex items-center gap-2 bg-white border border-amber-300 rounded-lg px-2 py-1 text-[11px] font-bold text-slate-700">
                     <span>${formatDate(String(g.data).slice(0,10))} - ${g.n} titulo(s) - ${formatMoney(g.total)}</span>
+                    <button onclick="imprimirComprovanteLote('${g.lote}')" class="text-blue-700 hover:text-blue-900 underline" title="Imprimir comprovante">Comprovante</button>
                     <button onclick="estornarLote('${g.lote}')" class="text-amber-700 hover:text-red-600 underline" title="Desfazer este lote">Desfazer</button>
                 </span>`).join('')}
             </div>`;
             if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+        function loteFornNome(m) {
+            let l = null;
+            if (m.oc_id) l = (STATE.logs || []).find(x => String(x.id) === String(m.oc_id) && x.tipo === 'compra');
+            else if (m.log_uid) l = (STATE.logs || []).find(x => x.uid === m.log_uid);
+            if (!l) return '';
+            const f = (STATE.fornecedores || []).find(x => String(x.id) === String(l.fornecedor_id));
+            return f ? f.nome : '';
+        }
+        function buildHTMLComprovanteLote(loteId) {
+            const movs = (STATE.movimentacoes || []).filter(m => String(m.lote_id) === String(loteId)
+                && (m.origem === 'baixa_oc' || m.origem === 'baixa_despesa' || m.origem === 'baixa_receita') && !m.estornada);
+            if (!movs.length) return '';
+            const dataLote = movs.map(m => m.data || m.created_at).filter(Boolean).sort().slice(-1)[0] || '';
+            const conta = (STATE.contas || []).find(c => String(c.id) === String(movs[0].conta_id));
+            const total = movs.reduce((a, m) => a + (parseFloat(m.valor) || 0), 0);
+            const linhas = movs.map(m => {
+                const obra = (STATE.obras || []).find(o => String(o.id) === String(m.obra_id));
+                const desc = m.oc_id ? ('O.C. #' + m.oc_id) : (m.descricao || 'Lançamento');
+                return `<tr>
+                    <td style="padding:6px; border-bottom:1px solid #e2e8f0;">${desc}</td>
+                    <td style="padding:6px; border-bottom:1px solid #e2e8f0;">${loteFornNome(m) || '-'}</td>
+                    <td style="padding:6px; border-bottom:1px solid #e2e8f0;">${obra ? obra.nome : 'Geral'}</td>
+                    <td align="right" style="padding:6px; border-bottom:1px solid #e2e8f0;">${formatMoney(m.valor)}</td>
+                </tr>`;
+            }).join('');
+            return `<div style="font-family:'Segoe UI',Arial; padding:24px; color:#1e293b;">
+                <div style="display:flex; justify-content:space-between; border-bottom:3px solid #1d4ed8; padding-bottom:12px; margin-bottom:20px;">
+                    <img src="logo.png" style="height:64px;">
+                    <div style="text-align:right;">
+                        <h1 style="margin:0; font-size:20px;">COMPROVANTE DE PAGAMENTO</h1>
+                        <p style="margin:4px 0 0 0; font-size:11px; color:#1d4ed8; font-weight:bold;">Pagamento em lote</p>
+                        <p style="margin:2px 0 0 0; font-size:10px;">Lote: ${String(loteId).slice(0, 8).toUpperCase()}</p>
+                    </div>
+                </div>
+                <table style="font-size:11px; margin-bottom:16px;">
+                    <tr>
+                        <td style="padding:2px 8px 2px 0; color:#64748b; font-weight:bold;">DATA:</td><td>${formatDate(String(dataLote).slice(0, 10))}</td>
+                        <td style="padding:2px 8px 2px 20px; color:#64748b; font-weight:bold;">CONTA:</td><td>${conta ? conta.nome : '-'}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:2px 8px 2px 0; color:#64748b; font-weight:bold;">TÍTULOS:</td><td colspan="3">${movs.length}</td>
+                    </tr>
+                </table>
+                <table width="100%" style="border-collapse:collapse; font-size:11px;">
+                    <thead>
+                        <tr>
+                            <th align="left" style="background:#0f172a; color:#fff; padding:8px;">Título</th>
+                            <th align="left" style="background:#0f172a; color:#fff; padding:8px;">Fornecedor</th>
+                            <th align="left" style="background:#0f172a; color:#fff; padding:8px;">Obra</th>
+                            <th align="right" style="background:#0f172a; color:#fff; padding:8px;">Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody>${linhas}</tbody>
+                </table>
+                <table width="100%" style="margin-top:10px;">
+                    <tr><td align="right" style="font-size:14px; font-weight:900; padding-top:8px;">TOTAL PAGO: ${formatMoney(total)}</td></tr>
+                </table>
+                <div style="margin-top:60px; display:flex; justify-content:space-between;">
+                    <div style="border-top:1px solid #000; width:45%; text-align:center; padding-top:5px; font-size:10px; font-weight:bold;">RESPONSÁVEL PELO PAGAMENTO</div>
+                    <div style="border-top:1px solid #000; width:45%; text-align:center; padding-top:5px; font-size:10px; font-weight:bold;">RECEBEDOR / FORNECEDOR</div>
+                </div>
+                <p style="margin-top:30px; font-size:9px; color:#94a3b8; text-align:center;">Emitido em ${new Date().toLocaleString('pt-BR')} · RV NEGÓCIOS E COMPANHIA</p>
+            </div>`;
+        }
+        function imprimirComprovanteLote(loteId) {
+            const html = buildHTMLComprovanteLote(loteId);
+            if (!html) return showToast('Lote não encontrado.', true);
+            document.getElementById('print-area').innerHTML = html;
+            document.body.classList.add('rv-printing');
+            setTimeout(() => { window.print(); document.body.classList.remove('rv-printing'); }, 300);
         }
         async function estornarLote(loteId) {
             if (!loteId) return;
