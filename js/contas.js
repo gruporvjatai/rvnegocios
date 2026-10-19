@@ -63,6 +63,13 @@
     function contasAtivas() { return contas().filter(function (c) { return c.ativa !== false; }); }
     function obras() { var s = STATEref(); return (s && s.obras) ? s.obras : []; }
     function nomeObra(id) { if (id == null || id === '') return '-'; var o = obras().find(function (x) { return String(x.id) === String(id); }); return o ? (o.nome || o.nome_obra || '-') : '-'; }
+    function contaObraSufixo(id) { var c = contaById(id); return c ? ' (' + nomeObra(c.obra_id) + ')' : ''; }
+    function descMov(m) {
+        var d = m.descricao || '';
+        if (m.tipo === 'TRANSFERENCIA_SAIDA' && m.conta_destino_id) return d + ' -> ' + nomeConta(m.conta_destino_id) + contaObraSufixo(m.conta_destino_id);
+        if (m.tipo === 'TRANSFERENCIA_ENTRADA' && m.conta_destino_id) return d + ' <- ' + nomeConta(m.conta_destino_id) + contaObraSufixo(m.conta_destino_id);
+        return d;
+    }
     function contasPorObra() { return contas().filter(function (c) { return !filtroObra || String(c.obra_id) === String(filtroObra); }); }
     function optionsObrasHtml(valor) {
         return '<option value="">-- Selecione --</option>' + obras().map(function (o) {
@@ -216,18 +223,32 @@
         var c = contaById(contaId);
         var obra = c ? c.obra_id : (filtroObra || '');
         preencherSelectContas('tr-origem', contaId || '', false, obra);
+        document.getElementById('tr-destino').value = '';
         onChangeTransfOrigem();
         document.getElementById('tr-valor').value = '';
         document.getElementById('tr-data').value = hoje();
         document.getElementById('tr-desc').value = 'Transferencia entre contas';
         document.getElementById('modal-transferencia').classList.remove('hidden');
+        atualizarAvisoTransferencia();
     }
     function onChangeTransfOrigem() {
         var origem = document.getElementById('tr-origem').value;
-        var c = contaById(origem);
-        var obra = c ? c.obra_id : (filtroObra || '');
-        var atual = document.getElementById('tr-destino').value;
-        preencherSelectContas('tr-destino', atual, true, obra);
+        preencherSelectContasDestino('tr-destino', document.getElementById('tr-destino').value, origem);
+        atualizarAvisoTransferencia();
+    }
+    function onChangeTransfDestino() { atualizarAvisoTransferencia(); }
+    function atualizarAvisoTransferencia() {
+        var aviso = document.getElementById('tr-aviso');
+        if (!aviso) return;
+        var o = contaById(document.getElementById('tr-origem').value);
+        var d = contaById(document.getElementById('tr-destino').value);
+        if (o && d && String(o.obra_id) !== String(d.obra_id)) {
+            aviso.style.display = '';
+            aviso.textContent = 'Transferencia entre obras: ' + nomeObra(o.obra_id) + ' -> ' + nomeObra(d.obra_id) + '.';
+        } else {
+            aviso.style.display = 'none';
+            aviso.textContent = '';
+        }
     }
     async function salvarTransferencia() {
         var origem = document.getElementById('tr-origem').value;
@@ -238,6 +259,14 @@
         if (!origem || !destino) return toast('Selecione origem e destino.', true);
         if (origem === destino) return toast('Origem e destino iguais.', true);
         if (isNaN(valor) || valor <= 0) return toast('Informe um valor valido.', true);
+        var co = contaById(origem);
+        var cd = contaById(destino);
+        if (co && cd && String(co.obra_id) !== String(cd.obra_id)) {
+            if (!confirm('Transferir ' + money(valor) + ' de "' + (co.nome || '') + '" (' + nomeObra(co.obra_id) + ') para "' + (cd.nome || '') + '" (' + nomeObra(cd.obra_id) + ')?')) return;
+            if (desc === 'Transferencia' || desc === 'Transferencia entre contas') {
+                desc = 'Transferencia ' + nomeObra(co.obra_id) + ' -> ' + nomeObra(cd.obra_id);
+            }
+        }
         loading(true);
         var r = await sb.rpc('rv_transferir', { p_origem: origem, p_destino: destino, p_valor: valor, p_data: data, p_desc: desc });
         loading(false);
@@ -389,6 +418,31 @@
         if (valor) el.value = String(valor);
     }
 
+    function preencherSelectContasDestino(elId, valor, origemId) {
+        var el = document.getElementById(elId);
+        if (!el) return;
+        var grupos = {};
+        var ordem = [];
+        contasAtivas().forEach(function (c) {
+            if (String(c.id) === String(origemId)) return;
+            var k = String(c.obra_id == null ? '' : c.obra_id);
+            if (!grupos[k]) { grupos[k] = []; ordem.push(k); }
+            grupos[k].push(c);
+        });
+        var html = '<option value="">-- Selecione --</option>';
+        ordem.forEach(function (k) {
+            var lista = grupos[k].slice().sort(function (a, b) {
+                return (a.ordem || 0) - (b.ordem || 0) || String(a.nome).localeCompare(String(b.nome));
+            });
+            html += '<optgroup label="' + esc(nomeObra(k)) + '">' +
+                lista.map(function (c) {
+                    return '<option value="' + esc(c.id) + '">' + esc(c.nome) + '</option>';
+                }).join('') + '</optgroup>';
+        });
+        el.innerHTML = html;
+        if (valor) el.value = String(valor);
+    }
+
     function preencherSelectPorForma(elId, forma, valor, obraFiltro) {
         var el = document.getElementById(elId);
         if (!el) return;
@@ -486,7 +540,7 @@
             var est = m.estornada === true ? '<span class="text-[9px] font-bold text-slate-400">ESTORNADO</span> ' : '';
             return '<tr class="border-b hover:bg-slate-50">' +
                 '<td class="p-2 text-[10px] font-bold text-slate-500 whitespace-nowrap">' + (m.data ? esc(String(m.data).slice(0,10)) : '-') + '</td>' +
-                '<td class="p-2 text-xs text-slate-700">' + est + esc(m.descricao || '-') +
+                '<td class="p-2 text-xs text-slate-700">' + est + esc(descMov(m) || '-') +
                     '<div class="text-[9px] text-slate-400 font-bold uppercase">' + tipoLabel(m.tipo) + (m.categoria ? ' | ' + esc(m.categoria) : '') + '</div></td>' +
                 '<td class="p-2 text-right text-xs font-bold ' + valCls + ' whitespace-nowrap">' + money(movSigned(m)) + '</td>' +
                 '<td class="p-2 text-right text-xs font-bold text-slate-500 whitespace-nowrap">' + money(m.__saldo) + '</td>' +
@@ -611,7 +665,7 @@
             if (filtro.inicio && dataMov(m) < filtro.inicio) return;
             if (filtro.fim && dataMov(m) > filtro.fim) return;
             run += movSigned(m);
-            body.push([String(m.data).slice(0, 10), (m.estornada ? '[EST] ' : '') + (m.descricao || ''), { text: money(movSigned(m)), alignment: 'right' }, { text: money(run), alignment: 'right' }]);
+            body.push([String(m.data).slice(0, 10), (m.estornada ? '[EST] ' : '') + descMov(m), { text: money(movSigned(m)), alignment: 'right' }, { text: money(run), alignment: 'right' }]);
         });
         var doc = { content: [
             { text: 'Extrato - ' + c.nome, style: 'h' },
@@ -652,8 +706,9 @@
             '<div class="p-4 border-b flex justify-between items-center bg-slate-50"><h3 class="font-bold text-slate-800">Transferencia entre Contas</h3><button onclick="document.getElementById(\'modal-transferencia\').classList.add(\'hidden\')" class="text-slate-400 hover:text-red-500"><i data-lucide="x"></i></button></div>' +
             '<div class="p-4 space-y-3">' +
               '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Origem</label><select id="tr-origem" onchange="RVContas.onChangeTransfOrigem()" class="w-full p-2 border rounded-lg text-sm font-bold"></select></div>' +
-              '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Destino</label><select id="tr-destino" class="w-full p-2 border rounded-lg text-sm font-bold"></select></div>' +
-              '<p class="text-[10px] text-slate-400 font-semibold">Transferencias so entre contas da mesma obra.</p>' +
+              '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Destino</label><select id="tr-destino" onchange="RVContas.onChangeTransfDestino()" class="w-full p-2 border rounded-lg text-sm font-bold"></select></div>' +
+              '<p id="tr-aviso" style="display:none" class="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2"></p>' +
+              '<p class="text-[10px] text-slate-400 font-semibold">Permitido transferir para contas de qualquer obra. Baixas continuam exigindo conta da mesma obra.</p>' +
               '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Valor (R$)</label><input type="number" step="0.01" id="tr-valor" class="w-full p-2 border rounded-lg text-sm font-bold"></div>' +
               '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data</label><input type="date" id="tr-data" class="w-full p-2 border rounded-lg text-sm"></div>' +
               '<div><label class="block text-xs font-bold text-slate-500 uppercase mb-1">Descricao</label><input id="tr-desc" class="w-full p-2 border rounded-lg text-sm"></div>' +
