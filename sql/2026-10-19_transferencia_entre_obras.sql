@@ -74,14 +74,21 @@ begin
   if m.origem = 'compra_cartao' then raise exception 'Estorne a compra pelo lancamento da despesa.'; end if;
 
   if m.tipo in ('TRANSFERENCIA_SAIDA','TRANSFERENCIA_ENTRADA') and m.grupo is not null then
+    -- Marca apenas as pernas ativas do grupo ANTES de inserir o estorno,
+    -- para que as linhas de estorno nao nasçam marcadas como estornadas.
+    with alvo as (
+      update public.jsp_movimentacoes
+         set estornada = true
+       where grupo = m.grupo
+         and estornada = false
+      returning id, conta_id, conta_destino_id, tipo, valor, descricao, obra_id, grupo
+    )
     insert into public.jsp_movimentacoes(conta_id, conta_destino_id, tipo, valor, data, descricao, obra_id, origem, grupo, estorno_de_id, created_by)
-    select x.conta_id, x.conta_destino_id,
-           case when x.tipo = 'TRANSFERENCIA_SAIDA' then 'TRANSFERENCIA_ENTRADA' else 'TRANSFERENCIA_SAIDA' end,
-           x.valor, current_date, 'Estorno: ' || coalesce(x.descricao,''), x.obra_id, 'estorno', x.grupo, x.id,
+    select a.conta_id, a.conta_destino_id,
+           case when a.tipo = 'TRANSFERENCIA_SAIDA' then 'TRANSFERENCIA_ENTRADA' else 'TRANSFERENCIA_SAIDA' end,
+           a.valor, current_date, 'Estorno: ' || coalesce(a.descricao,''), a.obra_id, 'estorno', a.grupo, a.id,
            coalesce(auth.jwt()->>'email','')
-      from public.jsp_movimentacoes x
-     where x.grupo = m.grupo and x.estornada = false;
-    update public.jsp_movimentacoes set estornada = true where grupo = m.grupo;
+      from alvo a;
   else
     insert into public.jsp_movimentacoes(conta_id, tipo, valor, data, descricao, obra_id, origem, estorno_de_id, created_by)
     values (m.conta_id,
