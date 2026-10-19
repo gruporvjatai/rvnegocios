@@ -40,6 +40,11 @@ jobs:
             npm run build
           fi
 
+      - name: Generate version.json (build-time)
+        run: |
+          set -e
+          node -e 'require("fs").writeFileSync("version.json", JSON.stringify({ v: process.env.GITHUB_SHA || String(Date.now()) })); console.log("version.json gerado:", process.env.GITHUB_SHA ? "sha" : "timestamp");'
+
       - name: Determine upload path
         id: set-path
         run: |
