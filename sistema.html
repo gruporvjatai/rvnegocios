@@ -4768,8 +4768,11 @@
 
       //================================= timer
       let inactivityTimer;
+      let inactivityMonitorStarted = false;
+      let lastInactivityReset = 0;
 
       function resetInactivityTimer() {
+          lastInactivityReset = Date.now();
           clearTimeout(inactivityTimer);
           inactivityTimer = setTimeout(() => {
               // Verifica se o usuário está logado (pode checar se existe a sessão)
@@ -4780,12 +4783,35 @@
           }, 30 * 60 * 1000); // 30 minutos
       }
 
+      function resetInactivityTimerThrottled() {
+          if (Date.now() - lastInactivityReset < 5000) return;
+          resetInactivityTimer();
+      }
+
       // Adiciona listeners para reiniciar o timer
       function startInactivityMonitoring() {
-          const events = ['mousedown', 'keydown', 'touchstart', 'scroll', 'click'];
+          if (inactivityMonitorStarted) {
+              resetInactivityTimer();
+              return;
+          }
+          inactivityMonitorStarted = true;
+
+          const events = [
+              'mousedown', 'pointerdown', 'keydown', 'touchstart', 'click',
+              'input', 'change', 'paste', 'focusin'
+          ];
           events.forEach(event => {
-              document.addEventListener(event, resetInactivityTimer);
+              document.addEventListener(event, resetInactivityTimer, { capture: true, passive: true });
           });
+
+          const throttledEvents = ['mousemove', 'pointermove', 'touchmove', 'wheel'];
+          throttledEvents.forEach(event => {
+              document.addEventListener(event, resetInactivityTimerThrottled, { capture: true, passive: true });
+          });
+
+          // Captura scroll de qualquer elemento (modais, tabelas, etc.)
+          document.addEventListener('scroll', resetInactivityTimer, { capture: true, passive: true });
+
           resetInactivityTimer(); // inicia o timer imediatamente
       }
             
