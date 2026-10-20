@@ -8,6 +8,14 @@
 
 
   // ====== CRUD EQUIPE E PONTO ======
+      function getMesAnoPonto() {
+          const mEl = document.getElementById('eqp-filter-mes');
+          const aEl = document.getElementById('eqp-filter-ano');
+          if (mEl && aEl && mEl.value && aEl.value) return { mes: mEl.value, ano: aEl.value };
+          const ini = document.getElementById('eqp-filter-data-inicio');
+          const base = (ini && ini.value) ? new Date(ini.value + 'T12:00:00') : new Date();
+          return { mes: String(base.getMonth() + 1), ano: String(base.getFullYear()) };
+      }
       function renderEquipe() {
             const term = document.getElementById('eqp-search').value.toLowerCase();
             const obraFiltro = document.getElementById('eqp-obra-filter').value;
@@ -472,8 +480,8 @@ function carregarTabelaSaldo() {
     function formatHoraUTC(isoString) {
         if (!isoString) return '--:--';
         const d = new Date(isoString);
-        const hh = String(d.getUTCHours()).padStart(2, '0');
-        const mm = String(d.getUTCMinutes()).padStart(2, '0');
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = String(d.getMinutes()).padStart(2, '0');
         return `${hh}:${mm}`;
     }
     
@@ -998,6 +1006,9 @@ async function estornarUltimoFechamentoMetros() {
     }
 
     const ultimaDespesa = despesas[0];
+    if (typeof RVContas !== 'undefined' && RVContas.movDoLog && RVContas.movDoLog(ultimaDespesa.uid)) {
+        return showToast('Pagamento já baixado no Financeiro. Estorne a baixa antes de estornar o fechamento.', true);
+    }
     
     // Extrai período da descrição (formato "Pagamento de metragem - Nome - Período dd/mm/aaaa a dd/mm/aaaa")
     let periodo = null;
@@ -1253,6 +1264,15 @@ function imprimirReciboMetrosDoModal() {
           
           showLoading(true);
           try {
+              const { data: rec, error: errRec } = await sb.from('jsp_ponto_diario')
+                  .select('pago_em_fechamento, fechamento_uid, despesa_id')
+                  .eq('id', registroId)
+                  .maybeSingle();
+              if (errRec) throw errRec;
+              if (rec && (rec.pago_em_fechamento === true || rec.fechamento_uid || rec.despesa_id)) {
+                  showLoading(false);
+                  return showToast("Registro já incluído em fechamento. Estorne o pagamento antes de excluir.", true);
+              }
               const { error } = await sb.from('jsp_ponto_diario').delete().eq('id', registroId);
               if (error) throw error;
               showToast("Registro excluído com sucesso.");
@@ -1780,8 +1800,7 @@ function imprimirReciboSaldo(equipeId) {
             const e = STATE.equipe.find(x => x.id == equipe_id);
             if(!e) return;
         
-            const mes = document.getElementById('eqp-filter-mes').value;
-            const ano = document.getElementById('eqp-filter-ano').value;
+            const { mes, ano } = getMesAnoPonto();
             currentPontoDiaria = parseFloat(e.valor_diaria || 0);
         
             document.getElementById('ponto-modal-subtitle').innerText = `${e.nome} - Mês: ${mes}/${ano} - Diária Base: ${formatMoney(currentPontoDiaria)}`;
@@ -1984,6 +2003,9 @@ async function estornarUltimoFechamento() {
     }
 
     const ultimaDespesa = despesas[0];
+    if (typeof RVContas !== 'undefined' && RVContas.movDoLog && RVContas.movDoLog(ultimaDespesa.uid)) {
+        return showToast('Pagamento já baixado no Financeiro. Estorne a baixa antes de estornar o fechamento.', true);
+    }
     
     // Extrai o período da descrição (formatos "Período DD/MM/YYYY a DD/MM/YYYY"
     // e o legado "Período MM/YYYY"). Sem datas, estorna todos os registros fechados.
@@ -2235,8 +2257,7 @@ async function estornarUltimoFechamento() {
     }
     
     // Pega o mês/ano atuais para re-renderizar o grid com as cores novas
-    const mes = document.getElementById('eqp-filter-mes').value;
-    const ano = document.getElementById('eqp-filter-ano').value;
+    const { mes, ano } = getMesAnoPonto();
     renderPontoGrid(mes, ano);
 }
         function updatePontoTotais() {
@@ -2530,8 +2551,7 @@ function executarImpressaoFolha() {
 }
 
         function imprimirRecibo(equipe_id, ponto_id) {
-            const mes = document.getElementById('eqp-filter-mes').value;
-            const ano = document.getElementById('eqp-filter-ano').value;
+            const { mes, ano } = getMesAnoPonto();
             const e = STATE.equipe.find(x => x.id == equipe_id);
             let pt = STATE.ponto.find(x => x.id == ponto_id);
             
@@ -3367,14 +3387,10 @@ function getMedicoesEmpreitaLocal() {
 }
 
 function persistirMedicoesEmpreitaLocal() {
-    localStorage.setItem('rv_medicoes_empreita', JSON.stringify(STATE.medicoes_empreita || []));
+    return;
 }
 
 function obterMedicoesEmpreita() {
-    const remoto = STATE.medicoes_empreita || [];
-    if (remoto.length) return remoto;
-    const local = getMedicoesEmpreitaLocal();
-    if (local.length && !remoto.length) STATE.medicoes_empreita = local;
     return STATE.medicoes_empreita || [];
 }
 
@@ -3764,25 +3780,23 @@ async function excluirMedicaoEmpreitaAdmin(medicaoId) {
         showToast('Lançamento não encontrado.', true);
         return;
     }
-    const msg = medicao.status === 'PAGO'
-        ? 'Este lançamento já está PAGO. Excluir mesmo assim? Ele sairá do histórico, mas a despesa financeira já lançada não será removida automaticamente.'
-        : 'Tem certeza que deseja excluir este lançamento? Esta ação não pode ser desfeita.';
-    if (!(await RVUI.confirm(msg))) return;
+    if (medicao.status === 'PAGO') {
+        return showToast('Lançamento já pago. Estorne o fechamento antes de excluir.', true);
+    }
+    if (!(await RVUI.confirm('Tem certeza que deseja excluir este lançamento? Esta ação não pode ser desfeita.'))) return;
     showLoading(true);
-    (async () => {
-        try {
-            const { error } = await sb.from('jsp_medicoes_empreita').delete().eq('id', medicaoId);
-            if (error) throw error;
-        } catch (e) {
-            showToast('Excluído localmente. Ajuste a tabela jsp_medicoes_empreita no banco se necessário.');
-        }
-        STATE.medicoes_empreita = obterMedicoesEmpreita().filter(m => m.id !== medicaoId);
-        persistirMedicoesEmpreitaLocal();
+    try {
+        const { error } = await sb.from('jsp_medicoes_empreita').delete().eq('id', medicaoId);
+        if (error) throw error;
+    } catch (e) {
         showLoading(false);
-        carregarTabelaSaldoEmpreita();
-        renderEquipe();
-        showToast('Lançamento excluído.');
-    })();
+        return showToast('Erro ao excluir medição: ' + (e.message || e), true);
+    }
+    STATE.medicoes_empreita = obterMedicoesEmpreita().filter(m => m.id !== medicaoId);
+    showLoading(false);
+    carregarTabelaSaldoEmpreita();
+    renderEquipe();
+    showToast('Lançamento excluído.');
 }
 
 async function lancarMedicaoEmpreita() {
@@ -3811,23 +3825,21 @@ async function lancarMedicaoEmpreita() {
         status: 'PENDENTE'
     };
     showLoading(true);
-    let persistiuRemoto = false;
     try {
         const { error } = await sb.from('jsp_medicoes_empreita').insert([payload]);
         if (error) throw error;
-        persistiuRemoto = true;
     } catch (err) {
-        persistiuRemoto = false;
+        showLoading(false);
+        return showToast('Erro ao lançar medição: ' + (err.message || err), true);
     }
     STATE.medicoes_empreita = [...obterMedicoesEmpreita(), payload];
-    persistirMedicoesEmpreitaLocal();
     showLoading(false);
     document.getElementById('emp-medicao-percent').value = '';
     document.getElementById('emp-medicao-valor').value = '';
     document.getElementById('emp-medicao-descricao').value = '';
     carregarTabelaSaldoEmpreita();
     renderEquipe();
-    showToast(persistiuRemoto ? 'Medição lançada.' : 'Medição lançada localmente. Crie a tabela jsp_medicoes_empreita no banco para persistir.');
+    showToast('Medição lançada.');
 }
 
 async function fecharPagamentoSaldoEmpreita() {
@@ -3858,7 +3870,6 @@ async function fecharPagamentoSaldoEmpreita() {
     const statusFinEmp = valorTotal > 0 ? 'PENDENTE' : 'PAGO';
     const logIdEmp = getNextIdNum(STATE.logs).toString();
     let fechamentoUidEmp = null;
-    let persistiuRemoto = false;
     try {
         const { data: logCriadoEmp, error: errFin } = await sb.from('jsp_logs').insert([{
             id: logIdEmp,
@@ -3880,37 +3891,22 @@ async function fecharPagamentoSaldoEmpreita() {
         const ids = registros.map(r => r.id);
         const { error: errMed } = await sb.from('jsp_medicoes_empreita').update({ status: 'PAGO' }).in('id', ids);
         if (errMed) throw errMed;
-        persistiuRemoto = true;
     } catch (err) {
-        fechamentoUidEmp = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : ('fech-' + Date.now());
-        STATE.logs.push({
-            id: logIdEmp,
-            uid: fechamentoUidEmp,
-            obra_id: func.obra_atual_id ? parseInt(func.obra_atual_id) : null,
-            tipo: 'despesa',
-            produto_nome: descricao,
-            valor_total: valorTotal,
-            data: new Date().toISOString(),
-            vencimento: new Date().toISOString(),
-            status_financeiro: statusFinEmp,
-            categoria: 'Mão de Obra (Empreita)',
-            observacao: observacaoEmp,
-            equipe_id: equipeId,
-            ref_tipo: 'empreita',
-            ref_uuid: equipeId
-        });
+        if (fechamentoUidEmp) {
+            await sb.from('jsp_logs')
+                .update({ status_financeiro: 'CANCELADO' })
+                .eq('uid', fechamentoUidEmp)
+                .eq('tipo', 'despesa');
+        }
+        showLoading(false);
+        return showToast('Erro ao fechar pagamento: ' + (err.message || err), true);
     }
     try {
         await registrarAbatimentosVale(equipeId, fechamentoUidEmp, simValeEmp);
     } catch (eVale) {
         showToast('Fechamento salvo, mas falhou ao registrar o abatimento de vale: ' + (eVale.message || eVale), true);
     }
-    const idsSet = new Set(registros.map(r => r.id));
-    STATE.medicoes_empreita = obterMedicoesEmpreita().map(m => idsSet.has(m.id) ? { ...m, status: 'PAGO' } : m);
-    persistirMedicoesEmpreitaLocal();
-    // Recarrega do banco para a despesa pendente aparecer na Folha de Pagamento
-    // (mesmo comportamento do fechamento de ponto/diaria).
-    if (persistiuRemoto) await loadData();
+    await loadData();
     showLoading(false);
     carregarTabelaSaldoEmpreita();
     renderEquipe();
@@ -3928,14 +3924,19 @@ async function estornarUltimoFechamentoEmpreita() {
     });
     if (despesas.length === 0) return showToast('Nenhum pagamento de empreita para estornar.', true);
     const ultima = despesas[0];
+    if (typeof RVContas !== 'undefined' && RVContas.movDoLog && RVContas.movDoLog(ultima.uid)) {
+        return showToast('Pagamento já baixado no Financeiro. Estorne a baixa antes de estornar o fechamento.', true);
+    }
     if (!(await RVUI.confirm(`Estornar o pagamento de ${formatMoney(ultima.valor_total)}? As medições voltam a ficar pendentes.`, { danger: true, confirmText: 'Estornar' }))) return;
     showLoading(true);
-    try {
-        await filtrarLogPorRef(
-            sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }),
-            ultima
-        ).eq('tipo', 'despesa');
-    } catch (e) {}
+    const { error: errFinEmp } = await filtrarLogPorRef(
+        sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }),
+        ultima
+    ).eq('tipo', 'despesa');
+    if (errFinEmp) {
+        showLoading(false);
+        return showToast('Erro ao cancelar despesa: ' + errFinEmp.message, true);
+    }
     ultima.status_financeiro = 'CANCELADO';
     let periodoInicio = null;
     let periodoFim = null;

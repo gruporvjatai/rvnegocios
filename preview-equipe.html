@@ -472,9 +472,8 @@ function lancarMedicao() {
 }
 
 function excluirMedicaoAdmin(mid) {
-  const senha = prompt('Acesso Restrito. Digite a senha mestra:');
-  if (senha !== '147258369' && senha !== '150105199') {
-    alert('Senha incorreta. Acesso negado.');
+  if (typeof usuarioPodeGerenciar === 'function' && !usuarioPodeGerenciar()) {
+    alert('Acesso negado.');
     return;
   }
   const m = MEDICOES.find(x => x.id === mid);

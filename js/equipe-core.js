@@ -41,8 +41,8 @@
         const entradas = registrosDoDia.filter(r => r.tipo === 'ENTRADA');
         if (entradas.length === 0) return rvRoundHalfDown(Math.min(ajustes, 1));
 
-        const manha = entradas.some(r => rvHoraDate(r).getUTCHours() < 12);
-        const tarde = entradas.some(r => rvHoraDate(r).getUTCHours() >= 12);
+        const manha = entradas.some(r => rvHoraDate(r).getHours() < 12);
+        const tarde = entradas.some(r => rvHoraDate(r).getHours() >= 12);
         const base = (manha ? 0.5 : 0) + (tarde ? 0.5 : 0);
 
         return rvRoundHalfDown(Math.min(base + ajustes, 1));

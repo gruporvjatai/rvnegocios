@@ -647,18 +647,22 @@
       <div id="modal-confirm-oc" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
         <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
             <h3 class="font-bold text-lg mb-4 text-slate-800 flex items-center gap-2"><i data-lucide="check-circle" class="text-blue-600"></i> Confirmar Compra</h3>
-            <p class="text-sm text-slate-600 mb-4">Selecione a forma de pagamento. PIX já entra como pago no caixa. Cartões ou Medição entram como pendente para daqui a 30 dias.</p>
+            <p class="text-sm text-slate-600 mb-4">PIX e Cartão de Débito entram como pagos na conta escolhida. Cartão de Crédito gera compras na fatura do cartão. Boleto e Medição ficam pendentes por 30 dias.</p>
             <input type="hidden" id="confirm-oc-id">
             <div class="space-y-3">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase">Forma de Pagamento Acordada</label>
-                    <select id="confirm-oc-payment" class="w-full p-2 border rounded-lg outline-none focus:border-blue-600 font-bold text-slate-700">
+                    <select id="confirm-oc-payment" onchange="onConfirmOcPaymentChange()" class="w-full p-2 border rounded-lg outline-none focus:border-blue-600 font-bold text-slate-700">
                         <option value="PIX">PIX</option>
                         <option value="Cartão de Crédito">Cartão de Crédito</option>
                         <option value="Cartão de Débito">Cartão de Débito</option>
                         <option value="Boleto">Boleto</option>
                         <option value="Medição">Medição</option>
                     </select>
+                </div>
+                <div id="confirm-oc-conta-wrap">
+                    <label class="block text-xs font-bold text-slate-500 uppercase" id="confirm-oc-conta-label">Conta do Pagamento</label>
+                    <select id="confirm-oc-conta" class="w-full p-2 border rounded-lg outline-none focus:border-blue-600 font-bold text-slate-700"></select>
                 </div>
             </div>
             <div class="flex gap-2 mt-6">
@@ -1412,8 +1416,9 @@
                     <input type="text" id="usr-login" required class="w-full p-2 border rounded outline-none focus:border-blue-600">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase">Senha (Somente números)</label>
-                    <input type="password" id="usr-pass" inputmode="numeric" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="Deixe em branco para não alterar" class="w-full p-2 border rounded outline-none focus:border-blue-600">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase">E-mail (login do Supabase Auth)</label>
+                    <input type="email" id="usr-email" required class="w-full p-2 border rounded outline-none focus:border-blue-600">
+                    <p class="text-[10px] text-slate-400 mt-1">A senha é definida no Supabase Auth para este e-mail.</p>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
@@ -2120,12 +2125,6 @@
         STATE.contas = resContas.data || [];
         STATE.movimentacoes = resMovs.data || [];
         STATE.faturas = resFats.data || [];
-        if (!STATE.medicoes_empreita.length) {
-            try {
-                const localMed = JSON.parse(localStorage.getItem('rv_medicoes_empreita') || '[]');
-                if (localMed.length) STATE.medicoes_empreita = localMed;
-            } catch (e) {}
-        }
         //console.log("Histórico de Preços carregado:", STATE.historico_precos);
         // Garante que data_preco seja string 'yyyy-mm-dd'
         STATE.historico_precos = STATE.historico_precos.map(r => ({
@@ -2474,8 +2473,6 @@
             // Aplica o desconto geral (em reais): valor_total fica liquido e valor_bruto guarda o original.
             const { brutos, nets, desconto } = distribuirDescontoNosItens(descontoCarrinhoAtual());
 
-            if(CURRENT_OC_ID) await sb.from('jsp_logs').delete().eq('id', CURRENT_OC_ID).eq('tipo', 'oc_pendente');
-
             const inserts = CART.map((i, idx) => ({
                 id: newId.toString(),
                 obra_id: parseInt(obraId),
@@ -2495,8 +2492,23 @@
                 observacao: obsFinal
             }));
 
-            const { error } = await sb.from('jsp_logs').insert(inserts);
+            const { data: inseridos, error } = await sb.from('jsp_logs').insert(inserts).select('uid');
             if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
+
+            if (CURRENT_OC_ID) {
+                const novosUids = (inseridos || []).map(r => r.uid).filter(Boolean);
+                if (novosUids.length) {
+                    const { error: errLimpeza } = await sb.from('jsp_logs')
+                        .delete()
+                        .eq('id', CURRENT_OC_ID)
+                        .eq('tipo', 'oc_pendente')
+                        .not('uid', 'in', `(${novosUids.join(',')})`);
+                    if (errLimpeza) {
+                        showLoading(false);
+                        return showToast("O.C. salva, mas falhou ao remover itens antigos: " + errLimpeza.message, true);
+                    }
+                }
+            }
 
             clearCart(); showToast("O.C. Salva com sucesso!"); await loadData(); navigate('oc');
         }
@@ -2645,32 +2657,77 @@
         function openConfirmOC(id) {
             document.getElementById('confirm-oc-id').value = id;
             document.getElementById('modal-confirm-oc').classList.remove('hidden');
+            onConfirmOcPaymentChange();
+        }
+
+        function onConfirmOcPaymentChange() {
+            const forma = document.getElementById('confirm-oc-payment').value;
+            const wrap = document.getElementById('confirm-oc-conta-wrap');
+            const sel = document.getElementById('confirm-oc-conta');
+            const label = document.getElementById('confirm-oc-conta-label');
+            const id = document.getElementById('confirm-oc-id').value;
+            const oc = STATE.logs.find(l => String(l.id) === String(id) && (l.tipo === 'oc_pendente' || l.tipo === 'compra'));
+            const obraId = oc ? oc.obra_id : '';
+
+            if (forma === 'Boleto' || forma === 'Medição') {
+                wrap.classList.add('hidden');
+                sel.innerHTML = '';
+                return;
+            }
+
+            wrap.classList.remove('hidden');
+            if (forma === 'Cartão de Crédito') {
+                label.innerText = 'Cartão de Crédito';
+                if (typeof RVContas !== 'undefined' && RVContas.preencherSelectCartoes) {
+                    RVContas.preencherSelectCartoes('confirm-oc-conta', obraId);
+                }
+            } else {
+                label.innerText = 'Conta do Pagamento';
+                if (typeof RVContas !== 'undefined' && RVContas.preencherSelectContas) {
+                    RVContas.preencherSelectContas('confirm-oc-conta', '', false, obraId);
+                }
+            }
         }
 
         async function executeConfirmOC() {
             const id = document.getElementById('confirm-oc-id').value;
             const formPagto = document.getElementById('confirm-oc-payment').value;
-            showLoading(true);
-            
-            let statusFinal = 'PENDENTE';
-            let dataHoje = new Date();
-            let dataVenc = new Date();
+            const contaId = document.getElementById('confirm-oc-conta').value || null;
+            const exigeConta = formPagto !== 'Boleto' && formPagto !== 'Medição';
 
-            if (formPagto === 'PIX') {
-                statusFinal = 'PAGO';
-            } else {
+            if (exigeConta && !contaId) {
+                return showToast(formPagto === 'Cartão de Crédito' ? 'Selecione o cartão de crédito.' : 'Selecione a conta do pagamento.', true);
+            }
+
+            showLoading(true);
+            let dataVenc = new Date();
+            if (formPagto === 'Boleto' || formPagto === 'Medição') {
                 dataVenc.setDate(dataVenc.getDate() + 30);
             }
             
             const { error } = await sb.from('jsp_logs').update({ 
                 tipo: 'compra', 
                 forma_pagamento: formPagto,
-                status_financeiro: statusFinal,
-                data: dataHoje.toISOString(),
+                status_financeiro: 'PENDENTE',
+                data: new Date().toISOString(),
                 vencimento: dataVenc.toISOString()
             }).eq('id', id).eq('tipo', 'oc_pendente');
 
             if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
+
+            try {
+                if (formPagto === 'Cartão de Crédito') {
+                    const r = await sb.rpc('rv_cartao_compra_oc', { p_id: String(id), p_conta: contaId });
+                    if (r.error) throw r.error;
+                } else if (formPagto === 'PIX' || formPagto === 'Cartão de Débito') {
+                    const r = await sb.rpc('rv_baixar_oc', { p_id: String(id), p_conta: contaId });
+                    if (r.error) throw r.error;
+                }
+            } catch (err) {
+                showLoading(false);
+                await loadData();
+                return showToast("Compra confirmada, mas o pagamento falhou: " + (err.message || err), true);
+            }
             
             document.getElementById('modal-confirm-oc').classList.add('hidden');
             showToast("Compra confirmada e enviada ao Financeiro!");
@@ -3356,7 +3413,7 @@
             };
 
             const cardsContainer = document.getElementById('fin-cards-container');
-            const saldoRealContas = (typeof RVContas !== 'undefined') ? RVContas.saldoTotalReal() : (totRec - totDesp);
+            const saldoRealContas = (typeof RVContas !== 'undefined') ? RVContas.saldoTotalReal(obraFilter) : (totRec - totDesp);
             const temContas = (typeof RVContas !== 'undefined') && (STATE.contas || []).length > 0;
             if(obraFilter) {
                 cardsContainer.innerHTML = `
@@ -4490,24 +4547,20 @@
 
         function openUserForm(id) {
             document.getElementById('user-form-container').classList.remove('hidden');
-            const passField = document.getElementById('usr-pass');
             if(id) {
                 const u = STATE.users.find(x => x.id == id);
                 document.getElementById('usr-id').value = u.id;
                 document.getElementById('usr-name').value = u.nome;
                 document.getElementById('usr-login').value = u.login;
+                document.getElementById('usr-email').value = u.email || '';
                  document.getElementById('usr-level').value = u.nivel_acesso;
                  document.getElementById('usr-status').value = u.ativo ? "true" : "false";
                  document.getElementById('usr-pode-gerenciar').checked = u.pode_gerenciar === true;
-                 passField.required = false;
-                passField.placeholder = "Deixe em branco para manter a senha";
             } else {
                 document.getElementById('user-form-container').querySelector('form').reset();
                  document.getElementById('usr-id').value = '';
                  document.getElementById('usr-status').value = "true";
                  document.getElementById('usr-pode-gerenciar').checked = false;
-                 passField.required = true;
-                passField.placeholder = "Senha apenas números";
             }
         }
 
@@ -4515,25 +4568,22 @@
             e.preventDefault(); 
             showLoading(true);
             const id = document.getElementById('usr-id').value;
-            const isNew = !id;
             
              const payload = {
                  nome: document.getElementById('usr-name').value,
                  login: document.getElementById('usr-login').value.trim().toLowerCase(),
+                 email: document.getElementById('usr-email').value.trim().toLowerCase(),
                  nivel_acesso: document.getElementById('usr-level').value,
                  ativo: document.getElementById('usr-status').value === "true",
                  pode_gerenciar: document.getElementById('usr-pode-gerenciar').checked
              };
 
-            const senha = document.getElementById('usr-pass').value;
-            if (senha) {
-                payload.senha = senha;
-            } else if (isNew) {
+            if (!payload.email) {
                 showLoading(false);
-                return showToast("Senha é obrigatória para novos usuários!", true);
+                return showToast("Informe o e-mail do usuário.", true);
             }
 
-            if(!isNew) payload.id = id;
+            if(id) payload.id = id;
 
             const { error } = await sb.from('jsp_usuarios').upsert(payload);
             
@@ -4820,14 +4870,14 @@
     </script>
      <script src="js/ui.js?v=20261006b"></script>
      <script src="js/modals.js?v=20261007a"></script>
-     <script src="js/equipe-core.js?v=20261006c"></script>
+     <script src="js/equipe-core.js?v=20261020a"></script>
      <script src="js/precos.js?v=20261007d"></script>
      <script src="js/conciliacao.js?v=20261007a"></script>
-     <script src="js/relatorios.js?v=20261009a"></script>
+     <script src="js/relatorios.js?v=20261020a"></script>
      <script src="js/contrato.js?v=20260922d"></script>
-     <script src="js/equipe.js?v=20261007f"></script>
+     <script src="js/equipe.js?v=20261020a"></script>
      <script src="js/vales.js?v=20261007c"></script>
-     <script src="js/contas.js?v=20261019a"></script>
+     <script src="js/contas.js?v=20261020a"></script>
      <script src="js/dashboard.js?v=20261009c"></script>
      <script src="js/versao.js"></script>
   </body>

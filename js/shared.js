@@ -933,9 +933,8 @@ function carregarTabelaSaldoMetros() {
 
       // ========== MODAL ADMINISTRATIVO DE METROS ==========
 async function abrirModalAdminRegistrosMetros(tercId) {
-    const senha = prompt("🔐 Acesso Restrito. Digite a senha mestra:");
-    if (senha !== "147258369") {
-        alert("Senha incorreta. Acesso negado.");
+    if (typeof usuarioPodeGerenciar === 'function' && !usuarioPodeGerenciar()) {
+        alert("Acesso negado.");
         return;
     }
     
@@ -1366,9 +1365,8 @@ function imprimirReciboMetrosDoModal() {
       //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
       async function excluirRegistroPonto(registroId) {
-          const senha = prompt("🔐 Ação restrita. Digite a senha mestra para excluir o registro:");
-          if (senha !== "147258369") {
-              alert("Senha incorreta. Operação cancelada.");
+          if (typeof usuarioPodeGerenciar === 'function' && !usuarioPodeGerenciar()) {
+              alert("Acesso negado.");
               return;
           }
           if (!confirm("Tem certeza que deseja excluir este registro permanentemente? Esta ação não pode ser desfeita.")) {
@@ -4608,7 +4606,6 @@ function executarImpressaoFolha() {
 
         function openUserForm(id) {
             document.getElementById('user-form-container').classList.remove('hidden');
-            const passField = document.getElementById('usr-pass');
             if(id) {
                 const u = STATE.users.find(x => x.id == id);
                 document.getElementById('usr-id').value = u.id;
@@ -4616,14 +4613,12 @@ function executarImpressaoFolha() {
                 document.getElementById('usr-login').value = u.login;
                 document.getElementById('usr-level').value = u.nivel_acesso;
                 document.getElementById('usr-status').value = u.ativo ? "true" : "false";
-                passField.required = false;
-                passField.placeholder = "Deixe em branco para manter a senha";
+
             } else {
                 document.getElementById('user-form-container').querySelector('form').reset();
                 document.getElementById('usr-id').value = '';
                 document.getElementById('usr-status').value = "true";
-                passField.required = true;
-                passField.placeholder = "Senha apenas números";
+
             }
         }
 
@@ -4636,16 +4631,14 @@ function executarImpressaoFolha() {
             const payload = {
                 nome: document.getElementById('usr-name').value,
                 login: document.getElementById('usr-login').value.trim().toLowerCase(),
+                email: (document.getElementById('usr-email') ? document.getElementById('usr-email').value : '').trim().toLowerCase(),
                 nivel_acesso: document.getElementById('usr-level').value,
                 ativo: document.getElementById('usr-status').value === "true"
             };
 
-            const senha = document.getElementById('usr-pass').value;
-            if (senha) {
-                payload.senha = senha;
-            } else if (isNew) {
+            if (!payload.email) {
                 showLoading(false);
-                return showToast("Senha é obrigatória para novos usuários!", true);
+                return showToast("Informe o e-mail do usuário.", true);
             }
 
             if(!isNew) payload.id = id;
@@ -4664,17 +4657,16 @@ function executarImpressaoFolha() {
 
         function abrirModalTransferencia(ocId) {
             document.getElementById('transf-oc-id').value = ocId;
-            document.getElementById('transf-senha').value = '';
+            const senhaEl = document.getElementById('transf-senha');
+            if (senhaEl) senhaEl.value = '';
             document.getElementById('modal-transf-portal').classList.remove('hidden');
         }
 
         async function executarTransferenciaPortal() {
-            const senhaDigitada = document.getElementById('transf-senha').value;
             const ocId = document.getElementById('transf-oc-id').value;
-            const senhaSecreta = "147258369"; 
 
-            if(senhaDigitada !== senhaSecreta) {
-                return showToast("Senha Incorreta! Transferência abortada.", true);
+            if (typeof usuarioPodeGerenciar === 'function' && !usuarioPodeGerenciar()) {
+                return showToast("Acesso restrito à transferência.", true);
             }
 
             showLoading(true);
@@ -5478,9 +5470,8 @@ function imprimirRelatorioTerc() {
       // ========== MODAL ADMINISTRATIVO DE REGISTROS ==========
 
 async function abrirModalAdminRegistros(funcId) {
-    const senha = prompt("🔐 Acesso Restrito. Digite a senha mestra:");
-    if (senha !== "147258369") {
-        alert("Senha incorreta. Acesso negado.");
+    if (typeof usuarioPodeGerenciar === 'function' && !usuarioPodeGerenciar()) {
+        alert("Acesso negado.");
         return;
     }
     

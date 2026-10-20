@@ -56,7 +56,7 @@
 
     function dataRef(l, regime) {
         if (regime === 'competencia') return l.data || l.vencimento || l.created_at;
-        return l.vencimento || l.data || l.created_at;
+        return l.liquidado_em || l.vencimento || l.data || l.created_at;
     }
     function dentroPeriodo(l, f) {
         const d = new Date(dataRef(l, f.regime));
@@ -197,7 +197,7 @@
                 }).join('') + '</div></div>';
         }
 
-        return { kpis, html, csv: { headers: ['Obra', 'Receitas', 'Despesas', 'Saldo'], rows: csvRows } };
+        return { kpis, html, csv: { headers: ['Obra', 'Receitas', 'Despesas', 'Ajustes', 'Saldo'], rows: csvRows } };
     }
 
     function repMovimentoFiltro(tipoLista, tituloTxt, corKpi) {

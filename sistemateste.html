@@ -1057,8 +1057,8 @@
                     <input type="text" id="usr-login" required class="w-full p-2 border rounded outline-none focus:border-blue-600">
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase">Senha (Somente números)</label>
-                    <input type="password" id="usr-pass" inputmode="numeric" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="Deixe em branco para não alterar" class="w-full p-2 border rounded outline-none focus:border-blue-600">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase">E-mail (login do Supabase Auth)</label>
+                    <input type="email" id="usr-email" required class="w-full p-2 border rounded outline-none focus:border-blue-600">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
@@ -3224,22 +3224,18 @@
 
         function openUserForm(id) {
             document.getElementById('user-form-container').classList.remove('hidden');
-            const passField = document.getElementById('usr-pass');
             if(id) {
                 const u = STATE.users.find(x => x.id == id);
                 document.getElementById('usr-id').value = u.id;
                 document.getElementById('usr-name').value = u.nome;
                 document.getElementById('usr-login').value = u.login;
+                document.getElementById('usr-email').value = u.email || '';
                 document.getElementById('usr-level').value = u.nivel_acesso;
                 document.getElementById('usr-status').value = u.ativo ? "true" : "false";
-                passField.required = false;
-                passField.placeholder = "Deixe em branco para manter a senha";
             } else {
                 document.getElementById('user-form-container').querySelector('form').reset();
                 document.getElementById('usr-id').value = '';
                 document.getElementById('usr-status').value = "true";
-                passField.required = true;
-                passField.placeholder = "Senha apenas números";
             }
         }
 
@@ -3247,24 +3243,21 @@
             e.preventDefault(); 
             showLoading(true);
             const id = document.getElementById('usr-id').value;
-            const isNew = !id;
             
             const payload = {
                 nome: document.getElementById('usr-name').value,
                 login: document.getElementById('usr-login').value.trim().toLowerCase(),
+                email: document.getElementById('usr-email').value.trim().toLowerCase(),
                 nivel_acesso: document.getElementById('usr-level').value,
                 ativo: document.getElementById('usr-status').value === "true"
             };
 
-            const senha = document.getElementById('usr-pass').value;
-            if (senha) {
-                payload.senha = senha;
-            } else if (isNew) {
+            if (!payload.email) {
                 showLoading(false);
-                return showToast("Senha é obrigatória para novos usuários!", true);
+                return showToast("Informe o e-mail do usuário.", true);
             }
 
-            if(!isNew) payload.id = id;
+            if(id) payload.id = id;
 
             const { error } = await sb.from('jsp_usuarios').upsert(payload);
             
@@ -3285,12 +3278,10 @@
         }
 
         async function executarTransferenciaPortal() {
-            const senhaDigitada = document.getElementById('transf-senha').value;
             const ocId = document.getElementById('transf-oc-id').value;
-            const senhaSecreta = "147258369"; 
 
-            if(senhaDigitada !== senhaSecreta) {
-                return showToast("Senha Incorreta! Transferência abortada.", true);
+            if (typeof usuarioPodeGerenciar === 'function' && !usuarioPodeGerenciar()) {
+                return showToast("Acesso restrito à transferência.", true);
             }
 
             showLoading(true);

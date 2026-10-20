@@ -1065,10 +1065,10 @@
 
     <script src="js/ui.js?v=20261006b"></script>
     <script src="js/modals.js?v=20261007a"></script>
-    <script src="js/equipe-core.js?v=20261006c"></script>
-    <script src="js/equipe.js?v=20261007f"></script>
+    <script src="js/equipe-core.js?v=20261020a"></script>
+    <script src="js/equipe.js?v=20261020a"></script>
     <script src="js/vales.js?v=20261007c"></script>
-    <script src="js/contas.js?v=20261019a"></script>
+    <script src="js/contas.js?v=20261020a"></script>
     <script src="js/precos.js?v=20261007d"></script>
     <script>window.__rvFolhaShared = (typeof executarImpressaoFolha === 'function') ? executarImpressaoFolha : null;
     window.__rvReciboMetrosShared = (typeof imprimirReciboMetrosDoModal === 'function') ? imprimirReciboMetrosDoModal : null;</script>
@@ -1176,9 +1176,10 @@
           // ===== VERIFICA PERMISSÃO =====
           const nivel = dadosUsuario?.nivel || dadosUsuario?.nivel_acesso || 'comprador';
           const isAdmin = nivel === 'admin';
+          const podeGerenciar = isAdmin || dadosUsuario?.pode_gerenciar === true;
           const permitidas = ['oc', 'pos', 'equipe', 'fornecedores', 'prod', 'menu'];
           
-          if (!isAdmin && !permitidas.includes(viewId)) {
+          if (!podeGerenciar && !permitidas.includes(viewId)) {
               //showToast("Acesso não permitido.", true);
               viewId = 'oc';
           }
@@ -1451,8 +1452,6 @@
           // Aplica o desconto geral (em reais): valor_total fica liquido e valor_bruto guarda o original.
           const { brutos, nets, desconto } = distribuirDescontoNosItens(descontoCarrinhoAtual());
 
-          if(CURRENT_OC_ID) await sb.from('jsp_logs').delete().eq('id', CURRENT_OC_ID); 
-          
           const inserts = CART.map((i, idx) => ({ 
               id: newId.toString(), 
               obra_id: parseInt(obraId), 
@@ -1467,15 +1466,29 @@
               data: dt, 
               vencimento: dt, 
               status_financeiro: 'PENDENTE', 
-              observacao: observacaoFinal,   // ⚠️ Não use campo 'solicitante'
+              observacao: observacaoFinal,
               fase_obra: fase
           })); 
           
-          const {error} = await sb.from('jsp_logs').insert(inserts); 
+          const {data: inseridos, error} = await sb.from('jsp_logs').insert(inserts).select('uid'); 
           if(error){ 
               showLoading(false); 
               return showToast("Erro: "+error.message, true); 
           } 
+          if (CURRENT_OC_ID) {
+              const novosUids = (inseridos || []).map(r => r.uid).filter(Boolean);
+              if (novosUids.length) {
+                  const { error: errLimpeza } = await sb.from('jsp_logs')
+                      .delete()
+                      .eq('id', CURRENT_OC_ID)
+                      .eq('tipo', 'oc_pendente')
+                      .not('uid', 'in', `(${novosUids.join(',')})`);
+                  if (errLimpeza) {
+                      showLoading(false);
+                      return showToast("O.C. salva, mas falhou ao remover itens antigos: " + errLimpeza.message, true);
+                  }
+              }
+          }
           clearCart(); 
           showToast("O.C. Salva!"); 
           await loadData(); 

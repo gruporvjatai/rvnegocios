@@ -365,7 +365,7 @@
         document.getElementById('pf-fatura').value = fatId;
         document.getElementById('pf-info').innerText = 'Fatura ' + f.competencia + ' - ' + money(f.valor_total);
         var card = contaById(f.conta_id);
-        preencherSelectContas('pf-conta', (card || {}).conta_pagamento_padrao || '', true, card ? card.obra_id : '');
+        preencherSelectContas('pf-conta', (card || {}).conta_pagamento_padrao || '', false, card ? card.obra_id : '');
         document.getElementById('pf-data').value = hoje();
         document.getElementById('modal-pagar-fatura').classList.remove('hidden');
     }
@@ -416,6 +416,19 @@
             return '<option value="' + esc(c.id) + '">' + esc(c.nome) + '</option>';
         }).join('');
         if (valor) el.value = String(valor);
+    }
+
+    function preencherSelectCartoes(elId, obraFiltro) {
+        var el = document.getElementById(elId);
+        if (!el) return;
+        var opcoes = contasAtivas().filter(function (c) {
+            if (c.tipo !== 'cartao_credito') return false;
+            if (obraFiltro && String(c.obra_id) !== String(obraFiltro)) return false;
+            return true;
+        });
+        el.innerHTML = '<option value="">-- Selecione --</option>' + opcoes.map(function (c) {
+            return '<option value="' + esc(c.id) + '">' + esc(c.nome) + '</option>';
+        }).join('');
     }
 
     function preencherSelectContasDestino(elId, valor, origemId) {
@@ -659,8 +672,11 @@
         var ms = movs().filter(function (m) { return String(m.conta_id) === String(contaId); })
             .sort(function (a, b) { return dataMov(a) < dataMov(b) ? -1 : (dataMov(a) > dataMov(b) ? 1 : 0); });
         var run = Number(c.saldo_inicial) || 0;
+        ms.forEach(function (m) {
+            if (filtro.inicio && dataMov(m) < filtro.inicio) run += movSigned(m);
+        });
         var body = [[{ text: 'Data', style: 'th' }, { text: 'Descricao', style: 'th' }, { text: 'Valor', style: 'th', alignment: 'right' }, { text: 'Saldo', style: 'th', alignment: 'right' }]];
-        body.push([{ text: 'Saldo inicial', colSpan: 2 }, {}, { text: '', alignment: 'right' }, { text: money(run), alignment: 'right' }]);
+        body.push([{ text: filtro.inicio ? 'Saldo em ' + filtro.inicio : 'Saldo inicial', colSpan: 2 }, {}, { text: '', alignment: 'right' }, { text: money(run), alignment: 'right' }]);
         ms.forEach(function (m) {
             if (filtro.inicio && dataMov(m) < filtro.inicio) return;
             if (filtro.fim && dataMov(m) > filtro.fim) return;
@@ -775,7 +791,7 @@
         registrarCompraCartao: registrarCompraCartao, estornarCompraCartao: estornarCompraCartao,
         abrirModalPagarFatura: abrirModalPagarFatura, confirmarPagarFatura: confirmarPagarFatura,
         fecharFatura: fecharFatura, estornarPagamentoFatura: estornarPagamentoFatura,
-        preencherSelectContas: preencherSelectContas, tipoLabel: tipoLabel,
+        preencherSelectContas: preencherSelectContas, preencherSelectCartoes: preencherSelectCartoes, tipoLabel: tipoLabel,
         preencherSelectPorForma: preencherSelectPorForma, onFormaExpChange: onFormaExpChange,
         onObraExpChange: onObraExpChange, onObraRevChange: onObraRevChange,
         nomeObra: nomeObra
