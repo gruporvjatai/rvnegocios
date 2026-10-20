@@ -507,7 +507,7 @@ begin
   if p_conta is null then raise exception 'Selecione a conta.'; end if;
 
   select coalesce(sum(valor_total),0), max(obra_id) into v_total, v_obra
-    from public.jsp_logs where id = p_id and tipo = 'compra' and status_financeiro = 'PENDENTE';
+    from public.jsp_logs where id::text = p_id and tipo = 'compra' and status_financeiro = 'PENDENTE';
   if coalesce(v_total,0) <= 0 then raise exception 'O.C. nao encontrada ou ja baixada.'; end if;
 
   select obra_id, tipo into v_obra_conta, v_tipo_conta from public.jsp_contas where id = p_conta;
@@ -522,11 +522,39 @@ begin
   returning id into v_id;
 
   update public.jsp_logs set status_financeiro = 'PAGO', liquidado_em = now()
-   where id = p_id and tipo = 'compra' and status_financeiro = 'PENDENTE';
+   where id::text = p_id and tipo = 'compra' and status_financeiro = 'PENDENTE';
 
   return v_id;
 end;
 $function$;
+
+-- Estorno da baixa de O.C.: jsp_logs.id e numeric, compara como texto.
+create or replace function public.rv_estornar_baixa_oc(p_id text)
+returns void
+language plpgsql
+security definer
+set search_path to 'public'
+as $function$
+declare m public.jsp_movimentacoes;
+begin
+  if not public.jsp_pode_operar() then raise exception 'Sem permissao para operar.'; end if;
+  select * into m from public.jsp_movimentacoes
+   where oc_id = p_id and origem = 'baixa_oc' and estornada = false
+   order by created_at desc limit 1;
+  if m.id is null then raise exception 'Nenhuma baixa de O.C. encontrada.'; end if;
+
+  insert into public.jsp_movimentacoes(conta_id, tipo, valor, data, descricao, obra_id, oc_id, origem, estorno_de_id, created_by)
+  values (m.conta_id, 'ENTRADA', m.valor, current_date, 'Estorno baixa O.C. #' || p_id, m.obra_id, p_id, 'estorno', m.id,
+          coalesce(auth.jwt()->>'email',''));
+
+  update public.jsp_movimentacoes set estornada = true where id = m.id;
+  update public.jsp_logs set status_financeiro = 'PENDENTE', liquidado_em = null
+   where id::text = p_id and tipo = 'compra' and status_financeiro = 'PAGO';
+end;
+$function$;
+
+revoke all on function public.rv_estornar_baixa_oc(text) from public, anon;
+grant execute on function public.rv_estornar_baixa_oc(text) to authenticated, service_role;
 
 -- =====================================================================
 -- 7) SENHA EM TEXTO PURO
