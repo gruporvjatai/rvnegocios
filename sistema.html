@@ -108,7 +108,6 @@
         <button onclick="navigate('fases')" id="nav-fases" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="layers"></i> <span class="font-medium text-sm">Fases de Obra</span></button>
         <div class="border-t border-slate-800 my-2 pt-2"></div>
         <button onclick="navigate('reports')" id="nav-reports" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="pie-chart"></i> <span class="font-medium text-sm">Relatórios</span></button>
-        <button onclick="navigate('precos')" id="nav-precos" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="trending-up"></i> <span class="font-medium text-sm">Histórico de Preços</span></button>
         <div class="border-t border-slate-800 my-2 pt-2"></div>
         <button onclick="navigate('users')" id="nav-users" class="nav-btn w-full hidden flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all"><i data-lucide="shield"></i> <span class="font-medium text-sm">Usuários</span></button>
        </nav>
@@ -517,21 +516,41 @@
       </div>
 
       <div id="view-prod" class="hidden-section">
-          <div class="flex justify-between items-center mb-4">
-              <h2 class="text-2xl font-bold text-slate-800">Materiais / Insumos</h2>
-              <div class="flex items-center gap-2">
-                  <button onclick="abrirConciliacaoItens()" class="bg-white border border-blue-200 text-blue-700 hover:bg-blue-50 px-4 py-2 rounded font-bold shadow-sm flex items-center gap-2"><i data-lucide="link-2"></i> Conciliar Itens</button>
-                  <button onclick="openProductForm()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="plus"></i> Novo Material</button>
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+              <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i data-lucide="package" class="text-blue-700"></i> Produtos</h2>
+          </div>
+
+          <!-- Sub-abas: Catálogo e Histórico de Preços -->
+          <div class="flex border-b-2 border-slate-300 mb-4 gap-2">
+              <button id="prod-tab-catalogo" onclick="switchProdTab('catalogo')" class="px-6 py-3 font-black text-sm uppercase tracking-wider text-slate-800 border-b-2 border-blue-600 -mb-[2px] transition flex items-center gap-2">
+                  <i data-lucide="package" class="w-4 h-4"></i> Catálogo
+              </button>
+              <button id="prod-tab-historico" onclick="switchProdTab('historico')" class="px-6 py-3 font-black text-sm uppercase tracking-wider text-slate-400 border-b-2 border-transparent hover:border-slate-300 -mb-[2px] transition flex items-center gap-2">
+                  <i data-lucide="trending-up" class="w-4 h-4"></i> Histórico de Preços
+              </button>
+          </div>
+
+          <div id="prod-panel-catalogo">
+              <div class="flex justify-between items-center mb-4">
+                  <h3 class="text-lg font-bold text-slate-700">Materiais / Insumos</h3>
+                  <div class="flex items-center gap-2">
+                      <button onclick="abrirConciliacaoItens()" class="bg-white border border-blue-200 text-blue-700 hover:bg-blue-50 px-4 py-2 rounded font-bold shadow-sm flex items-center gap-2"><i data-lucide="link-2"></i> Conciliar Itens</button>
+                      <button onclick="openProductForm()" class="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded font-bold shadow flex items-center gap-2"><i data-lucide="plus"></i> Novo Material</button>
+                  </div>
+              </div>
+              <div class="flex gap-2 mb-4 bg-white p-4 rounded-xl shadow-sm border">
+                  <input type="text" id="prod-search" placeholder="Buscar material..." class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium" onkeyup="renderProducts()">
+              </div>
+              <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
+                  <table class="w-full text-sm text-left">
+                      <thead class="bg-slate-100 text-slate-700"><tr><th class="p-4">Material</th><th class="p-4">Preço Ref. (R$)</th><th class="p-4 text-center">Editar</th></tr></thead>
+                      <tbody id="prod-list" class="divide-y"></tbody>
+                  </table>
               </div>
           </div>
-          <div class="flex gap-2 mb-4 bg-white p-4 rounded-xl shadow-sm border">
-              <input type="text" id="prod-search" placeholder="Buscar material..." class="w-full p-2 border rounded outline-none focus:border-blue-600 font-medium" onkeyup="renderProducts()">
-          </div>
-          <div class="bg-white rounded-xl border shadow-sm overflow-hidden">
-              <table class="w-full text-sm text-left">
-                  <thead class="bg-slate-100 text-slate-700"><tr><th class="p-4">Material</th><th class="p-4">Preço Ref. (R$)</th><th class="p-4 text-center">Editar</th></tr></thead>
-                  <tbody id="prod-list" class="divide-y"></tbody>
-              </table>
+
+          <div id="prod-panel-historico" class="hidden">
+              <div id="view-precos"></div>
           </div>
       </div>
 
@@ -1842,8 +1861,6 @@
     </div>
 </div>
 
-      <div id="view-precos" class="hidden-section"></div>
-      
     </main>
 
     <div id="print-area" class="print-only"></div>
@@ -2030,11 +2047,10 @@
             if(viewId === 'fin') { updateSelects(); renderFinance(); switchFinTop('mov'); switchFinTab('pagar'); }
             if(viewId === 'equipe') renderEquipe();
             if(viewId === 'fornecedores') renderFornecedores();
-            if(viewId === 'prod') renderProducts();
+            if(viewId === 'prod') renderProdAba();
             if(viewId === 'fases') renderFases();
             if(viewId === 'reports') { updateSelects(); renderRelatorios(); }
             if(viewId === 'users') renderUsers();
-            if (viewId === 'precos') renderViewHistoricoPrecos();
             if(viewId === 'terc') { updateSelects(); renderTerceirizados(); }
             atualizarIcones();
         }
@@ -2088,7 +2104,6 @@
         const DOMINIOS_VIEW = {
             dash: [], oc: [], pos: [], fin: [], fornecedores: [], prod: [], fases: [],
             users: ['users'],
-            precos: ['historico_precos'],
             reports: ['equipe', 'terceirizados'],
             equipe: ['equipe', 'ponto', 'ponto_diario', 'terceirizados', 'producao_terc', 'medicoes_empreita', 'vale_abatimentos'],
             terc: ['terceirizados', 'producao_terc']
@@ -2214,7 +2229,7 @@
                     if (navUsersBtn) navUsersBtn.classList.remove('hidden');
                 } else if (dadosUsuario.nivel === 'comprador') {
                     // Oculta as abas não permitidas para comprador
-                    const abasOcultas = ['nav-dash', 'nav-fin', 'nav-reports', 'nav-precos'];
+                    const abasOcultas = ['nav-dash', 'nav-fin', 'nav-reports'];
                     abasOcultas.forEach(id => {
                         const btn = document.getElementById(id);
                         if (btn) btn.style.display = 'none';
@@ -4547,6 +4562,48 @@
         pdfMake.createPdf(docDefinition).download(`Lista_OC_#${id}.pdf`);
         showToast("Romaneio baixado com sucesso!");
     }
+
+        // Sub-abas de Produtos: Catálogo e Histórico de Preços
+        let prodAbaAtiva = 'catalogo';
+
+        async function switchProdTab(aba) {
+            prodAbaAtiva = aba === 'historico' ? 'historico' : 'catalogo';
+
+            const catalogo = document.getElementById('prod-panel-catalogo');
+            const historico = document.getElementById('prod-panel-historico');
+            const btnCat = document.getElementById('prod-tab-catalogo');
+            const btnHist = document.getElementById('prod-tab-historico');
+            const ativo = 'text-slate-800 border-blue-600';
+            const inativo = 'text-slate-400 border-transparent hover:border-slate-300';
+            const base = 'px-6 py-3 font-black text-sm uppercase tracking-wider border-b-2 -mb-[2px] transition flex items-center gap-2 ';
+
+            if (catalogo) catalogo.classList.toggle('hidden', prodAbaAtiva !== 'catalogo');
+            if (historico) historico.classList.toggle('hidden', prodAbaAtiva !== 'historico');
+            if (btnCat) btnCat.className = base + (prodAbaAtiva === 'catalogo' ? ativo : inativo);
+            if (btnHist) btnHist.className = base + (prodAbaAtiva === 'historico' ? ativo : inativo);
+
+            if (prodAbaAtiva === 'catalogo') {
+                renderProducts();
+            } else {
+                if (!STATE._carregado.historico_precos) {
+                    showLoading(true);
+                    try {
+                        await garantirDominios(['historico_precos']);
+                    } catch (err) {
+                        showLoading(false);
+                        showToast('Erro ao carregar o histórico de preços: ' + (err.message || err), true);
+                        return;
+                    }
+                    showLoading(false);
+                }
+                renderViewHistoricoPrecos();
+            }
+            atualizarIcones();
+        }
+
+        function renderProdAba() {
+            return switchProdTab(prodAbaAtiva);
+        }
 
         function renderProducts() {
             const term = document.getElementById('prod-search').value.toLowerCase();
