@@ -193,7 +193,7 @@
                     }
                 }
                     
-                    lucide.createIcons();
+                    atualizarIcones();
                 }
 
       // ====== MENU "MAIS OPCOES" DAS ACOES DO COLABORADOR ======
@@ -241,7 +241,7 @@
           menu.style.left = left + 'px';
           menu.style.top = top + 'px';
 
-          if (typeof lucide !== 'undefined') lucide.createIcons();
+          atualizarIcones();
 
           window.__rvMenuAcoesHandler = function (e) {
               const m = document.getElementById('rv-menu-acoes');
@@ -443,7 +443,7 @@ function abrirModalSaldo(equipeId) {
     
     carregarTabelaSaldo();
     document.getElementById('modal-saldo-ponto').classList.remove('hidden');
-    lucide.createIcons();
+    atualizarIcones();
 }
 
 function fecharModalSaldo() {
@@ -613,7 +613,7 @@ function carregarTabelaSaldo() {
     if (elVales) elVales.innerText = '- ' + formatMoney(valeAbatido);
     document.getElementById('saldo-total-valor').innerText = formatMoney(valorLiquido);
     
-    lucide.createIcons();
+    atualizarIcones();
 }
 
       /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -645,7 +645,7 @@ function abrirModalSaldoMetros(tercId) {
     
     carregarTabelaSaldoMetros();
     document.getElementById('modal-saldo-metros').classList.remove('hidden');
-    lucide.createIcons();
+    atualizarIcones();
 }
       
 
@@ -751,7 +751,7 @@ function carregarTabelaSaldoMetros() {
     if (elValesMetros) elValesMetros.innerText = '- ' + formatMoney(valeAbatidoMetros);
     document.getElementById('saldo-metros-total-valor').innerText = formatMoney(valorLiquidoMetros);
     
-    lucide.createIcons();
+    atualizarIcones();
 }
 
 
@@ -771,7 +771,7 @@ async function abrirModalAdminRegistrosMetros(tercId) {
     
     await carregarListaAdminRegistrosMetros(tercId);
     document.getElementById('modal-admin-registros').classList.remove('hidden');
-    lucide.createIcons();
+    atualizarIcones();
 }
 
 async function carregarListaAdminRegistrosMetros(tercId) {
@@ -827,7 +827,7 @@ async function carregarListaAdminRegistrosMetros(tercId) {
         `;
     }).join('');
     
-    lucide.createIcons();
+    atualizarIcones();
 }
 
 async function excluirRegistroAdminMetros(registroId) {
@@ -845,7 +845,7 @@ async function excluirRegistroAdminMetros(registroId) {
         await carregarListaAdminRegistrosMetros(tercId);
         // Se o modal de saldo metros estiver aberto, recarrega a tabela principal também
         if (!document.getElementById('modal-saldo-metros').classList.contains('hidden')) {
-            await loadData(); // recarrega STATE.producao_terc
+            await recarregarDados('producao_terc'); // recarrega STATE.producao_terc
             carregarTabelaSaldoMetros();
         }
     } catch (err) {
@@ -888,7 +888,7 @@ async function lancarAjusteManualMetros() {
         return showToast('Erro ao lançar ajuste: ' + error.message, true);
     }
     
-    await loadData();
+    await recarregarDados('producao_terc');
     carregarTabelaSaldoMetros();
     showToast('Ajuste lançado com sucesso!');
 }
@@ -982,7 +982,7 @@ async function fecharPagamentoSaldoMetros() {
         showToast('Fechamento salvo, mas falhou ao registrar o abatimento de vale: ' + (eVale.message || eVale), true);
     }
     
-    await loadData();
+    await recarregarDados('producao_terc', 'logs', 'vales', 'vale_abatimentos');
     fecharModalSaldoMetros();
     renderEquipe();
     showToast('Pagamento fechado! Despesa lançada como pendente.');
@@ -1078,7 +1078,7 @@ async function estornarUltimoFechamentoMetros() {
 
     await reverterAbatimentosVale(ultimaDespesa.uid);
 
-    await loadData();
+    await recarregarDados('producao_terc', 'logs', 'vales', 'vale_abatimentos');
     carregarTabelaSaldoMetros();
     renderEquipe();
     showToast('Estorno realizado com sucesso! Despesa cancelada e metragens liberadas.');
@@ -1277,7 +1277,7 @@ function imprimirReciboMetrosDoModal() {
               if (error) throw error;
               showToast("Registro excluído com sucesso.");
               // Recarrega os dados e atualiza a tabela do modal
-              await loadData();
+              await recarregarDados('ponto_diario');
               carregarTabelaSaldo();
           } catch (err) {
               showToast("Erro ao excluir: " + err.message, true);
@@ -1326,7 +1326,7 @@ async function lancarAjusteManual() {
         return showToast('Erro ao lançar ajuste: ' + error.message, true);
     }
     
-    await loadData();
+    await recarregarDados('ponto_diario');
     carregarTabelaSaldo();
     showToast('Ajuste lançado com sucesso!');
 }
@@ -1429,7 +1429,7 @@ async function fecharPagamentoSaldo() {
         showToast('Fechamento salvo, mas falhou ao registrar o abatimento de vale: ' + (eVale.message || eVale), true);
     }
     
-    await loadData();
+    await recarregarDados('ponto_diario', 'logs', 'vales', 'vale_abatimentos');
     fecharModalSaldo();
     renderEquipe();
     showToast('Pagamento fechado! Despesa lançada como pendente.');
@@ -1782,7 +1782,7 @@ function imprimirReciboSaldo(equipeId) {
           
           document.getElementById('equipe-form-container').classList.add('hidden');
           showToast("Cadastro salvo com sucesso!");
-          loadData();
+          await recarregarDados('equipe', 'terceirizados');
       }
 
       
@@ -1830,7 +1830,7 @@ function imprimirReciboSaldo(equipeId) {
             selecionarModoPonto('selecao');
         
             document.getElementById('ponto-modal').classList.remove('hidden');
-            lucide.createIcons();
+            atualizarIcones();
         }
 
 
@@ -2075,7 +2075,7 @@ async function estornarUltimoFechamento() {
 
     await reverterAbatimentosVale(ultimaDespesa.uid);
 
-    await loadData();
+    await recarregarDados('ponto_diario', 'logs', 'vales', 'vale_abatimentos');
     carregarTabelaSaldo(); // Atualiza o modal
     renderEquipe();        // Atualiza a listagem principal
     showToast('Estorno realizado com sucesso! Despesa cancelada e registros liberados.');
@@ -2284,7 +2284,7 @@ function abrirModalFolhaPagamento() {
     document.getElementById('folha-data-fim').value = ultimoDiaStr;
     
     document.getElementById('modal-folha-pagamento').classList.remove('hidden');
-    lucide.createIcons();
+    atualizarIcones();
 }
       
 
@@ -2615,7 +2615,7 @@ function executarImpressaoFolha() {
             }
             
             document.getElementById('modal-docs-equipe').classList.remove('hidden');
-            lucide.createIcons();
+            atualizarIcones();
         }
 
         async function marcarContratoAssinado() {
@@ -2632,7 +2632,7 @@ function executarImpressaoFolha() {
     if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
     showToast("Contrato marcado como assinado com sucesso!");
     document.getElementById('modal-docs-equipe').classList.add('hidden');
-    loadData();
+    await recarregarDados('equipe');
 }
       
 
@@ -2747,7 +2747,7 @@ function renderTerceirizados() {
     }).join('');
     
     list.innerHTML = htmlLinhas || `<tr><td colspan="5" class="p-8 text-center text-slate-400 font-medium">Nenhuma produção atende a este filtro no período selecionado.</td></tr>`;
-    lucide.createIcons();
+    atualizarIcones();
 }
       
 
@@ -2796,7 +2796,7 @@ async function saveTerc(e) {
     if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
     
     document.getElementById('terc-form-container').classList.add('hidden');
-    showToast("Terceirizado salvo com sucesso!"); loadData();
+    showToast("Terceirizado salvo com sucesso!"); await recarregarDados('terceirizados');
 }
 
 async function toggleStatusTerc(id, isAtivo) {
@@ -2804,7 +2804,7 @@ async function toggleStatusTerc(id, isAtivo) {
     showLoading(true);
     const { error } = await sb.from('jsp_terceirizados').update({ ativo: !isAtivo }).eq('id', id);
     if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
-    showToast("Status atualizado!"); loadData();
+    showToast("Status atualizado!"); await recarregarDados('terceirizados');
 }
 
 // --- Produção Terceirizados ---
@@ -2861,7 +2861,7 @@ function renderTercProdList(id) {
 
     document.getElementById('prod-terc-total-metros').innerText = totalMetros.toFixed(2);
     document.getElementById('prod-terc-total-valor').innerText = formatMoney(totalMetros * parseFloat(t.valor_metro || 0));
-    lucide.createIcons();
+    atualizarIcones();
 }
 
 async function lancarProducaoTerc() {
@@ -2888,7 +2888,7 @@ async function lancarProducaoTerc() {
 
     document.getElementById('prod-terc-metros').value = '';
     showToast("Medição lançada com sucesso!");
-    await loadData();
+    await recarregarDados('producao_terc');
     renderTercProdList(tId); // Re-renderiza o grid interno
 }
 
@@ -2899,7 +2899,7 @@ async function deleteProducaoTerc(prodId, tercId) {
     if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
     
     showToast("Medição removida!");
-    await loadData();
+    await recarregarDados('producao_terc');
     renderTercProdList(tercId);
 }
 
@@ -3096,7 +3096,7 @@ function imprimirRelatorioTerc() {
     if(error) { showLoading(false); return showToast("Erro ao baixar: " + error.message, true); }
 
     showToast(`Baixa realizada com sucesso para ${t.nome}!`);
-    await loadData();
+    await recarregarDados('producao_terc', 'logs');
     renderTerceirizados();
 }
       function imprimirReciboIndividualTerc() {
@@ -3248,7 +3248,7 @@ async function abrirModalAdminRegistros(funcId) {
     
     await carregarListaAdminRegistros(funcId);
     document.getElementById('modal-admin-registros').classList.remove('hidden');
-    lucide.createIcons();
+    atualizarIcones();
 }
 
 function fecharModalAdminRegistros() {
@@ -3317,7 +3317,7 @@ async function carregarListaAdminRegistros(funcId) {
         `;
     }).join('');
     
-    lucide.createIcons();
+    atualizarIcones();
 }
 
 async function excluirRegistroAdmin(registroId) {
@@ -3335,7 +3335,7 @@ async function excluirRegistroAdmin(registroId) {
         await carregarListaAdminRegistros(funcId);
         // Se o modal de saldo estiver aberto, recarrega a tabela principal também
         if (!document.getElementById('modal-saldo-ponto').classList.contains('hidden')) {
-            await loadData(); // recarrega STATE.ponto_diario
+            await recarregarDados('ponto_diario'); // recarrega STATE.ponto_diario
             carregarTabelaSaldo();
         }
     } catch (err) {
@@ -3463,7 +3463,7 @@ function calcularResumoEmpreita(equipeId, dataInicio, dataFim) {
         return showToast("Erro: " + error.message, true); 
     }
     showToast(`Status atualizado com sucesso!`); 
-    loadData();
+    await recarregarDados('terceirizados');
 }
 
 
@@ -3489,7 +3489,7 @@ function calcularResumoEmpreita(equipeId, dataInicio, dataFim) {
     btnAssinar.setAttribute('onclick', assinado ? '' : 'marcarContratoAssinadoTerc()');
     
     document.getElementById('modal-docs-equipe').classList.remove('hidden');
-    lucide.createIcons();
+    atualizarIcones();
 }
       
 
@@ -3515,7 +3515,7 @@ function calcularResumoEmpreita(equipeId, dataInicio, dataFim) {
       
           showToast("Contrato marcado como assinado!");
           document.getElementById('modal-docs-equipe').classList.add('hidden');
-          loadData(); // recarrega STATE
+          await recarregarDados('terceirizados'); // recarrega STATE
       }
 
      function imprimirChecagem() {
@@ -3646,7 +3646,7 @@ function calcularResumoEmpreita(equipeId, dataInicio, dataFim) {
                   .eq('id', id);
               if (error) throw error;
               showToast(`Status atualizado com sucesso!`);
-              await loadData(); // recarrega a lista e atualiza a tela
+              await recarregarDados('equipe'); // recarrega a lista e atualiza a tela
           } catch (err) {
               showToast("Erro: " + err.message, true);
           } finally {
@@ -3673,7 +3673,7 @@ function abrirModalSaldoEmpreita(equipeId) {
     document.getElementById('emp-medicao-descricao').value = '';
     carregarTabelaSaldoEmpreita();
     document.getElementById('modal-saldo-empreita').classList.remove('hidden');
-    lucide.createIcons();
+    atualizarIcones();
 }
 
 function fecharModalSaldoEmpreita() {
@@ -3906,7 +3906,7 @@ async function fecharPagamentoSaldoEmpreita() {
     } catch (eVale) {
         showToast('Fechamento salvo, mas falhou ao registrar o abatimento de vale: ' + (eVale.message || eVale), true);
     }
-    await loadData();
+    await recarregarDados('medicoes_empreita', 'logs', 'vales', 'vale_abatimentos');
     showLoading(false);
     carregarTabelaSaldoEmpreita();
     renderEquipe();

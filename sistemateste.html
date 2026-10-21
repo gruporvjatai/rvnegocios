@@ -3411,6 +3411,11 @@
       
         function fazerLogout() { try { sb.auth.signOut(); } catch (_) {} localStorage.removeItem('rv_user'); window.location.href = "index.html?t=" + Date.now();  }
     </script>
+    <script>
+      // Fallbacks para modulos compartilhados neste arquivo legado.
+      window.atualizarIcones = window.atualizarIcones || function(){ if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons(); };
+      window.recarregarDados = window.recarregarDados || async function(){ if (typeof loadData === 'function') await loadData(); };
+    </script>
     <script src="js/precos.js"></script>
     <script src="js/contrato.js"></script>
     <script src="js/equipe.js"></script>

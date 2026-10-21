@@ -388,7 +388,7 @@
         renderAlertas(m);
         renderObras(m);
         renderAnalitico(m);
-        if (global.lucide) lucide.createIcons();
+        if (global.lucide) atualizarIcones();
     }
 
     // ---------- API publica ----------

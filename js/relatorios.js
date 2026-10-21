@@ -564,7 +564,7 @@
             '<div class="text-xs text-slate-500">' + esc(descricaoFiltros(f)) + '</div></div>';
         cont.innerHTML = header + kpiGrid(rep.kpis) + (rep.html || '');
         ultimo = { rel: abaAtiva().titulo, csv: rep.csv || null, html: cont.innerHTML };
-        if (global.lucide) lucide.createIcons();
+        if (global.lucide) atualizarIcones();
     }
 
     // ---------- API publica ----------

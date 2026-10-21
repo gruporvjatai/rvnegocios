@@ -49,7 +49,7 @@
             if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
             
             document.getElementById('fase-form-container').classList.add('hidden');
-            showToast("Fase de Obra salva com sucesso!"); loadData();
+            showToast("Fase de Obra salva com sucesso!"); await recarregarDados('fases');
         }
 
         async function deleteFase(id) {
@@ -57,7 +57,7 @@
             showLoading(true);
             const { error } = await sb.from('jsp_fase').delete().eq('id', id);
             if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
-            showToast("Fase Excluída!"); loadData();
+            showToast("Fase Excluída!"); await recarregarDados('fases');
         }
 
 
@@ -1021,7 +1021,7 @@ async function excluirRegistroAdminMetros(registroId) {
         await carregarListaAdminRegistrosMetros(tercId);
         // Se o modal de saldo metros estiver aberto, recarrega a tabela principal também
         if (!document.getElementById('modal-saldo-metros').classList.contains('hidden')) {
-            await loadData(); // recarrega STATE.producao_terc
+            await recarregarDados('producao_terc', 'logs', 'vales', 'vale_abatimentos'); // recarrega STATE.producao_terc
             carregarTabelaSaldoMetros();
         }
     } catch (err) {
@@ -1064,7 +1064,7 @@ async function lancarAjusteManualMetros() {
         return showToast('Erro ao lançar ajuste: ' + error.message, true);
     }
     
-    await loadData();
+    await recarregarDados('producao_terc', 'logs', 'vales', 'vale_abatimentos');
     carregarTabelaSaldoMetros();
     showToast('Ajuste lançado com sucesso!');
 }
@@ -1132,7 +1132,7 @@ async function fecharPagamentoSaldoMetros() {
         return showToast('Erro ao atualizar registros: ' + errProd.message, true);
     }
     
-    await loadData();
+    await recarregarDados('producao_terc', 'logs', 'vales', 'vale_abatimentos');
     fecharModalSaldoMetros();
     renderEquipe();
     showToast('Pagamento fechado! Despesa lançada como pendente.');
@@ -1205,7 +1205,7 @@ async function estornarUltimoFechamentoMetros() {
         return showToast('Erro ao reverter registros de metragem: ' + errProd.message, true);
     }
 
-    await loadData();
+    await recarregarDados('producao_terc', 'logs', 'vales', 'vale_abatimentos');
     carregarTabelaSaldoMetros();
     renderEquipe();
     showToast('Estorno realizado com sucesso! Despesa cancelada e metragens liberadas.');
@@ -1379,7 +1379,7 @@ function imprimirReciboMetrosDoModal() {
               if (error) throw error;
               showToast("Registro excluído com sucesso.");
               // Recarrega os dados e atualiza a tabela do modal
-              await loadData();
+              await recarregarDados('ponto_diario');
               carregarTabelaSaldo();
           } catch (err) {
               showToast("Erro ao excluir: " + err.message, true);
@@ -1433,7 +1433,7 @@ async function lancarAjusteManual() {
         return showToast('Erro ao lançar ajuste: ' + error.message, true);
     }
     
-    await loadData();
+    await recarregarDados('ponto_diario', 'logs', 'vales', 'vale_abatimentos');
     carregarTabelaSaldo();
     showToast('Ajuste lançado com sucesso!');
 }
@@ -1505,7 +1505,7 @@ async function fecharPagamentoSaldo() {
         return showToast('Erro ao atualizar registros: ' + errPonto.message, true);
     }
     
-    await loadData();
+    await recarregarDados('ponto_diario', 'logs', 'vales', 'vale_abatimentos');
     fecharModalSaldo();
     renderEquipe();
     showToast('Pagamento fechado! Despesa lançada como pendente.');
@@ -1865,7 +1865,7 @@ function imprimirReciboSaldo(equipeId) {
           
           document.getElementById('equipe-form-container').classList.add('hidden');
           showToast("Cadastro salvo com sucesso!");
-          loadData();
+          await recarregarDados('equipe');
       }
 
       
@@ -2171,7 +2171,7 @@ async function estornarUltimoFechamento() {
         return showToast('Erro ao reverter registros de ponto: ' + errPonto.message, true);
     }
 
-    await loadData();
+    await recarregarDados('ponto_diario', 'logs', 'vales', 'vale_abatimentos');
     carregarTabelaSaldo(); // Atualiza o modal
     renderEquipe();        // Atualiza a listagem principal
     showToast('Estorno realizado com sucesso! Despesa cancelada e registros liberados.');
@@ -2408,7 +2408,7 @@ async function estornarUltimoFechamento() {
               
               document.getElementById('ponto-modal').classList.add('hidden');
               showToast("Fechamento de Ponto salvo com sucesso!"); 
-              loadData();
+              await recarregarDados('ponto_diario');
           }
 
       
@@ -2446,7 +2446,7 @@ async function estornarUltimoFechamento() {
 
             if(errFin) { showLoading(false); return showToast("Erro financeiro: " + errFin.message, true); }
             
-            showToast("Pagamento e Despesa lançados com sucesso!"); loadData();
+            showToast("Pagamento e Despesa lançados com sucesso!"); await recarregarDados('ponto_diario', 'logs', 'vales', 'vale_abatimentos');
         }
 function abrirModalFolhaPagamento() {
     const selectObra = document.getElementById('folha-obra');
@@ -2718,7 +2718,7 @@ function executarImpressaoFolha() {
     if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
     showToast("Contrato marcado como assinado com sucesso!");
     document.getElementById('modal-docs-equipe').classList.add('hidden');
-    loadData();
+    await recarregarDados('equipe');
 }
 
      function imprimirDocumento() {
@@ -3194,7 +3194,7 @@ function executarImpressaoFolha() {
             
             document.getElementById('obra-form-container').classList.add('hidden');
             showToast("Obra Salva!"); 
-            if (typeof loadData === 'function') loadData();
+            if (typeof recarregarDados === 'function') await recarregarDados('obras');
         }
 
         function openObraForm(id) {
@@ -3229,7 +3229,7 @@ function executarImpressaoFolha() {
             const { error } = await sb.from('jsp_fornecedores').upsert(payload);
             if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
             document.getElementById('fornecedor-form-container').classList.add('hidden');
-            showToast("Fornecedor Salvo!"); loadData();
+            showToast("Fornecedor Salvo!"); await recarregarDados('fornecedores');
         }
         function openFornecedorForm(id) {
             document.getElementById('fornecedor-form-container').classList.remove('hidden');
@@ -3379,7 +3379,7 @@ function executarImpressaoFolha() {
             const { error } = await sb.from('jsp_logs').insert(inserts);
             if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
 
-            clearCart(); showToast("O.C. Salva com sucesso!"); await loadData(); navigate('oc');
+            clearCart(); showToast("O.C. Salva com sucesso!"); await recarregarDados('logs', 'produtos', 'historico_precos'); navigate('oc');
         }
 
         function renderOCList() {
@@ -3496,14 +3496,14 @@ function executarImpressaoFolha() {
 
             if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
             showToast("O.C. estornada para Pendente!"); 
-            loadData();
+            await recarregarDados('logs', 'movimentacoes', 'historico_precos');
         }
 
         async function deleteOC(id) {
             if(!confirm("Excluir esta O.C.?")) return;
             showLoading(true);
             await sb.from('jsp_logs').delete().eq('id', id).eq('tipo', 'oc_pendente');
-            showToast("O.C. Excluída!"); loadData();
+            showToast("O.C. Excluída!"); await recarregarDados('logs', 'movimentacoes', 'historico_precos');
         }
 
         function openConfirmOC(id) {
@@ -3538,7 +3538,7 @@ function executarImpressaoFolha() {
             
             document.getElementById('modal-confirm-oc').classList.add('hidden');
             showToast("Compra confirmada e enviada ao Financeiro!");
-            await loadData();
+            await recarregarDados('logs', 'movimentacoes', 'contas', 'faturas', 'produtos', 'historico_precos');
             await registrarPrecosAutomaticos(id);
         }
 
@@ -3794,7 +3794,7 @@ function executarImpressaoFolha() {
             showLoading(true);
             const {error} = await sb.from('jsp_logs').update({ status_financeiro: 'PAGO' }).eq('uid', uid);
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
-            showToast("Baixa realizada! Valor computado."); loadData();
+            showToast("Baixa realizada! Valor computado."); await recarregarDados('logs', 'movimentacoes', 'contas', 'faturas');
         }
 
         async function estornarBaixa(uid) {
@@ -3802,7 +3802,7 @@ function executarImpressaoFolha() {
             showLoading(true);
             const {error} = await sb.from('jsp_logs').update({ status_financeiro: 'PENDENTE' }).eq('uid', uid);
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
-            showToast("Baixa estornada com sucesso!"); loadData();
+            showToast("Baixa estornada com sucesso!"); await recarregarDados('logs', 'movimentacoes', 'contas', 'faturas');
         }
 
         async function excluirLancamento(uid) {
@@ -3810,7 +3810,7 @@ function executarImpressaoFolha() {
             showLoading(true);
             const {error} = await sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }).eq('uid', uid);
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
-            showToast("Lançamento Cancelado!"); loadData();
+            showToast("Lançamento Cancelado!"); await recarregarDados('logs', 'movimentacoes', 'contas', 'faturas');
         }
 
         async function baixarLogOC(id) {
@@ -3818,7 +3818,7 @@ function executarImpressaoFolha() {
             showLoading(true);
             const {error} = await sb.from('jsp_logs').update({ status_financeiro: 'PAGO' }).eq('id', id).eq('tipo', 'compra');
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
-            showToast("O.C. Paga com sucesso!"); loadData();
+            showToast("O.C. Paga com sucesso!"); await recarregarDados('logs', 'movimentacoes', 'contas', 'faturas');
         }
 
         async function estornarBaixaOC(id) {
@@ -3826,7 +3826,7 @@ function executarImpressaoFolha() {
             showLoading(true);
             const {error} = await sb.from('jsp_logs').update({ status_financeiro: 'PENDENTE' }).eq('id', id).eq('tipo', 'compra');
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
-            showToast("Baixa da O.C. estornada!"); loadData();
+            showToast("Baixa da O.C. estornada!"); await recarregarDados('logs', 'movimentacoes', 'contas', 'faturas');
         }
 
         async function excluirLancamentoOC(id) {
@@ -3834,7 +3834,7 @@ function executarImpressaoFolha() {
             showLoading(true);
             const {error} = await sb.from('jsp_logs').update({ status_financeiro: 'CANCELADO' }).eq('id', id).eq('tipo', 'compra');
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
-            showToast("O.C. Cancelada no Financeiro!"); loadData();
+            showToast("O.C. Cancelada no Financeiro!"); await recarregarDados('logs', 'movimentacoes', 'contas', 'faturas');
         }
         
         async function saveExpense() {
@@ -3874,7 +3874,7 @@ function executarImpressaoFolha() {
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
             
             document.getElementById('modal-expense').classList.add('hidden');
-            showToast("Despesa Salva!"); loadData();
+            showToast("Despesa Salva!"); await recarregarDados('logs');
         }
 
         async function saveRevenue() {
@@ -3904,7 +3904,7 @@ function executarImpressaoFolha() {
             if(error) { showLoading(false); return showToast("Erro: "+error.message, true); }
             
             document.getElementById('modal-revenue').classList.add('hidden');
-            showToast("Medição Salva!"); loadData();
+            showToast("Medição Salva!"); await recarregarDados('logs');
         }
 
         function gerarRelatorio() {
@@ -4585,7 +4585,7 @@ function executarImpressaoFolha() {
                 }
             }
             document.getElementById('prod-form-container').classList.add('hidden');
-            showToast("Material salvo!"); loadData();
+            showToast("Material salvo!"); await recarregarDados('produtos', 'logs');
         }
 
         function renderUsers() {
@@ -4652,7 +4652,7 @@ function executarImpressaoFolha() {
             
             document.getElementById('user-form-container').classList.add('hidden');
             showToast("Usuário salvo com sucesso!"); 
-            loadData();
+            await recarregarDados('users');
         }
 
         function abrirModalTransferencia(ocId) {
@@ -4766,7 +4766,7 @@ function executarImpressaoFolha() {
             }
 
             showToast("Pagamento estornado com sucesso!");
-            loadData();
+            await recarregarDados('ponto_diario', 'logs', 'vales', 'vale_abatimentos');
         }
 
 
@@ -5032,7 +5032,7 @@ async function saveTerc(e) {
     if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
     
     document.getElementById('terc-form-container').classList.add('hidden');
-    showToast("Terceirizado salvo com sucesso!"); loadData();
+    showToast("Terceirizado salvo com sucesso!"); await recarregarDados('terceirizados');
 }
 
 async function toggleStatusTerc(id, isAtivo) {
@@ -5040,7 +5040,7 @@ async function toggleStatusTerc(id, isAtivo) {
     showLoading(true);
     const { error } = await sb.from('jsp_terceirizados').update({ ativo: !isAtivo }).eq('id', id);
     if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
-    showToast("Status atualizado!"); loadData();
+    showToast("Status atualizado!"); await recarregarDados('terceirizados');
 }
 
 // --- Produção Terceirizados ---
@@ -5124,7 +5124,7 @@ async function lancarProducaoTerc() {
 
     document.getElementById('prod-terc-metros').value = '';
     showToast("Medição lançada com sucesso!");
-    await loadData();
+    await recarregarDados('producao_terc');
     renderTercProdList(tId); // Re-renderiza o grid interno
 }
 
@@ -5135,7 +5135,7 @@ async function deleteProducaoTerc(prodId, tercId) {
     if(error) { showLoading(false); return showToast("Erro: " + error.message, true); }
     
     showToast("Medição removida!");
-    await loadData();
+    await recarregarDados('producao_terc', 'logs', 'vales', 'vale_abatimentos');
     renderTercProdList(tercId);
 }
 
@@ -5332,7 +5332,7 @@ function imprimirRelatorioTerc() {
     if(error) { showLoading(false); return showToast("Erro ao baixar: " + error.message, true); }
 
     showToast(`Baixa realizada com sucesso para ${t.nome}!`);
-    await loadData();
+    await recarregarDados('producao_terc', 'terceirizados', 'logs', 'vales', 'vale_abatimentos');
     renderTerceirizados();
 }
       function imprimirReciboIndividualTerc() {
@@ -5571,7 +5571,7 @@ async function excluirRegistroAdmin(registroId) {
         await carregarListaAdminRegistros(funcId);
         // Se o modal de saldo estiver aberto, recarrega a tabela principal também
         if (!document.getElementById('modal-saldo-ponto').classList.contains('hidden')) {
-            await loadData(); // recarrega STATE.ponto_diario
+            await recarregarDados('ponto_diario', 'logs', 'vales', 'vale_abatimentos'); // recarrega STATE.ponto_diario
             carregarTabelaSaldo();
         }
     } catch (err) {
@@ -5640,7 +5640,7 @@ function getColaboradoresUnificados() {
         return showToast("Erro: " + error.message, true); 
     }
     showToast(`Status atualizado com sucesso!`); 
-    loadData();
+    await recarregarDados('terceirizados');
 }
 
 
@@ -5692,7 +5692,7 @@ function getColaboradoresUnificados() {
       
           showToast("Contrato marcado como assinado!");
           document.getElementById('modal-docs-equipe').classList.add('hidden');
-          loadData(); // recarrega STATE
+          await recarregarDados('terceirizados'); // recarrega STATE
       }
 
       function imprimirChecagem() {

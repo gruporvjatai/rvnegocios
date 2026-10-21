@@ -182,7 +182,7 @@ function renderViewHistoricoPrecos() {
   garantirModalPrecoManual();
   preencherSelectsHistoricoPrecos();
   atualizarVisualizacao();
-  lucide.createIcons();
+  atualizarIcones();
 }
 
 function preencherSelectsHistoricoPrecos() {
@@ -274,7 +274,7 @@ function abrirModalPrecoManual() {
   if (dataEl && !dataEl.value) dataEl.value = new Date().toISOString().split('T')[0];
   if (typeof RVModals !== 'undefined') RVModals.clearDirty('modal-preco-manual');
   document.getElementById('modal-preco-manual').classList.remove('hidden');
-  lucide.createIcons();
+  atualizarIcones();
 }
 
 function fecharModalPrecoManual() {
@@ -420,7 +420,7 @@ function carregarTabelaHistoricoPrecos() {
     </tr>
   `).join('') : `<tr><td colspan="7" class="p-10 text-center text-slate-400">Nenhum registro encontrado para os filtros aplicados.</td></tr>`;
 
-  lucide.createIcons();
+  atualizarIcones();
 }
 
 function renderResumoPrecos(registros, produtoId) {
@@ -896,7 +896,7 @@ async function salvarPrecoManualHist(e) {
     if (typeof RVModals !== 'undefined') { RVModals.clearDirty('modal-preco-manual'); RVModals.close('modal-preco-manual'); }
     else { const m = document.getElementById('modal-preco-manual'); if (m) m.classList.add('hidden'); }
 
-    await loadData();
+    await recarregarDados('historico_precos');
     atualizarVisualizacao();
   } catch (err) {
     showToast('Erro: ' + err.message, true);
@@ -927,7 +927,7 @@ function editarPrecoManualHist(id) {
 
   if (typeof RVModals !== 'undefined') RVModals.clearDirty('modal-preco-manual');
   document.getElementById('modal-preco-manual').classList.remove('hidden');
-  lucide.createIcons();
+  atualizarIcones();
 }
 
 async function excluirPrecoHist(id) {
@@ -940,7 +940,7 @@ async function excluirPrecoHist(id) {
     const { error } = await sb.from('jsp_historico_precos').delete().eq('id', id);
     if (error) throw error;
     showToast('Registro excluído.');
-    await loadData();
+    await recarregarDados('historico_precos');
     atualizarVisualizacao();
   } catch (err) {
     showToast('Erro: ' + err.message, true);

@@ -1066,10 +1066,10 @@
     <script src="js/ui.js?v=20261006b"></script>
     <script src="js/modals.js?v=20261007a"></script>
     <script src="js/equipe-core.js?v=20261020a"></script>
-    <script src="js/equipe.js?v=20261020a"></script>
-    <script src="js/vales.js?v=20261007c"></script>
-    <script src="js/contas.js?v=20261020a"></script>
-    <script src="js/precos.js?v=20261007d"></script>
+    <script src="js/equipe.js?v=20261021a"></script>
+    <script src="js/vales.js?v=20261021a"></script>
+    <script src="js/contas.js?v=20261021a"></script>
+    <script src="js/precos.js?v=20261021a"></script>
     <script>window.__rvFolhaShared = (typeof executarImpressaoFolha === 'function') ? executarImpressaoFolha : null;
     window.__rvReciboMetrosShared = (typeof imprimirReciboMetrosDoModal === 'function') ? imprimirReciboMetrosDoModal : null;</script>
     <script>
@@ -1083,7 +1083,9 @@
         const supabaseKey = 'sb_publishable_B2a4vA22qf4XGcrxPDRAaw_13rW51uI';
         const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], fases: [], equipe: [], ponto_diario: [], terceirizados: [], producao_terc: [], medicoes_empreita: [], contas: [], movimentacoes: [], faturas: [] };
+        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], fases: [], equipe: [], ponto_diario: [], terceirizados: [], producao_terc: [], medicoes_empreita: [], contas: [], movimentacoes: [], faturas: [], vales: [], vale_abatimentos: [] };
+        STATE._carregado = {};
+        STATE._carregando = {};
         let CART = [];
         let CURRENT_OC_ID = null; 
         // Origem dos formularios: 'pos' quando abertos de dentro da Nova O.C.
@@ -1137,10 +1139,10 @@
                         window.location.replace('index.html');
                         return;
                     }
-                    loadData();
+                    recarregarDados(...Object.keys(TABELAS).filter(k => STATE._carregado[k])).then(() => navigate(document.querySelector('main > .active-section')?.id.replace('view-', '') || 'oc'));
                 });
             }
-            lucide.createIcons();          
+            atualizarIcones();
         });
 
         // ====== UTILITÁRIOS ======
@@ -1153,6 +1155,13 @@
             const t=document.getElementById('toast'); 
             t.textContent=msg; t.className=`fixed top-10 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl text-white font-bold text-sm z-[100] transition-all text-center w-[90%] max-w-sm ${isError?'bg-red-600':'bg-slate-800'}`; 
             t.style.display='block'; setTimeout(()=>t.style.display='none',3000); 
+        }
+        let _iconesAgendado = false;
+        function atualizarIcones() {
+            if (_iconesAgendado) return;
+            _iconesAgendado = true;
+            const executar = () => { _iconesAgendado = false; if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons(); };
+            if ('requestAnimationFrame' in window) requestAnimationFrame(executar); else setTimeout(executar, 16);
         }
         function maskCPF(input) { let v = input.value.replace(/\D/g, ""); if (v.length > 11) v = v.slice(0,11); v = v.replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d)/,"$1.$2").replace(/(\d{3})(\d{1,2})$/,"$1-$2"); input.value = v; }
         function openModal(id) { const m = document.getElementById(id); if(m) { m.classList.remove('modal-hidden'); m.classList.add('modal-visible'); } }
@@ -1172,7 +1181,7 @@
 
 
       
-      function navigate(viewId) {
+      async function navigate(viewId) {
           // ===== VERIFICA PERMISSÃO =====
           const nivel = dadosUsuario?.nivel || dadosUsuario?.nivel_acesso || 'comprador';
           const isAdmin = nivel === 'admin';
@@ -1183,6 +1192,8 @@
               //showToast("Acesso não permitido.", true);
               viewId = 'oc';
           }
+
+          try { await garantirDominios(DOMINIOS_VIEW[viewId] || []); } catch (e) { console.warn('Falha ao carregar dados da tela:', e); }
       
           // ===== NAVEGAÇÃO ORIGINAL =====
           document.querySelectorAll('main > div[id^="view-"]').forEach(el => { 
@@ -1203,7 +1214,7 @@
           if(viewId === 'fornecedores') renderFornecedores();
           if(viewId === 'prod') renderProducts();
           if(viewId === 'equipe') { updateSelects(); renderEquipe(); }
-          lucide.createIcons();
+          atualizarIcones();
           window.scrollTo(0,0);
       }
 
@@ -1213,7 +1224,87 @@
         function toggleFinTab(tab) { if(tab==='contas') return toggleFinTop('contas'); if(tab==='mov') return toggleFinTop('mov'); const secs={despesas:'fin-section-despesas',receitas:'fin-section-receitas'}; const tabs={despesas:'tab-despesas',receitas:'tab-receitas'}; Object.keys(secs).forEach(function(k){ const sec=document.getElementById(secs[k]); if(sec) sec.classList.toggle('hidden', k!==tab); const btn=document.getElementById(tabs[k]); if(btn){ if(k===tab){ btn.classList.add('bg-white','text-slate-800','shadow-sm'); btn.classList.remove('text-slate-500'); } else { btn.classList.remove('bg-white','shadow-sm','text-slate-800'); btn.classList.add('text-slate-500'); } } }); }
 
         // ====== DADOS ======
-        async function fetchAllRecords(table) { let allRecords = []; let from=0; const step=1000; let keepFetching=true; while(keepFetching){ const {data,error}=await sb.from(table).select('*').range(from,from+step-1); if(error) throw error; if(data && data.length>0){ allRecords.push(...data); if(data.length<step) keepFetching=false; else from+=step; } else keepFetching=false; } return {data: allRecords}; }
+        // ====== CARGA DE DADOS (essenciais no login, resto sob demanda) ======
+        const TABELAS = {
+            obras: 'jsp_obras', fornecedores: 'jsp_fornecedores', produtos: 'jsp_produtos',
+            logs: 'jsp_logs', fases: 'jsp_fase', contas: 'jsp_contas',
+            movimentacoes: 'jsp_movimentacoes', faturas: 'jsp_faturas', vales: 'jsp_vales',
+            equipe: 'jsp_equipe', terceirizados: 'jsp_terceirizados',
+            ponto_diario: 'jsp_ponto_diario', producao_terc: 'jsp_producao_terc',
+            medicoes_empreita: 'jsp_medicoes_empreita', vale_abatimentos: 'jsp_vale_abatimentos'
+        };
+        const TABELAS_ESSENCIAIS = ['obras', 'fornecedores', 'produtos', 'logs', 'fases', 'contas', 'movimentacoes', 'faturas', 'vales'];
+        const COLUNAS_TABELA = {
+            jsp_ponto_diario: 'id,funcionario_id,obra_id,data_registro,tipo,lat_registro,lng_registro,status,hora_registro,fracao_diaria,pago_em_fechamento,observacao,despesa_id,fechamento_uid'
+        };
+        const DOMINIOS_VIEW = {
+            dash: [], fin: [], oc: [], pos: [], fornecedores: [], prod: [], menu: [],
+            equipe: ['equipe', 'ponto_diario', 'terceirizados', 'producao_terc', 'medicoes_empreita', 'vale_abatimentos']
+        };
+
+        async function fetchAllRecords(table, colunas) {
+            const selecao = colunas || '*';
+            let allRecords = []; let from=0; const step=1000; let keepFetching=true;
+            while(keepFetching){
+                const {data,error}=await sb.from(table).select(selecao).range(from,from+step-1);
+                if(error) throw error;
+                if(data && data.length>0){ allRecords.push(...data); if(data.length<step) keepFetching=false; else from+=step; }
+                else keepFetching=false;
+            }
+            return {data: allRecords};
+        }
+
+        function aplicarTabela(chave, rows) {
+            rows = rows || [];
+            if (chave === 'fases') { STATE.fases = rows.slice().sort((a, b) => a.ordem - b.ordem); return; }
+            STATE[chave] = rows;
+        }
+
+        async function carregarTabela(chave) {
+            const tabela = TABELAS[chave];
+            if (!tabela) return;
+            if (STATE._carregando[chave]) return STATE._carregando[chave];
+            const p = (async () => {
+                const res = await fetchAllRecords(tabela, COLUNAS_TABELA[tabela]);
+                aplicarTabela(chave, res.data || []);
+                STATE._carregado[chave] = true;
+            })();
+            STATE._carregando[chave] = p;
+            try { await p; } finally { delete STATE._carregando[chave]; }
+        }
+
+        async function garantirDominios(chaves) {
+            const faltando = (chaves || []).filter(k => TABELAS[k] && !STATE._carregado[k]);
+            if (!faltando.length) return;
+            await Promise.all(faltando.map(carregarTabela));
+        }
+
+        async function recarregarDados(...chaves) {
+            const lista = chaves.flat(Infinity).filter(k => TABELAS[k]);
+            await Promise.all(lista.map(carregarTabela));
+            if (lista.includes('logs') || lista.includes('produtos')) syncLogsComProdutos();
+        }
+
+        function renderViewAtual() {
+            const ativa = document.querySelector('main > .active-section');
+            if (ativa) navigate(ativa.id.replace('view-', ''));
+        }
+
+        let _preloadAgendado = false;
+        function agendarPreload() {
+            if (_preloadAgendado) return;
+            _preloadAgendado = true;
+            const restantes = Object.keys(TABELAS).filter(k => !STATE._carregado[k]);
+            let i = 0;
+            const passo = () => {
+                if (i >= restantes.length) return;
+                const chave = restantes[i++];
+                carregarTabela(chave).catch(() => {}).finally(() => setTimeout(passo, 120));
+            };
+            if ('requestIdleCallback' in window) requestIdleCallback(passo, { timeout: 2000 });
+            else setTimeout(passo, 400);
+        }
+
 
         function getProdutoById(id) {
             if (id === undefined || id === null || id === '') return null;
@@ -1237,61 +1328,9 @@
 
         async function loadData() {
           try {
-              const [
-                  resObras,
-                  resForn,
-                  resProd,
-                  resLog,
-                  resFases,
-                  resEquipe,
-                  resTerceirizados,
-                  resPonto,
-                  resProducaoTerc,
-                  resMedicoesEmpreita,
-                  resVales,
-                  resValeAbat,
-                  resContas,
-                  resMov,
-                  resFaturas
-              ] = await Promise.all([
-                  fetchAllRecords('jsp_obras'),
-                  fetchAllRecords('jsp_fornecedores'),
-                  fetchAllRecords('jsp_produtos'),
-                  fetchAllRecords('jsp_logs'),
-                  fetchAllRecords('jsp_fase'),
-                  fetchAllRecords('jsp_equipe'),
-                  fetchAllRecords('jsp_terceirizados'),
-                  fetchAllRecords('jsp_ponto_diario').catch(() => ({ data: [] })),
-                  fetchAllRecords('jsp_producao_terc').catch(() => ({ data: [] })),
-                  fetchAllRecords('jsp_medicoes_empreita').catch(() => ({ data: [] })),
-                  fetchAllRecords('jsp_vales').catch(() => ({ data: [] })),
-                  fetchAllRecords('jsp_vale_abatimentos').catch(() => ({ data: [] })),
-                  fetchAllRecords('jsp_contas').catch(() => ({ data: [] })),
-                  fetchAllRecords('jsp_movimentacoes').catch(() => ({ data: [] })),
-                  fetchAllRecords('jsp_faturas').catch(() => ({ data: [] }))
-              ]);
-      
-              STATE.obras = resObras.data || [];
-              STATE.fornecedores = resForn.data || [];
-              STATE.produtos = resProd.data || [];
-              STATE.logs = resLog.data || [];
-              syncLogsComProdutos();
-              STATE.fases = (resFases.data || []).sort((a, b) => a.ordem - b.ordem);
-              STATE.equipe = resEquipe.data || [];
-              STATE.terceirizados = resTerceirizados.data || [];
-              STATE.ponto_diario = resPonto.data || [];
-              STATE.producao_terc = resProducaoTerc.data || [];
-              STATE.medicoes_empreita = resMedicoesEmpreita.data || [];
-              STATE.vales = resVales.data || [];
-              STATE.vale_abatimentos = resValeAbat.data || [];
-              STATE.contas = resContas.data || [];
-              STATE.movimentacoes = resMov.data || [];
-              STATE.faturas = resFaturas.data || [];
-      
-                  
+              await garantirDominios(TABELAS_ESSENCIAIS);
+              await garantirDominios(Object.keys(TABELAS).filter(k => STATE._carregado[k]));
               updateSelects();
-
-            updateSelects();
 
         // ===== APLICA PERMISSÕES =====
         const nivel = dadosUsuario?.nivel || dadosUsuario?.nivel_acesso || 'comprador';
@@ -1312,16 +1351,17 @@
         const primeiraView = isAdmin ? 'dash' : 'oc';
         const currentActive = document.querySelector('main > .active-section');
         if (!currentActive) {
-            navigate(primeiraView);
+            await navigate(primeiraView);
         } else {
             const currentView = currentActive.id.replace('view-', '');
             if (!isAdmin && !['oc', 'pos', 'equipe', 'fornecedores', 'prod', 'menu'].includes(currentView)) {
-                navigate('oc');
+                await navigate('oc');
             } else {
-                navigate(currentView);
+                await navigate(currentView);
             }
         }
         showLoading(false);
+        agendarPreload();
     } catch (err) {
         showLoading(false);
         showToast("Erro banco: " + err.message, true);
@@ -1404,28 +1444,28 @@
             }).join('');
             var up=document.getElementById('dash-updated');
             if(up) up.textContent='Atualizado às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-            if(typeof lucide!=='undefined') lucide.createIcons();
+            atualizarIcones();
         }
         // ====== RENDER DASHBOARD (LEGACY, nao usado) ======
         function renderDashboardLegacy() {
             const grid = document.getElementById('dash-grid');
             const saldos = {}; STATE.obras.forEach(o=>{ saldos[o.id]={custos:0,medicoes:0,valor_contrato:parseFloat(o.valor_contrato)||0}; });
             STATE.logs.forEach(l=>{ if(l.status_financeiro==='CANCELADO') return; if(!saldos[l.obra_id]) return; if(l.tipo==='receita' && l.status_financeiro==='PAGO') saldos[l.obra_id].medicoes+=parseFloat(l.valor_total||0); if((l.tipo==='compra'||l.tipo==='despesa') && l.status_financeiro==='PAGO') saldos[l.obra_id].custos+=parseFloat(l.valor_total||0); });
-            grid.innerHTML = STATE.obras.map(o=>{ const s=saldos[o.id]; const pct = s.valor_contrato>0?Math.min((s.medicoes/s.valor_contrato)*100,100):0; return `<div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm relative"><div class="pr-6 mb-2"><h4 class="font-black text-base">${o.nome}</h4><p class="text-[10px] text-slate-500">${o.endereco||'-'}</p></div><div class="w-full bg-slate-100 rounded-full h-1.5 mb-1"><div class="bg-blue-600 h-1.5 rounded-full" style="width:${pct}%"></div></div><div class="text-[9px] text-slate-400 text-right mb-3">${pct.toFixed(1)}% recebido</div><div class="grid grid-cols-2 gap-2 text-[10px]"><div class="bg-slate-50 p-2 rounded"><div class="text-slate-400 uppercase">Contrato</div><div class="font-black">${formatMoney(s.valor_contrato)}</div></div><div class="bg-green-50 p-2 rounded"><div class="text-green-600 uppercase">Medições</div><div class="font-black">${formatMoney(s.medicoes)}</div></div><div class="bg-orange-50 p-2 rounded"><div class="text-orange-600 uppercase">A Receber</div><div class="font-black">${formatMoney(s.valor_contrato-s.medicoes)}</div></div><div class="bg-red-50 p-2 rounded"><div class="text-red-600 uppercase">Custos</div><div class="font-black">${formatMoney(s.custos)}</div></div></div><div class="mt-3 pt-3 border-t flex justify-between"><div><span class="text-[10px] font-bold text-slate-500 uppercase">Custos Pagos</span><div class="font-black text-xl text-red-600">${formatMoney(s.custos)}</div></div><div class="text-right"><span class="text-[10px] font-bold text-slate-500 uppercase">Caixa Atual</span><div class="font-black text-xl ${(s.medicoes-s.custos)>=0?'text-blue-700':'text-red-600'}">${formatMoney(s.medicoes-s.custos)}</div></div></div></div>`; }).join(''); lucide.createIcons();
+            grid.innerHTML = STATE.obras.map(o=>{ const s=saldos[o.id]; const pct = s.valor_contrato>0?Math.min((s.medicoes/s.valor_contrato)*100,100):0; return `<div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm relative"><div class="pr-6 mb-2"><h4 class="font-black text-base">${o.nome}</h4><p class="text-[10px] text-slate-500">${o.endereco||'-'}</p></div><div class="w-full bg-slate-100 rounded-full h-1.5 mb-1"><div class="bg-blue-600 h-1.5 rounded-full" style="width:${pct}%"></div></div><div class="text-[9px] text-slate-400 text-right mb-3">${pct.toFixed(1)}% recebido</div><div class="grid grid-cols-2 gap-2 text-[10px]"><div class="bg-slate-50 p-2 rounded"><div class="text-slate-400 uppercase">Contrato</div><div class="font-black">${formatMoney(s.valor_contrato)}</div></div><div class="bg-green-50 p-2 rounded"><div class="text-green-600 uppercase">Medições</div><div class="font-black">${formatMoney(s.medicoes)}</div></div><div class="bg-orange-50 p-2 rounded"><div class="text-orange-600 uppercase">A Receber</div><div class="font-black">${formatMoney(s.valor_contrato-s.medicoes)}</div></div><div class="bg-red-50 p-2 rounded"><div class="text-red-600 uppercase">Custos</div><div class="font-black">${formatMoney(s.custos)}</div></div></div><div class="mt-3 pt-3 border-t flex justify-between"><div><span class="text-[10px] font-bold text-slate-500 uppercase">Custos Pagos</span><div class="font-black text-xl text-red-600">${formatMoney(s.custos)}</div></div><div class="text-right"><span class="text-[10px] font-bold text-slate-500 uppercase">Caixa Atual</span><div class="font-black text-xl ${(s.medicoes-s.custos)>=0?'text-blue-700':'text-red-600'}">${formatMoney(s.medicoes-s.custos)}</div></div></div></div>`; }).join(''); atualizarIcones();
         }
 
         function openObraForm(id){ if(id){ const o=STATE.obras.find(x=>x.id==id); document.getElementById('obra-id').value=o.id; document.getElementById('obra-name').value=o.nome; document.getElementById('obra-addr').value=o.endereco; document.getElementById('obra-solic').value=o.solicitante||''; document.getElementById('obra-contrato').value=o.valor_contrato||''; } else { document.getElementById('obra-form-container').querySelector('form').reset(); document.getElementById('obra-id').value=''; } openOverlayForm('obra-form-container'); }
         async function saveObra(e){ e.preventDefault(); showLoading(true); const isNew=!document.getElementById('obra-id').value; const payload={ nome:document.getElementById('obra-name').value, endereco:document.getElementById('obra-addr').value, solicitante:document.getElementById('obra-solic').value, valor_contrato:parseFloat(document.getElementById('obra-contrato').value)||0 }; if(!isNew) payload.id=document.getElementById('obra-id').value; const {error}=await sb.from('jsp_obras').upsert(payload); if(error){ showLoading(false); return showToast("Erro: "+error.message,true); } closeOverlayForm('obra-form-container'); showToast("Obra Salva!"); loadData(); }
 
         // ====== CARRINHO ======
-        function renderCart(){ const box=document.getElementById('pos-cart-items'); if(!CART.length){ box.innerHTML='<p class="text-center text-slate-400 mt-4 text-[10px]">Nenhum item.</p>'; renderTotaisCarrinho(); return; } let sub=0; box.innerHTML=CART.map((i,idx)=>{ const totalItem=i.qty*i.price; sub+=totalItem; return `<div class="bg-white p-2 border border-slate-100 rounded-lg shadow-sm flex flex-col gap-1 relative"><div class="pr-6"><div class="text-[11px] font-bold">${i.name}</div></div><button onclick="CART.splice(${idx},1);renderCart()" class="absolute top-1 right-1 text-slate-300"><i data-lucide="trash-2" class="w-4 h-4"></i></button><div class="flex items-center justify-between pt-1"><div class="flex items-center gap-1"><input type="number" value="${i.qty}" onchange="updateCart(${idx}, 'qty', this.value)" class="w-10 bg-transparent text-center text-xs font-bold outline-none border-b"><span class="text-[9px]">UN x</span><input type="number" step="0.01" value="${i.price}" onchange="updateCart(${idx}, 'price', this.value)" class="w-14 bg-transparent text-center text-xs font-bold outline-none border-b text-blue-700"></div><div class="font-black text-xs">${formatMoney(totalItem)}</div></div></div>`; }).join(''); renderTotaisCarrinho(); lucide.createIcons(); }
+        function renderCart(){ const box=document.getElementById('pos-cart-items'); if(!CART.length){ box.innerHTML='<p class="text-center text-slate-400 mt-4 text-[10px]">Nenhum item.</p>'; renderTotaisCarrinho(); return; } let sub=0; box.innerHTML=CART.map((i,idx)=>{ const totalItem=i.qty*i.price; sub+=totalItem; return `<div class="bg-white p-2 border border-slate-100 rounded-lg shadow-sm flex flex-col gap-1 relative"><div class="pr-6"><div class="text-[11px] font-bold">${i.name}</div></div><button onclick="CART.splice(${idx},1);renderCart()" class="absolute top-1 right-1 text-slate-300"><i data-lucide="trash-2" class="w-4 h-4"></i></button><div class="flex items-center justify-between pt-1"><div class="flex items-center gap-1"><input type="number" value="${i.qty}" onchange="updateCart(${idx}, 'qty', this.value)" class="w-10 bg-transparent text-center text-xs font-bold outline-none border-b"><span class="text-[9px]">UN x</span><input type="number" step="0.01" value="${i.price}" onchange="updateCart(${idx}, 'price', this.value)" class="w-14 bg-transparent text-center text-xs font-bold outline-none border-b text-blue-700"></div><div class="font-black text-xs">${formatMoney(totalItem)}</div></div></div>`; }).join(''); renderTotaisCarrinho(); atualizarIcones(); }
         function updateCart(idx,field,value){ CART[idx][field]=parseFloat(value)||0; renderCart(); }
         function clearCart(){ CART=[]; CURRENT_OC_ID=null; document.getElementById('pos-cond-pagamento').value=''; document.getElementById('pos-obs-geral').value=''; document.getElementById('pos-fornecedor').value=''; document.getElementById('pos-fase').value=''; document.getElementById('pos-solicitante').value=''; document.getElementById('pos-fornecedor-btn').querySelector('span').innerText='Selecionar...'; const dEl=document.getElementById('pos-desconto'); if(dEl) dEl.value=''; renderCart(); }
         function openPosProductModal(){ openModal('pos-product-modal'); renderPosProductModal(); }
-        function renderPosProductModal(){ const term=document.getElementById('pos-modal-search').value.toLowerCase(); const grid=document.getElementById('pos-modal-grid'); const fil=STATE.produtos.filter(p=>p.nome.toLowerCase().includes(term)).slice(0,50); grid.innerHTML=fil.map(p=>`<div class="p-2 bg-white border border-slate-200 rounded-lg mb-2 flex items-center justify-between shadow-sm"><div class="flex-1 pr-2"><h4 class="font-bold text-xs">${p.nome}</h4><span class="text-[9px] text-slate-400">${formatMoney(p.preco)}</span></div><div class="flex items-center gap-1"><button onclick="openProductForm(${p.id})" class="bg-slate-100 text-slate-600 p-1.5 rounded-full" title="Editar material"><i data-lucide="pencil" class="w-4 h-4"></i></button><button onclick="addCartModal(${p.id}, '${p.nome.replace(/'/g,"")}', ${p.preco})" class="bg-blue-100 text-blue-700 p-1.5 rounded-full" title="Adicionar à O.C."><i data-lucide="plus" class="w-4 h-4"></i></button></div></div>`).join(''); lucide.createIcons(); }
+        function renderPosProductModal(){ const term=document.getElementById('pos-modal-search').value.toLowerCase(); const grid=document.getElementById('pos-modal-grid'); const fil=STATE.produtos.filter(p=>p.nome.toLowerCase().includes(term)).slice(0,50); grid.innerHTML=fil.map(p=>`<div class="p-2 bg-white border border-slate-200 rounded-lg mb-2 flex items-center justify-between shadow-sm"><div class="flex-1 pr-2"><h4 class="font-bold text-xs">${p.nome}</h4><span class="text-[9px] text-slate-400">${formatMoney(p.preco)}</span></div><div class="flex items-center gap-1"><button onclick="openProductForm(${p.id})" class="bg-slate-100 text-slate-600 p-1.5 rounded-full" title="Editar material"><i data-lucide="pencil" class="w-4 h-4"></i></button><button onclick="addCartModal(${p.id}, '${p.nome.replace(/'/g,"")}', ${p.preco})" class="bg-blue-100 text-blue-700 p-1.5 rounded-full" title="Adicionar à O.C."><i data-lucide="plus" class="w-4 h-4"></i></button></div></div>`).join(''); atualizarIcones(); }
         function addCartModal(id,name,price){ const exist=CART.find(x=>x.id==id); if(exist) exist.qty+=1; else CART.push({id,name,price,qty:1}); showToast("Item add!"); renderCart(); }
         function openPosFornecedorModal(){ openModal('pos-fornecedor-modal'); renderPosFornecedorModal(); }
-        function renderPosFornecedorModal(){ const term=document.getElementById('pos-fornecedor-modal-search').value.toLowerCase(); const fil=STATE.fornecedores.filter(f=>f.nome.toLowerCase().includes(term)); document.getElementById('pos-fornecedor-modal-grid').innerHTML=fil.map(f=>`<div class="p-3 bg-white border border-slate-200 rounded-lg mb-2 flex items-center justify-between shadow-sm" onclick="selectPosFornecedor(${f.id}, '${f.nome.replace(/'/g,"")}')"><div><h4 class="font-bold text-xs">${f.nome}</h4><span class="text-[9px] text-slate-500">Doc: ${f.documento||'-'}</span></div><div class="text-slate-300"><i data-lucide="chevron-right" class="w-4 h-4"></i></div></div>`).join(''); lucide.createIcons(); }
+        function renderPosFornecedorModal(){ const term=document.getElementById('pos-fornecedor-modal-search').value.toLowerCase(); const fil=STATE.fornecedores.filter(f=>f.nome.toLowerCase().includes(term)); document.getElementById('pos-fornecedor-modal-grid').innerHTML=fil.map(f=>`<div class="p-3 bg-white border border-slate-200 rounded-lg mb-2 flex items-center justify-between shadow-sm" onclick="selectPosFornecedor(${f.id}, '${f.nome.replace(/'/g,"")}')"><div><h4 class="font-bold text-xs">${f.nome}</h4><span class="text-[9px] text-slate-500">Doc: ${f.documento||'-'}</span></div><div class="text-slate-300"><i data-lucide="chevron-right" class="w-4 h-4"></i></div></div>`).join(''); atualizarIcones(); }
         function selectPosFornecedor(id,name){ document.getElementById('pos-fornecedor').value=id; document.getElementById('pos-fornecedor-btn').querySelector('span').innerText=name; closeModal('pos-fornecedor-modal'); }
        // async function saveOC(){ if(!CART.length) return showToast("Adicione itens à O.C.",true); const obraId=document.getElementById('pos-obra').value; if(!obraId) return showToast("Selecione a Obra!",true); showLoading(true); const fornId=document.getElementById('pos-fornecedor').value||null; const fase=document.getElementById('pos-fase').value; const solic=document.getElementById('pos-solicitante').value; const obsPag=document.getElementById('pos-cond-pagamento').value.trim(); const obsGeral=document.getElementById('pos-obs-geral').value.trim(); let observacaoFinal=""; if(obsPag) observacaoFinal+="Condições de Pagamento:\n"+obsPag+"\n\n"; if(obsGeral) observacaoFinal+="Observações Gerais:\n"+obsGeral; const newId=CURRENT_OC_ID||getNextIdNum(STATE.logs); const dt=new Date().toISOString(); if(CURRENT_OC_ID) await sb.from('jsp_logs').delete().eq('id',CURRENT_OC_ID); const inserts=CART.map(i=>({ id:newId.toString(), obra_id:parseInt(obraId), fornecedor_id:fornId?parseInt(fornId):null, tipo:'oc_pendente', produto_nome:i.name, quantidade:i.qty, valor_total:(i.qty*i.price), data:dt, vencimento:dt, status_financeiro:'PENDENTE', observacao:observacaoFinal.trim(), fase_obra:fase, solicitante:solic })); const {error}=await sb.from('jsp_logs').insert(inserts); if(error){ showLoading(false); return showToast("Erro: "+error.message,true); } clearCart(); showToast("O.C. Salva!"); await loadData(); closeNovaOC(); }
         async function saveOC(){ 
@@ -1496,7 +1536,7 @@
       }
         
           // ====== O.C. ======
-          function renderOCList(){ const list=document.getElementById('oc-list'); const term=document.getElementById('oc-search').value.toLowerCase(); const obraFilt=document.getElementById('oc-obra-filter').value; const ocs={}; STATE.logs.filter(l=>(l.tipo==='oc_pendente'||l.tipo==='compra')&&l.status_financeiro!=='CANCELADO').forEach(l=>{ if(obraFilt&&String(l.obra_id)!==String(obraFilt)) return; if(!ocs[l.id]) ocs[l.id]={id:l.id,data:l.data,itemsText:[],total:0,desconto:0,obra_id:l.obra_id,forn_id:l.fornecedor_id,status:l.tipo==='compra'?'CONFIRMADA':'PENDENTE'}; ocs[l.id].itemsText.push(l.produto_nome); ocs[l.id].total+=parseFloat(l.valor_total); if(parseFloat(l.desconto)>0) ocs[l.id].desconto=parseFloat(l.desconto); if(l.tipo==='compra') ocs[l.id].status='CONFIRMADA'; }); let arr=Object.values(ocs).sort((a,b)=>Number(b.id)-Number(a.id)); if(arr.length===0){ list.innerHTML='<p class="text-center text-slate-400 mt-10 text-xs">Nenhuma O.C. encontrada.</p>'; return; } list.innerHTML=arr.map(o=>{ const obra=STATE.obras.find(x=>x.id==o.obra_id); const forn=STATE.fornecedores.find(x=>x.id==o.forn_id); const txt=(obra?.nome||'')+' '+(forn?.nome||'')+' '+o.id; if(term&&!txt.toLowerCase().includes(term)) return ''; const isConfirmada=o.status==='CONFIRMADA'; return `<div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm relative"><div class="absolute top-2 right-2 text-[8px] font-bold px-1.5 py-0.5 rounded ${isConfirmada?'bg-green-100 text-green-700':'bg-orange-100 text-orange-700'}">${isConfirmada?'EFETIVADA':'PENDENTE'}</div><div class="flex justify-between items-start mb-1 pr-14"><div><span class="bg-blue-100 text-blue-800 text-[9px] font-bold px-1.5 py-0.5 rounded">#${o.id}</span><h4 class="font-bold text-slate-800 mt-1 text-xs">${forn?.nome||'Forn. A Definir'}</h4><div class="text-[9px] text-blue-600 font-bold uppercase truncate mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Sem Obra'}</div></div></div><div class="font-black text-sm text-slate-800 mb-1">${formatMoney(o.total)}${o.desconto>0?` <span class="text-[8px] text-green-600 font-bold">desc. -${formatMoney(o.desconto)}</span>`:''}</div><p class="text-[9px] text-slate-500 truncate mb-2 bg-slate-50 p-1 rounded">${o.itemsText.join(', ')}</p><div class="flex justify-between gap-1 pt-2 items-center">${!isConfirmada?`<button onclick="openConfirmOC('${o.id}')" class="flex-1 bg-green-600 active:bg-green-700 text-white py-1.5 rounded-lg text-[10px] font-bold shadow-sm">Comprar</button>`:`<span class="flex-1 text-slate-400 text-[10px] font-bold">Lançado Caixa</span>`}<div class="flex gap-1 shrink-0"><button onclick="verOC('${o.id}')" class="p-1.5 border border-slate-200 text-slate-500 rounded-lg"><i data-lucide="eye" class="w-4 h-4"></i></button>${!isConfirmada?`<button onclick="loadOCToCart('${o.id}')" class="p-1.5 border border-slate-200 text-slate-500 rounded-lg"><i data-lucide="edit-3" class="w-4 h-4"></i></button>`:''}${isConfirmada?`<button onclick="estornarOC('${o.id}')" class="p-1.5 border border-orange-200 text-orange-500 rounded-lg" title="Estornar"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>`:''}<button onclick="compartilharOC('${o.id}')" class="p-1.5 border border-blue-200 text-blue-600 rounded-lg"><i data-lucide="share-2" class="w-4 h-4"></i></button><button onclick="compartilharRomaneio('${o.id}')" class="p-1.5 border border-indigo-200 text-indigo-600 rounded-lg"><i data-lucide="truck" class="w-4 h-4"></i></button>${!isConfirmada?`<button onclick="deleteOC('${o.id}')" class="p-1.5 border border-red-200 text-red-500 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`:''}</div></div></div>`; }).join(''); lucide.createIcons(); }
+          function renderOCList(){ const list=document.getElementById('oc-list'); const term=document.getElementById('oc-search').value.toLowerCase(); const obraFilt=document.getElementById('oc-obra-filter').value; const ocs={}; STATE.logs.filter(l=>(l.tipo==='oc_pendente'||l.tipo==='compra')&&l.status_financeiro!=='CANCELADO').forEach(l=>{ if(obraFilt&&String(l.obra_id)!==String(obraFilt)) return; if(!ocs[l.id]) ocs[l.id]={id:l.id,data:l.data,itemsText:[],total:0,desconto:0,obra_id:l.obra_id,forn_id:l.fornecedor_id,status:l.tipo==='compra'?'CONFIRMADA':'PENDENTE'}; ocs[l.id].itemsText.push(l.produto_nome); ocs[l.id].total+=parseFloat(l.valor_total); if(parseFloat(l.desconto)>0) ocs[l.id].desconto=parseFloat(l.desconto); if(l.tipo==='compra') ocs[l.id].status='CONFIRMADA'; }); let arr=Object.values(ocs).sort((a,b)=>Number(b.id)-Number(a.id)); if(arr.length===0){ list.innerHTML='<p class="text-center text-slate-400 mt-10 text-xs">Nenhuma O.C. encontrada.</p>'; return; } list.innerHTML=arr.map(o=>{ const obra=STATE.obras.find(x=>x.id==o.obra_id); const forn=STATE.fornecedores.find(x=>x.id==o.forn_id); const txt=(obra?.nome||'')+' '+(forn?.nome||'')+' '+o.id; if(term&&!txt.toLowerCase().includes(term)) return ''; const isConfirmada=o.status==='CONFIRMADA'; return `<div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm relative"><div class="absolute top-2 right-2 text-[8px] font-bold px-1.5 py-0.5 rounded ${isConfirmada?'bg-green-100 text-green-700':'bg-orange-100 text-orange-700'}">${isConfirmada?'EFETIVADA':'PENDENTE'}</div><div class="flex justify-between items-start mb-1 pr-14"><div><span class="bg-blue-100 text-blue-800 text-[9px] font-bold px-1.5 py-0.5 rounded">#${o.id}</span><h4 class="font-bold text-slate-800 mt-1 text-xs">${forn?.nome||'Forn. A Definir'}</h4><div class="text-[9px] text-blue-600 font-bold uppercase truncate mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Sem Obra'}</div></div></div><div class="font-black text-sm text-slate-800 mb-1">${formatMoney(o.total)}${o.desconto>0?` <span class="text-[8px] text-green-600 font-bold">desc. -${formatMoney(o.desconto)}</span>`:''}</div><p class="text-[9px] text-slate-500 truncate mb-2 bg-slate-50 p-1 rounded">${o.itemsText.join(', ')}</p><div class="flex justify-between gap-1 pt-2 items-center">${!isConfirmada?`<button onclick="openConfirmOC('${o.id}')" class="flex-1 bg-green-600 active:bg-green-700 text-white py-1.5 rounded-lg text-[10px] font-bold shadow-sm">Comprar</button>`:`<span class="flex-1 text-slate-400 text-[10px] font-bold">Lançado Caixa</span>`}<div class="flex gap-1 shrink-0"><button onclick="verOC('${o.id}')" class="p-1.5 border border-slate-200 text-slate-500 rounded-lg"><i data-lucide="eye" class="w-4 h-4"></i></button>${!isConfirmada?`<button onclick="loadOCToCart('${o.id}')" class="p-1.5 border border-slate-200 text-slate-500 rounded-lg"><i data-lucide="edit-3" class="w-4 h-4"></i></button>`:''}${isConfirmada?`<button onclick="estornarOC('${o.id}')" class="p-1.5 border border-orange-200 text-orange-500 rounded-lg" title="Estornar"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>`:''}<button onclick="compartilharOC('${o.id}')" class="p-1.5 border border-blue-200 text-blue-600 rounded-lg"><i data-lucide="share-2" class="w-4 h-4"></i></button><button onclick="compartilharRomaneio('${o.id}')" class="p-1.5 border border-indigo-200 text-indigo-600 rounded-lg"><i data-lucide="truck" class="w-4 h-4"></i></button>${!isConfirmada?`<button onclick="deleteOC('${o.id}')" class="p-1.5 border border-red-200 text-red-500 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`:''}</div></div></div>`; }).join(''); atualizarIcones(); }
         //  function loadOCToCart(id){ const itemsLog=STATE.logs.filter(l=>String(l.id)===String(id)&&l.tipo==='oc_pendente'); if(!itemsLog.length) return; CART=itemsLog.map(i=>({name:i.produto_nome,qty:parseFloat(i.quantidade),price:(parseFloat(i.valor_total)/parseFloat(i.quantidade)),total:parseFloat(i.valor_total)})); CURRENT_OC_ID=id; document.getElementById('pos-obra').value=itemsLog[0].obra_id||''; document.getElementById('pos-fase').value=itemsLog[0].fase_obra||''; document.getElementById('pos-solicitante').value=itemsLog[0].solicitante||''; const fornObj=STATE.fornecedores.find(f=>f.id==itemsLog[0].fornecedor_id); if(fornObj){ document.getElementById('pos-fornecedor').value=fornObj.id; document.getElementById('pos-fornecedor-btn').querySelector('span').innerText=fornObj.nome; } else { document.getElementById('pos-fornecedor').value=''; document.getElementById('pos-fornecedor-btn').querySelector('span').innerText='Selecionar...'; } document.getElementById('pos-cond-pagamento').value=''; document.getElementById('pos-obs-geral').value=itemsLog[0].observacao||''; openNovaOC(); renderCart(); showToast(`Editando O.C. #${id}`); }
          function loadOCToCart(id){ 
             const itemsLog = STATE.logs.filter(l => String(l.id) === String(id) && l.tipo === 'oc_pendente'); 
@@ -1562,14 +1602,14 @@
         async function executeConfirmOC(){ const id=document.getElementById('confirm-oc-id').value; const formPagto=document.getElementById('confirm-oc-payment').value; showLoading(true); let statusFinal=formPagto==='PIX'?'PAGO':'PENDENTE'; let dataVenc=new Date(); if(formPagto!=='PIX') dataVenc.setDate(dataVenc.getDate()+30); const {error}=await sb.from('jsp_logs').update({ tipo:'compra', forma_pagamento:formPagto, status_financeiro:statusFinal, data:new Date().toISOString(), vencimento:dataVenc.toISOString() }).eq('id',id).eq('tipo','oc_pendente'); if(error){ showLoading(false); return showToast("Erro: "+error.message,true); } closeOverlayForm('modal-confirm-oc'); showToast("Compra efetivada!"); await loadData(); if(typeof registrarPrecosAutomaticos==='function') await registrarPrecosAutomaticos(id); }
 
         // ====== FINANCEIRO ======
-        function renderFinance(){ const obraFilter=document.getElementById('fin-obra-filter').value; const faseFilter=document.getElementById('fin-fase-filter').value; const catFilter=document.getElementById('fin-cat-filter').value; const term=document.getElementById('fin-search').value.toLowerCase(); const dtStart=document.getElementById('fin-start').value; const dtEnd=document.getElementById('fin-end').value; let logsFilt=STATE.logs.filter(l=>l.tipo!=='oc_pendente'&&l.status_financeiro!=='CANCELADO'); if(obraFilter) logsFilt=logsFilt.filter(l=>String(l.obra_id)===String(obraFilter)); if(faseFilter) logsFilt=logsFilt.filter(l=>(l.fase_obra||'')===faseFilter); if(term) logsFilt=logsFilt.filter(l=>(l.produto_nome||'').toLowerCase().includes(term)); if(catFilter){ logsFilt=logsFilt.filter(l=>{ const prod=STATE.produtos.find(p=>window.rvEqFold(p.nome, l.produto_nome)); return prod&&prod.categoria===catFilter; }); } if(dtStart) logsFilt=logsFilt.filter(l=>new Date(l.data||l.vencimento)>=new Date(dtStart)); if(dtEnd){ let endD=new Date(dtEnd); endD.setHours(23,59,59); logsFilt=logsFilt.filter(l=>new Date(l.data||l.vencimento)<=endD); } let totDesp=0, totRec=0; const listaDesp=document.getElementById('fin-expense-history-list'); let despArrRaw=logsFilt.filter(l=>l.tipo==='compra'||l.tipo==='despesa'); let despArr=[], groupedOCs={}; despArrRaw.forEach(l=>{ if(l.tipo==='compra'){ if(!groupedOCs[l.id]){ groupedOCs[l.id]={...l,valor_total:0,is_oc:true}; despArr.push(groupedOCs[l.id]); } groupedOCs[l.id].valor_total+=parseFloat(l.valor_total); } else { despArr.push(l); } }); despArr.sort((a,b)=>new Date(b.vencimento||b.data)-new Date(a.vencimento||a.data)); mvConstruirItensPag(despArr); listaDesp.innerHTML=despArr.map(l=>{ const isPago=l.status_financeiro==='PAGO'; if(isPago) totDesp+=parseFloat(l.valor_total); const obra=STATE.obras.find(x=>x.id==l.obra_id); const forn=l.is_oc?STATE.fornecedores.find(x=>x.id==l.fornecedor_id):null; const pagKey=l.is_oc?('oc:'+l.id):('lg:'+l.uid); const podeSel=!isPago&&!l.eh_cartao&&(l.tipo==='compra'||l.tipo==='despesa'); const selMarcado=window.MV_PAG_SEL&&window.MV_PAG_SEL.has(pagKey); return `<div class="bg-white p-2.5 rounded-xl border-l-4 ${isPago?'border-l-green-500':'border-l-red-500'} shadow-sm flex flex-col gap-1">${podeSel?`<label class="flex items-center gap-2 text-[9px] font-bold text-blue-700 bg-blue-50 rounded px-2 py-1"><input type="checkbox" class="mv-pag-sel w-4 h-4" data-key="${pagKey}" ${selMarcado?'checked':''} onchange="mvToggleSelPag('${pagKey}',this.checked)"> Selecionar para pagamento</label>`:''}<div class="flex justify-between"><div><span class="text-[9px] font-bold text-slate-400">${formatDate(l.vencimento||l.data)}</span><div class="font-bold text-xs flex items-center gap-1">${l.is_oc?`O.C. #${l.id} - Consolidada <button onclick="verOC('${l.id}')" class="p-1 bg-slate-100 text-slate-500 rounded shrink-0" title="Visualizar O.C."><i data-lucide="eye" class="w-3 h-3"></i></button>`:l.produto_nome}</div>${l.is_oc?`<div class="text-[9px] text-slate-600 font-bold mt-0.5"><i data-lucide="truck" class="inline w-3 h-3"></i> Fornecedor: ${forn?.nome||'A Definir'}</div>`:''}<div class="text-[9px] text-blue-700 font-bold mt-1"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Geral'} <span class="text-slate-400">| ${l.fase_obra||'-'}</span></div></div><div class="text-right"><div class="font-black ${isPago?'text-slate-500':'text-red-600'} text-sm">${formatMoney(l.valor_total)}</div>${!isPago?`<div class="text-[8px] text-slate-400">${l.forma_pagamento||'-'}</div>`:`<span class="bg-green-100 text-green-700 text-[8px] font-bold px-1 rounded">PAGO</span>`}</div></div></div>`; }).join(''); const listaRec=document.getElementById('fin-receivables-list'); let recArr=logsFilt.filter(l=>l.tipo==='receita'); recArr.sort((a,b)=>new Date(b.vencimento||b.data)-new Date(a.vencimento||a.data)); listaRec.innerHTML=recArr.map(l=>{ const isPago=l.status_financeiro==='PAGO'; if(isPago) totRec+=parseFloat(l.valor_total); const obra=STATE.obras.find(x=>x.id==l.obra_id); return `<div class="bg-white p-2.5 rounded-xl border-l-4 ${isPago?'border-l-green-500':'border-l-orange-400'} shadow-sm flex flex-col gap-1"><div class="flex justify-between"><div><span class="text-[9px] font-bold text-slate-400">${formatDate(l.vencimento||l.data)}</span><div class="font-bold text-xs">${l.produto_nome}</div><div class="text-[9px] text-blue-700 font-bold mt-1"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Geral'}</div></div><div class="text-right"><div class="font-black text-green-700 text-sm">${formatMoney(l.valor_total)}</div>${isPago?`<span class="bg-green-100 text-green-700 text-[8px] font-bold px-1 rounded">RECEBIDO</span>`:`<span class="bg-orange-100 text-orange-700 text-[8px] font-bold px-1 rounded">A REC.</span>`}</div></div></div>`; }).join(''); document.getElementById('fin-expenses').innerText=formatMoney(totDesp); document.getElementById('fin-income').innerText=formatMoney(totRec); mvPagAtualizarBarra(); mvAplicarBloqueioObra(); mvRenderLotesRecentes(); lucide.createIcons(); window.financeiroAtual={despArr,recArr,totDesp,totRec}; }
+        function renderFinance(){ const obraFilter=document.getElementById('fin-obra-filter').value; const faseFilter=document.getElementById('fin-fase-filter').value; const catFilter=document.getElementById('fin-cat-filter').value; const term=document.getElementById('fin-search').value.toLowerCase(); const dtStart=document.getElementById('fin-start').value; const dtEnd=document.getElementById('fin-end').value; let logsFilt=STATE.logs.filter(l=>l.tipo!=='oc_pendente'&&l.status_financeiro!=='CANCELADO'); if(obraFilter) logsFilt=logsFilt.filter(l=>String(l.obra_id)===String(obraFilter)); if(faseFilter) logsFilt=logsFilt.filter(l=>(l.fase_obra||'')===faseFilter); if(term) logsFilt=logsFilt.filter(l=>(l.produto_nome||'').toLowerCase().includes(term)); if(catFilter){ logsFilt=logsFilt.filter(l=>{ const prod=STATE.produtos.find(p=>window.rvEqFold(p.nome, l.produto_nome)); return prod&&prod.categoria===catFilter; }); } if(dtStart) logsFilt=logsFilt.filter(l=>new Date(l.data||l.vencimento)>=new Date(dtStart)); if(dtEnd){ let endD=new Date(dtEnd); endD.setHours(23,59,59); logsFilt=logsFilt.filter(l=>new Date(l.data||l.vencimento)<=endD); } let totDesp=0, totRec=0; const listaDesp=document.getElementById('fin-expense-history-list'); let despArrRaw=logsFilt.filter(l=>l.tipo==='compra'||l.tipo==='despesa'); let despArr=[], groupedOCs={}; despArrRaw.forEach(l=>{ if(l.tipo==='compra'){ if(!groupedOCs[l.id]){ groupedOCs[l.id]={...l,valor_total:0,is_oc:true}; despArr.push(groupedOCs[l.id]); } groupedOCs[l.id].valor_total+=parseFloat(l.valor_total); } else { despArr.push(l); } }); despArr.sort((a,b)=>new Date(b.vencimento||b.data)-new Date(a.vencimento||a.data)); mvConstruirItensPag(despArr); listaDesp.innerHTML=despArr.map(l=>{ const isPago=l.status_financeiro==='PAGO'; if(isPago) totDesp+=parseFloat(l.valor_total); const obra=STATE.obras.find(x=>x.id==l.obra_id); const forn=l.is_oc?STATE.fornecedores.find(x=>x.id==l.fornecedor_id):null; const pagKey=l.is_oc?('oc:'+l.id):('lg:'+l.uid); const podeSel=!isPago&&!l.eh_cartao&&(l.tipo==='compra'||l.tipo==='despesa'); const selMarcado=window.MV_PAG_SEL&&window.MV_PAG_SEL.has(pagKey); return `<div class="bg-white p-2.5 rounded-xl border-l-4 ${isPago?'border-l-green-500':'border-l-red-500'} shadow-sm flex flex-col gap-1">${podeSel?`<label class="flex items-center gap-2 text-[9px] font-bold text-blue-700 bg-blue-50 rounded px-2 py-1"><input type="checkbox" class="mv-pag-sel w-4 h-4" data-key="${pagKey}" ${selMarcado?'checked':''} onchange="mvToggleSelPag('${pagKey}',this.checked)"> Selecionar para pagamento</label>`:''}<div class="flex justify-between"><div><span class="text-[9px] font-bold text-slate-400">${formatDate(l.vencimento||l.data)}</span><div class="font-bold text-xs flex items-center gap-1">${l.is_oc?`O.C. #${l.id} - Consolidada <button onclick="verOC('${l.id}')" class="p-1 bg-slate-100 text-slate-500 rounded shrink-0" title="Visualizar O.C."><i data-lucide="eye" class="w-3 h-3"></i></button>`:l.produto_nome}</div>${l.is_oc?`<div class="text-[9px] text-slate-600 font-bold mt-0.5"><i data-lucide="truck" class="inline w-3 h-3"></i> Fornecedor: ${forn?.nome||'A Definir'}</div>`:''}<div class="text-[9px] text-blue-700 font-bold mt-1"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Geral'} <span class="text-slate-400">| ${l.fase_obra||'-'}</span></div></div><div class="text-right"><div class="font-black ${isPago?'text-slate-500':'text-red-600'} text-sm">${formatMoney(l.valor_total)}</div>${!isPago?`<div class="text-[8px] text-slate-400">${l.forma_pagamento||'-'}</div>`:`<span class="bg-green-100 text-green-700 text-[8px] font-bold px-1 rounded">PAGO</span>`}</div></div></div>`; }).join(''); const listaRec=document.getElementById('fin-receivables-list'); let recArr=logsFilt.filter(l=>l.tipo==='receita'); recArr.sort((a,b)=>new Date(b.vencimento||b.data)-new Date(a.vencimento||a.data)); listaRec.innerHTML=recArr.map(l=>{ const isPago=l.status_financeiro==='PAGO'; if(isPago) totRec+=parseFloat(l.valor_total); const obra=STATE.obras.find(x=>x.id==l.obra_id); return `<div class="bg-white p-2.5 rounded-xl border-l-4 ${isPago?'border-l-green-500':'border-l-orange-400'} shadow-sm flex flex-col gap-1"><div class="flex justify-between"><div><span class="text-[9px] font-bold text-slate-400">${formatDate(l.vencimento||l.data)}</span><div class="font-bold text-xs">${l.produto_nome}</div><div class="text-[9px] text-blue-700 font-bold mt-1"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Geral'}</div></div><div class="text-right"><div class="font-black text-green-700 text-sm">${formatMoney(l.valor_total)}</div>${isPago?`<span class="bg-green-100 text-green-700 text-[8px] font-bold px-1 rounded">RECEBIDO</span>`:`<span class="bg-orange-100 text-orange-700 text-[8px] font-bold px-1 rounded">A REC.</span>`}</div></div></div>`; }).join(''); document.getElementById('fin-expenses').innerText=formatMoney(totDesp); document.getElementById('fin-income').innerText=formatMoney(totRec); mvPagAtualizarBarra(); mvAplicarBloqueioObra(); mvRenderLotesRecentes(); atualizarIcones(); window.financeiroAtual={despArr,recArr,totDesp,totRec}; }
         function imprimirFinanceiro(){ if(!window.financeiroAtual) return showToast("Filtre o financeiro primeiro."); const {despArr,recArr,totDesp,totRec}=window.financeiroAtual; const dtStart=document.getElementById('fin-start').value; const dtEnd=document.getElementById('fin-end').value; const obraFilter=document.getElementById('fin-obra-filter'); const nomeObraFiltro=obraFilter.options[obraFilter.selectedIndex].text; let htmlTabela=`<div style="font-family: Arial; padding:15px;"><h2 style="margin:0 0 5px 0;">Relatório Financeiro</h2><h3 style="margin:0 0 10px 0;">Filtro: ${nomeObraFiltro}</h3><p style="font-size:10px;">Período: ${dtStart?formatDate(dtStart):'Início'} até ${dtEnd?formatDate(dtEnd):'Hoje'}</p><table width="100%" style="border-collapse:collapse; font-size:10px;"><thead><tr style="background:#f1f5f9;"><th style="padding:6px;">Data</th><th style="padding:6px;">Descrição</th><th style="padding:6px;">Obra/Fase</th><th style="padding:6px;">Status</th><th style="padding:6px;">Valor</th></tr></thead><tbody>`; if(despArr.length){ htmlTabela+=`<tr><td colspan="5" style="background:#fee2e2; font-weight:bold;">CUSTOS</td></tr>`; despArr.forEach(l=>{ const obra=STATE.obras.find(x=>x.id==l.obra_id); const isPago=l.status_financeiro==='PAGO'; htmlTabela+=`<tr><td style="padding:5px;">${formatDate(l.vencimento||l.data)}</td><td>${l.is_oc?`O.C. #${l.id}`:l.produto_nome}</td><td>${obra?.nome||'Geral'} <span style="font-size:8px;">${l.fase_obra||'-'}</span></td><td align="center">${isPago?'PAGO':'PEND.'}</td><td align="right" style="color:#b91c1c;">${formatMoney(l.valor_total)}</td></tr>`; }); } if(recArr.length){ htmlTabela+=`<tr><td colspan="5" style="background:#dcfce7; font-weight:bold;">MEDIÇÕES</td></tr>`; recArr.forEach(l=>{ const obra=STATE.obras.find(x=>x.id==l.obra_id); const isPago=l.status_financeiro==='PAGO'; htmlTabela+=`<tr><td style="padding:5px;">${formatDate(l.vencimento||l.data)}</td><td>${l.produto_nome}</td><td>${obra?.nome||'Geral'}</td><td align="center">${isPago?'REC.':'PEND.'}</td><td align="right" style="color:#15803d;">${formatMoney(l.valor_total)}</td></tr>`; }); } htmlTabela+=`</tbody></table><table width="100%" style="margin-top:10px;"><tr><td align="right">Total Custos Pagos:</td><td align="right" style="color:#b91c1c;">${formatMoney(totDesp)}</td></tr><tr><td align="right">Total Medições Rec:</td><td align="right" style="color:#15803d;">${formatMoney(totRec)}</td></tr></table></div>`; const printArea=document.getElementById('print-area'); printArea.innerHTML=htmlTabela; printArea.classList.add('print-active'); window.print(); setTimeout(()=>printArea.classList.remove('print-active'),1000); }
 
         // ====== FORNECEDORES E PRODUTOS ======
-        function renderFornecedores(){ const term=document.getElementById('forn-search').value.toLowerCase(); const fil=STATE.fornecedores.filter(f=>f.nome.toLowerCase().includes(term)||(f.documento||'').includes(term)); document.getElementById('fornecedores-list').innerHTML=fil.map(f=>`<div class="bg-white p-3 rounded-xl border flex justify-between"><div><h4 class="font-bold text-xs">${f.nome}</h4><p class="text-[10px] text-slate-500">${f.telefone||'-'} | ${f.documento||'-'}</p></div><button onclick="openFornecedorForm('${f.id}')" class="p-1.5 bg-slate-100 text-blue-600 rounded"><i data-lucide="edit-3" class="w-4 h-4"></i></button></div>`).join(''); lucide.createIcons(); }
+        function renderFornecedores(){ const term=document.getElementById('forn-search').value.toLowerCase(); const fil=STATE.fornecedores.filter(f=>f.nome.toLowerCase().includes(term)||(f.documento||'').includes(term)); document.getElementById('fornecedores-list').innerHTML=fil.map(f=>`<div class="bg-white p-3 rounded-xl border flex justify-between"><div><h4 class="font-bold text-xs">${f.nome}</h4><p class="text-[10px] text-slate-500">${f.telefone||'-'} | ${f.documento||'-'}</p></div><button onclick="openFornecedorForm('${f.id}')" class="p-1.5 bg-slate-100 text-blue-600 rounded"><i data-lucide="edit-3" class="w-4 h-4"></i></button></div>`).join(''); atualizarIcones(); }
         function openFornecedorForm(id, origem){ FORNECEDOR_FORM_ORIGEM = origem || null; if(id){ const f=STATE.fornecedores.find(x=>x.id==id); document.getElementById('forn-id').value=f.id; document.getElementById('forn-name').value=f.nome; document.getElementById('forn-phone').value=f.telefone; document.getElementById('forn-doc').value=f.documento; document.getElementById('forn-addr').value=f.endereco; } else { document.getElementById('fornecedor-form-container').querySelector('form').reset(); document.getElementById('forn-id').value=''; } openOverlayForm('fornecedor-form-container'); }
         async function saveFornecedor(e){ e.preventDefault(); showLoading(true); const isNew=!document.getElementById('forn-id').value; const payload={ nome:document.getElementById('forn-name').value, telefone:document.getElementById('forn-phone').value, documento:document.getElementById('forn-doc').value, endereco:document.getElementById('forn-addr').value }; if(!isNew) payload.id=document.getElementById('forn-id').value; const { data, error } = await sb.from('jsp_fornecedores').upsert(payload).select(); if(error){ showLoading(false); return showToast("Erro: "+error.message,true); } const novoFornecedor=(data && data[0]) || null; closeOverlayForm('fornecedor-form-container'); showToast("Fornecedor salvo!"); await loadData(); if(FORNECEDOR_FORM_ORIGEM==='pos' && isNew && novoFornecedor){ if(confirm(`Fornecedor "${novoFornecedor.nome}" cadastrado!\n\nDeseja selecionar este fornecedor para a O.C.?`)){ selectPosFornecedor(novoFornecedor.id, novoFornecedor.nome); } } FORNECEDOR_FORM_ORIGEM=null; }
-        function renderProducts(){ const term=document.getElementById('prod-search').value.toLowerCase(); const fil=STATE.produtos.filter(p=>p.nome.toLowerCase().includes(term)); document.getElementById('prod-list').innerHTML=fil.map(p=>`<div class="bg-white p-3 rounded-xl border flex justify-between"><div><h4 class="font-bold text-xs">${p.nome}</h4><span class="text-[9px] bg-slate-100 px-1 rounded">${p.categoria||'GERAL'}</span></div><div class="flex items-center gap-3"><span class="font-bold text-xs">${formatMoney(p.preco)}</span><button onclick="openProductForm('${p.id}')" class="p-1.5 bg-slate-100 text-blue-600 rounded"><i data-lucide="edit-3" class="w-4 h-4"></i></button></div></div>`).join(''); lucide.createIcons(); }
+        function renderProducts(){ const term=document.getElementById('prod-search').value.toLowerCase(); const fil=STATE.produtos.filter(p=>p.nome.toLowerCase().includes(term)); document.getElementById('prod-list').innerHTML=fil.map(p=>`<div class="bg-white p-3 rounded-xl border flex justify-between"><div><h4 class="font-bold text-xs">${p.nome}</h4><span class="text-[9px] bg-slate-100 px-1 rounded">${p.categoria||'GERAL'}</span></div><div class="flex items-center gap-3"><span class="font-bold text-xs">${formatMoney(p.preco)}</span><button onclick="openProductForm('${p.id}')" class="p-1.5 bg-slate-100 text-blue-600 rounded"><i data-lucide="edit-3" class="w-4 h-4"></i></button></div></div>`).join(''); atualizarIcones(); }
         function openProductForm(id, origem){ PRODUTO_FORM_ORIGEM = origem || null; if(id){ const p=STATE.produtos.find(x=>x.id==id); document.getElementById('prd-id').value=p.id; document.getElementById('prd-name').value=p.nome; document.getElementById('prd-cat').value=p.categoria; document.getElementById('prd-price').value=p.preco; } else { document.getElementById('prod-form-container').querySelector('form').reset(); document.getElementById('prd-id').value=''; } openOverlayForm('prod-form-container'); }
         async function saveProduct(e){ e.preventDefault(); showLoading(true); const isNew=!document.getElementById('prd-id').value; const nome=document.getElementById('prd-name').value; const categoria=document.getElementById('prd-cat').value; const payload={ nome:nome, categoria:categoria, preco:document.getElementById('prd-price').value }; if(!isNew) payload.id=parseInt(document.getElementById('prd-id').value,10); const { data, error }=await sb.from('jsp_produtos').upsert(payload).select(); if(error){ showLoading(false); return showToast("Erro: "+error.message,true); } const novoProduto=(data && data[0]) || null; if(!isNew && payload.id){ await sb.from('jsp_logs').update({ produto_nome:nome, categoria:categoria||'Geral' }).eq('produto_id', payload.id).in('tipo', ['oc_pendente','compra']); } closeOverlayForm('prod-form-container'); showToast("Material salvo!"); await loadData(); if(typeof renderPosProductModal==='function') renderPosProductModal(); if(PRODUTO_FORM_ORIGEM==='pos' && isNew && novoProduto){ if(confirm(`Material "${nome}" cadastrado!\n\nDeseja adicionar este item à O.C.?`)){ addCartModal(novoProduto.id, novoProduto.nome, novoProduto.preco); } } PRODUTO_FORM_ORIGEM=null; }
 
@@ -1704,7 +1744,7 @@
               }
           }
           
-          lucide.createIcons();
+          atualizarIcones();
       }
 
         // ====== MODAL DE SALDO PONTO ======
@@ -1765,7 +1805,7 @@
             if(typeof renderResumoValeModal==='function'){ const pv=STATE.ponto_diario.filter(p=>p.funcionario_id===funcId&&p.status==='VALIDADO'&&!p.pago_em_fechamento&&(!dataInicio||p.hora_registro>=dataInicio+'T00:00:00')&&(!dataFim||p.hora_registro<=dataFim+'T23:59:59')); simDiaria=renderResumoValeModal('saldo-vale-resumo', funcId, rvCalcularTotalDiarias(pv)*parseFloat(func.valor_diaria||0), { hideLiquido:true }); }
             const elVlDia=document.getElementById('saldo-total-vales'); if(elVlDia) elVlDia.innerText='- '+formatMoney(simDiaria?simDiaria.total:0);
             document.getElementById('saldo-total-valor').innerText=formatMoney(simDiaria?simDiaria.saldoLiquido:brutoDiaria);
-            lucide.createIcons();
+            atualizarIcones();
         }
       
         function imprimirExtratoSaldo(){
@@ -1783,7 +1823,7 @@
             btnAssinar.innerHTML=assinado?`<i data-lucide="check-double"></i> Contrato Já Assinado`:`<i data-lucide="check-circle"></i> Marcar como Assinado`;
             btnAssinar.onclick=assinado?null:(()=>marcarContratoAssinado());
             openModal('modal-docs-equipe');
-            lucide.createIcons();
+            atualizarIcones();
         }
         async function marcarContratoAssinado(){
             const id=document.getElementById('doc-equipe-id').value; const isTerc=STATE.terceirizados.some(t=>t.id==id);
@@ -1817,7 +1857,7 @@
                 if(!isNew) payload.id=idAtual; else { payload.id=gerarIdSeguro(); payload.contrato_assinado=false; }
                 const {data:salvo,error}=await sb.from('jsp_equipe').upsert(payload).select('matricula').single();
                 if(error){ showLoading(false); return showToast("Erro: "+error.message,true); }
-                if(isNew){ if(salvo) payload.matricula=salvo.matricula; document.getElementById('sucesso-nome').innerText=payload.nome; document.getElementById('sucesso-num-matricula').innerText=payload.matricula; document.getElementById('modal-sucesso-matricula').classList.remove('hidden'); lucide.createIcons(); }
+                if(isNew){ if(salvo) payload.matricula=salvo.matricula; document.getElementById('sucesso-nome').innerText=payload.nome; document.getElementById('sucesso-num-matricula').innerText=payload.matricula; document.getElementById('modal-sucesso-matricula').classList.remove('hidden'); atualizarIcones(); }
             }
             if(mudouTipo){
                 const tabelaOrigem=origem==='terceirizado'?'jsp_terceirizados':'jsp_equipe';
@@ -1893,7 +1933,7 @@ function carregarTabelaSaldoMetros() {
     if (typeof renderResumoValeModal === 'function') { const pend = (STATE.producao_terc || []).filter(p => p.terceirizado_id === tercId && p.status !== 'PAGO' && (!dataInicio || p.data_registro >= dataInicio) && (!dataFim || p.data_registro <= dataFim)); const bruto = pend.reduce((s, p) => s + (parseFloat(p.metros) || 0), 0) * parseFloat(terc.valor_metro || 0); simMetros = renderResumoValeModal('saldo-metros-vale-resumo', tercId, bruto, { hideLiquido: true }); }
     const elVlMetros = document.getElementById('saldo-metros-total-vales'); if (elVlMetros) elVlMetros.innerText = '- ' + formatMoney(simMetros ? simMetros.total : 0);
     document.getElementById('saldo-metros-total-valor').innerText = formatMoney(simMetros ? simMetros.saldoLiquido : valorTotal);
-    lucide.createIcons();
+    atualizarIcones();
 }
 
 function imprimirExtratoSaldoMetros() {
@@ -2090,7 +2130,7 @@ function abrirModalFolhaPagamento() {
     document.getElementById('folha-data-fim').value = ultimoDiaStr;
     
     document.getElementById('modal-folha-pagamento').classList.remove('hidden');
-    lucide.createIcons();
+    atualizarIcones();
 }
 
 function fecharModalFolhaPagamento() {
@@ -3031,7 +3071,7 @@ async function getLogoBase64(url) {
         const dt = document.getElementById('mv-mpx-data'); if (dt) dt.value = new Date().toISOString().slice(0, 10);
         const obs = document.getElementById('mv-mpx-obs'); if (obs) obs.value = '';
         document.getElementById('modal-baixa-multipla-mv').classList.remove('hidden');
-        if (typeof lucide !== 'undefined') lucide.createIcons();
+        atualizarIcones();
     }
     function mvFecharModalBaixa() {
         const m = document.getElementById('modal-baixa-multipla-mv'); if (m) m.classList.add('hidden');
@@ -3086,7 +3126,7 @@ async function getLogoBase64(url) {
                 <button onclick="mvEstornarLote('${g.lote}')" class="text-amber-700 hover:text-red-600 underline" title="Desfazer este lote">Desfazer</button>
             </span>`).join('')}
         </div>`;
-        if (typeof lucide !== 'undefined') lucide.createIcons();
+        atualizarIcones();
     }
     function mvLoteFornNome(m) {
         let l = null;

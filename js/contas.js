@@ -42,7 +42,7 @@
     }
     function toast(m, e) { if (typeof showToast === 'function') showToast(m, e); else alert(m); }
     function loading(b) { if (typeof showLoading === 'function') showLoading(b); }
-    function icons() { if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons(); }
+    function icons() { if (typeof lucide !== 'undefined' && lucide.createIcons) atualizarIcones(); }
     function dataMov(m) { return m.data ? String(m.data).slice(0, 10) : ''; }
 
     function movSigned(m) {
@@ -178,7 +178,7 @@
             }
             document.getElementById('modal-conta').classList.add('hidden');
             toast(id ? 'Conta atualizada!' : 'Conta criada!');
-            await loadData();
+            await recarregarDados('contas', 'movimentacoes', 'faturas', 'logs');
             renderAll();
         } catch (e) { loading(false); toast('Erro: ' + (e.message || e), true); return; }
         loading(false);
@@ -189,7 +189,7 @@
         var r = await sb.from('jsp_contas').update({ ativa: !(c.ativa !== false) }).eq('id', id);
         loading(false);
         if (r.error) return toast('Erro: ' + r.error.message, true);
-        await loadData(); renderAll();
+        await recarregarDados('contas', 'movimentacoes', 'faturas', 'logs'); renderAll();
     }
 
     // ---------------- AJUSTE / TRANSFERENCIA ----------------
@@ -215,7 +215,7 @@
         loading(false);
         if (r.error) return toast('Erro: ' + r.error.message, true);
         document.getElementById('modal-ajuste').classList.add('hidden');
-        toast('Ajuste lancado!'); await loadData(); renderAll();
+        toast('Ajuste lancado!'); await recarregarDados('contas', 'movimentacoes', 'faturas', 'logs'); renderAll();
     }
 
     function abrirModalTransferencia(contaId) {
@@ -272,7 +272,7 @@
         loading(false);
         if (r.error) return toast('Erro: ' + r.error.message, true);
         document.getElementById('modal-transferencia').classList.add('hidden');
-        toast('Transferencia realizada!'); await loadData(); renderAll();
+        toast('Transferencia realizada!'); await recarregarDados('contas', 'movimentacoes', 'faturas', 'logs'); renderAll();
     }
 
     async function estornarMovimento(id) {
@@ -281,7 +281,7 @@
         var r = await sb.rpc('rv_mov_estornar', { p_mov: id });
         loading(false);
         if (r.error) return toast('Erro: ' + r.error.message, true);
-        toast('Movimento estornado!'); await loadData(); renderAll();
+        toast('Movimento estornado!'); await recarregarDados('contas', 'movimentacoes', 'faturas', 'logs'); renderAll();
     }
 
     // ---------------- BAIXA (receita/despesa) ----------------
@@ -324,7 +324,7 @@
         document.getElementById('modal-baixa').classList.add('hidden');
         var eraOC = !!baixaPendente.ocId;
         baixaPendente = null;
-        toast(eraOC ? 'O.C. baixada!' : 'Baixa realizada!'); await loadData(); renderAll();
+        toast(eraOC ? 'O.C. baixada!' : 'Baixa realizada!'); await recarregarDados('contas', 'movimentacoes', 'faturas', 'logs'); renderAll();
     }
 
     async function estornarBaixa(uid) {
@@ -333,7 +333,7 @@
         var r = await sb.rpc('rv_estornar_baixa', { p_uid: uid });
         loading(false);
         if (r.error) return toast('Erro: ' + r.error.message, true);
-        toast('Baixa estornada!'); await loadData(); renderAll();
+        toast('Baixa estornada!'); await recarregarDados('contas', 'movimentacoes', 'faturas', 'logs'); renderAll();
     }
     async function estornarBaixaOC(id) {
         if (!confirm('Estornar a baixa desta O.C.?')) return;
@@ -341,7 +341,7 @@
         var r = await sb.rpc('rv_estornar_baixa_oc', { p_id: String(id) });
         loading(false);
         if (r.error) return toast('Erro: ' + r.error.message, true);
-        toast('Baixa da O.C. estornada!'); await loadData(); renderAll();
+        toast('Baixa da O.C. estornada!'); await recarregarDados('contas', 'movimentacoes', 'faturas', 'logs'); renderAll();
     }
 
     // ---------------- CARTAO ----------------
@@ -355,7 +355,7 @@
         var r = await sb.rpc('rv_estornar_compra_cartao', { p_uid: uid });
         loading(false);
         if (r.error) return toast('Erro: ' + r.error.message, true);
-        toast('Compra cancelada!'); await loadData(); renderAll();
+        toast('Compra cancelada!'); await recarregarDados('contas', 'movimentacoes', 'faturas', 'logs'); renderAll();
     }
 
     function abrirModalPagarFatura(fatId) {
@@ -379,7 +379,7 @@
         loading(false);
         if (r.error) return toast('Erro: ' + r.error.message, true);
         document.getElementById('modal-pagar-fatura').classList.add('hidden');
-        toast('Fatura paga!'); await loadData(); renderAll();
+        toast('Fatura paga!'); await recarregarDados('contas', 'movimentacoes', 'faturas', 'logs'); renderAll();
     }
     async function fecharFatura(fatId) {
         if (!confirm('Fechar esta fatura agora?')) return;
@@ -387,7 +387,7 @@
         var r = await sb.rpc('rv_fatura_fechar', { p_fatura: fatId });
         loading(false);
         if (r.error) return toast('Erro: ' + r.error.message, true);
-        toast('Fatura fechada!'); await loadData(); renderAll();
+        toast('Fatura fechada!'); await recarregarDados('contas', 'movimentacoes', 'faturas', 'logs'); renderAll();
     }
     async function estornarPagamentoFatura(fatId) {
         if (!confirm('Estornar o pagamento desta fatura?')) return;
@@ -395,7 +395,7 @@
         var r = await sb.rpc('rv_fatura_estornar_pagamento', { p_fatura: fatId });
         loading(false);
         if (r.error) return toast('Erro: ' + r.error.message, true);
-        toast('Pagamento estornado!'); await loadData(); renderAll();
+        toast('Pagamento estornado!'); await recarregarDados('contas', 'movimentacoes', 'faturas', 'logs'); renderAll();
     }
 
     // ---------------- RENDER ----------------

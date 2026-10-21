@@ -164,7 +164,7 @@
                 linhas +
                 totaisHtml +
             '</div>';
-        if (typeof lucide !== 'undefined') lucide.createIcons();
+        atualizarIcones();
         return sim;
     }
 
@@ -261,7 +261,7 @@
         renderTabelaVales(colabId || (sel ? sel.value : ''));
         if (typeof RVModals !== 'undefined') RVModals.clearDirty('modal-vale');
         document.getElementById('modal-vale').classList.remove('hidden');
-        if (typeof lucide !== 'undefined') lucide.createIcons();
+        atualizarIcones();
     }
 
     function fecharModalVale() {
@@ -307,7 +307,7 @@
         });
         if (sem) sem.classList.toggle('hidden', lista.length > 0);
         if (totalEl) totalEl.innerText = formatMoney(totalAberto);
-        if (typeof lucide !== 'undefined') lucide.createIcons();
+        atualizarIcones();
     }
 
     async function salvarVale() {
@@ -351,7 +351,7 @@
                 valeAtual.valor_aberto = valor;
                 valeAtual.data = data;
                 valeAtual.observacao = obs || null;
-                await loadData();
+                await recarregarDados('vales', 'logs', 'vale_abatimentos');
                 renderTabelaVales(colabId);
                 showLoading(false);
                 if (typeof RVModals !== 'undefined') RVModals.clearDirty('modal-vale');
@@ -395,7 +395,7 @@
                 throw insVale.error;
             }
 
-            await loadData();
+            await recarregarDados('vales', 'logs', 'vale_abatimentos');
             document.getElementById('vale-valor').value = '';
             document.getElementById('vale-observacao').value = '';
             renderTabelaVales(colabId);
@@ -427,7 +427,7 @@
         renderTabelaVales(v.colaborador_id);
         if (typeof RVModals !== 'undefined') RVModals.clearDirty('modal-vale');
         document.getElementById('modal-vale').classList.remove('hidden');
-        if (typeof lucide !== 'undefined') lucide.createIcons();
+        atualizarIcones();
     }
 
     async function estornarVale(id) {
@@ -453,7 +453,7 @@
             }
             v.status = 'ESTORNADO';
             v.valor_aberto = 0;
-            await loadData();
+            await recarregarDados('vales', 'logs', 'vale_abatimentos');
             renderTabelaVales(v.colaborador_id);
             showLoading(false);
             showToast('Vale estornado.');

@@ -153,7 +153,7 @@
         if (!lista.length) {
             tbody.innerHTML = '<tr><td colspan="5" class="p-10 text-center text-slate-400 font-medium">' +
                 'Nenhum item avulso' + (estado.filtro ? ' para este filtro.' : '. Tudo conciliado!') + '</td></tr>';
-            if (window.lucide) lucide.createIcons();
+            if (window.lucide) atualizarIcones();
             return;
         }
 
@@ -186,7 +186,7 @@
         }).join('');
 
         concPopularDatalist();
-        if (window.lucide) lucide.createIcons();
+        if (window.lucide) atualizarIcones();
     }
 
     function concPopularDatalist() {
