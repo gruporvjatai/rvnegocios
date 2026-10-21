@@ -66,7 +66,7 @@ function contarForaDoPadrao(registros) {
 // RENDER DA ABA
 // ============================================================
 function renderViewHistoricoPrecos() {
-  const container = document.getElementById('view-precos');
+  const container = document.getElementById('prod-historico-precos');
   if (!container) return;
 
   container.innerHTML = `
