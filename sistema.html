@@ -2600,9 +2600,17 @@
             clearCart(); showToast("O.C. Salva com sucesso!"); await recarregarDados('logs'); navigate('oc');
         }
 
+        const OC_LIMITE_PADRAO = 30;
+        let OC_LIMITE = OC_LIMITE_PADRAO;
+
+        function mostrarMaisOC() {
+            OC_LIMITE += OC_LIMITE_PADRAO;
+            renderOCList();
+        }
+
         function renderOCList() {
             const list = document.getElementById('oc-list');
-            const term = document.getElementById('oc-search').value.toLowerCase();
+            const term = document.getElementById('oc-search').value.trim().toLowerCase();
             
             const ocs = {};
             STATE.logs.filter(l => (l.tipo === 'oc_pendente' || l.tipo === 'compra') && l.status_financeiro !== 'CANCELADO').forEach(l => {
@@ -2614,15 +2622,27 @@
                 if(parseFloat(l.desconto) > 0) ocs[l.id].desconto = parseFloat(l.desconto);
             });
 
-           let arr = Object.values(ocs).sort((a,b)=> parseInt(b.id) - parseInt(a.id));
-            
-            if(arr.length === 0) { list.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">Nenhuma Ordem de Compra encontrada.</td></tr>`; return; }
+           const arr = Object.values(ocs).sort((a,b)=> parseInt(b.id) - parseInt(a.id));
 
-            list.innerHTML = arr.map(o => {
-                const obra = STATE.obras.find(x=>x.id == o.obra_id);
-                const forn = STATE.fornecedores.find(x=>x.id == o.forn_id);
-                const txt = (obra?.nome || '?') + ' ' + (forn?.nome || '');
-                if(term && !txt.toLowerCase().includes(term) && !String(o.id).includes(term)) return '';
+            const arrFiltrado = !term ? arr : arr.filter(o => {
+                const obra = obraPorId(o.obra_id);
+                const forn = fornecedorPorId(o.forn_id);
+                const txt = ((obra?.nome || '?') + ' ' + (forn?.nome || '')).toLowerCase();
+                return txt.includes(term) || String(o.id).includes(term);
+            });
+
+            if(arrFiltrado.length === 0) {
+                list.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">${term ? 'Nenhuma Ordem de Compra encontrada para a busca.' : 'Nenhuma Ordem de Compra encontrada.'}</td></tr>`;
+                return;
+            }
+
+            // Sem filtro de busca, mostra por partes. Com busca ativa, mostra tudo que casar.
+            const visiveis = term ? arrFiltrado : arrFiltrado.slice(0, OC_LIMITE);
+            const restantes = arrFiltrado.length - visiveis.length;
+
+            list.innerHTML = visiveis.map(o => {
+                const obra = obraPorId(o.obra_id);
+                const forn = fornecedorPorId(o.forn_id);
 
                 return `
                 <tr class="border-b hover:bg-slate-50 transition">
@@ -2660,6 +2680,14 @@
                     </td>
                 </tr>`;
             }).join('');
+
+            if(restantes > 0) {
+                list.innerHTML += `<tr><td colspan="6" class="p-4 text-center">
+                    <button onclick="mostrarMaisOC()" class="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold">
+                        Mostrar mais (${restantes} restante${restantes === 1 ? '' : 's'})
+                    </button>
+                </td></tr>`;
+            }
             atualizarIcones();
         }
 
