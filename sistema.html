@@ -346,6 +346,7 @@
                 <span id="pag-sel-info" class="text-xs font-bold text-blue-800"></span>
                 <div class="flex items-center gap-2">
                     <button type="button" onclick="limparSelPag()" class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100">Limpar</button>
+                    <button type="button" id="btn-pag-parcelar" onclick="abrirParcelamentoSelecionado()" disabled class="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold shadow flex items-center gap-1" title="Selecione um lançamento pendente para parcelar"><i data-lucide="calendar-range" class="w-4 h-4"></i> Parcelar</button>
                     <button type="button" onclick="abrirModalBaixaMultipla()" class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-bold shadow flex items-center gap-1"><i data-lucide="check-circle" class="w-4 h-4"></i> Pagar selecionados</button>
                 </div>
             </div>
@@ -1883,7 +1884,7 @@
                     <input type="date" id="mpx-data" class="w-full p-2 border rounded-lg text-sm">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Observacao (opcional)</label>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Observação (opcional)</label>
                     <input type="text" id="mpx-obs" placeholder="Ex.: pagamento fim de mes" class="w-full p-2 border rounded-lg text-sm">
                 </div>
                 <div id="mpx-total" class="text-right font-black text-red-600 text-lg"></div>
@@ -1891,6 +1892,58 @@
             <div class="p-4 border-t bg-slate-50 flex gap-2 rounded-b-2xl">
                 <button onclick="fecharModalBaixaMultipla()" class="flex-1 py-2 bg-white border rounded-lg font-bold text-slate-600">Cancelar</button>
                 <button onclick="confirmarBaixaMultipla()" class="flex-1 py-2 bg-green-600 text-white rounded-lg font-bold">Confirmar pagamento</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Parcelamento de lancamento em aberto (Contas a Pagar) -->
+    <div id="modal-parcelamento" class="hidden fixed inset-0 bg-black/60 z-[80] flex justify-center items-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[92vh]">
+            <div class="p-4 border-b flex justify-between items-center bg-gradient-to-r from-violet-50 to-indigo-50 rounded-t-2xl">
+                <div>
+                    <h3 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="calendar-range" class="w-5 h-5 text-violet-600"></i> Parcelar lançamento</h3>
+                    <p class="text-[11px] text-slate-500 mt-0.5">Gere os títulos e ajuste os vencimentos um a um.</p>
+                </div>
+                <button onclick="fecharModalParcelamento()" class="text-slate-400 hover:text-red-500"><i data-lucide="x"></i></button>
+            </div>
+            <div class="p-4 space-y-4 overflow-y-auto">
+                <div id="parc-resumo" class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-600"></div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Número de parcelas</label>
+                        <div class="flex items-center gap-1">
+                            <button type="button" onclick="ajustarNumParcelas(-1)" class="w-9 h-9 shrink-0 bg-white border rounded-lg text-slate-600 hover:bg-slate-100 font-black">-</button>
+                            <input type="number" id="parc-qtd" min="2" max="60" step="1" value="2" onchange="recalcularParcelas(true)" class="w-full p-2 border rounded-lg text-sm font-bold text-center focus:ring-2 focus:ring-violet-500 outline-none">
+                            <button type="button" onclick="ajustarNumParcelas(1)" class="w-9 h-9 shrink-0 bg-white border rounded-lg text-slate-600 hover:bg-slate-100 font-black">+</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">1º vencimento</label>
+                        <input type="date" id="parc-base" onchange="recalcularParcelas(true)" class="w-full p-2 border rounded-lg text-sm focus:ring-2 focus:ring-violet-500 outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-xs font-bold text-slate-500 uppercase">Vencimentos das parcelas</label>
+                        <span id="parc-total" class="text-[11px] font-bold text-violet-700"></span>
+                    </div>
+                    <div id="parc-lista" class="space-y-2 max-h-64 overflow-y-auto pr-1"></div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Observação (opcional)</label>
+                    <input type="text" id="parc-obs" maxlength="160" placeholder="Ex.: negociado com o fornecedor" class="w-full p-2 border rounded-lg text-sm">
+                </div>
+
+                <div class="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-2.5">
+                    O lançamento original será cancelado e substituído pelas parcelas informadas. A soma dos valores será sempre igual ao total original.
+                </div>
+            </div>
+            <div class="p-4 border-t bg-slate-50 flex gap-2 rounded-b-2xl">
+                <button onclick="fecharModalParcelamento()" class="flex-1 py-2 bg-white border rounded-lg font-bold text-slate-600">Cancelar</button>
+                <button id="parc-confirmar" onclick="confirmarParcelamento()" class="flex-1 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-bold shadow">Confirmar parcelamento</button>
             </div>
         </div>
     </div>
@@ -2197,8 +2250,12 @@
         // Recarrega somente as tabelas afetadas por uma acao, sem derrubar a tela.
         async function recarregarDados(...chaves) {
             const lista = chaves.flat(Infinity).filter(k => TABELAS[k]);
-            await Promise.all(lista.map(carregarTabela));
-            if (lista.includes('logs') || lista.includes('produtos')) syncLogsComProdutos();
+            try {
+                await Promise.all(lista.map(carregarTabela));
+                if (lista.includes('logs') || lista.includes('produtos')) syncLogsComProdutos();
+            } finally {
+                showLoading(false);
+            }
         }
 
         function renderViewAtual() {
@@ -3050,6 +3107,11 @@
         // ====== CONTAS A PAGAR: SELECAO MULTIPLA (PAGAMENTO EM LOTE) ======
         window.PAG_SEL = window.PAG_SEL || new Set();
 
+        function pagItensSelecionados() {
+            const itens = [];
+            (window.PAG_SEL || new Set()).forEach(k => { const it = (window.PAG_ITENS || {})[k]; if (it) itens.push(it); });
+            return itens;
+        }
         function pagAtualizarBarra() {
             const sel = window.PAG_SEL || new Set();
             const bar = document.getElementById('pag-sel-bar');
@@ -3063,6 +3125,15 @@
             } else {
                 bar.classList.add('hidden');
                 if (info) info.innerText = '';
+            }
+            const btnParc = document.getElementById('btn-pag-parcelar');
+            if (btnParc) {
+                const itens = pagItensSelecionados();
+                const elegiveis = itens.filter(i => i.tipo === 'lancamento' && podeParcelarLancamento(STATE.logs.find(l => String(l.uid) === String(i.id))));
+                btnParc.disabled = elegiveis.length !== 1;
+                btnParc.title = elegiveis.length === 1
+                    ? 'Parcelar o lançamento selecionado'
+                    : 'Selecione exatamente um lançamento pendente (não O.C., não cartão) para parcelar';
             }
             const boxes = Array.from(document.querySelectorAll('#fin-expense-history-list .pag-sel'));
             const all = document.getElementById('pag-sel-all');
@@ -3143,6 +3214,178 @@
             pagAtualizarBarra();
             pagAplicarBloqueioObra();
         }
+
+        // ====== CONTAS A PAGAR: PARCELAMENTO DE LANCAMENTO ======
+        const PARC_MAX = 60;
+        window.PARC_ATUAL = null;
+
+        function podeParcelarLancamento(l) {
+            return !!l &&
+                l.tipo === 'despesa' &&
+                l.status_financeiro === 'PENDENTE' &&
+                !l.eh_cartao &&
+                !l.ref_tipo &&
+                !l.equipe_id &&
+                !l.fatura_id;
+        }
+
+        function isoDataLocal(d) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const dia = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${dia}`;
+        }
+
+        function addMesesISO(baseISO, meses) {
+            const [y, m, d] = String(baseISO || '').split('-').map(Number);
+            if (!y || !m || !d) return '';
+            const alvo = new Date(Date.UTC(y, m - 1 + meses, 1));
+            const ultimoDia = new Date(Date.UTC(alvo.getUTCFullYear(), alvo.getUTCMonth() + 1, 0)).getUTCDate();
+            alvo.setUTCDate(Math.min(d, ultimoDia));
+            return alvo.toISOString().slice(0, 10);
+        }
+
+        function dividirValorParcelas(total, n) {
+            const centavos = Math.round((parseFloat(total) || 0) * 100);
+            const base = Math.floor(centavos / n);
+            const resto = centavos - (base * n);
+            return Array.from({ length: n }, (_, i) => (base + (i < resto ? 1 : 0)) / 100);
+        }
+
+        function abrirParcelamentoSelecionado() {
+            const itens = pagItensSelecionados();
+            if (itens.length !== 1) return showToast('Selecione exatamente um lançamento para parcelar.', true);
+            if (itens[0].tipo !== 'lancamento') return showToast('Ordens de compra não podem ser parceladas por aqui.', true);
+            abrirModalParcelamento(itens[0].id);
+        }
+
+        function abrirModalParcelamento(uid) {
+            const l = (STATE.logs || []).find(x => String(x.uid) === String(uid));
+            if (!l) return showToast('Lançamento não encontrado.', true);
+            if (!podeParcelarLancamento(l)) {
+                return showToast('Este lançamento não pode ser parcelado (precisa estar pendente, sem cartão, equipe, vale ou fatura vinculada).', true);
+            }
+            const valor = parseFloat(l.valor_total) || 0;
+            if (valor <= 0) return showToast('O lançamento precisa ter valor maior que zero.', true);
+
+            const base = String(l.vencimento || l.data || '').slice(0, 10) || isoDataLocal(new Date());
+            window.PARC_ATUAL = { uid: String(l.uid), valor, base, n: 2, datas: [], valores: [] };
+
+            const obra = obraPorId(l.obra_id);
+            document.getElementById('parc-resumo').innerHTML = `
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <div class="font-bold text-slate-800 truncate">${l.produto_nome || 'Despesa'}</div>
+                        <div class="text-[10px] text-slate-500 mt-0.5">${obra ? obra.nome : 'Geral'}${l.fase_obra ? ' | ' + l.fase_obra : ''}</div>
+                        <div class="text-[10px] text-slate-500">Vencimento atual: ${formatDate(l.vencimento || l.data)}</div>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <div class="text-[9px] uppercase font-bold text-slate-400">Valor total</div>
+                        <div class="text-lg font-black text-slate-800">${formatMoney(valor)}</div>
+                    </div>
+                </div>`;
+            document.getElementById('parc-qtd').value = 2;
+            document.getElementById('parc-base').value = base;
+            document.getElementById('parc-obs').value = '';
+            document.getElementById('modal-parcelamento').classList.remove('hidden');
+            recalcularParcelas(true);
+            atualizarIcones();
+        }
+
+        function fecharModalParcelamento() {
+            const m = document.getElementById('modal-parcelamento');
+            if (m) m.classList.add('hidden');
+            window.PARC_ATUAL = null;
+        }
+
+        function ajustarNumParcelas(delta) {
+            const inp = document.getElementById('parc-qtd');
+            if (!inp) return;
+            let n = (parseInt(inp.value, 10) || 2) + delta;
+            n = Math.max(2, Math.min(PARC_MAX, n));
+            inp.value = n;
+            recalcularParcelas(true);
+        }
+
+        function recalcularParcelas(resetarDatas) {
+            const st = window.PARC_ATUAL;
+            if (!st) return;
+            const inpQtd = document.getElementById('parc-qtd');
+            const inpBase = document.getElementById('parc-base');
+            let n = parseInt(inpQtd.value, 10);
+            if (!n || n < 2) n = 2;
+            if (n > PARC_MAX) n = PARC_MAX;
+            inpQtd.value = n;
+
+            const base = inpBase.value || st.base;
+            st.n = n;
+            st.base = base;
+            if (resetarDatas || !Array.isArray(st.datas) || st.datas.length !== n) {
+                st.datas = Array.from({ length: n }, (_, i) => addMesesISO(base, i));
+            }
+            renderParcelas();
+        }
+
+        function atualizarDataParcela(idx, valor) {
+            if (!window.PARC_ATUAL || !window.PARC_ATUAL.datas) return;
+            window.PARC_ATUAL.datas[idx] = valor;
+        }
+
+        function renderParcelas() {
+            const st = window.PARC_ATUAL;
+            if (!st) return;
+            st.valores = dividirValorParcelas(st.valor, st.n);
+            const lista = document.getElementById('parc-lista');
+            lista.innerHTML = st.valores.map((v, i) => `
+                <div class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2">
+                    <span class="w-7 h-7 shrink-0 rounded-full bg-violet-100 text-violet-700 text-[10px] font-black flex items-center justify-center">${i + 1}</span>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-[9px] uppercase font-bold text-slate-400">Vencimento da parcela ${i + 1}/${st.n}</div>
+                        <input type="date" value="${st.datas[i] || ''}" onchange="atualizarDataParcela(${i}, this.value)" class="w-full mt-0.5 p-1.5 border rounded-lg text-xs focus:ring-2 focus:ring-violet-500 outline-none">
+                    </div>
+                    <div class="text-right shrink-0">
+                        <div class="text-[9px] uppercase font-bold text-slate-400">Valor</div>
+                        <div class="text-sm font-black text-slate-700">${formatMoney(v)}</div>
+                    </div>
+                </div>`).join('');
+            const total = st.valores.reduce((a, v) => a + v, 0);
+            document.getElementById('parc-total').innerText = `${st.n}x - Total ${formatMoney(total)}`;
+        }
+
+        async function confirmarParcelamento() {
+            const st = window.PARC_ATUAL;
+            if (!st) return;
+            const datas = (st.datas || []).slice();
+            if (datas.length !== st.n) return showToast('Gere os vencimentos antes de confirmar.', true);
+            if (datas.some(d => !d)) return showToast('Preencha todos os vencimentos.', true);
+            const valores = dividirValorParcelas(st.valor, st.n);
+            const parcelas = datas.map((d, i) => ({ vencimento: d, valor: Number(valores[i].toFixed(2)) }));
+            const obs = (document.getElementById('parc-obs').value || '').trim();
+
+            const btn = document.getElementById('parc-confirmar');
+            if (btn) btn.disabled = true;
+            showLoading(true);
+            try {
+                const { data, error } = await sb.rpc('rv_parcelar_lancamento', {
+                    p_uid: st.uid,
+                    p_parcelas: parcelas,
+                    p_obs: obs || null
+                });
+                if (error) throw error;
+                const n = (data && data.parcelas) ? data.parcelas : st.n;
+                fecharModalParcelamento();
+                limparSelPag();
+                showToast(`Lançamento parcelado em ${n}x!`);
+                await recarregarDados('logs');
+                renderFinance();
+            } catch (e) {
+                showToast('Erro ao parcelar: ' + (e.message || e), true);
+            } finally {
+                showLoading(false);
+                if (btn) btn.disabled = false;
+            }
+        }
+
         function abrirModalBaixaMultipla() {
             const sel = window.PAG_SEL || new Set();
             const itens = [];
@@ -3421,6 +3664,7 @@
                 const obra = obraPorId(l.obra_id);
                 const pagKey = l.is_oc ? ('oc:' + l.id) : ('lg:' + l.uid);
                 const podeSel = !isPago && !l.eh_cartao && (l.tipo === 'compra' || l.tipo === 'despesa');
+                const podeParcelar = !isPago && !l.is_oc && podeParcelarLancamento(l);
                 const selMarcado = window.PAG_SEL && window.PAG_SEL.has(pagKey);
                 const forn = l.is_oc ? fornecedorPorId(l.fornecedor_id) : null;
                 const extraInfo = (!l.is_oc && l.observacao) ? `<div class="text-[9px] text-slate-500 font-bold uppercase mt-0.5">${l.observacao}</div>` : '';
@@ -3433,6 +3677,7 @@
                         <button onclick="baixarLogOC('${l.id}')" class="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded shadow flex items-center gap-1 text-[10px] font-bold" title="Pagar O.C. Completa"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> BAIXAR</button>
                         <button onclick="excluirLancamentoOC('${l.id}')" class="bg-slate-200 hover:bg-slate-300 text-slate-600 p-1.5 rounded shadow" title="Cancelar Lançamento"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>
                     ` : `
+                        ${podeParcelar ? `<button onclick="abrirModalParcelamento('${l.uid}')" class="bg-violet-100 hover:bg-violet-600 text-violet-700 hover:text-white p-1.5 rounded shadow" title="Parcelar este lançamento"><i data-lucide="calendar-range" class="w-3.5 h-3.5"></i></button>` : ''}
                         <button onclick="openExpenseEdit('${l.uid}')" class="bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 p-1.5 rounded shadow" title="Editar Despesa"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
                         <button onclick="baixarLog('${l.uid}')" class="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded shadow flex items-center gap-1 text-[10px] font-bold" title="Baixar Despesa"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> BAIXAR</button>
                         <button onclick="excluirLancamento('${l.uid}')" class="bg-slate-200 hover:bg-slate-300 text-slate-600 p-1.5 rounded shadow" title="Cancelar Lançamento"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>

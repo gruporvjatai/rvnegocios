@@ -239,6 +239,7 @@
                     <div class="flex items-center gap-1.5">
                         <button type="button" onclick="mvToggleSelAllPag()" class="px-2 py-1 bg-white border border-slate-300 rounded-lg text-[10px] font-bold text-slate-600">Todos</button>
                         <button type="button" onclick="mvLimparSelPag()" class="px-2 py-1 bg-white border border-slate-300 rounded-lg text-[10px] font-bold text-slate-600">Limpar</button>
+                        <button type="button" id="mv-btn-parcelar" onclick="mvAbrirParcelamentoSelecionado()" disabled class="px-2 py-1 bg-violet-600 disabled:bg-slate-300 disabled:text-slate-500 text-white rounded-lg text-[10px] font-bold flex items-center gap-1"><i data-lucide="calendar-range" class="w-3.5 h-3.5"></i> Parcelar</button>
                         <button type="button" onclick="mvAbrirModalBaixa()" class="px-2 py-1 bg-green-600 text-white rounded-lg text-[10px] font-bold flex items-center gap-1"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Pagar</button>
                     </div>
                 </div>
@@ -1057,6 +1058,53 @@
         </div>
     </div>
 
+    <div id="modal-parcelamento-mv" class="hidden fixed inset-0 bg-black/60 z-[80] flex justify-center items-end p-0">
+        <div class="bg-white rounded-t-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[92vh]">
+            <div class="p-3 border-b flex justify-between items-center bg-gradient-to-r from-violet-50 to-indigo-50 rounded-t-2xl">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2"><i data-lucide="calendar-range" class="w-4 h-4 text-violet-600"></i> Parcelar lancamento</h3>
+                    <p class="text-[10px] text-slate-500 mt-0.5">Ajuste os vencimentos um a um.</p>
+                </div>
+                <button onclick="mvFecharModalParcelamento()" class="text-slate-400"><i data-lucide="x"></i></button>
+            </div>
+            <div class="p-3 space-y-3 overflow-y-auto">
+                <div id="mv-parc-resumo" class="bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-[11px] text-slate-600"></div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Numero de parcelas</label>
+                        <div class="flex items-center gap-1">
+                            <button type="button" onclick="mvAjustarNumParcelas(-1)" class="w-8 h-8 shrink-0 bg-white border rounded-lg text-slate-600 font-black">-</button>
+                            <input type="number" id="mv-parc-qtd" min="2" max="60" step="1" value="2" onchange="mvRecalcularParcelas(true)" class="w-full p-1.5 border rounded-lg text-xs font-bold text-center focus:ring-2 focus:ring-violet-500 outline-none">
+                            <button type="button" onclick="mvAjustarNumParcelas(1)" class="w-8 h-8 shrink-0 bg-white border rounded-lg text-slate-600 font-black">+</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">1o vencimento</label>
+                        <input type="date" id="mv-parc-base" onchange="mvRecalcularParcelas(true)" class="w-full p-1.5 border rounded-lg text-xs focus:ring-2 focus:ring-violet-500 outline-none">
+                    </div>
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-[9px] font-bold text-slate-500 uppercase">Vencimentos das parcelas</label>
+                        <span id="mv-parc-total" class="text-[10px] font-bold text-violet-700"></span>
+                    </div>
+                    <div id="mv-parc-lista" class="space-y-1.5 max-h-56 overflow-y-auto pr-1"></div>
+                </div>
+                <div>
+                    <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Observacao (opcional)</label>
+                    <input type="text" id="mv-parc-obs" maxlength="160" placeholder="Ex.: negociado com o fornecedor" class="w-full p-2 border rounded-lg text-xs">
+                </div>
+                <div class="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-2">
+                    O lancamento original sera cancelado e substituido pelas parcelas informadas.
+                </div>
+            </div>
+            <div class="p-3 border-t bg-slate-50 flex gap-2 rounded-b-2xl pb-5">
+                <button onclick="mvFecharModalParcelamento()" class="flex-1 py-2 bg-white border rounded-lg font-bold text-slate-600 text-sm">Cancelar</button>
+                <button id="mv-parc-confirmar" onclick="mvConfirmarParcelamento()" class="flex-1 py-2 bg-violet-600 text-white rounded-lg font-bold text-sm">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
     window.rvUp = function (v) { return String(v == null ? '' : v).toUpperCase(); };
     window.rvHasFold = function (hay, needle) { return window.rvUp(hay).indexOf(window.rvUp(needle)) !== -1; };
@@ -1281,8 +1329,12 @@
 
         async function recarregarDados(...chaves) {
             const lista = chaves.flat(Infinity).filter(k => TABELAS[k]);
-            await Promise.all(lista.map(carregarTabela));
-            if (lista.includes('logs') || lista.includes('produtos')) syncLogsComProdutos();
+            try {
+                await Promise.all(lista.map(carregarTabela));
+                if (lista.includes('logs') || lista.includes('produtos')) syncLogsComProdutos();
+            } finally {
+                showLoading(false);
+            }
         }
 
         function renderViewAtual() {
@@ -2989,6 +3041,11 @@ async function getLogoBase64(url) {
         });
         if (window.MV_PAG_SEL) Array.from(window.MV_PAG_SEL).forEach(k => { if (!window.MV_PAG_ITENS[k]) window.MV_PAG_SEL.delete(k); });
     }
+    function mvItensSelecionados() {
+        const itens = [];
+        (window.MV_PAG_SEL || new Set()).forEach(k => { const it = (window.MV_PAG_ITENS || {})[k]; if (it) itens.push(it); });
+        return itens;
+    }
     function mvPagAtualizarBarra() {
         const sel = window.MV_PAG_SEL || new Set();
         const bar = document.getElementById('mv-pag-bar');
@@ -3002,6 +3059,11 @@ async function getLogoBase64(url) {
         } else {
             bar.classList.add('hidden');
             if (info) info.innerText = '';
+        }
+        const btnParc = document.getElementById('mv-btn-parcelar');
+        if (btnParc) {
+            const elegiveis = mvItensSelecionados().filter(i => i.tipo === 'lancamento' && mvPodeParcelarLancamento((STATE.logs || []).find(l => String(l.uid) === String(i.id))));
+            btnParc.disabled = elegiveis.length !== 1;
         }
     }
     function mvObraDe(it) { return (it && it.obra_id != null && it.obra_id !== '') ? String(it.obra_id) : null; }
@@ -3068,6 +3130,137 @@ async function getLogoBase64(url) {
         document.querySelectorAll('#fin-expense-history-list .mv-pag-sel').forEach(b => { b.checked = false; });
         mvPagAtualizarBarra();
         mvAplicarBloqueioObra();
+    }
+
+    var MV_PARC_MAX = 60;
+    window.MV_PARC_ATUAL = null;
+    function mvPodeParcelarLancamento(l) {
+        return !!l && l.tipo === 'despesa' && l.status_financeiro === 'PENDENTE' &&
+            !l.eh_cartao && !l.ref_tipo && !l.equipe_id && !l.fatura_id;
+    }
+    function mvIsoDataLocal(d) {
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+    function mvAddMesesISO(baseISO, meses) {
+        var p = String(baseISO || '').split('-').map(Number);
+        if (!p[0] || !p[1] || !p[2]) return '';
+        var alvo = new Date(Date.UTC(p[0], p[1] - 1 + meses, 1));
+        var ultimoDia = new Date(Date.UTC(alvo.getUTCFullYear(), alvo.getUTCMonth() + 1, 0)).getUTCDate();
+        alvo.setUTCDate(Math.min(p[2], ultimoDia));
+        return alvo.toISOString().slice(0, 10);
+    }
+    function mvDividirValorParcelas(total, n) {
+        var centavos = Math.round((parseFloat(total) || 0) * 100);
+        var base = Math.floor(centavos / n);
+        var resto = centavos - (base * n);
+        var arr = [];
+        for (var i = 0; i < n; i++) arr.push((base + (i < resto ? 1 : 0)) / 100);
+        return arr;
+    }
+    function mvAbrirParcelamentoSelecionado() {
+        var itens = mvItensSelecionados();
+        if (itens.length !== 1) return showToast('Selecione exatamente um lancamento para parcelar.', true);
+        if (itens[0].tipo !== 'lancamento') return showToast('Ordens de compra nao podem ser parceladas por aqui.', true);
+        mvAbrirModalParcelamento(itens[0].id);
+    }
+    function mvAbrirModalParcelamento(uid) {
+        var l = (STATE.logs || []).find(function (x) { return String(x.uid) === String(uid); });
+        if (!l) return showToast('Lancamento nao encontrado.', true);
+        if (!mvPodeParcelarLancamento(l)) return showToast('Este lancamento nao pode ser parcelado (precisa estar pendente, sem cartao, equipe, vale ou fatura vinculada).', true);
+        var valor = parseFloat(l.valor_total) || 0;
+        if (valor <= 0) return showToast('O lancamento precisa ter valor maior que zero.', true);
+        var base = String(l.vencimento || l.data || '').slice(0, 10) || mvIsoDataLocal(new Date());
+        window.MV_PARC_ATUAL = { uid: String(l.uid), valor: valor, base: base, n: 2, datas: [], valores: [] };
+        var obra = (STATE.obras || []).find(function (o) { return String(o.id) === String(l.obra_id); });
+        document.getElementById('mv-parc-resumo').innerHTML =
+            '<div class="flex items-start justify-between gap-2"><div class="min-w-0"><div class="font-bold text-slate-800 truncate">' + (l.produto_nome || 'Despesa') + '</div>' +
+            '<div class="text-[9px] text-slate-500 mt-0.5">' + (obra ? obra.nome : 'Geral') + (l.fase_obra ? ' | ' + l.fase_obra : '') + '</div>' +
+            '<div class="text-[9px] text-slate-500">Vencimento atual: ' + formatDate(l.vencimento || l.data) + '</div></div>' +
+            '<div class="text-right shrink-0"><div class="text-[8px] uppercase font-bold text-slate-400">Total</div><div class="text-base font-black text-slate-800">' + formatMoney(valor) + '</div></div></div>';
+        document.getElementById('mv-parc-qtd').value = 2;
+        document.getElementById('mv-parc-base').value = base;
+        document.getElementById('mv-parc-obs').value = '';
+        document.getElementById('modal-parcelamento-mv').classList.remove('hidden');
+        mvRecalcularParcelas(true);
+        atualizarIcones();
+    }
+    function mvFecharModalParcelamento() {
+        var m = document.getElementById('modal-parcelamento-mv');
+        if (m) m.classList.add('hidden');
+        window.MV_PARC_ATUAL = null;
+    }
+    function mvAjustarNumParcelas(delta) {
+        var inp = document.getElementById('mv-parc-qtd');
+        if (!inp) return;
+        var n = (parseInt(inp.value, 10) || 2) + delta;
+        n = Math.max(2, Math.min(MV_PARC_MAX, n));
+        inp.value = n;
+        mvRecalcularParcelas(true);
+    }
+    function mvRecalcularParcelas(resetarDatas) {
+        var st = window.MV_PARC_ATUAL;
+        if (!st) return;
+        var inpQtd = document.getElementById('mv-parc-qtd');
+        var inpBase = document.getElementById('mv-parc-base');
+        var n = parseInt(inpQtd.value, 10);
+        if (!n || n < 2) n = 2;
+        if (n > MV_PARC_MAX) n = MV_PARC_MAX;
+        inpQtd.value = n;
+        var base = inpBase.value || st.base;
+        st.n = n;
+        st.base = base;
+        if (resetarDatas || !Array.isArray(st.datas) || st.datas.length !== n) {
+            st.datas = [];
+            for (var i = 0; i < n; i++) st.datas.push(mvAddMesesISO(base, i));
+        }
+        mvRenderParcelas();
+    }
+    function mvAtualizarDataParcela(idx, valor) {
+        if (window.MV_PARC_ATUAL && window.MV_PARC_ATUAL.datas) window.MV_PARC_ATUAL.datas[idx] = valor;
+    }
+    function mvRenderParcelas() {
+        var st = window.MV_PARC_ATUAL;
+        if (!st) return;
+        st.valores = mvDividirValorParcelas(st.valor, st.n);
+        var html = '';
+        for (var i = 0; i < st.valores.length; i++) {
+            html += '<div class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-2 py-1.5">' +
+                '<span class="w-6 h-6 shrink-0 rounded-full bg-violet-100 text-violet-700 text-[9px] font-black flex items-center justify-center">' + (i + 1) + '</span>' +
+                '<div class="flex-1 min-w-0"><div class="text-[8px] uppercase font-bold text-slate-400">Parcela ' + (i + 1) + '/' + st.n + '</div>' +
+                '<input type="date" value="' + (st.datas[i] || '') + '" onchange="mvAtualizarDataParcela(' + i + ', this.value)" class="w-full mt-0.5 p-1 border rounded-lg text-[11px] focus:ring-2 focus:ring-violet-500 outline-none"></div>' +
+                '<div class="text-right shrink-0"><div class="text-[8px] uppercase font-bold text-slate-400">Valor</div><div class="text-xs font-black text-slate-700">' + formatMoney(st.valores[i]) + '</div></div></div>';
+        }
+        document.getElementById('mv-parc-lista').innerHTML = html;
+        var total = st.valores.reduce(function (a, v) { return a + v; }, 0);
+        document.getElementById('mv-parc-total').innerText = st.n + 'x - Total ' + formatMoney(total);
+    }
+    async function mvConfirmarParcelamento() {
+        var st = window.MV_PARC_ATUAL;
+        if (!st) return;
+        var datas = (st.datas || []).slice();
+        if (datas.length !== st.n) return showToast('Gere os vencimentos antes de confirmar.', true);
+        if (datas.some(function (d) { return !d; })) return showToast('Preencha todos os vencimentos.', true);
+        var valores = mvDividirValorParcelas(st.valor, st.n);
+        var parcelas = datas.map(function (d, i) { return { vencimento: d, valor: Number(valores[i].toFixed(2)) }; });
+        var obs = (document.getElementById('mv-parc-obs').value || '').trim();
+        var btn = document.getElementById('mv-parc-confirmar');
+        if (btn) btn.disabled = true;
+        showLoading(true);
+        try {
+            var resp = await sb.rpc('rv_parcelar_lancamento', { p_uid: st.uid, p_parcelas: parcelas, p_obs: obs || null });
+            if (resp.error) throw resp.error;
+            var n = (resp.data && resp.data.parcelas) ? resp.data.parcelas : st.n;
+            mvFecharModalParcelamento();
+            mvLimparSelPag();
+            showToast('Lancamento parcelado em ' + n + 'x!');
+            await recarregarDados('logs');
+            renderFinance();
+        } catch (e) {
+            showToast('Erro ao parcelar: ' + (e.message || e), true);
+        } finally {
+            showLoading(false);
+            if (btn) btn.disabled = false;
+        }
     }
     function mvAbrirModalBaixa() {
         const sel = window.MV_PAG_SEL || new Set();
