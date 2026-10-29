@@ -40,7 +40,14 @@
         if (typeof dadosUsuario !== 'undefined' && dadosUsuario) return !!(dadosUsuario.nivel === 'admin' || dadosUsuario.pode_gerenciar === true);
         return false;
     }
-    function toast(m, e) { if (typeof showToast === 'function') showToast(m, e); else alert(m); }
+    function toast(m, e) {
+        if (typeof showToast === 'function') showToast(m, e);
+        else if (global.RVUI && typeof global.RVUI.alert === 'function') global.RVUI.alert(m, { error: !!e });
+    }
+    function confirmar(msg, opts) {
+        if (global.RVUI && typeof global.RVUI.confirm === 'function') return global.RVUI.confirm(msg, opts || {});
+        return Promise.resolve(false);
+    }
     function loading(b) { if (typeof showLoading === 'function') showLoading(b); }
     function icons() { if (typeof lucide !== 'undefined' && lucide.createIcons) atualizarIcones(); }
     function dataMov(m) { return m.data ? String(m.data).slice(0, 10) : ''; }
@@ -262,7 +269,7 @@
         var co = contaById(origem);
         var cd = contaById(destino);
         if (co && cd && String(co.obra_id) !== String(cd.obra_id)) {
-            if (!confirm('Transferir ' + money(valor) + ' de "' + (co.nome || '') + '" (' + nomeObra(co.obra_id) + ') para "' + (cd.nome || '') + '" (' + nomeObra(cd.obra_id) + ')?')) return;
+            if (!(await confirmar('Transferir ' + money(valor) + ' de "' + (co.nome || '') + '" (' + nomeObra(co.obra_id) + ') para "' + (cd.nome || '') + '" (' + nomeObra(cd.obra_id) + ')?', { confirmText: 'Transferir' }))) return;
             if (desc === 'Transferencia' || desc === 'Transferencia entre contas') {
                 desc = 'Transferencia ' + nomeObra(co.obra_id) + ' -> ' + nomeObra(cd.obra_id);
             }
@@ -276,7 +283,7 @@
     }
 
     async function estornarMovimento(id) {
-        if (!confirm('Estornar este movimento? Sera criado um lancamento inverso.')) return;
+        if (!(await confirmar('Estornar este movimento? Sera criado um lancamento inverso.', { danger: true, confirmText: 'Estornar' }))) return;
         loading(true);
         var r = await sb.rpc('rv_mov_estornar', { p_mov: id });
         loading(false);
@@ -328,7 +335,7 @@
     }
 
     async function estornarBaixa(uid) {
-        if (!confirm('Estornar a baixa? Um lancamento inverso sera criado e o status volta para PENDENTE.')) return;
+        if (!(await confirmar('Estornar a baixa? Um lancamento inverso sera criado e o status volta para PENDENTE.', { danger: true, confirmText: 'Estornar' }))) return;
         loading(true);
         var r = await sb.rpc('rv_estornar_baixa', { p_uid: uid });
         loading(false);
@@ -336,7 +343,7 @@
         toast('Baixa estornada!'); await recarregarDados('contas', 'movimentacoes', 'faturas', 'logs'); renderAll();
     }
     async function estornarBaixaOC(id) {
-        if (!confirm('Estornar a baixa desta O.C.?')) return;
+        if (!(await confirmar('Estornar a baixa desta O.C.?', { danger: true, confirmText: 'Estornar' }))) return;
         loading(true);
         var r = await sb.rpc('rv_estornar_baixa_oc', { p_id: String(id) });
         loading(false);
@@ -350,7 +357,7 @@
         return r;
     }
     async function estornarCompraCartao(uid) {
-        if (!confirm('Cancelar esta compra no cartao? Sera criado o lancamento inverso.')) return;
+        if (!(await confirmar('Cancelar esta compra no cartao? Sera criado o lancamento inverso.', { danger: true, confirmText: 'Cancelar compra' }))) return;
         loading(true);
         var r = await sb.rpc('rv_estornar_compra_cartao', { p_uid: uid });
         loading(false);
@@ -382,7 +389,7 @@
         toast('Fatura paga!'); await recarregarDados('contas', 'movimentacoes', 'faturas', 'logs'); renderAll();
     }
     async function fecharFatura(fatId) {
-        if (!confirm('Fechar esta fatura agora?')) return;
+        if (!(await confirmar('Fechar esta fatura agora?', { confirmText: 'Fechar fatura' }))) return;
         loading(true);
         var r = await sb.rpc('rv_fatura_fechar', { p_fatura: fatId });
         loading(false);
@@ -390,7 +397,7 @@
         toast('Fatura fechada!'); await recarregarDados('contas', 'movimentacoes', 'faturas', 'logs'); renderAll();
     }
     async function estornarPagamentoFatura(fatId) {
-        if (!confirm('Estornar o pagamento desta fatura?')) return;
+        if (!(await confirmar('Estornar o pagamento desta fatura?', { danger: true, confirmText: 'Estornar' }))) return;
         loading(true);
         var r = await sb.rpc('rv_fatura_estornar_pagamento', { p_fatura: fatId });
         loading(false);
