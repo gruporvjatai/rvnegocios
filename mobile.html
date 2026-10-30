@@ -1087,11 +1087,16 @@
                     </div>
                 </div>
                 <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <label class="text-[9px] font-bold text-slate-500 uppercase">Vencimentos das parcelas</label>
-                        <span id="mv-parc-total" class="text-[10px] font-bold text-violet-700"></span>
+                    <div class="flex items-center justify-between mb-1 gap-2">
+                        <label class="text-[9px] font-bold text-slate-500 uppercase">Vencimentos e valores</label>
+                        <div class="flex items-center gap-2">
+                            <span id="mv-parc-total" class="text-[10px] font-bold text-violet-700"></span>
+                            <button type="button" id="mv-parc-fechar-dif" onclick="mvFecharDiferencaParcelas()" class="hidden text-[9px] font-bold text-amber-700 underline">Ajustar diferença</button>
+                            <button type="button" onclick="mvRedistribuirParcelas()" class="text-[9px] font-bold text-violet-700 underline">Redistribuir</button>
+                        </div>
                     </div>
                     <div id="mv-parc-lista" class="space-y-1.5 max-h-56 overflow-y-auto pr-1"></div>
+                    <p id="mv-parc-diff" class="text-[9px] font-bold text-slate-500 mt-1.5"></p>
                 </div>
                 <div>
                     <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Observacao (opcional)</label>
@@ -3315,8 +3320,8 @@ async function getLogoBase64(url) {
         if (titulo) titulo.innerHTML = '<i data-lucide="calendar-range" class="w-4 h-4 text-violet-600"></i> ' + (st && st.modo === 'oc' ? 'Parcelar O.C.' : 'Parcelar lancamento');
         var aviso = document.getElementById('mv-parc-aviso');
         if (aviso) aviso.innerHTML = (st && st.modo === 'oc')
-            ? 'A O.C. continua unica no estoque e nas compras. O Financeiro passa a mostrar as parcelas; a O.C. so e marcada como paga quando todas forem pagas.'
-            : 'O lancamento original sera cancelado e substituido pelas parcelas informadas.';
+            ? 'A O.C. continua unica no estoque e nas compras. O Financeiro passa a mostrar as parcelas; a O.C. so e marcada como paga quando todas forem pagas. Voce pode ajustar o valor de cada parcela - a soma precisa fechar com o total da O.C.'
+            : 'O lancamento original sera cancelado e substituido pelas parcelas informadas. Voce pode ajustar o valor de cada parcela - a soma precisa fechar com o total original.';
         document.getElementById('mv-parc-qtd').value = 2;
         document.getElementById('mv-parc-base').value = base;
         document.getElementById('mv-parc-obs').value = '';
@@ -3347,12 +3352,46 @@ async function getLogoBase64(url) {
         if (n > MV_PARC_MAX) n = MV_PARC_MAX;
         inpQtd.value = n;
         var base = inpBase.value || st.base;
+        var nAnterior = st.n;
         st.n = n;
         st.base = base;
         if (resetarDatas || !Array.isArray(st.datas) || st.datas.length !== n) {
             st.datas = [];
             for (var i = 0; i < n; i++) st.datas.push(mvAddMesesISO(base, i));
         }
+        if (n !== nAnterior || !Array.isArray(st.valores) || st.valores.length !== n) {
+            st.valores = mvDividirValorParcelas(st.valor, n);
+        } else {
+            st.valores = st.valores.map(function (v) { return Math.max(1, Math.round((parseFloat(v) || 0) * 100)) / 100; });
+        }
+        mvRenderParcelas();
+    }
+    function mvAtualizarValorParcela(idx, valor) {
+        var st = window.MV_PARC_ATUAL;
+        if (!st) return;
+        if (!Array.isArray(st.valores) || st.valores.length !== st.n) st.valores = mvDividirValorParcelas(st.valor, st.n);
+        var cent = Math.max(1, Math.round((parseFloat(String(valor).replace(',', '.')) || 0) * 100));
+        st.valores[idx] = cent / 100;
+        mvRenderParcelas();
+    }
+    function mvRedistribuirParcelas() {
+        var st = window.MV_PARC_ATUAL;
+        if (!st) return;
+        st.valores = mvDividirValorParcelas(st.valor, st.n);
+        mvRenderParcelas();
+    }
+    function mvFecharDiferencaParcelas() {
+        var st = window.MV_PARC_ATUAL;
+        if (!st) return;
+        var totalCent = Math.round((parseFloat(st.valor) || 0) * 100);
+        var cent = (st.valores || []).map(function (v) { return Math.max(1, Math.round((parseFloat(v) || 0) * 100)); });
+        if (cent.length !== st.n) return;
+        var soma = cent.reduce(function (a, v) { return a + v; }, 0);
+        var dif = totalCent - soma;
+        if (dif === 0) return;
+        var idx = st.n - 1;
+        cent[idx] = Math.max(1, cent[idx] + dif);
+        st.valores = cent.map(function (v) { return v / 100; });
         mvRenderParcelas();
     }
     function mvAtualizarDataParcela(idx, valor) {
@@ -3361,18 +3400,32 @@ async function getLogoBase64(url) {
     function mvRenderParcelas() {
         var st = window.MV_PARC_ATUAL;
         if (!st) return;
-        st.valores = mvDividirValorParcelas(st.valor, st.n);
+        if (!Array.isArray(st.valores) || st.valores.length !== st.n) st.valores = mvDividirValorParcelas(st.valor, st.n);
         var html = '';
         for (var i = 0; i < st.valores.length; i++) {
             html += '<div class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-2 py-1.5">' +
                 '<span class="w-6 h-6 shrink-0 rounded-full bg-violet-100 text-violet-700 text-[9px] font-black flex items-center justify-center">' + (i + 1) + '</span>' +
                 '<div class="flex-1 min-w-0"><div class="text-[8px] uppercase font-bold text-slate-400">Parcela ' + (i + 1) + '/' + st.n + '</div>' +
                 '<input type="date" value="' + (st.datas[i] || '') + '" onchange="mvAtualizarDataParcela(' + i + ', this.value)" class="w-full mt-0.5 p-1 border rounded-lg text-[11px] focus:ring-2 focus:ring-violet-500 outline-none"></div>' +
-                '<div class="text-right shrink-0"><div class="text-[8px] uppercase font-bold text-slate-400">Valor</div><div class="text-xs font-black text-slate-700">' + formatMoney(st.valores[i]) + '</div></div></div>';
+                '<div class="shrink-0 w-20"><div class="text-[8px] uppercase font-bold text-slate-400">Valor</div>' +
+                '<input type="number" step="0.01" min="0.01" value="' + Number(st.valores[i]).toFixed(2) + '" onchange="mvAtualizarValorParcela(' + i + ', this.value)" class="w-full mt-0.5 p-1 border rounded-lg text-[11px] font-black text-right text-slate-700 focus:ring-2 focus:ring-violet-500 outline-none"></div></div>';
         }
         document.getElementById('mv-parc-lista').innerHTML = html;
-        var total = st.valores.reduce(function (a, v) { return a + v; }, 0);
+        var total = st.valores.reduce(function (a, v) { return a + (parseFloat(v) || 0); }, 0);
         document.getElementById('mv-parc-total').innerText = st.n + 'x - Total ' + formatMoney(total);
+        var diffEl = document.getElementById('mv-parc-diff');
+        var btnDif = document.getElementById('mv-parc-fechar-dif');
+        if (btnDif) btnDif.classList.toggle('hidden', Math.abs(Math.round((total - st.valor) * 100)) <= 1);
+        if (diffEl) {
+            var dif = Math.round((total - st.valor) * 100);
+            if (Math.abs(dif) <= 1) {
+                diffEl.className = 'text-[9px] font-bold text-green-700 mt-1.5';
+                diffEl.innerText = 'Soma confere com o total.';
+            } else {
+                diffEl.className = 'text-[9px] font-bold text-amber-700 mt-1.5';
+                diffEl.innerText = 'A soma difere em ' + formatMoney(Math.abs(dif) / 100) + ' (' + (dif > 0 ? 'acima' : 'abaixo') + ' do total).';
+            }
+        }
     }
     async function mvConfirmarParcelamento() {
         var st = window.MV_PARC_ATUAL;
@@ -3380,7 +3433,21 @@ async function getLogoBase64(url) {
         var datas = (st.datas || []).slice();
         if (datas.length !== st.n) return showToast('Gere os vencimentos antes de confirmar.', true);
         if (datas.some(function (d) { return !d; })) return showToast('Preencha todos os vencimentos.', true);
-        var valores = mvDividirValorParcelas(st.valor, st.n);
+        var valores = (st.valores && st.valores.length === st.n)
+            ? st.valores.map(function (v) { return Math.max(1, Math.round((parseFloat(v) || 0) * 100)) / 100; })
+            : mvDividirValorParcelas(st.valor, st.n);
+        var somaC = Math.round(valores.reduce(function (a, v) { return a + v; }, 0) * 100);
+        var alvoC = Math.round((parseFloat(st.valor) || 0) * 100);
+        if (somaC !== alvoC) {
+            var difC = (alvoC - somaC) / 100;
+            var msgC = 'A soma das parcelas (' + formatMoney(somaC / 100) + ') difere do total (' + formatMoney(alvoC / 100) + '). Lancar ' + formatMoney(Math.abs(difC)) + ' ' + (difC > 0 ? 'a mais' : 'a menos') + ' na ultima parcela?';
+            var okC = window.RVUI && RVUI.confirm ? await RVUI.confirm(msgC) : confirm(msgC);
+            if (!okC) return;
+            mvFecharDiferencaParcelas();
+            valores = st.valores.map(function (v) { return Math.max(1, Math.round((parseFloat(v) || 0) * 100)) / 100; });
+            somaC = Math.round(valores.reduce(function (a, v) { return a + v; }, 0) * 100);
+            if (somaC !== alvoC) return showToast('Nao foi possivel ajustar a diferenca. Revise os valores.', true);
+        }
         var parcelas = datas.map(function (d, i) { return { vencimento: d, valor: Number(valores[i].toFixed(2)) }; });
         var obs = (document.getElementById('mv-parc-obs').value || '').trim();
         var btn = document.getElementById('mv-parc-confirmar');

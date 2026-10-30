@@ -1927,11 +1927,16 @@
                 </div>
 
                 <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <label class="text-xs font-bold text-slate-500 uppercase">Vencimentos das parcelas</label>
-                        <span id="parc-total" class="text-[11px] font-bold text-violet-700"></span>
+                    <div class="flex items-center justify-between mb-1 gap-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase">Vencimentos e valores</label>
+                        <div class="flex items-center gap-2">
+                            <span id="parc-total" class="text-[11px] font-bold text-violet-700"></span>
+                            <button type="button" id="parc-fechar-dif" onclick="fecharDiferencaParcelas()" class="hidden text-[10px] font-bold text-amber-700 hover:text-amber-900 underline" title="Lançar a diferença na última parcela">Ajustar diferença</button>
+                            <button type="button" onclick="redistribuirParcelas()" class="text-[10px] font-bold text-violet-700 hover:text-violet-900 underline" title="Recalcular os valores igualmente">Redistribuir</button>
+                        </div>
                     </div>
                     <div id="parc-lista" class="space-y-2 max-h-64 overflow-y-auto pr-1"></div>
+                    <p id="parc-diff" class="text-[11px] font-bold text-slate-500 mt-2"></p>
                 </div>
 
                 <div>
@@ -3494,8 +3499,8 @@
             const aviso = document.getElementById('parc-aviso');
             if (aviso) {
                 aviso.innerHTML = (window.PARC_ATUAL && window.PARC_ATUAL.modo === 'oc')
-                    ? 'A O.C. continua única no estoque e nas compras. O Financeiro passa a mostrar as parcelas; a O.C. só é marcada como paga quando todas forem pagas.'
-                    : 'O lançamento original será cancelado e substituído pelas parcelas informadas. A soma dos valores será sempre igual ao total original.';
+                    ? 'A O.C. continua única no estoque e nas compras. O Financeiro passa a mostrar as parcelas; a O.C. só é marcada como paga quando todas forem pagas. Você pode ajustar o valor de cada parcela — a soma precisa fechar com o total da O.C.'
+                    : 'O lançamento original será cancelado e substituído pelas parcelas informadas. Você pode ajustar o valor de cada parcela — a soma precisa fechar com o total original.';
             }
             const titulo = document.getElementById('parc-titulo');
             if (titulo) {
@@ -3536,11 +3541,50 @@
             inpQtd.value = n;
 
             const base = inpBase.value || st.base;
+            const nAnterior = st.n;
             st.n = n;
             st.base = base;
             if (resetarDatas || !Array.isArray(st.datas) || st.datas.length !== n) {
                 st.datas = Array.from({ length: n }, (_, i) => addMesesISO(base, i));
             }
+            if (n !== nAnterior || !Array.isArray(st.valores) || st.valores.length !== n) {
+                st.valores = dividirValorParcelas(st.valor, n);
+            } else {
+                st.valores = st.valores.map(v => Math.max(1, Math.round((parseFloat(v) || 0) * 100)) / 100);
+            }
+            renderParcelas();
+        }
+
+        function atualizarValorParcela(idx, valor) {
+            const st = window.PARC_ATUAL;
+            if (!st) return;
+            if (!Array.isArray(st.valores) || st.valores.length !== st.n) {
+                st.valores = dividirValorParcelas(st.valor, st.n);
+            }
+            const cent = Math.max(1, Math.round((parseFloat(String(valor).replace(',', '.')) || 0) * 100));
+            st.valores[idx] = cent / 100;
+            renderParcelas();
+        }
+
+        function redistribuirParcelas() {
+            const st = window.PARC_ATUAL;
+            if (!st) return;
+            st.valores = dividirValorParcelas(st.valor, st.n);
+            renderParcelas();
+        }
+
+        function fecharDiferencaParcelas() {
+            const st = window.PARC_ATUAL;
+            if (!st) return;
+            const totalCent = Math.round((parseFloat(st.valor) || 0) * 100);
+            const cent = (st.valores || []).map(v => Math.max(1, Math.round((parseFloat(v) || 0) * 100)));
+            if (cent.length !== st.n) return;
+            const soma = cent.reduce((a, v) => a + v, 0);
+            const dif = totalCent - soma;
+            if (dif === 0) return;
+            const idx = st.n - 1;
+            cent[idx] = Math.max(1, cent[idx] + dif);
+            st.valores = cent.map(v => v / 100);
             renderParcelas();
         }
 
@@ -3552,7 +3596,9 @@
         function renderParcelas() {
             const st = window.PARC_ATUAL;
             if (!st) return;
-            st.valores = dividirValorParcelas(st.valor, st.n);
+            if (!Array.isArray(st.valores) || st.valores.length !== st.n) {
+                st.valores = dividirValorParcelas(st.valor, st.n);
+            }
             const lista = document.getElementById('parc-lista');
             lista.innerHTML = st.valores.map((v, i) => `
                 <div class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2">
@@ -3561,13 +3607,26 @@
                         <div class="text-[9px] uppercase font-bold text-slate-400">Vencimento da parcela ${i + 1}/${st.n}</div>
                         <input type="date" value="${st.datas[i] || ''}" onchange="atualizarDataParcela(${i}, this.value)" class="w-full mt-0.5 p-1.5 border rounded-lg text-xs focus:ring-2 focus:ring-violet-500 outline-none">
                     </div>
-                    <div class="text-right shrink-0">
+                    <div class="shrink-0 w-24">
                         <div class="text-[9px] uppercase font-bold text-slate-400">Valor</div>
-                        <div class="text-sm font-black text-slate-700">${formatMoney(v)}</div>
+                        <input type="number" step="0.01" min="0.01" value="${Number(v).toFixed(2)}" onchange="atualizarValorParcela(${i}, this.value)" class="w-full mt-0.5 p-1.5 border rounded-lg text-xs font-black text-right text-slate-700 focus:ring-2 focus:ring-violet-500 outline-none">
                     </div>
                 </div>`).join('');
-            const total = st.valores.reduce((a, v) => a + v, 0);
+            const total = st.valores.reduce((a, v) => a + (parseFloat(v) || 0), 0);
             document.getElementById('parc-total').innerText = `${st.n}x - Total ${formatMoney(total)}`;
+            const diffEl = document.getElementById('parc-diff');
+            const btnDif = document.getElementById('parc-fechar-dif');
+            if (btnDif) btnDif.classList.toggle('hidden', Math.abs(Math.round((total - st.valor) * 100)) <= 1);
+            if (diffEl) {
+                const dif = Math.round((total - st.valor) * 100);
+                if (Math.abs(dif) <= 1) {
+                    diffEl.className = 'text-[11px] font-bold text-green-700 mt-2';
+                    diffEl.innerText = 'Soma confere com o total da O.C./lançamento.';
+                } else {
+                    diffEl.className = 'text-[11px] font-bold text-amber-700 mt-2';
+                    diffEl.innerText = `A soma difere em ${formatMoney(Math.abs(dif) / 100)} (${dif > 0 ? 'acima' : 'abaixo'} do total).`;
+                }
+            }
         }
 
         async function confirmarParcelamento() {
@@ -3576,7 +3635,21 @@
             const datas = (st.datas || []).slice();
             if (datas.length !== st.n) return showToast('Gere os vencimentos antes de confirmar.', true);
             if (datas.some(d => !d)) return showToast('Preencha todos os vencimentos.', true);
-            const valores = dividirValorParcelas(st.valor, st.n);
+            let valores = (st.valores && st.valores.length === st.n)
+                ? st.valores.map(v => Math.max(1, Math.round((parseFloat(v) || 0) * 100)) / 100)
+                : dividirValorParcelas(st.valor, st.n);
+            let soma = Math.round(valores.reduce((a, v) => a + v, 0) * 100);
+            const alvo = Math.round((parseFloat(st.valor) || 0) * 100);
+            if (soma !== alvo) {
+                const dif = (alvo - soma) / 100;
+                const msg = `A soma das parcelas (${formatMoney(soma / 100)}) difere do total (${formatMoney(alvo / 100)}). Lançar ${formatMoney(Math.abs(dif))} ${dif > 0 ? 'a mais' : 'a menos'} na última parcela?`;
+                const ok = window.RVUI && RVUI.confirm ? await RVUI.confirm(msg) : confirm(msg);
+                if (!ok) return;
+                fecharDiferencaParcelas();
+                valores = st.valores.map(v => Math.max(1, Math.round((parseFloat(v) || 0) * 100)) / 100);
+                soma = Math.round(valores.reduce((a, v) => a + v, 0) * 100);
+                if (soma !== alvo) return showToast('Não foi possível ajustar a diferença. Revise os valores.', true);
+            }
             const parcelas = datas.map((d, i) => ({ vencimento: d, valor: Number(valores[i].toFixed(2)) }));
             const obs = (document.getElementById('parc-obs').value || '').trim();
 
