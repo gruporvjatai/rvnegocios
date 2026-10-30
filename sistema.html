@@ -2741,6 +2741,7 @@
                                 <button onclick="openConfirmOC('${o.id}')" class="p-2 bg-green-600 text-white rounded hover:bg-green-700 shadow-sm font-bold text-xs" title="Confirmar Compra">Comprar</button>
                                 <button onclick="loadOCToCart('${o.id}')" class="p-2 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Editar Itens"><i data-lucide="edit-3" width="14"></i></button>
                             ` : `
+                                <button disabled class="p-2 border border-slate-200 text-slate-300 bg-slate-50 rounded opacity-50 cursor-not-allowed" title="O.C. confirmada: edite os itens antes de comprar"><i data-lucide="edit-3" width="14"></i></button>
                                 <button onclick="estornarCompra('${o.id}')" ${parcelada ? 'disabled title="O.C. parcelada: desfaça o parcelamento no Financeiro primeiro"' : 'title="Estornar Confirmação (Voltar para Pendente)"'} class="p-2 border border-orange-300 text-orange-600 hover:bg-orange-50 rounded ${parcelada?'opacity-40 cursor-not-allowed':''}"><i data-lucide="rotate-ccw" width="14"></i></button>
                             `}
                             <button onclick="printRomaneio('${o.id}')" class="p-2 border border-teal-200 text-teal-700 hover:bg-teal-50 rounded bg-teal-50/50" title="Baixar Lista de Itens (Sem Valores)"><i data-lucide="truck" width="14"></i></button>
@@ -3779,6 +3780,7 @@
                     const mostrarDesfazer = !temPaga && Number(l.parcela.numero) === 1;
                     btnAcoes = !isPago ? `
                         <span class="text-[10px] font-bold text-violet-700 bg-violet-100 px-2 py-1 rounded">PARCELA</span>
+                        <button disabled class="bg-white border border-slate-200 text-slate-300 p-1.5 rounded shadow opacity-50 cursor-not-allowed" title="Parcela da O.C.: edite os itens na Ordem de Compra"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
                         <button onclick="baixarParcelaOC('${l.parcela.id}')" class="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded shadow flex items-center gap-1 text-[10px] font-bold" title="Pagar esta parcela"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> PAGAR</button>
                         ${mostrarDesfazer ? `<button onclick="desfazerParcelamentoOC('${l.id}')" class="bg-slate-200 hover:bg-amber-500 text-slate-500 hover:text-white p-1.5 rounded shadow" title="Desfazer parcelamento da O.C."><i data-lucide="undo-2" class="w-3 h-3"></i></button>` : ''}
                     ` : `
@@ -3788,6 +3790,7 @@
                 } else if (!isPago) {
                     btnAcoes = l.is_oc ? `
                         ${podeParcelarOc ? `<button onclick="abrirModalParcelamentoOC('${l.id}')" class="bg-violet-100 hover:bg-violet-600 text-violet-700 hover:text-white p-1.5 rounded shadow" title="Parcelar esta O.C."><i data-lucide="calendar-range" class="w-3.5 h-3.5"></i></button>` : ''}
+                        <button disabled class="bg-white border border-slate-200 text-slate-300 p-1.5 rounded shadow opacity-50 cursor-not-allowed" title="O.C.: edite os itens na Ordem de Compra"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
                         <button onclick="baixarLogOC('${l.id}')" class="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded shadow flex items-center gap-1 text-[10px] font-bold" title="Pagar O.C. Completa"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> BAIXAR</button>
                         <button onclick="excluirLancamentoOC('${l.id}')" class="bg-slate-200 hover:bg-slate-300 text-slate-600 p-1.5 rounded shadow" title="Cancelar Lançamento"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>
                     ` : `
