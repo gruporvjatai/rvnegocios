@@ -317,6 +317,22 @@
         document.getElementById('bx-data').value = hoje();
         document.getElementById('modal-baixa').classList.remove('hidden');
     }
+    function abrirModalBaixaParcelaOC(parcelaId) {
+        garantirModais();
+        var p = ocParcelas().find(function (x) { return String(x.id) === String(parcelaId); });
+        if (!p) return toast('Parcela nao encontrada.', true);
+        if (p.status === 'PAGO') return toast('Esta parcela ja esta paga.', true);
+        if (String(p.status) === 'CANCELADA') return toast('Esta parcela foi cancelada.', true);
+        var linhas = ocLinhas(p.oc_id);
+        var obra = '';
+        linhas.forEach(function (l) { if (l.obra_id != null) obra = l.obra_id; });
+        baixaPendente = { parcelaId: String(parcelaId) };
+        document.getElementById('bx-titulo').innerText = 'Pagar parcela ' + p.numero + '/' + p.total_parcelas;
+        document.getElementById('bx-info').innerText = 'O.C. #' + p.oc_id + ' - parcela ' + p.numero + '/' + p.total_parcelas + ' - ' + money(p.valor) + ' | saida no caixa';
+        preencherSelectContas('bx-conta', p.conta_id || '', false, obra);
+        document.getElementById('bx-data').value = hoje();
+        document.getElementById('modal-baixa').classList.remove('hidden');
+    }
     async function confirmarBaixa() { // eslint-disable-line no-redeclare
         if (!baixaPendente) return;
         var conta = document.getElementById('bx-conta').value;
@@ -324,14 +340,19 @@
         if (!conta) return toast('Selecione a conta.', true);
         loading(true);
         var r;
-        if (baixaPendente.ocId) r = await sb.rpc('rv_baixar_oc', { p_id: String(baixaPendente.ocId), p_conta: conta, p_data: data });
+        if (baixaPendente.parcelaId) r = await sb.rpc('rv_oc_parcela_pagar', { p_parcela: baixaPendente.parcelaId, p_conta: conta, p_data: data });
+        else if (baixaPendente.ocId) r = await sb.rpc('rv_baixar_oc', { p_id: String(baixaPendente.ocId), p_conta: conta, p_data: data });
         else r = await sb.rpc('rv_baixar_lancamento', { p_uid: baixaPendente.uid, p_conta: conta, p_data: data });
         loading(false);
         if (r.error) return toast('Erro: ' + r.error.message, true);
         document.getElementById('modal-baixa').classList.add('hidden');
         var eraOC = !!baixaPendente.ocId;
+        var eraParcela = !!baixaPendente.parcelaId;
         baixaPendente = null;
-        toast(eraOC ? 'O.C. baixada!' : 'Baixa realizada!'); await recarregarDados('contas', 'movimentacoes', 'faturas', 'logs'); renderAll();
+        toast(eraParcela ? 'Parcela paga!' : (eraOC ? 'O.C. baixada!' : 'Baixa realizada!'));
+        await recarregarDados('contas', 'movimentacoes', 'faturas', 'logs', 'oc_parcelas');
+        renderAll();
+        if (typeof renderFinance === 'function') renderFinance();
     }
 
     async function estornarBaixa(uid) {
@@ -698,6 +719,102 @@
         pdfMake.createPdf(doc).download('extrato_' + c.nome.replace(/\s+/g, '_') + '.pdf');
     }
 
+    // ---------------- PARCELAMENTO DE O.C. ----------------
+    function ocParcelas() { var s = STATEref(); return (s && s.oc_parcelas) ? s.oc_parcelas : []; }
+
+    function parcelasPorOC() {
+        var mapa = {};
+        ocParcelas().forEach(function (p) {
+            if (p.status === 'CANCELADA') return;
+            var k = String(p.oc_id);
+            if (!mapa[k]) mapa[k] = [];
+            mapa[k].push(p);
+        });
+        Object.keys(mapa).forEach(function (k) {
+            mapa[k].sort(function (a, b) { return Number(a.numero) - Number(b.numero); });
+        });
+        return mapa;
+    }
+
+    function ocParcelada(ocId, mapa) {
+        var m = mapa || parcelasPorOC();
+        return !!(m[String(ocId)] && m[String(ocId)].length);
+    }
+
+    // Soma as linhas de compra da O.C. (ignora canceladas).
+    function ocLinhas(ocId) {
+        var s = STATEref();
+        return ((s && s.logs) || []).filter(function (l) {
+            return String(l.id) === String(ocId) && l.tipo === 'compra' && l.status_financeiro !== 'CANCELADO';
+        });
+    }
+
+    function ocTotal(ocId) {
+        return ocLinhas(ocId).reduce(function (a, l) { return a + (Number(l.valor_total) || 0); }, 0);
+    }
+
+    function ocTemBaixa(ocId) {
+        return movs().some(function (m) {
+            return String(m.oc_id) === String(ocId) && m.estornada !== true
+                && (m.origem === 'baixa_oc' || m.origem === 'baixa_oc_parcela');
+        });
+    }
+
+    function podeParcelarOC(ocId, mapa) {
+        var linhas = ocLinhas(ocId);
+        if (!linhas.length) return false;
+        if (linhas.some(function (l) { return l.tipo !== 'compra'; })) return false;
+        if (linhas.some(function (l) { return l.status_financeiro !== 'PENDENTE'; })) return false;
+        if (linhas.some(function (l) { return l.eh_cartao === true; })) return false;
+        if (linhas.some(function (l) { return /CART/i.test(String(l.forma_pagamento || '')); })) return false;
+        if (linhas.some(function (l) { return l.fatura_id != null; })) return false;
+        if (ocParcelada(ocId, mapa)) return false;
+        if (ocTemBaixa(ocId)) return false;
+        return ocTotal(ocId) > 0;
+    }
+
+    function parcelarOC(ocId, parcelas, obs) {
+        return sb.rpc('rv_oc_parcelar', {
+            p_oc_id: String(ocId),
+            p_parcelas: parcelas,
+            p_obs: obs || null
+        });
+    }
+
+    function pagarParcelaOC(parcelaId, conta, data) {
+        return sb.rpc('rv_oc_parcela_pagar', {
+            p_parcela: parcelaId,
+            p_conta: conta,
+            p_data: data || hoje()
+        });
+    }
+
+    async function estornarParcelaOC(parcelaId) {
+        if (!(await confirmar('Estornar o pagamento desta parcela? A O.C. volta a ficar pendente ate tudo ser pago novamente.', { danger: true, confirmText: 'Estornar' }))) return { cancel: true };
+        loading(true);
+        var r = await sb.rpc('rv_oc_parcela_estornar', { p_parcela: parcelaId });
+        loading(false);
+        if (r.error) { toast('Erro: ' + r.error.message, true); return r; }
+        toast('Parcela estornada!');
+        await recarregarDados('contas', 'movimentacoes', 'faturas', 'logs', 'oc_parcelas');
+        renderAll();
+        if (typeof renderFinance === 'function') renderFinance();
+        return r;
+    }
+
+    async function desparcelarOC(ocId) {
+        if (!(await confirmar('Desfazer o parcelamento desta O.C.? Todas as parcelas pendentes serao canceladas.', { danger: true, confirmText: 'Desfazer parcelamento' }))) return { cancel: true };
+        loading(true);
+        var r = await sb.rpc('rv_oc_desparcelar', { p_oc_id: String(ocId) });
+        loading(false);
+        if (r.error) { toast('Erro: ' + r.error.message, true); return r; }
+        toast('Parcelamento desfeito!');
+        await recarregarDados('contas', 'movimentacoes', 'faturas', 'logs', 'oc_parcelas');
+        renderAll();
+        if (typeof renderFinance === 'function') renderFinance();
+        return r;
+    }
+
     // ---------------- MODAIS ----------------
     function garantirModais() {
         if (document.getElementById('modal-conta')) return;
@@ -793,8 +910,12 @@
         abrirModalTransferencia: abrirModalTransferencia, salvarTransferencia: salvarTransferencia, onChangeTransfOrigem: onChangeTransfOrigem,
         estornarMovimento: estornarMovimento,
         selecionarConta: selecionarConta, abrirExtrato: abrirExtrato, fecharExtrato: fecharExtrato, setFiltro: setFiltro, setFiltroObra: setFiltroObra, pdfExtrato: pdfExtrato,
-        abrirModalBaixa: abrirModalBaixa, abrirModalBaixaOC: abrirModalBaixaOC, confirmarBaixa: confirmarBaixa,
+        abrirModalBaixa: abrirModalBaixa, abrirModalBaixaOC: abrirModalBaixaOC, abrirModalBaixaParcelaOC: abrirModalBaixaParcelaOC, confirmarBaixa: confirmarBaixa,
         estornarBaixa: estornarBaixa, estornarBaixaOC: estornarBaixaOC,
+        ocParcelas: ocParcelas, parcelasPorOC: parcelasPorOC, ocParcelada: ocParcelada,
+        ocLinhas: ocLinhas, ocTotal: ocTotal, ocTemBaixa: ocTemBaixa, podeParcelarOC: podeParcelarOC,
+        parcelarOC: parcelarOC, pagarParcelaOC: pagarParcelaOC,
+        estornarParcelaOC: estornarParcelaOC, desparcelarOC: desparcelarOC,
         registrarCompraCartao: registrarCompraCartao, estornarCompraCartao: estornarCompraCartao,
         abrirModalPagarFatura: abrirModalPagarFatura, confirmarPagarFatura: confirmarPagarFatura,
         fecharFatura: fecharFatura, estornarPagamentoFatura: estornarPagamentoFatura,

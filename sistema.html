@@ -1901,7 +1901,7 @@
         <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[92vh]">
             <div class="p-4 border-b flex justify-between items-center bg-gradient-to-r from-violet-50 to-indigo-50 rounded-t-2xl">
                 <div>
-                    <h3 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="calendar-range" class="w-5 h-5 text-violet-600"></i> Parcelar lançamento</h3>
+                    <h3 id="parc-titulo" class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="calendar-range" class="w-5 h-5 text-violet-600"></i> Parcelar lançamento</h3>
                     <p class="text-[11px] text-slate-500 mt-0.5">Gere os títulos e ajuste os vencimentos um a um.</p>
                 </div>
                 <button onclick="fecharModalParcelamento()" class="text-slate-400 hover:text-red-500"><i data-lucide="x"></i></button>
@@ -1937,7 +1937,7 @@
                     <input type="text" id="parc-obs" maxlength="160" placeholder="Ex.: negociado com o fornecedor" class="w-full p-2 border rounded-lg text-sm">
                 </div>
 
-                <div class="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-2.5">
+                <div id="parc-aviso" class="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-2.5">
                     O lançamento original será cancelado e substituído pelas parcelas informadas. A soma dos valores será sempre igual ao total original.
                 </div>
             </div>
@@ -1970,7 +1970,7 @@
         const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
 
         // ====== VARIÁVEIS DE ESTADO ======
-        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], users: [], equipe: [], fases: [], ponto: [], terceirizados: [], producao_terc: [], ponto_diario: [], medicoes_empreita: [], vales: [], vale_abatimentos: [], contas: [], movimentacoes: [], faturas: [], historico_precos: [] };
+        let STATE = { obras: [], fornecedores: [], produtos: [], logs: [], users: [], equipe: [], fases: [], ponto: [], terceirizados: [], producao_terc: [], ponto_diario: [], medicoes_empreita: [], vales: [], vale_abatimentos: [], contas: [], movimentacoes: [], faturas: [], oc_parcelas: [], historico_precos: [] };
         STATE._carregado = {};
         STATE._carregando = {};
         let CART = [];
@@ -2142,12 +2142,13 @@
             obras: 'jsp_obras', fornecedores: 'jsp_fornecedores', produtos: 'jsp_produtos',
             logs: 'jsp_logs', fases: 'jsp_fase', contas: 'jsp_contas',
             movimentacoes: 'jsp_movimentacoes', faturas: 'jsp_faturas', vales: 'jsp_vales',
+            oc_parcelas: 'jsp_oc_parcelas',
             equipe: 'jsp_equipe', ponto: 'jsp_ponto', terceirizados: 'jsp_terceirizados',
             ponto_diario: 'jsp_ponto_diario', historico_precos: 'jsp_historico_precos',
             producao_terc: 'jsp_producao_terc', medicoes_empreita: 'jsp_medicoes_empreita',
             vale_abatimentos: 'jsp_vale_abatimentos', users: 'jsp_usuarios'
         };
-        const TABELAS_ESSENCIAIS = ['obras', 'fornecedores', 'produtos', 'logs', 'fases', 'contas', 'movimentacoes', 'faturas', 'vales'];
+        const TABELAS_ESSENCIAIS = ['obras', 'fornecedores', 'produtos', 'logs', 'fases', 'contas', 'movimentacoes', 'faturas', 'vales', 'oc_parcelas'];
         // Projecao de colunas apenas onde ha ganho real e nenhuma coluna usada fica de fora.
         const COLUNAS_TABELA = {
             jsp_ponto_diario: 'id,funcionario_id,obra_id,data_registro,tipo,lat_registro,lng_registro,status,hora_registro,fracao_diaria,pago_em_fechamento,observacao,despesa_id,fechamento_uid',
@@ -2715,6 +2716,7 @@
             list.innerHTML = visiveis.map(o => {
                 const obra = obraPorId(o.obra_id);
                 const forn = fornecedorPorId(o.forn_id);
+                const parcelada = (typeof RVContas !== 'undefined' && RVContas.ocParcelada) ? RVContas.ocParcelada(o.id) : false;
 
                 return `
                 <tr class="border-b hover:bg-slate-50 transition">
@@ -2723,6 +2725,7 @@
                         <div class="font-bold text-slate-800">${forn?.nome || 'Fornecedor A Definir'}</div>
                         <div class="text-[10px] text-blue-600 font-bold uppercase mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome || 'Sem Obra'}</div>
                         ${o.fase ? `<div class="text-[9px] text-slate-500 font-bold uppercase mt-0.5"><i data-lucide="layers" class="inline w-3 h-3"></i> ${o.fase}</div>` : ''}
+                        ${parcelada ? `<div class="text-[9px] text-violet-700 font-bold uppercase mt-0.5"><i data-lucide="calendar-range" class="inline w-3 h-3"></i> Parcelada no Financeiro</div>` : ''}
                     </td>
                     <td class="p-4 text-center">
                         <span class="px-2 py-1 rounded text-[10px] font-bold ${o.tipo === 'compra' ? 'bg-indigo-100 text-indigo-700' : 'bg-orange-100 text-orange-700'}">${o.tipo === 'compra' ? 'CONFIRMADA' : 'PENDENTE'}</span>
@@ -2738,7 +2741,7 @@
                                 <button onclick="openConfirmOC('${o.id}')" class="p-2 bg-green-600 text-white rounded hover:bg-green-700 shadow-sm font-bold text-xs" title="Confirmar Compra">Comprar</button>
                                 <button onclick="loadOCToCart('${o.id}')" class="p-2 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Editar Itens"><i data-lucide="edit-3" width="14"></i></button>
                             ` : `
-                                <button onclick="estornarCompra('${o.id}')" class="p-2 border border-orange-300 text-orange-600 hover:bg-orange-50 rounded" title="Estornar Confirmação (Voltar para Pendente)"><i data-lucide="rotate-ccw" width="14"></i></button>
+                                <button onclick="estornarCompra('${o.id}')" ${parcelada ? 'disabled title="O.C. parcelada: desfaça o parcelamento no Financeiro primeiro"' : 'title="Estornar Confirmação (Voltar para Pendente)"'} class="p-2 border border-orange-300 text-orange-600 hover:bg-orange-50 rounded ${parcelada?'opacity-40 cursor-not-allowed':''}"><i data-lucide="rotate-ccw" width="14"></i></button>
                             `}
                             <button onclick="printRomaneio('${o.id}')" class="p-2 border border-teal-200 text-teal-700 hover:bg-teal-50 rounded bg-teal-50/50" title="Baixar Lista de Itens (Sem Valores)"><i data-lucide="truck" width="14"></i></button>
                             <button onclick="printOC('${o.id}')" class="p-2 border border-slate-300 text-slate-600 hover:bg-slate-100 rounded" title="Imprimir"><i data-lucide="printer" width="14"></i></button>
@@ -2822,8 +2825,11 @@
         }
 
         async function estornarCompra(id) {
+            if (typeof RVContas !== 'undefined' && RVContas.ocParcelada && RVContas.ocParcelada(id)) {
+                return showToast('O.C. parcelada. Desfaça o parcelamento no Financeiro antes de estornar a confirmação.', true);
+            }
             if(!confirm("Deseja estornar a confirmação desta O.C.? Ela voltará a ser Pendente e sairá do quadro Financeiro.")) return;
-            const temBaixa = (typeof RVContas !== 'undefined') && (STATE.movimentacoes || []).some(m => String(m.oc_id) === String(id) && m.origem === 'baixa_oc' && m.estornada !== true);
+            const temBaixa = (typeof RVContas !== 'undefined' && RVContas.ocTemBaixa) ? RVContas.ocTemBaixa(id) : (STATE.movimentacoes || []).some(m => String(m.oc_id) === String(id) && m.origem === 'baixa_oc' && m.estornada !== true);
             if (temBaixa) return showToast('O.C. já baixada. Estorne a baixa no Financeiro antes de estornar a confirmação.', true);
             showLoading(true);
             const { error } = await sb.from('jsp_logs').update({ 
@@ -3075,7 +3081,7 @@
             if (!term) return true;
             const t = term.toLowerCase().trim();
             const obra = obraPorId(l.obra_id);
-            const forn = l.is_oc ? fornecedorPorId(l.fornecedor_id) : null;
+            const forn = (l.is_oc || l.is_oc_parcela) ? fornecedorPorId(l.fornecedor_id) : null;
             const valor = parseFloat(l.valor_total) || 0;
             const textos = [
                 l.produto_nome,
@@ -3085,7 +3091,8 @@
                 String(l.id || ''),
                 obra ? obra.nome : '',
                 forn ? forn.nome : '',
-                l.is_oc ? ('O.C. #' + l.id + ' Compra Consolidada') : ''
+                l.is_oc ? ('O.C. #' + l.id + ' Compra Consolidada') : '',
+                l.is_oc_parcela ? ('O.C. #' + l.id + ' Parcela ' + l.parcela.numero + '/' + l.parcela.total_parcelas) : ''
             ].filter(Boolean).join(' ').toLowerCase();
             if (textos.includes(t)) return true;
             const valorFix = valor.toFixed(2);
@@ -3129,11 +3136,16 @@
             const btnParc = document.getElementById('btn-pag-parcelar');
             if (btnParc) {
                 const itens = pagItensSelecionados();
-                const elegiveis = itens.filter(i => i.tipo === 'lancamento' && podeParcelarLancamento(STATE.logs.find(l => String(l.uid) === String(i.id))));
-                btnParc.disabled = elegiveis.length !== 1;
+                const elegiveis = itens.filter(i => {
+                    if (i.tipo === 'lancamento') return podeParcelarLancamento(STATE.logs.find(l => String(l.uid) === String(i.id)));
+                    if (i.tipo === 'oc') return podeParcelarOCAgora(i.id);
+                    return false;
+                });
+                const podeParcelaItem = itens.filter(i => i.tipo === 'oc_parcela');
+                btnParc.disabled = elegiveis.length !== 1 || podeParcelaItem.length > 0;
                 btnParc.title = elegiveis.length === 1
-                    ? 'Parcelar o lançamento selecionado'
-                    : 'Selecione exatamente um lançamento pendente (não O.C., não cartão) para parcelar';
+                    ? (elegiveis[0].tipo === 'oc' ? 'Parcelar a O.C. selecionada' : 'Parcelar o lançamento selecionado')
+                    : 'Selecione exatamente um lançamento/O.C. pendente (não cartão) para parcelar';
             }
             const boxes = Array.from(document.querySelectorAll('#fin-expense-history-list .pag-sel'));
             const all = document.getElementById('pag-sel-all');
@@ -3215,7 +3227,7 @@
             pagAplicarBloqueioObra();
         }
 
-        // ====== CONTAS A PAGAR: PARCELAMENTO DE LANCAMENTO ======
+        // ====== CONTAS A PAGAR: PARCELAMENTO (LANCAMENTO E O.C.) ======
         const PARC_MAX = 60;
         window.PARC_ATUAL = null;
 
@@ -3227,6 +3239,11 @@
                 !l.ref_tipo &&
                 !l.equipe_id &&
                 !l.fatura_id;
+        }
+
+        function podeParcelarOCAgora(ocId) {
+            if (typeof RVContas === 'undefined' || !RVContas.podeParcelarOC) return false;
+            return RVContas.podeParcelarOC(ocId);
         }
 
         function isoDataLocal(d) {
@@ -3255,8 +3272,9 @@
         function abrirParcelamentoSelecionado() {
             const itens = pagItensSelecionados();
             if (itens.length !== 1) return showToast('Selecione exatamente um lançamento para parcelar.', true);
-            if (itens[0].tipo !== 'lancamento') return showToast('Ordens de compra não podem ser parceladas por aqui.', true);
-            abrirModalParcelamento(itens[0].id);
+            if (itens[0].tipo === 'lancamento') return abrirModalParcelamento(itens[0].id);
+            if (itens[0].tipo === 'oc') return abrirModalParcelamentoOC(itens[0].id);
+            return showToast('Selecione um lançamento ou uma O.C. pendente para parcelar.', true);
         }
 
         function abrirModalParcelamento(uid) {
@@ -3269,7 +3287,7 @@
             if (valor <= 0) return showToast('O lançamento precisa ter valor maior que zero.', true);
 
             const base = String(l.vencimento || l.data || '').slice(0, 10) || isoDataLocal(new Date());
-            window.PARC_ATUAL = { uid: String(l.uid), valor, base, n: 2, datas: [], valores: [] };
+            window.PARC_ATUAL = { modo: 'lancamento', uid: String(l.uid), valor, base, n: 2, datas: [], valores: [] };
 
             const obra = obraPorId(l.obra_id);
             document.getElementById('parc-resumo').innerHTML = `
@@ -3284,6 +3302,53 @@
                         <div class="text-lg font-black text-slate-800">${formatMoney(valor)}</div>
                     </div>
                 </div>`;
+            prepararModalParcelamento(base);
+        }
+
+        function abrirModalParcelamentoOC(ocId) {
+            if (typeof RVContas === 'undefined' || !RVContas.ocLinhas) return showToast('Módulo financeiro indisponível.', true);
+            const linhas = RVContas.ocLinhas(ocId);
+            if (!linhas.length) return showToast('O.C. não encontrada.', true);
+            if (!podeParcelarOCAgora(ocId)) {
+                return showToast('Esta O.C. não pode ser parcelada (precisa estar pendente, sem cartão, fatura ou baixa financeira).', true);
+            }
+            const valor = RVContas.ocTotal(ocId);
+            if (valor <= 0) return showToast('A O.C. precisa ter valor maior que zero.', true);
+
+            const primeira = linhas[0];
+            const base = String(primeira.vencimento || primeira.data || '').slice(0, 10) || isoDataLocal(new Date());
+            window.PARC_ATUAL = { modo: 'oc', ocId: String(ocId), valor, base, n: 2, datas: [], valores: [] };
+
+            const obra = obraPorId(primeira.obra_id);
+            const forn = fornecedorPorId(primeira.fornecedor_id);
+            document.getElementById('parc-resumo').innerHTML = `
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <div class="font-bold text-slate-800 truncate">O.C. #${ocId} - Compra Consolidada</div>
+                        <div class="text-[10px] text-slate-500 mt-0.5">${forn ? forn.nome : 'Fornecedor a definir'}</div>
+                        <div class="text-[10px] text-slate-500">${obra ? obra.nome : 'Geral'}${primeira.fase_obra ? ' | ' + primeira.fase_obra : ''}</div>
+                        <div class="text-[10px] text-slate-500">${linhas.length} item(ns) na O.C.</div>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <div class="text-[9px] uppercase font-bold text-slate-400">Valor total</div>
+                        <div class="text-lg font-black text-slate-800">${formatMoney(valor)}</div>
+                    </div>
+                </div>`;
+            prepararModalParcelamento(base);
+        }
+
+        function prepararModalParcelamento(base) {
+            const aviso = document.getElementById('parc-aviso');
+            if (aviso) {
+                aviso.innerHTML = (window.PARC_ATUAL && window.PARC_ATUAL.modo === 'oc')
+                    ? 'A O.C. continua única no estoque e nas compras. O Financeiro passa a mostrar as parcelas; a O.C. só é marcada como paga quando todas forem pagas.'
+                    : 'O lançamento original será cancelado e substituído pelas parcelas informadas. A soma dos valores será sempre igual ao total original.';
+            }
+            const titulo = document.getElementById('parc-titulo');
+            if (titulo) {
+                titulo.innerHTML = '<i data-lucide="calendar-range" class="w-5 h-5 text-violet-600"></i> ' +
+                    (window.PARC_ATUAL && window.PARC_ATUAL.modo === 'oc' ? 'Parcelar O.C.' : 'Parcelar lançamento');
+            }
             document.getElementById('parc-qtd').value = 2;
             document.getElementById('parc-base').value = base;
             document.getElementById('parc-obs').value = '';
@@ -3366,17 +3431,16 @@
             if (btn) btn.disabled = true;
             showLoading(true);
             try {
-                const { data, error } = await sb.rpc('rv_parcelar_lancamento', {
-                    p_uid: st.uid,
-                    p_parcelas: parcelas,
-                    p_obs: obs || null
-                });
+                const ehOC = st.modo === 'oc';
+                const { data, error } = ehOC
+                    ? await sb.rpc('rv_oc_parcelar', { p_oc_id: String(st.ocId), p_parcelas: parcelas, p_obs: obs || null })
+                    : await sb.rpc('rv_parcelar_lancamento', { p_uid: st.uid, p_parcelas: parcelas, p_obs: obs || null });
                 if (error) throw error;
                 const n = (data && data.parcelas) ? data.parcelas : st.n;
                 fecharModalParcelamento();
                 limparSelPag();
-                showToast(`Lançamento parcelado em ${n}x!`);
-                await recarregarDados('logs');
+                showToast(ehOC ? `O.C. parcelada em ${n}x!` : `Lançamento parcelado em ${n}x!`);
+                await recarregarDados('logs', 'oc_parcelas');
                 renderFinance();
             } catch (e) {
                 showToast('Erro ao parcelar: ' + (e.message || e), true);
@@ -3393,7 +3457,7 @@
             if (!itens.length) return showToast('Selecione ao menos um titulo.', true);
             const total = itens.reduce((a, i) => a + i.valor, 0);
             const resumo = document.getElementById('mpx-resumo');
-            resumo.innerHTML = itens.map(i => `<div class="flex justify-between gap-2"><span class="truncate">${i.tipo === 'oc' ? ('O.C. #' + i.id) : ('Lancamento ' + String(i.id).slice(0, 8))}</span><span class="font-bold">${formatMoney(i.valor)}</span></div>`).join('');
+            resumo.innerHTML = itens.map(i => `<div class="flex justify-between gap-2"><span class="truncate">${i.tipo === 'oc' ? ('O.C. #' + i.id) : (i.tipo === 'oc_parcela' ? ('Parcela O.C. ' + String(i.id).slice(0, 8)) : ('Lancamento ' + String(i.id).slice(0, 8)))}</span><span class="font-bold">${formatMoney(i.valor)}</span></div>`).join('');
             document.getElementById('mpx-total').innerText = formatMoney(total);
             if (typeof RVContas !== 'undefined' && RVContas.preencherSelectContas) RVContas.preencherSelectContas('mpx-conta', '', false, '');
             const dt = document.getElementById('mpx-data'); if (dt) dt.value = (typeof getTodayDate === 'function' ? getTodayDate() : new Date().toISOString().slice(0, 10));
@@ -3426,7 +3490,7 @@
             fecharModalBaixaMultipla();
             limparSelPag();
             showToast(`${pagos} titulo(s) pago(s)${falhas.length ? ' - ' + falhas.length + ' ignorado(s)' : ''}!`);
-            await recarregarDados('logs', 'contas', 'movimentacoes', 'faturas');
+            await recarregarDados('logs', 'contas', 'movimentacoes', 'faturas', 'oc_parcelas');
             renderFinance();
         }
 
@@ -3473,7 +3537,7 @@
         function renderLotesRecentes() {
             const strip = document.getElementById('fin-lotes-strip');
             if (!strip) return;
-            const movs = (STATE.movimentacoes || []).filter(m => m.lote_id && !m.estornada && (m.origem === 'baixa_oc' || m.origem === 'baixa_despesa' || m.origem === 'baixa_receita'));
+            const movs = (STATE.movimentacoes || []).filter(m => m.lote_id && !m.estornada && (m.origem === 'baixa_oc' || m.origem === 'baixa_oc_parcela' || m.origem === 'baixa_despesa' || m.origem === 'baixa_receita'));
             const map = new Map();
             movs.forEach(m => {
                 const k = m.lote_id;
@@ -3507,7 +3571,7 @@
         }
         function buildHTMLComprovanteLote(loteId) {
             const movs = (STATE.movimentacoes || []).filter(m => String(m.lote_id) === String(loteId)
-                && (m.origem === 'baixa_oc' || m.origem === 'baixa_despesa' || m.origem === 'baixa_receita') && !m.estornada);
+                && (m.origem === 'baixa_oc' || m.origem === 'baixa_oc_parcela' || m.origem === 'baixa_despesa' || m.origem === 'baixa_receita') && !m.estornada);
             if (!movs.length) return '';
             const dataLote = movs.map(m => m.data || m.created_at).filter(Boolean).sort().slice(-1)[0] || '';
             const conta = (STATE.contas || []).find(c => String(c.id) === String(movs[0].conta_id));
@@ -3577,7 +3641,7 @@
             if (error) return showToast('Erro: ' + error.message, true);
             const n = (data && data.estornados) ? data.estornados : 0;
             showToast(`${n} pagamento(s) desfeito(s)!`);
-            await recarregarDados('logs', 'contas', 'movimentacoes', 'faturas');
+            await recarregarDados('logs', 'contas', 'movimentacoes', 'faturas', 'oc_parcelas');
             renderFinance();
         }
 
@@ -3594,37 +3658,73 @@
                 if(o) valorContratoFiltrado = parseFloat(o.valor_contrato) || 0;
             }
 
-            const totDesp = logsFilt
-                .filter(l => (l.tipo === 'compra' || l.tipo === 'despesa') && l.status_financeiro === 'PAGO')
-                .reduce((acc, l) => acc + (parseFloat(l.valor_total) || 0), 0);
             const totRec = logsFilt
                 .filter(l => l.tipo === 'receita' && l.status_financeiro === 'PAGO')
                 .reduce((acc, l) => acc + (parseFloat(l.valor_total) || 0), 0);
 
             const listaDesp = document.getElementById('fin-expense-history-list');
             let despArrRaw = logsFilt.filter(l => l.tipo === 'compra' || l.tipo === 'despesa');
-            
+
+            const mapaParcelas = (typeof RVContas !== 'undefined' && RVContas.parcelasPorOC) ? RVContas.parcelasPorOC() : {};
             let despArr = [];
             let groupedOCs = {};
-            
+
             despArrRaw.forEach(l => {
                 if (l.tipo === 'compra') {
-                    if (!groupedOCs[l.id]) {
-                        groupedOCs[l.id] = { ...l, valor_total: 0, is_oc: true, categorias_oc: new Set() };
-                        despArr.push(groupedOCs[l.id]);
+                    const ocKey = String(l.id);
+                    if (!groupedOCs[ocKey]) {
+                        groupedOCs[ocKey] = { ...l, valor_total: 0, is_oc: true, categorias_oc: new Set(), __linhas: [] };
+                        despArr.push(groupedOCs[ocKey]);
                     }
-                    groupedOCs[l.id].valor_total += parseFloat(l.valor_total);
-                    if(l.categoria) groupedOCs[l.id].categorias_oc.add(l.categoria);
+                    groupedOCs[ocKey].__linhas.push(l);
+                    groupedOCs[ocKey].valor_total += parseFloat(l.valor_total) || 0;
+                    if(l.categoria) groupedOCs[ocKey].categorias_oc.add(l.categoria);
                 } else {
                     despArr.push(l);
                 }
             });
-            
+
+            // O.C. parcelada: troca a linha unica pelas parcelas no Financeiro.
+            // Os itens da O.C. seguem intactos em compras/estoque/competencia.
+            const despExpandido = [];
+            despArr.forEach(l => {
+                const parcelas = l.is_oc ? mapaParcelas[String(l.id)] : null;
+                if (parcelas && parcelas.length) {
+                    parcelas.forEach(p => {
+                        despExpandido.push({
+                            ...l,
+                            __linhas: undefined,
+                            is_oc: false,
+                            is_oc_parcela: true,
+                            id: l.id,
+                            parcela: p,
+                            status_financeiro: p.status,
+                            vencimento: p.vencimento,
+                            valor_total: parseFloat(p.valor) || 0,
+                            produto_nome: 'O.C. #' + l.id + ' - Parcela ' + p.numero + '/' + p.total_parcelas,
+                            observacao: p.observacao || ''
+                        });
+                    });
+                } else {
+                    despExpandido.push(l);
+                }
+            });
+            despArr = despExpandido;
+
+            const totDesp = despArr
+                .filter(l => l.status_financeiro === 'PAGO')
+                .reduce((acc, l) => acc + (parseFloat(l.valor_total) || 0), 0);
+
             // Mapa de titulos pagaveis (selecao multipla) - usa a lista antes dos filtros de busca/status/data
             window.PAG_ITENS = {};
             despArr.forEach(l => {
                 if (l.status_financeiro === 'PAGO') return;
                 if (l.eh_cartao) return;
+                if (l.is_oc_parcela) {
+                    const p = l.parcela;
+                    window.PAG_ITENS['pc:' + p.id] = { tipo: 'oc_parcela', id: String(p.id), valor: parseFloat(p.valor) || 0, obra_id: (l.obra_id != null && l.obra_id !== '') ? String(l.obra_id) : null };
+                    return;
+                }
                 if (!(l.tipo === 'compra' || l.tipo === 'despesa')) return;
                 const key = l.is_oc ? ('oc:' + l.id) : ('lg:' + l.uid);
                 window.PAG_ITENS[key] = { tipo: l.is_oc ? 'oc' : 'lancamento', id: l.is_oc ? String(l.id) : l.uid, valor: parseFloat(l.valor_total) || 0, obra_id: (l.obra_id != null && l.obra_id !== '') ? String(l.obra_id) : null };
@@ -3662,18 +3762,32 @@
                 }
                 
                 const obra = obraPorId(l.obra_id);
-                const pagKey = l.is_oc ? ('oc:' + l.id) : ('lg:' + l.uid);
-                const podeSel = !isPago && !l.eh_cartao && (l.tipo === 'compra' || l.tipo === 'despesa');
-                const podeParcelar = !isPago && !l.is_oc && podeParcelarLancamento(l);
+                const pagKey = l.is_oc_parcela ? ('pc:' + l.parcela.id) : (l.is_oc ? ('oc:' + l.id) : ('lg:' + l.uid));
+                const podeSel = !isPago && !l.eh_cartao && (l.is_oc_parcela || l.tipo === 'compra' || l.tipo === 'despesa');
+                const podeParcelar = !isPago && !l.is_oc && !l.is_oc_parcela && podeParcelarLancamento(l);
+                const podeParcelarOc = !isPago && l.is_oc && podeParcelarOCAgora(l.id);
                 const selMarcado = window.PAG_SEL && window.PAG_SEL.has(pagKey);
-                const forn = l.is_oc ? fornecedorPorId(l.fornecedor_id) : null;
-                const extraInfo = (!l.is_oc && l.observacao) ? `<div class="text-[9px] text-slate-500 font-bold uppercase mt-0.5">${l.observacao}</div>` : '';
+                const forn = (l.is_oc || l.is_oc_parcela) ? fornecedorPorId(l.fornecedor_id) : null;
+                const extraInfo = (!l.is_oc && !l.is_oc_parcela && l.observacao) ? `<div class="text-[9px] text-slate-500 font-bold uppercase mt-0.5">${l.observacao}</div>` : '';
 
                 let strCategoria = l.is_oc ? (l.categorias_oc.size > 0 ? Array.from(l.categorias_oc).join(', ') : 'Várias Categorias') : (l.categoria || 'Geral');
 
                 let btnAcoes = '';
-                if (!isPago) {
+                if (l.is_oc_parcela) {
+                    const parcelasOC = (typeof RVContas !== 'undefined' && RVContas.ocParcelas) ? RVContas.ocParcelas().filter(p => String(p.oc_id) === String(l.id) && p.status !== 'CANCELADA') : [];
+                    const temPaga = parcelasOC.some(p => p.status === 'PAGO');
+                    const mostrarDesfazer = !temPaga && Number(l.parcela.numero) === 1;
+                    btnAcoes = !isPago ? `
+                        <span class="text-[10px] font-bold text-violet-700 bg-violet-100 px-2 py-1 rounded">PARCELA</span>
+                        <button onclick="baixarParcelaOC('${l.parcela.id}')" class="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded shadow flex items-center gap-1 text-[10px] font-bold" title="Pagar esta parcela"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> PAGAR</button>
+                        ${mostrarDesfazer ? `<button onclick="desfazerParcelamentoOC('${l.id}')" class="bg-slate-200 hover:bg-amber-500 text-slate-500 hover:text-white p-1.5 rounded shadow" title="Desfazer parcelamento da O.C."><i data-lucide="undo-2" class="w-3 h-3"></i></button>` : ''}
+                    ` : `
+                        <span class="text-[10px] font-bold text-green-700 bg-green-200 px-2 py-1 rounded">PAGO</span>
+                        <button onclick="estornarParcelaOC('${l.parcela.id}')" class="bg-slate-200 hover:bg-slate-300 text-slate-600 p-1.5 rounded shadow" title="Estornar pagamento da parcela"><i data-lucide="rotate-ccw" class="w-3 h-3"></i></button>
+                    `;
+                } else if (!isPago) {
                     btnAcoes = l.is_oc ? `
+                        ${podeParcelarOc ? `<button onclick="abrirModalParcelamentoOC('${l.id}')" class="bg-violet-100 hover:bg-violet-600 text-violet-700 hover:text-white p-1.5 rounded shadow" title="Parcelar esta O.C."><i data-lucide="calendar-range" class="w-3.5 h-3.5"></i></button>` : ''}
                         <button onclick="baixarLogOC('${l.id}')" class="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded shadow flex items-center gap-1 text-[10px] font-bold" title="Pagar O.C. Completa"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> BAIXAR</button>
                         <button onclick="excluirLancamentoOC('${l.id}')" class="bg-slate-200 hover:bg-slate-300 text-slate-600 p-1.5 rounded shadow" title="Cancelar Lançamento"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>
                     ` : `
@@ -3692,12 +3806,16 @@
                     `;
                 }
 
-                rowsHtml.push(`<tr class="border-b ${isPago?'bg-green-50':'bg-red-50/20'} transition">
+                const tituloLinha = l.is_oc_parcela
+                    ? `O.C. #${l.id} - Parcela ${l.parcela.numero}/${l.parcela.total_parcelas} <button onclick="verOC('${l.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 p-1 rounded shrink-0" title="Visualizar O.C. (sem imprimir)"><i data-lucide="eye" class="w-3.5 h-3.5"></i></button>`
+                    : (l.is_oc ? `O.C. #${l.id} - Compra Consolidada <button onclick="verOC('${l.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 p-1 rounded shrink-0" title="Visualizar O.C. (sem imprimir)"><i data-lucide="eye" class="w-3.5 h-3.5"></i></button>` : l.produto_nome);
+
+                rowsHtml.push(`<tr class="border-b ${isPago?'bg-green-50':'bg-red-50/20'} ${l.is_oc_parcela?'bg-violet-50/30':''} transition">
                     <td class="p-3 text-center">${podeSel ? `<input type="checkbox" class="pag-sel w-4 h-4 cursor-pointer" data-key="${pagKey}" ${selMarcado?'checked':''} onchange="toggleSelPag('${pagKey}', this.checked)">` : ''}</td>
                     <td class="p-3 text-xs font-bold text-slate-700">${formatDate(l.vencimento || l.data)}</td>
                     <td class="p-3">
-                        <div class="font-bold text-slate-800 text-xs flex items-center gap-2">${l.is_oc ? `O.C. #${l.id} - Compra Consolidada <button onclick="verOC('${l.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 p-1 rounded shrink-0" title="Visualizar O.C. (sem imprimir)"><i data-lucide="eye" class="w-3.5 h-3.5"></i></button>` : l.produto_nome}</div>
-                        ${l.is_oc ? `<div class="text-[10px] text-slate-600 font-bold mt-0.5"><i data-lucide="truck" class="inline w-3 h-3"></i> Fornecedor: ${forn?.nome || 'A Definir'}</div>` : ''}
+                        <div class="font-bold text-slate-800 text-xs flex items-center gap-2">${tituloLinha}</div>
+                        ${(l.is_oc || l.is_oc_parcela) ? `<div class="text-[10px] text-slate-600 font-bold mt-0.5"><i data-lucide="truck" class="inline w-3 h-3"></i> Fornecedor: ${forn?.nome || 'A Definir'}</div>` : ''}
                         <div class="text-[9px] text-purple-600 font-bold uppercase mt-1"><i data-lucide="tag" class="inline w-3 h-3"></i> ${strCategoria} | <i data-lucide="layers" class="inline w-3 h-3"></i> ${l.fase_obra || 'Geral'}</div>
                         <div class="text-[10px] text-blue-700 font-bold mt-0.5"><i data-lucide="building" class="inline w-3 h-3"></i> ${obra?.nome||'Geral'}</div>
                         ${extraInfo}
@@ -4026,6 +4144,9 @@
         }
 
         async function baixarLogOC(id) {
+            if (typeof RVContas !== 'undefined' && RVContas.ocParcelada && RVContas.ocParcelada(id)) {
+                return showToast('O.C. parcelada: pague as parcelas no Financeiro ou desfaça o parcelamento.', true);
+            }
             if (typeof RVContas !== 'undefined') return RVContas.abrirModalBaixaOC(id);
             if(!confirm("Confirmar a baixa financeira desta O.C.?")) return;
             showLoading(true);
@@ -4043,8 +4164,25 @@
             showToast("Baixa da O.C. estornada!"); await recarregarDados('logs', 'contas', 'movimentacoes'); renderViewAtual();
         }
 
+        function baixarParcelaOC(parcelaId) {
+            if (typeof RVContas !== 'undefined' && RVContas.abrirModalBaixaParcelaOC) return RVContas.abrirModalBaixaParcelaOC(parcelaId);
+            return showToast('Módulo financeiro indisponível.', true);
+        }
+
+        async function estornarParcelaOC(parcelaId) {
+            if (typeof RVContas !== 'undefined' && RVContas.estornarParcelaOC) return RVContas.estornarParcelaOC(parcelaId);
+            return showToast('Módulo financeiro indisponível.', true);
+        }
+
+        async function desfazerParcelamentoOC(ocId) {
+            if (typeof RVContas !== 'undefined' && RVContas.desparcelarOC) return RVContas.desparcelarOC(ocId);
+            return showToast('Módulo financeiro indisponível.', true);
+        }
+
         async function excluirLancamentoOC(id) {
-            const temBaixa = (typeof RVContas !== 'undefined') && (STATE.movimentacoes || []).some(m => String(m.oc_id) === String(id) && m.origem === 'baixa_oc' && m.estornada !== true);
+            const parcelada = (typeof RVContas !== 'undefined' && RVContas.ocParcelada) ? RVContas.ocParcelada(id) : false;
+            if (parcelada) return showToast('O.C. parcelada. Desfaça o parcelamento antes de cancelar.', true);
+            const temBaixa = (typeof RVContas !== 'undefined' && RVContas.ocTemBaixa) ? RVContas.ocTemBaixa(id) : (STATE.movimentacoes || []).some(m => String(m.oc_id) === String(id) && m.origem === 'baixa_oc' && m.estornada !== true);
             if (temBaixa) return showToast('O.C. já baixada. Estorne a baixa antes de cancelar.', true);
             if(!confirm("Deseja CANCELAR esta O.C. no Financeiro? Ela será removida das pendências.")) return;
             showLoading(true);
@@ -5310,7 +5448,7 @@
      <script src="js/contrato.js?v=20260922d"></script>
      <script src="js/equipe.js?v=20261021a"></script>
      <script src="js/vales.js?v=20261021a"></script>
-     <script src="js/contas.js?v=20261029a"></script>
+     <script src="js/contas.js?v=20261030a"></script>
      <script src="js/dashboard.js?v=20261009c"></script>
      <script src="js/versao.js"></script>
   </body>
