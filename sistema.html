@@ -296,6 +296,9 @@
                   <i data-lucide="arrow-up-circle" class="w-5 h-5 text-red-500"></i> Contas a Pagar
               </h3>
               <div class="flex items-center gap-2">
+                  <button id="btn-undo-lote" onclick="desfazerUltimoLote()" disabled class="bg-white border border-amber-300 text-amber-700 disabled:text-slate-300 disabled:border-slate-200 disabled:cursor-not-allowed hover:bg-amber-50 px-3 py-1.5 rounded-lg text-xs font-bold shadow-md transition-all flex items-center gap-1" title="Nenhum lote recente para desfazer">
+                      <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                  </button>
                   <button onclick="refresh()" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md transition-all flex items-center gap-1" title="Atualizar Lista">
                       <i data-lucide="list-restart" class="w-4 h-4"></i>
                   </button>
@@ -340,12 +343,11 @@
                 </div>
             </div>
 
-            <div id="fin-lotes-strip" class="hidden px-4 py-2 border-b border-amber-200 bg-amber-50/70"></div>
-
             <div id="pag-sel-bar" class="hidden px-4 py-2 bg-blue-50 border-b border-blue-200 flex flex-wrap justify-between items-center gap-2">
                 <span id="pag-sel-info" class="text-xs font-bold text-blue-800"></span>
                 <div class="flex items-center gap-2">
                     <button type="button" onclick="limparSelPag()" class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100">Limpar</button>
+                    <button type="button" id="btn-pag-imprimir" onclick="imprimirSelecionados()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold shadow flex items-center gap-1" title="Imprimir os titulos selecionados"><i data-lucide="printer" class="w-4 h-4"></i> Imprimir selecionados</button>
                     <button type="button" id="btn-pag-parcelar" onclick="abrirParcelamentoSelecionado()" disabled class="px-3 py-1.5 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold shadow flex items-center gap-1" title="Selecione um lançamento pendente para parcelar"><i data-lucide="calendar-range" class="w-4 h-4"></i> Parcelar</button>
                     <button type="button" onclick="abrirModalBaixaMultipla()" class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-bold shadow flex items-center gap-1"><i data-lucide="check-circle" class="w-4 h-4"></i> Pagar selecionados</button>
                 </div>
@@ -3151,6 +3153,12 @@
             const boxes = Array.from(document.querySelectorAll('#fin-expense-history-list .pag-sel'));
             const all = document.getElementById('pag-sel-all');
             if (all) all.checked = boxes.length > 0 && boxes.every(b => b.checked);
+            const btnImp = document.getElementById('btn-pag-imprimir');
+            if (btnImp) {
+                btnImp.disabled = !(window.PAG_SEL && window.PAG_SEL.size);
+                btnImp.classList.toggle('opacity-50', btnImp.disabled);
+                btnImp.classList.toggle('cursor-not-allowed', btnImp.disabled);
+            }
         }
         function pagObraDe(it) { return (it && it.obra_id != null && it.obra_id !== '') ? String(it.obra_id) : null; }
         function pagObraNome(id) { const o = (STATE.obras || []).find(x => String(x.id) === String(id)); return o ? o.nome : 'obra'; }
@@ -3226,6 +3234,150 @@
             if (all) all.checked = false;
             pagAtualizarBarra();
             pagAplicarBloqueioObra();
+        }
+
+        // ====== CONTAS A PAGAR: IMPRIMIR SELECIONADOS ======
+        function pagTituloImpressao(it) {
+            if (!it) return '-';
+            if (it.tipo === 'oc') {
+                const linhas = (STATE.logs || []).filter(l => String(l.id) === String(it.id) && l.tipo === 'compra');
+                const p = linhas[0] || {};
+                return 'O.C. #' + it.id + (p.produto_nome ? ' - ' + p.produto_nome : ' - Compra Consolidada');
+            }
+            if (it.tipo === 'oc_parcela') {
+                const p = (STATE.oc_parcelas || []).find(x => String(x.id) === String(it.id));
+                return p ? ('O.C. #' + p.oc_id + ' - Parcela ' + p.numero + '/' + p.total_parcelas) : ('Parcela ' + String(it.id).slice(0, 8));
+            }
+            const l = (STATE.logs || []).find(x => String(x.uid) === String(it.id));
+            return l ? (l.produto_nome || 'Lançamento') : ('Lançamento ' + String(it.id).slice(0, 8));
+        }
+        function pagFornecedorDe(it) {
+            if (!it) return '';
+            let fornId = null;
+            if (it.tipo === 'oc') {
+                const l = (STATE.logs || []).find(x => String(x.id) === String(it.id) && x.tipo === 'compra');
+                fornId = l ? l.fornecedor_id : null;
+            } else if (it.tipo === 'oc_parcela') {
+                const p = (STATE.oc_parcelas || []).find(x => String(x.id) === String(it.id));
+                const l = p ? (STATE.logs || []).find(x => String(x.id) === String(p.oc_id) && x.tipo === 'compra') : null;
+                fornId = l ? l.fornecedor_id : null;
+            } else {
+                const l = (STATE.logs || []).find(x => String(x.uid) === String(it.id));
+                fornId = l ? l.fornecedor_id : null;
+            }
+            const f = (STATE.fornecedores || []).find(x => String(x.id) === String(fornId));
+            return f ? f.nome : '-';
+        }
+        function pagVencDe(it) {
+            if (!it) return '';
+            if (it.tipo === 'oc_parcela') {
+                const p = (STATE.oc_parcelas || []).find(x => String(x.id) === String(it.id));
+                return p ? p.vencimento : '';
+            }
+            let l = null;
+            if (it.tipo === 'oc') l = (STATE.logs || []).find(x => String(x.id) === String(it.id) && x.tipo === 'compra');
+            else l = (STATE.logs || []).find(x => String(x.uid) === String(it.id));
+            return l ? (l.vencimento || l.data || '') : '';
+        }
+        function buildHTMLSelecionados(itens) {
+            if (!itens || !itens.length) return '';
+            const total = itens.reduce((a, i) => a + (parseFloat(i.valor) || 0), 0);
+            const obraId = pagObraSelecionada();
+            const obra = obraId ? obraPorId(obraId) : null;
+            const linhas = itens.map(it => `<tr>
+                <td style="padding:6px; border-bottom:1px solid #e2e8f0;">${pagTituloImpressao(it)}</td>
+                <td style="padding:6px; border-bottom:1px solid #e2e8f0;">${pagFornecedorDe(it)}</td>
+                <td style="padding:6px; border-bottom:1px solid #e2e8f0;">${formatDate(String(pagVencDe(it)).slice(0, 10)) || '-'}</td>
+                <td align="right" style="padding:6px; border-bottom:1px solid #e2e8f0;">${formatMoney(it.valor)}</td>
+            </tr>`).join('');
+            return `<div style="font-family:'Segoe UI',Arial; padding:24px; color:#1e293b;">
+                <div style="display:flex; justify-content:space-between; border-bottom:3px solid #1d4ed8; padding-bottom:12px; margin-bottom:20px;">
+                    <img src="logo.png" style="height:64px;">
+                    <div style="text-align:right;">
+                        <h1 style="margin:0; font-size:20px;">TITULOS A PAGAR</h1>
+                        <p style="margin:4px 0 0 0; font-size:11px; color:#1d4ed8; font-weight:bold;">Selecao do contas a pagar</p>
+                        <p style="margin:2px 0 0 0; font-size:10px;">${obra ? obra.nome : 'Todas as obras'}</p>
+                    </div>
+                </div>
+                <table style="font-size:11px; margin-bottom:16px;">
+                    <tr>
+                        <td style="padding:2px 8px 2px 0; color:#64748b; font-weight:bold;">EMISSAO:</td><td>${formatDate(getTodayDate())}</td>
+                        <td style="padding:2px 8px 2px 20px; color:#64748b; font-weight:bold;">TITULOS:</td><td>${itens.length}</td>
+                    </tr>
+                </table>
+                <table width="100%" style="border-collapse:collapse; font-size:11px;">
+                    <thead>
+                        <tr>
+                            <th align="left" style="background:#0f172a; color:#fff; padding:8px;">Titulo</th>
+                            <th align="left" style="background:#0f172a; color:#fff; padding:8px;">Fornecedor</th>
+                            <th align="left" style="background:#0f172a; color:#fff; padding:8px;">Vencimento</th>
+                            <th align="right" style="background:#0f172a; color:#fff; padding:8px;">Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody>${linhas}</tbody>
+                </table>
+                <table width="100%" style="margin-top:10px;">
+                    <tr><td align="right" style="font-size:14px; font-weight:900; padding-top:8px;">TOTAL: ${formatMoney(total)}</td></tr>
+                </table>
+                <div style="margin-top:60px; display:flex; justify-content:space-between;">
+                    <div style="border-top:1px solid #000; width:45%; text-align:center; padding-top:5px; font-size:10px; font-weight:bold;">RESPONSAVEL</div>
+                    <div style="border-top:1px solid #000; width:45%; text-align:center; padding-top:5px; font-size:10px; font-weight:bold;">RECEBEDOR / FORNECEDOR</div>
+                </div>
+                <p style="margin-top:30px; font-size:9px; color:#94a3b8; text-align:center;">Emitido em ${new Date().toLocaleString('pt-BR')} - RV NEGOCIOS E COMPANHIA</p>
+            </div>`;
+        }
+        function imprimirSelecionados() {
+            const itens = pagItensSelecionados();
+            if (!itens.length) return showToast('Selecione ao menos um titulo para imprimir.', true);
+            const html = buildHTMLSelecionados(itens);
+            if (!html) return showToast('Nao foi possivel montar a impressao.', true);
+            document.getElementById('print-area').innerHTML = html;
+            document.body.classList.add('rv-printing');
+            setTimeout(() => { window.print(); document.body.classList.remove('rv-printing'); }, 300);
+        }
+
+        // ====== CONTAS A PAGAR: DESFAZER ULTIMO LOTE ======
+        function lotesRecentes(limite) {
+            const movs = (STATE.movimentacoes || []).filter(m => m.lote_id && !m.estornada && (m.origem === 'baixa_oc' || m.origem === 'baixa_oc_parcela' || m.origem === 'baixa_despesa' || m.origem === 'baixa_receita'));
+            const map = new Map();
+            movs.forEach(m => {
+                const k = m.lote_id;
+                if (!map.has(k)) map.set(k, { lote: k, data: m.data || m.created_at, total: 0, n: 0 });
+                const g = map.get(k);
+                g.total += parseFloat(m.valor) || 0;
+                g.n += 1;
+                const dt = m.data || m.created_at;
+                if (dt && (!g.data || new Date(dt) > new Date(g.data))) g.data = dt;
+            });
+            return Array.from(map.values()).sort((a, b) => new Date(b.data) - new Date(a.data)).slice(0, limite || 5);
+        }
+        function ultimoLote() { const l = lotesRecentes(1); return l.length ? l[0] : null; }
+        function atualizarBotaoDesfazerLote() {
+            const btn = document.getElementById('btn-undo-lote');
+            if (!btn) return;
+            const g = ultimoLote();
+            if (!g) {
+                btn.disabled = true;
+                btn.title = 'Nenhum lote recente para desfazer';
+                return;
+            }
+            btn.disabled = false;
+            btn.title = 'Desfazer o ultimo lote: ' + formatDate(String(g.data).slice(0, 10)) + ' - ' + g.n + ' titulo(s) - ' + formatMoney(g.total);
+        }
+        async function desfazerUltimoLote() {
+            const g = ultimoLote();
+            if (!g) return showToast('Nenhum lote recente para desfazer.', true);
+            const msg = 'Desfazer o ultimo lote de pagamento (' + g.n + ' titulo(s))? Os titulos voltam para PENDENTE.';
+            const ok = window.RVUI && RVUI.confirm ? await RVUI.confirm(msg) : confirm(msg);
+            if (!ok) return;
+            showLoading(true);
+            const { data, error } = await sb.rpc('rv_estornar_lote', { p_lote: g.lote });
+            showLoading(false);
+            if (error) return showToast('Erro: ' + error.message, true);
+            const n = (data && data.estornados) ? data.estornados : 0;
+            showToast(n + ' pagamento(s) desfeito(s)!');
+            await recarregarDados('logs', 'contas', 'movimentacoes', 'faturas', 'oc_parcelas');
+            renderFinance();
         }
 
         // ====== CONTAS A PAGAR: PARCELAMENTO (LANCAMENTO E O.C.) ======
@@ -3535,117 +3687,6 @@
             el.value = sel;
             if (el.value !== sel) el.value = '';
         }
-        function renderLotesRecentes() {
-            const strip = document.getElementById('fin-lotes-strip');
-            if (!strip) return;
-            const movs = (STATE.movimentacoes || []).filter(m => m.lote_id && !m.estornada && (m.origem === 'baixa_oc' || m.origem === 'baixa_oc_parcela' || m.origem === 'baixa_despesa' || m.origem === 'baixa_receita'));
-            const map = new Map();
-            movs.forEach(m => {
-                const k = m.lote_id;
-                if (!map.has(k)) map.set(k, { lote: k, data: m.data || m.created_at, total: 0, n: 0 });
-                const g = map.get(k);
-                g.total += parseFloat(m.valor) || 0;
-                g.n += 1;
-                const dt = m.data || m.created_at;
-                if (dt && (!g.data || new Date(dt) > new Date(g.data))) g.data = dt;
-            });
-            const list = Array.from(map.values()).sort((a, b) => new Date(b.data) - new Date(a.data)).slice(0, 5);
-            if (!list.length) { strip.classList.add('hidden'); strip.innerHTML = ''; return; }
-            strip.classList.remove('hidden');
-            strip.innerHTML = `<div class="flex items-center gap-2 flex-wrap">
-                <span class="text-[10px] font-black uppercase text-amber-800 flex items-center gap-1"><i data-lucide="package" class="w-3.5 h-3.5"></i> Lotes recentes</span>
-                ${list.map(g => `<span class="inline-flex items-center gap-2 bg-white border border-amber-300 rounded-lg px-2 py-1 text-[11px] font-bold text-slate-700">
-                    <span>${formatDate(String(g.data).slice(0,10))} - ${g.n} titulo(s) - ${formatMoney(g.total)}</span>
-                    <button onclick="imprimirComprovanteLote('${g.lote}')" class="text-blue-700 hover:text-blue-900 underline" title="Imprimir comprovante">Comprovante</button>
-                    <button onclick="estornarLote('${g.lote}')" class="text-amber-700 hover:text-red-600 underline" title="Desfazer este lote">Desfazer</button>
-                </span>`).join('')}
-            </div>`;
-            atualizarIcones();
-        }
-        function loteFornNome(m) {
-            let l = null;
-            if (m.oc_id) l = (STATE.logs || []).find(x => String(x.id) === String(m.oc_id) && x.tipo === 'compra');
-            else if (m.log_uid) l = (STATE.logs || []).find(x => x.uid === m.log_uid);
-            if (!l) return '';
-            const f = (STATE.fornecedores || []).find(x => String(x.id) === String(l.fornecedor_id));
-            return f ? f.nome : '';
-        }
-        function buildHTMLComprovanteLote(loteId) {
-            const movs = (STATE.movimentacoes || []).filter(m => String(m.lote_id) === String(loteId)
-                && (m.origem === 'baixa_oc' || m.origem === 'baixa_oc_parcela' || m.origem === 'baixa_despesa' || m.origem === 'baixa_receita') && !m.estornada);
-            if (!movs.length) return '';
-            const dataLote = movs.map(m => m.data || m.created_at).filter(Boolean).sort().slice(-1)[0] || '';
-            const conta = (STATE.contas || []).find(c => String(c.id) === String(movs[0].conta_id));
-            const total = movs.reduce((a, m) => a + (parseFloat(m.valor) || 0), 0);
-            const linhas = movs.map(m => {
-                const obra = (STATE.obras || []).find(o => String(o.id) === String(m.obra_id));
-                const desc = m.oc_id ? ('O.C. #' + m.oc_id) : (m.descricao || 'Lançamento');
-                return `<tr>
-                    <td style="padding:6px; border-bottom:1px solid #e2e8f0;">${desc}</td>
-                    <td style="padding:6px; border-bottom:1px solid #e2e8f0;">${loteFornNome(m) || '-'}</td>
-                    <td style="padding:6px; border-bottom:1px solid #e2e8f0;">${obra ? obra.nome : 'Geral'}</td>
-                    <td align="right" style="padding:6px; border-bottom:1px solid #e2e8f0;">${formatMoney(m.valor)}</td>
-                </tr>`;
-            }).join('');
-            return `<div style="font-family:'Segoe UI',Arial; padding:24px; color:#1e293b;">
-                <div style="display:flex; justify-content:space-between; border-bottom:3px solid #1d4ed8; padding-bottom:12px; margin-bottom:20px;">
-                    <img src="logo.png" style="height:64px;">
-                    <div style="text-align:right;">
-                        <h1 style="margin:0; font-size:20px;">COMPROVANTE DE PAGAMENTO</h1>
-                        <p style="margin:4px 0 0 0; font-size:11px; color:#1d4ed8; font-weight:bold;">Pagamento em lote</p>
-                        <p style="margin:2px 0 0 0; font-size:10px;">Lote: ${String(loteId).slice(0, 8).toUpperCase()}</p>
-                    </div>
-                </div>
-                <table style="font-size:11px; margin-bottom:16px;">
-                    <tr>
-                        <td style="padding:2px 8px 2px 0; color:#64748b; font-weight:bold;">DATA:</td><td>${formatDate(String(dataLote).slice(0, 10))}</td>
-                        <td style="padding:2px 8px 2px 20px; color:#64748b; font-weight:bold;">CONTA:</td><td>${conta ? conta.nome : '-'}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding:2px 8px 2px 0; color:#64748b; font-weight:bold;">TÍTULOS:</td><td colspan="3">${movs.length}</td>
-                    </tr>
-                </table>
-                <table width="100%" style="border-collapse:collapse; font-size:11px;">
-                    <thead>
-                        <tr>
-                            <th align="left" style="background:#0f172a; color:#fff; padding:8px;">Título</th>
-                            <th align="left" style="background:#0f172a; color:#fff; padding:8px;">Fornecedor</th>
-                            <th align="left" style="background:#0f172a; color:#fff; padding:8px;">Obra</th>
-                            <th align="right" style="background:#0f172a; color:#fff; padding:8px;">Valor</th>
-                        </tr>
-                    </thead>
-                    <tbody>${linhas}</tbody>
-                </table>
-                <table width="100%" style="margin-top:10px;">
-                    <tr><td align="right" style="font-size:14px; font-weight:900; padding-top:8px;">TOTAL PAGO: ${formatMoney(total)}</td></tr>
-                </table>
-                <div style="margin-top:60px; display:flex; justify-content:space-between;">
-                    <div style="border-top:1px solid #000; width:45%; text-align:center; padding-top:5px; font-size:10px; font-weight:bold;">RESPONSÁVEL PELO PAGAMENTO</div>
-                    <div style="border-top:1px solid #000; width:45%; text-align:center; padding-top:5px; font-size:10px; font-weight:bold;">RECEBEDOR / FORNECEDOR</div>
-                </div>
-                <p style="margin-top:30px; font-size:9px; color:#94a3b8; text-align:center;">Emitido em ${new Date().toLocaleString('pt-BR')} · RV NEGÓCIOS E COMPANHIA</p>
-            </div>`;
-        }
-        function imprimirComprovanteLote(loteId) {
-            const html = buildHTMLComprovanteLote(loteId);
-            if (!html) return showToast('Lote não encontrado.', true);
-            document.getElementById('print-area').innerHTML = html;
-            document.body.classList.add('rv-printing');
-            setTimeout(() => { window.print(); document.body.classList.remove('rv-printing'); }, 300);
-        }
-        async function estornarLote(loteId) {
-            if (!loteId) return;
-            if (!confirm('Desfazer este lote de pagamento? Os titulos voltam para PENDENTE.')) return;
-            showLoading(true);
-            const { data, error } = await sb.rpc('rv_estornar_lote', { p_lote: loteId });
-            showLoading(false);
-            if (error) return showToast('Erro: ' + error.message, true);
-            const n = (data && data.estornados) ? data.estornados : 0;
-            showToast(`${n} pagamento(s) desfeito(s)!`);
-            await recarregarDados('logs', 'contas', 'movimentacoes', 'faturas', 'oc_parcelas');
-            renderFinance();
-        }
-
         function renderFinance() {
             preencherFiltroFornecedoresFin();
             const obraFilter = document.getElementById('fin-obra-filter').value;
@@ -3848,7 +3889,7 @@
 
             pagAtualizarBarra();
             pagAplicarBloqueioObra();
-            renderLotesRecentes();
+            atualizarBotaoDesfazerLote();
 
             const listaRec = document.getElementById('fin-receivables-list');
             let recArr = logsFilt.filter(l => l.tipo === 'receita');
